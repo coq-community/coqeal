@@ -561,5 +561,17 @@ apply/seqmxP ; split=> [||i j] ; first by rewrite size_map size_iota.
 by rewrite mkseqmxE // mxE.
 Qed.
 
+Definition scaleseqmx (x : mT) (M : seqmatrix) :=
+  map (map ( *%R x)) M.
+
+Lemma scaleseqmxE m n x (M : 'M_(m,n)) :
+  scaleseqmx x (seqmx_of_mx M) = seqmx_of_mx (scalemx x M).
+Proof.
+apply/seqmxP; split=> [|i Hi| i j] ; first by rewrite size_map size_seqmx.
+  by rewrite /rowseqmx (nth_map [::]) ?size_seqmx // size_map size_row_seqmx.
+rewrite mxE /fun_of_seqmx /rowseqmx (nth_map [::]) ?size_seqmx // (nth_map 0).
+  by rewrite -seqmxE.
+by rewrite size_row_seqmx.
+Qed.
 
 End seqmx.
