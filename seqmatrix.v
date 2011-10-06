@@ -281,8 +281,7 @@ rewrite Hn.
 Abort.
 *)
 
-Lemma size_trseqmx (M : 'M_(m.+1,n.+1)) :
-  size (trseqmx (seqmx_of_mx M)) = n.+1.
+Lemma size_trseqmx (M : 'M_(m.+1, n)) : size (trseqmx (seqmx_of_mx M)) = n.
 Proof.
 rewrite /trseqmx.
 pose P s k := forall i, i < size s -> size (rowseqmx s i) = k.
@@ -295,8 +294,8 @@ rewrite H size_nseq size_row_seqmx //.
 by move=> i; rewrite size_seqmx=> Hi; rewrite size_row_seqmx.
 Qed.
 
-Lemma size_row_trseqmx (M:'M[mT]_(m.+1,n.+1)) i :
-  i < n.+1 -> size (rowseqmx (trseqmx (seqmx_of_mx M)) i) = m.+1.
+Lemma size_row_trseqmx (M : 'M_(m.+1, n)) i :
+  i < n -> size (rowseqmx (trseqmx (seqmx_of_mx M)) i) = m.+1.
 Proof.
 have H: forall k s1 s2, k < size (foldr (map2 cons) s1 s2) -> k < size s1 ->
 size (rowseqmx (foldr (map2 cons) s1 s2) k) = (size s2 + size (rowseqmx s1 k))%N.
@@ -310,7 +309,7 @@ move=> Hi; rewrite H.
   by rewrite size_nseq size_row_seqmx.
 Qed.
 
-Lemma trseqmxE (M : 'M_(m.+1,n.+1)) :
+Lemma trseqmxE (M : 'M_(m.+1, n)) :
   trseqmx (seqmx_of_mx M) = seqmx_of_mx (trmx M).
 Proof.
 apply/seqmxP; split => [|i Hi|i j].
@@ -342,7 +341,7 @@ Definition mulseqmx (M N: seqmatrix) : seqmatrix :=
 Lemma minSS (p q : nat) : minn p.+1 q.+1 = (minn p q).+1.
 Proof. by rewrite /minn ltnS; case:ifP. Qed.
 
-Lemma mulseqmxE (M:'M_(m,p)) (N:'M_(p,n.+1)) :
+Lemma mulseqmxE (M:'M_(m,p)) (N:'M_(p,n)) :
   mulseqmx (seqmx_of_mx M) (seqmx_of_mx N) = seqmx_of_mx (M *m N).
 Proof.
 apply/seqmxP; split => [|i Hi|i j]; first by rewrite size_map size_seqmx.
