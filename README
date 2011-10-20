@@ -1,0 +1,9 @@
+In order to compile this library, you have to set SSRPATH environment variable
+to the root path of ssreflect on your machine, by a command like:
+
+export SSRPATH=/path/to/ssr/root/folder
+
+and then type `make` to compile.
+
+Note: the makefile assumes you are using a dynamically linked version of the
+ssreflect plugin. If this is not the case, you need to adapt the `Make` file.

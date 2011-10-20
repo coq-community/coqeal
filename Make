@@ -1,0 +1,8 @@
+-I $(SSRPATH)/src
+-I $(SSRPATH)/theories
+dvdring.v
+infra.v
+zintdiv.v
+seqmatrix.v
+matrix_facts.v
+rank.v
