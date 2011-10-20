@@ -1,5 +1,5 @@
--I $(SSRPATH)/src
--I $(SSRPATH)/theories
+-I $(SSRSRC)
+-I $(SSRLIB)
 dvdring.v
 infra.v
 zintdiv.v

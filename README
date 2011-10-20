@@ -1,6 +1,9 @@
-In order to compile this library, you have to set SSRPATH environment variable
-to the root path of ssreflect on your machine, by a command like:
+In order to compile this library, you have to set two environment variables:
+  - SSRSRC should be the path of the ssreflect "src" folder
+    (in which ssreflect.cmxs can be found).
+  - SSRLIB should be the path to ssr theories (where the .v files are)
 
+To set environment variables, you may use a command like:
 export SSRPATH=/path/to/ssr/root/folder
 
 and then type `make` to compile.
