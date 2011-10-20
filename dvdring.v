@@ -583,7 +583,7 @@ Export GcdRing.Exports.
 Definition gcdr R := GcdRing.gcd (GcdRing.class R).
 
 Definition lcmr R a b := nosimpl
-  if (a == 0) || (b == 0) then 0 else odflt 0 ((a * b) %/? (@gcdr R a b)).
+  (if (a == 0) || (b == 0) then 0 else odflt 0 ((a * b) %/? (@gcdr R a b))).
 
 Definition gcdsr R := foldr (@gcdr R) 0.
 Definition lcmsr R := foldr (@lcmr R) 1.
