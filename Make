@@ -1,6 +1,12 @@
+cssralg.v
 dvdring.v
-infra.v
-zintdiv.v
+cdvdring.v
+Zinfra.v
+Qinfra.v
 seqmatrix.v
 matrix_facts.v
 rank.v
+polydvd.v
+cseqpoly.v
+cseqpolydvd.v
+karatsuba.v
