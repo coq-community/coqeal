@@ -148,27 +148,14 @@ split=> [|i Hi|i j] ; first by rewrite size_seqmx.
 by rewrite seqmxE.
 Qed.
 
-End FixedDim.
-
-Section StrictMatrix.
-
-Variables m' n' : nat.
-Local Notation m := m'.+1.
-Local Notation n := n'.+1.
-
-Lemma seqmx_of_funE : forall (f : 'I_m -> 'I_n -> mT),
+Lemma seqmx_of_funE (f : 'I_m -> 'I_n -> mT) :
   seqmx_of_mx (\matrix_(i < m, j < n) f i j) = mkseqmx_ord f.
 Proof.
-move=>f.
-rewrite /mkseqmx_ord /seqmx_of_mx. (* /mkseq. -(val_enum_ord m) -[x in _ = x]map_comp. *)
-rewrite !ord_enum_eqE [x in map _ x]enumT unlock.
-apply:eq_map=> i.
-rewrite enumT unlock.
-apply:eq_map=> j.
-by rewrite mxE.
+rewrite /mkseqmx_ord /seqmx_of_mx !ord_enum_eqE [x in map _ x]enumT unlock.
+by apply:eq_map=> i; rewrite enumT unlock; apply:eq_map=> j; rewrite mxE.
 Qed.
 
-End StrictMatrix.
+End FixedDim.
 
 Section map2.
 
