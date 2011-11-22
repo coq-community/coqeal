@@ -43,17 +43,25 @@ Definition seqrow := seq mT.
 Variables m n : nat.
 
 Definition mkseqmx (f:nat->nat->mT) : seqmatrix :=
-  let row i := mkseq (fun j => f i j) n in
-  mkseq (fun i => row i) m.
+  mkseq (fun i => mkseq (fun j => f i j) n) m.
 
 Definition ord_enum_eq n : seq 'I_n := pmap (insub_eq _) (iota 0 n).
 
-Lemma ord_enum_eqE p : ord_enum_eq p = ord_enum p.
-Proof. by apply:eq_pmap ; exact:insub_eqE. Qed.
+Lemma ord_enum_eqE p : ord_enum_eq p = enum 'I_p.
+Proof. by rewrite enumT unlock; apply:eq_pmap ; exact:insub_eqE. Qed.
+
+(*
+Lemma ord_enumE p : ord_enum p = enum 'I_p.
+Proof. by rewrite enumT unlock. Qed.
+*)
 
 Definition mkseqmx_ord (f:'I_m->'I_n->mT) : seqmatrix :=
   let enum_n := ord_enum_eq n in
   map (fun i => map (f i) enum_n) (ord_enum_eq m).
+
+Lemma eq_mkseqmx_ord f g :
+  f =2 g -> mkseqmx_ord f = mkseqmx_ord g.
+Proof. by move=> Hfg; apply:eq_map=> i; apply:eq_map=> j. Qed.
 
 Definition rowseqmx (M : seqmatrix) i := nth [::] M i.
 
@@ -83,7 +91,7 @@ Lemma mkseqmxE f i j : i < m -> j < n -> mkseqmx f i j = f i j.
 Proof. by move=> Hi Hj ; rewrite /fun_of_seqmx /rowseqmx !nth_mkseq. Qed.
 
 Definition seqmx_of_mx (M:'M_(m,n)) : seqmatrix :=
-  map (fun i => map (fun j => M i j) (enum 'I_n)) (enum 'I_m).
+  [seq [seq M i j | j <- enum 'I_n] | i <- enum 'I_m].
 
 Lemma size_seqmx : forall (M:'M[mT]_(m,n)),
   size (seqmx_of_mx M) = m.
@@ -116,11 +124,11 @@ Section FixedDim.
 
 Variables m n : nat.
 
-(* Should we use a reflect predicate here ? *)
-(* Is this lemma useful ?                   *)
-Lemma seqmx_eqP: forall (M N:'M[mT]_(m,n)),
-  seqmx_of_mx M == seqmx_of_mx N -> M = N.
-Proof. by move=> M N H ; apply/matrixP=> i j ; rewrite -!seqmxE (eqP H). Qed.
+Lemma seqmx_eqP (M N : 'M[mT]_(m,n)) :
+  reflect (M = N) (seqmx_of_mx M == seqmx_of_mx N).
+Proof.
+by apply/(iffP idP)=> [H|->//]; apply/matrixP=> i j; rewrite -!seqmxE (eqP H).
+Qed.
 
 Lemma size_row_seqmx : forall (M:'M[mT]_(m,n)) i,
   i < m -> size (rowseqmx (seqmx_of_mx M) i) = n.
@@ -151,7 +159,7 @@ Qed.
 Lemma seqmx_of_funE (f : 'I_m -> 'I_n -> mT) :
   seqmx_of_mx (\matrix_(i < m, j < n) f i j) = mkseqmx_ord f.
 Proof.
-rewrite /mkseqmx_ord /seqmx_of_mx !ord_enum_eqE [x in map _ x]enumT unlock.
+rewrite /mkseqmx_ord /seqmx_of_mx !ord_enum_eqE.
 by apply:eq_map=> i; rewrite enumT unlock; apply:eq_map=> j; rewrite mxE.
 Qed.
 
