@@ -315,8 +315,8 @@ case: d => [ | d] hd.
 - by rewrite eq_refl orbT.
 assert (0 < 2) by apply ltn0Sn.
 have : d.+2 < 2 by apply hd.
-change (d.+2) with (1 + (1 + d)).
-change 2 with (1 + (1 + 0)).
+change (d.+2) with (1 + (1 + d))%nat.
+change 2 with (1 + (1 + 0))%nat.
 by rewrite 2!ltn_add2l ltn0.
 Qed.
 
