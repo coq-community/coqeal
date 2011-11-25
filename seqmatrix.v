@@ -90,8 +90,15 @@ Qed.
 Lemma mkseqmxE f i j : i < m -> j < n -> mkseqmx f i j = f i j.
 Proof. by move=> Hi Hj ; rewrite /fun_of_seqmx /rowseqmx !nth_mkseq. Qed.
 
+(* For ssreflect >= 1.4 *)
+(*
 Definition seqmx_of_mx (M:'M_(m,n)) : seqmatrix :=
   [seq [seq M i j | j <- enum 'I_n] | i <- enum 'I_m].
+*)
+
+(* For ssreflect 1.3 *)
+Definition seqmx_of_mx (M:'M_(m,n)) : seqmatrix :=
+  map (fun i => map (fun j => M i j) (enum 'I_n)) (enum 'I_m).
 
 Lemma size_seqmx : forall (M:'M[mT]_(m,n)),
   size (seqmx_of_mx M) = m.

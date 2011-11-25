@@ -51,7 +51,8 @@ by elim: xs => //= x xs ->.
 Qed.
 
 (* Reflection lemma *)
-Lemma trans_polyP : forall p q : {poly R}, reflect (p = q) (trans_poly p == trans_poly q).
+Lemma trans_polyP : forall p q : {poly R},
+  reflect (p = q) (trans_poly p == trans_poly q).
 Proof.
 move=> p q.
 apply: (iffP idP)=> [|->] // /eqP.
@@ -95,8 +96,7 @@ rewrite -!poly_cons_def poly_cons_add !polyseq_cons.
 case: ifP => [|spq].
   case: ifP => sp.
     case: ifP => sq.
-      rewrite size_poly_neq0 /=.
-      rewrite -addP trans_eq0.
+      rewrite size_poly_neq0 /= -addP trans_eq0.
       case: ifP; rewrite -IH //.
       move: (trans_poly_eq0 (p + q)).
       rewrite /trans_poly -seq_poly0 => ->.
@@ -175,7 +175,7 @@ Qed.
 (* lead_coef *)
 Definition lead_coef_seq (p : seq CR) := nth (@zero R CR) p (size p).-1.
 
-Lemma lead_coef_seqP : forall p, @trans R CR (lead_coef p) = lead_coef_seq (trans_poly p).
+Lemma lead_coef_seqP : forall p, trans CR (lead_coef p) = lead_coef_seq (trans_poly p).
 Proof.
 move=> p.
 rewrite /lead_coef_seq /lead_coef size_trans_poly /trans_poly /=.
@@ -215,7 +215,7 @@ Fixpoint scale_seq x p : seq CR := match p with
   end.
 
 Lemma scale_seqP : forall (x : R) (p : {poly R}),
-  trans_poly (scale_poly x p) = scale_seq (@trans R CR x) (trans_poly p).
+  trans_poly (scale_poly x p) = scale_seq (trans CR x) (trans_poly p).
 Proof.
 move=> x.
 elim/poly_ind=> [| p c IH].
@@ -388,5 +388,24 @@ rewrite /scalp_seq /scalp /= => p q.
 move: (edivp_seqP p q).
 by case: edivp=> [[a b c]] ->.
 Qed.
+
+
+(* Horner evaluation *)
+
+Fixpoint horner_seq (s : seq CR) (x : CR) {struct s} : CR :=
+  if s is a :: s' then add (mul (horner_seq s' x) x) a else zero CR.
+
+Lemma horner_seqP : forall p x,
+  trans CR (polyseq p).[x] = horner_seq (trans_poly p) (trans CR x).
+Proof.
+elim/poly_ind => [ x | p c]; first by rewrite horner0 trans_poly0 zeroP.
+rewrite /horner_seq -!poly_cons_def /trans_poly polyseq_cons => ih x.
+case sp0: (size p == 0%N) => /=.
+  rewrite hornerC polyseqC.
+  case c0: (c == 0) => /=; first by rewrite (eqP c0) zeroP.
+  by rewrite -zeroP -mulP mul0r -addP add0r.
+by rewrite -ih -mulP -addP.
+Qed.
+
 
 End SeqPoly.
