@@ -117,6 +117,14 @@ apply/eqP/eqP=> [h|->].
 by rewrite zeroP.
 Qed.
 
+Definition sub x y := add x (opp y).
+
+Lemma subP : {morph (@trans V T) : x y / x - y >-> sub x y }.
+Proof.
+move=> x y /=.
+by rewrite addP oppP.
+Qed.
+
 End CZmoduleTheory.
 
 Export CZmodule.Exports.

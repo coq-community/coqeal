@@ -88,6 +88,13 @@ move => n a b.
 by apply/matrixP => i j; rewrite !mxE mulrn_addl.
 Qed.
 
+Lemma scalar_sub: forall (n:nat) (a b: R),
+ (a - b)%:M = a%:M - b%:M :> 'M_n.
+Proof.
+move => n a b.
+by apply/matrixP => i j; rewrite !mxE mulrn_subl.
+Qed.
+
 Lemma scalar0: forall n, 0%:M = 0 :> 'M[R]_n.
 Proof.
 move => n; apply/matrixP => i j; rewrite !mxE.
