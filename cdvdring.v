@@ -81,7 +81,8 @@ Section CDvdRingTheory.
 Variable R : dvdRingType.
 Variable CR : cdvdRingType R.
 
-Lemma cdivP : forall x y, omap (trans CR) (x %/? y) = cdiv (trans CR x) (trans CR y).
+Lemma cdivE : forall x y,
+  omap (trans CR) (x %/? y) = cdiv (trans CR x) (trans CR y).
 Proof. by case: CR => ? [] ? []. Qed.
 
 End CDvdRingTheory.
@@ -173,7 +174,7 @@ Section CGcdRingTheory.
 Variable R : gcdRingType.
 Variable CR : cgcdRingType R.
 
-Lemma cgcdP : {morph (trans CR) : x y / gcdr x y >-> cgcd x y}.
+Lemma cgcdE : {morph (trans CR) : x y / gcdr x y >-> cgcd x y}.
 Proof. by case: CR => ? [] ? []. Qed.
 
 (* TODO: Add theory about cgcds? *)
@@ -258,7 +259,7 @@ Section CBezoutRingTheory.
 Variable R : bezoutRingType.
 Variable CR : cbezoutRingType R.
 
-Lemma cbezoutP : forall x y, (trans CR (bezout x y).1,trans CR (bezout x y).2) =
+Lemma cbezoutE : forall x y, (trans CR (bezout x y).1,trans CR (bezout x y).2) =
                              cbezout (trans CR x) (trans CR y).
 Proof. by case: CR => ? [] ? []. Qed.
 
@@ -346,10 +347,10 @@ Local Notation cediv := (cediv mR).
 
 Definition czero := (@zero _ [czmodType R of CR]).
 
-Lemma cnormP : forall x, cnorm (trans _ x) = enorm x.
+Lemma cnormE : forall x, cnorm (trans _ x) = enorm x.
 Proof. by case: mR. Qed.
 
-Lemma cedivP :
+Lemma cedivE :
   forall x y, cediv (trans _ x) (trans _ y) = (trans _ (x %/ y),trans _ (x %% y)).
 Proof. by case: mR. Qed.
 
@@ -359,22 +360,24 @@ Canonical Structure R_dvdRingType := DvdRingType R R_dvdMixin.
 Definition codiv a b := let (q, r) := cediv a b in
   if r == czero then Some (if b == czero then czero else q) else None.
 
-Lemma odivP : forall x y, omap (trans _) (x %/? y) = codiv (trans _ x) (trans _ y).
+Lemma odivE : forall x y,
+  omap (trans _) (x %/? y) = codiv (trans _ x) (trans _ y).
 Proof.
 rewrite /odivr /= /EuclideanRing.Mixins.odiv /codiv => x y.
-rewrite cedivP !trans_eq0 /divr /modr /edivr /=.
+rewrite cedivE !trans_eq0 /divr /modr /edivr /=.
 case: EuclideanRing.ediv=> a b /=.
 do 2! case: ifP => _ //=.
-by rewrite zeroP.
+by rewrite zeroE.
 Qed.
 
-Lemma codivP : forall x y, omap (trans _) (x %/? y) = codiv (trans _ x) (trans _ y).
+Lemma codivE : forall x y,
+  omap (trans _) (x %/? y) = codiv (trans _ x) (trans _ y).
 Proof.
 move=> x y.
-by rewrite odivP.
+by rewrite odivE.
 Qed.
 
-Definition CEuclidDvd := CDvdRingMixin codivP.
+Definition CEuclidDvd := CDvdRingMixin codivE.
 
 (*
 
@@ -702,10 +705,10 @@ Section CEuclideanRingTheory.
 Variable R : euclidRingType.
 Variable CR : ceuclidRingType R.
 
-Lemma cnormP : forall x, enorm x = cnorm (trans CR x).
+Lemma cnormE : forall x, enorm x = cnorm (trans CR x).
 Proof. by case: CR => ? [] ? []. Qed.
 
-Lemma cedivP : forall x y, (trans CR (x %/ y),trans CR (x %% y)) =
+Lemma cedivE : forall x y, (trans CR (x %/ y),trans CR (x %% y)) =
                            cediv (trans CR x) (trans CR y).
 Proof. by case: CR => ? [] ? []. Qed.
 

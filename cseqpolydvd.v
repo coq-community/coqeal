@@ -39,33 +39,33 @@ Definition odivp_seq p q : option (seq CR) :=
 
 Import PolyDvdRing.
 
-Lemma odivp_recP :
+Lemma odivp_recE :
  forall n (q r p : {poly R}),
   odivp_rec_seq (trans_poly CR q) n (trans_poly CR r) (trans_poly CR p) =
    omap (trans_poly CR) (odivp_rec q n r p).
 Proof.
 elim=> [q r p|n IH q r p] /=.
-  rewrite trans_poly_eq0 !size_trans_poly -!lead_coef_seqP -cdivP.
+  rewrite trans_poly_eq0 !size_trans_poly -!lead_coef_seqE -cdivE.
   do 2! case: ifP => //.
   by case: odivrP.
-rewrite trans_poly_eq0 !size_trans_poly -!lead_coef_seqP -cdivP.
+rewrite trans_poly_eq0 !size_trans_poly -!lead_coef_seqE -cdivE.
 do 2! case: ifP => //.
 case: odivrP => // x hx /=.
-by rewrite -IH -polyC_seqP -indetP -!mul_seqP add_seqP sub_seqP.
+by rewrite -IH -polyC_seqE -indetE -!mul_seqE add_seqE sub_seqE.
 Qed.
 
-Lemma odivp_seqP :
+Lemma odivp_seqE :
   forall p q : {poly R}, omap (trans_poly CR) (p %/? q) =
                          odivp_seq (trans_poly CR p) (trans_poly CR q).
 Proof.
 rewrite /odivr /= /odivp /odivp_seq => p q.
 rewrite trans_poly_eq0.
 case: ifP => hp /=; first by rewrite trans_poly0.
-by rewrite size_trans_poly -trans_poly0 odivp_recP.
+by rewrite size_trans_poly -trans_poly0 odivp_recE.
 Qed.
 
 (* CDvdring structure *)
-Definition seq_cdvdRingMixin := CDvdRingMixin odivp_seqP.
+Definition seq_cdvdRingMixin := CDvdRingMixin odivp_seqE.
 
 Canonical Structure seq_cdvdRingType :=
   Eval hnf in CDvdRingType [dvdRingType of {poly R}] seq_cdvdRingMixin.
@@ -87,13 +87,13 @@ Implicit Types p q : seq CR.
 
 Definition gcdsr_seq := foldr (@cgcd R CR) (zero CR).
 
-Lemma gcdsr_seqP : forall p : {poly R}, trans CR (@gcdsr R p) = gcdsr_seq (trans_poly CR p).
+Lemma gcdsr_seqE : forall p : {poly R}, trans CR (@gcdsr R p) = gcdsr_seq (trans_poly CR p).
 Proof.
 move=> p.
 rewrite /trans_poly.
 elim: p => xs /= _.
-elim: xs => [|x xs ih] /=; first by rewrite zeroP.
-by rewrite -ih cgcdP.
+elim: xs => [|x xs ih] /=; first by rewrite zeroE.
+by rewrite -ih cgcdE.
 Qed.
 
 (* Primitive part *)
@@ -104,12 +104,12 @@ Definition pp_seq p : seq CR := match odivp_seq p (polyC_seq (gcdsr_seq p)) with
 
 Import PolyGcdRing.
 
-Lemma pp_seqP : {morph (trans_poly CR) : p / pp p >-> pp_seq p}.
+Lemma pp_seqE : {morph (trans_poly CR) : p / pp p >-> pp_seq p}.
 Proof.
 move=> p /=.
-rewrite /pp /pp_seq -gcdsr_seqP -polyC_seqP -odivp_seqP.
+rewrite /pp /pp_seq -gcdsr_seqE -polyC_seqE -odivp_seqE.
 case: odivrP => //=.
-by rewrite -oneP /trans_poly polyseq1.
+by rewrite -oneE /trans_poly polyseq1.
 Qed.
 
 Fixpoint gcdp_rec_seq (n : nat) (p q : seq CR) :=
@@ -123,23 +123,23 @@ Definition gcdp_seq (p q : seq CR) :=
   let d  := polyC_seq (cgcd (gcdsr_seq p1) (gcdsr_seq q1)) in
   mul_seq d (gcdp_rec_seq (size (pp_seq p1)) (pp_seq p1) (pp_seq q1)).
 
-Lemma gcdp_rec_seqP :
+Lemma gcdp_rec_seqE :
  forall n (p q : {poly R}),
    gcdp_rec_seq n (trans_poly CR p) (trans_poly CR q) = trans_poly CR (gcdp_rec n p q).
 Proof.
-by elim=> [|n ih] p q /=; rewrite -modp_seqP trans_poly_eq0 -pp_seqP; case: ifP.
+by elim=> [|n ih] p q /=; rewrite -modp_seqE trans_poly_eq0 -pp_seqE; case: ifP.
 Qed.
 
-Lemma gcdp_seqP : {morph (trans_poly CR) : p q / gcdp p q >-> gcdp_seq p q}.
+Lemma gcdp_seqE : {morph (trans_poly CR) : p q / gcdp p q >-> gcdp_seq p q}.
 Proof.
 rewrite /gcdp /gcdp_seq => p q /=; rewrite !size_trans_poly.
 by case: ifP;
-   rewrite -!gcdsr_seqP -!pp_seqP -cgcdP -!polyC_seqP gcdp_rec_seqP -mul_seqP
+   rewrite -!gcdsr_seqE -!pp_seqE -cgcdE -!polyC_seqE gcdp_rec_seqE -mul_seqE
            size_trans_poly.
 Qed.
 
 (* CGcdRing structure *)
-Definition seq_cgcdRingMixin := CGcdRingMixin gcdp_seqP.
+Definition seq_cgcdRingMixin := CGcdRingMixin gcdp_seqE.
 
 Canonical Structure seq_cgcdRingType :=
   Eval hnf in CGcdRingType [gcdRingType of {poly R}] seq_cgcdRingMixin.
@@ -177,33 +177,33 @@ Definition ediv_rec_seq q :=
 Definition ediv_seq p q : seq CK * seq CK :=
   if q == [::] then ([::], p) else ediv_rec_seq q (size p) [::] p.
 
-Lemma ediv_rec_seqP :
+Lemma ediv_rec_seqE :
  forall n (q qq p : {poly K}),
   ediv_rec_seq (trans_poly CK q) n (trans_poly CK qq) (trans_poly CK p) =
   (trans_poly CK (ediv_rec q n qq p).1,trans_poly CK (ediv_rec q n qq p).2).
 Proof.
 elim=> [|n ih] q qq r /=; rewrite !size_trans_poly; case: ifP=> //= _.
-  by rewrite add_seqP sub_seqP !mul_seqP polyC_seqP indetP cudivP
-             !lead_coef_seqP.
-by rewrite -ih add_seqP sub_seqP !mul_seqP polyC_seqP cudivP indetP
-           !lead_coef_seqP.
+  by rewrite add_seqE sub_seqE !mul_seqE polyC_seqE indetE cudivE
+             !lead_coef_seqE.
+by rewrite -ih add_seqE sub_seqE !mul_seqE polyC_seqE cudivE indetE
+           !lead_coef_seqE.
 Qed.
 
-Lemma ediv_seqP : forall p q : {poly K},
+Lemma ediv_seqE : forall p q : {poly K},
   ediv_seq (trans_poly CK p) (trans_poly CK q) =
   (trans_poly CK (ediv p q).1, trans_poly CK (ediv p q).2).
 Proof.
 rewrite /ediv /ediv_seq=> p q; rewrite trans_poly_eq0.
 case: ifP => /= _.
   by rewrite /trans_poly seq_poly0.
-by rewrite size_trans_poly -ediv_rec_seqP /trans_poly seq_poly0.
+by rewrite size_trans_poly -ediv_rec_seqE /trans_poly seq_poly0.
 Qed.
 
 (* CEuclideanRing structure *)
 Lemma temp : forall (p : {poly K}), size (trans_poly CK p) = size p.
 Proof. by move=> p; rewrite size_trans_poly. Qed.
 
-Definition seq_ceuclidRingMixin := CEuclidRingMixin temp ediv_seqP.
+Definition seq_ceuclidRingMixin := CEuclidRingMixin temp ediv_seqE.
 
 Canonical Structure seq_ceuclidRingType :=
   Eval hnf in CEuclidRingType [euclidRingType of {poly K}] seq_ceuclidRingMixin.
@@ -215,18 +215,18 @@ Definition codiv_seq (a b : seq CK) := let (q, r) := cediv a b in
   if r == (zero _) then Some (if b == (zero _)
      then (zero (seq_czType CK)) else q) else None.
 
-Lemma codiv_seqP : forall x y,
+Lemma codiv_seqE : forall x y,
   omap (trans_poly CK) (x %/? y) = codiv_seq (trans_poly CK x) (trans_poly CK y).
 Proof.
 move=> x y.
-rewrite /codiv_seq -cedivP !trans_poly_eq0 /odivr /= /EuclideanRing.Mixins.odiv.
+rewrite /codiv_seq -cedivE !trans_poly_eq0 /odivr /= /EuclideanRing.Mixins.odiv.
 rewrite /= /divr /modr /edivr /=.
 case: ediv=> a b /=.
 do 2! case: ifP => _ //=.
-by rewrite -zeroP.
+by rewrite -zeroE.
 Qed.
 
-Definition seqK_cdvdRingMixin := CDvdRingMixin codiv_seqP.
+Definition seqK_cdvdRingMixin := CDvdRingMixin codiv_seqE.
 
 Canonical Structure seqK_cdvdRingType :=
   Eval hnf in CDvdRingType [dvdRingType of {poly K}] seqK_cdvdRingMixin.
@@ -242,7 +242,7 @@ Definition gcd_seq a b :=
       if n is n1.+1 then loop n1 bb rr else rr in
   loop (size a1) a1 b1.
 
-Lemma gcd_seqP :
+Lemma gcd_seqE :
   {morph (trans_poly CK) : p q / gcdr (p : {poly K}) q >-> gcd_seq p q}.
 Proof.
 rewrite /gcdr /gcd_seq /= /EuclideanRing.Mixins.gcd /= => p q.
@@ -254,10 +254,10 @@ wlog sqp: p q / size q <= size p=>[hwlog|].
 rewrite ltnNge sqp /= trans_poly_eq0 size_trans_poly.
 case: ifP => // _.
 remember (size p) as n; rewrite -Heqn; clear Heqn sqp.
-by elim: n q p=> [|n ih] p q; rewrite ediv_seqP /= trans_poly_eq0; case: ifP.
+by elim: n q p=> [|n ih] p q; rewrite ediv_seqE /= trans_poly_eq0; case: ifP.
 Qed.
 
-Definition seqK_cgcdRingMixin := CGcdRingMixin gcd_seqP.
+Definition seqK_cgcdRingMixin := CGcdRingMixin gcd_seqE.
 
 Canonical Structure seqK_cgcdRingType :=
   Eval hnf in CGcdRingType [gcdRingType of {poly K}] seqK_cgcdRingMixin.
@@ -273,7 +273,7 @@ Fixpoint egcd_rec (a b : seq CK) n {struct n} : seq CK * seq CK :=
 
 Definition egcd_seq p q := egcd_rec p q (size q).
 
-Lemma egcd_rec_seqP : forall (p q : {poly K}),
+Lemma egcd_rec_seqE : forall (p q : {poly K}),
   egcd_seq (trans_poly CK p) (trans_poly CK q) =
   (trans_poly CK (bezout p q).1, trans_poly CK (bezout p q).2).
 Proof.
@@ -286,7 +286,7 @@ elim: n p q => /= [|n ih p q].
 rewrite trans_poly_eq0.
 case: ifP => q0.
   by rewrite trans_poly1 trans_poly0.
-rewrite ediv_seqP ih -mul_seqP -sub_seqP /EuclideanRing.Mixins.div q0.
+rewrite ediv_seqE ih -mul_seqE -sub_seqE /EuclideanRing.Mixins.div q0.
 by case: EuclideanRing.Mixins.egcd_rec.
 Qed.
 

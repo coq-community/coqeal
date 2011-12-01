@@ -100,29 +100,29 @@ Implicit Types x y : T.
 Lemma inj_trans : injective (@trans V T).
 Proof. by case: T => ? [] ? [] ? ? ? []. Qed.
 
-Lemma zeroP : @trans V T 0 = (zero _).
+Lemma zeroE : @trans V T 0 = (zero _).
 Proof. by case: T => ? [] ? [].  Qed.
 
-Lemma addP : {morph (@trans V T) : x y / x + y >-> add x y}.
+Lemma addE : {morph (@trans V T) : x y / x + y >-> add x y}.
 Proof. by case: T => ? [] ? []. Qed.
 
-Lemma oppP : {morph (@trans V T) : x / - x >-> opp x}.
+Lemma oppE : {morph (@trans V T) : x / - x >-> opp x}.
 Proof. by case: T => ? [] ? []. Qed.
 
 Lemma trans_eq0 : forall a, (trans T a == zero T) = (a == 0).
 Proof.
 move=> a.
 apply/eqP/eqP=> [h|->].
-  by apply/inj_trans; rewrite h zeroP.
-by rewrite zeroP.
+  by apply/inj_trans; rewrite h zeroE.
+by rewrite zeroE.
 Qed.
 
 Definition sub x y := add x (opp y).
 
-Lemma subP : {morph (@trans V T) : x y / x - y >-> sub x y }.
+Lemma subE : {morph (@trans V T) : x y / x - y >-> sub x y }.
 Proof.
 move=> x y /=.
-by rewrite addP oppP.
+by rewrite addE oppE.
 Qed.
 
 End CZmoduleTheory.
@@ -209,10 +209,10 @@ Variable T : cringType R.
 
 Implicit Types x y : T.
 
-Lemma oneP : @trans R T 1 = (one _).
+Lemma oneE : @trans R T 1 = (one _).
 Proof. by case: T => ? [] ? [].  Qed.
 
-Lemma mulP : {morph (@trans R T) : x y / x * y >-> mul x y}.
+Lemma mulE : {morph (@trans R T) : x y / x * y >-> mul x y}.
 Proof. by case: T => ? [] ? []. Qed.
 
 End CRingTheory.
@@ -294,18 +294,18 @@ Section CUnitRingTheory.
 Variable R : unitRingType.
 Variable CR : cunitRingType R.
 
-Lemma cunitP : forall x, GRing.unit x = cunit (trans CR x).
+Lemma cunitE : forall x, GRing.unit x = cunit (trans CR x).
 Proof. by case: CR => ? [] ? []. Qed.
 
-Lemma cinvP : {morph (trans CR) : x / x^-1 >-> cinv x}.
+Lemma cinvE : {morph (trans CR) : x / x^-1 >-> cinv x}.
 Proof. by case: CR => ? [] ? []. Qed.
 
 Definition cudiv x y : CR := mul x (cinv y).
 
-Lemma cudivP : {morph (trans CR) : x y / x / y >-> cudiv x y}.
+Lemma cudivE : {morph (trans CR) : x y / x / y >-> cudiv x y}.
 Proof.
 move=> x y /=.
-by rewrite /cudiv mulP cinvP.
+by rewrite /cudiv mulE cinvE.
 Qed.
 
 End CUnitRingTheory.
