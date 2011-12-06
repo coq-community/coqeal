@@ -4,7 +4,7 @@ In order to compile this library, you have to set two environment variables:
   - SSRLIB should be the path to ssr theories (where the .v files are)
 
 To set environment variables, you may use a command like:
-export SSRPATH=/path/to/ssr/root/folder
+export SSRSRC=/path/...
 
 and then type `make` to compile.
 

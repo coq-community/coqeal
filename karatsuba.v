@@ -133,7 +133,7 @@ Qed.
 
 Definition splitp_seq n (p : seq CR) := (drop n p, take' n p).
 
-Lemma splitp_seqP : forall p n,
+Lemma splitp_seqE : forall p n,
   (trans_poly CR (splitp n p).1,trans_poly CR (splitp n p).2) =
   splitp_seq n (trans_poly CR p).
 Proof.
@@ -169,22 +169,22 @@ Definition karatsuba_seq (p q : seq CR) :=
   let (p1,q1) := if size p < size q then (q,p) else (p,q) in
   karatsuba_rec_seq (size p1) (size p1)./2 p1 q1.
 
-Lemma karatsuba_rec_seqP : forall n m,
+Lemma karatsuba_rec_seqE : forall n m,
   {morph (trans_poly CR) : p q / karatsuba_rec n m p q >-> karatsuba_rec_seq n m p q}.
 Proof.
-elim=> /= [_|n ih m p q]; first exact: mul_seqP.
+elim=> /= [_|n ih m p q]; first exact: mul_seqE.
 rewrite !size_trans_poly.
-case: ifP=> _; first exact: mul_seqP.
-case/pair_eqP: (splitp_seqP p m); case/andP => /eqP <- /eqP <-.
-case/pair_eqP: (splitp_seqP q m); case/andP => /eqP <- /eqP <-.
-by rewrite -!add_seqP -!ih -!sub_seqP -!shiftP -!add_seqP.
+case: ifP=> _; first exact: mul_seqE.
+case/pair_eqP: (splitp_seqE p m); case/andP => /eqP <- /eqP <-.
+case/pair_eqP: (splitp_seqE q m); case/andP => /eqP <- /eqP <-.
+by rewrite -!add_seqE -!ih -!sub_seqE -!shiftE -!add_seqE.
 Qed.
 
-Lemma karatsuba_seqP : {morph (trans_poly CR) : p q / karatsuba p q >-> karatsuba_seq p q}.
+Lemma karatsuba_seqE : {morph (trans_poly CR) : p q / karatsuba p q >-> karatsuba_seq p q}.
 Proof.
 move=> p q /=.
 rewrite /karatsuba /karatsuba_seq !size_trans_poly.
-by case: ifP=> _; rewrite karatsuba_rec_seqP size_trans_poly.
+by case: ifP=> _; rewrite karatsuba_rec_seqE size_trans_poly.
 Qed.
 
 End karatsuba.
