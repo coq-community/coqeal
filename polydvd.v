@@ -26,6 +26,7 @@ Variable R : dvdRingType.
 
 Implicit Types p q : {poly R}.
 
+(* Long division of polynomials *)
 Definition odivp_rec q :=
   let sq := size q in
   let lq := lead_coef q in
