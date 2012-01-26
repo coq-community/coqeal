@@ -1,7 +1,7 @@
 (* This file is part of CoqEAL, the Coq Effective Algebra Library *)
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
-Require Import perm zmodp matrix.
+Require Import perm zmodp matrix ssrcomplements.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -172,61 +172,23 @@ Qed.
 
 End FixedDim.
 
-Section map2.
-
-Variables T1 : Type.
-Variables x1 : T1.
-Variables T2 : Type.
-Variable x2 : T2.
-Variable T3 : Type.
-Variable x3 : T3.
-Variable (f : T1 -> T2 -> T3).
-
-Fixpoint map2 (s1 : seq T1) (s2 : seq T2) :=
-  if s1 is x1 :: s1' then
-    if s2 is x2 :: s2' then f x1 x2 :: map2 s1' s2' else [::]
-  else [::].
-
-Lemma size_map2 (s1 : seq T1) (s2 : seq T2) :
-  size (map2 s1 s2) = minn (size s1) (size s2).
-Proof.
-move:s2; elim:s1=>[s2|t1 s1 IHs] ; first by rewrite min0n.
-by case=>[|t2 s2] //= ; rewrite IHs /minn /leq subSS ; case:ifP.
-Qed.
-
-Lemma nth_map2 (n : nat) (s1 : seq T1) (s2 : seq T2) :
-n < minn (size s1) (size s2) ->
-  nth x3 (map2 s1 s2) n = f (nth x1 s1 n) (nth x2 s2 n).
-Proof.
-move:n s2; elim:s1=> [n s2|t1 s1 IHs]; first by rewrite min0n ltn0.
-case=>[|n]; first by case.
-by case=> // t2 s2 H ; rewrite /= IHs // ; move:H ; rewrite !leq_minr.
-Qed.
-
-Fixpoint foldl2 (f : T3 -> T1 -> T2 -> T3) z (s : seq T1) (t : seq T2) {struct s} :=
-  if s is x :: s' then
-    if t is y :: t' then foldl2 f (f z x y) s' t' else z
-  else z.
-
-End map2.
-
 Section SeqmxOp.
 
 Variables m n p' : nat.
 Local Notation p := p'.+1.
 
 Definition map2seqmx (M N : seqmatrix) (f : mT -> mT -> mT) : seqmatrix :=
-  map2 (map2 f) M N.
+  zipwith (zipwith f) M N.
 
 Lemma map2seqmxE (M N : 'M_(m,n)) (f : mT -> mT -> mT) :
   map2seqmx (seqmx_of_mx M) (seqmx_of_mx N) f = seqmx_of_mx (\matrix_(i < m, j < n) f (M i j) (N i j)).
 Proof.
 apply/seqmxP ; split=>[|i Hi|i j].
-    by rewrite size_map2 !size_seqmx minnn.
-  rewrite /rowseqmx (nth_map2 [::] [::]) ; last by rewrite !size_seqmx minnn.
-  by rewrite size_map2 !size_row_seqmx // minnn.
-rewrite fun_of_seqmxE (nth_map2 [::] [::]); last by rewrite !size_seqmx // minnn.
-rewrite (nth_map2 0 0) ; last by rewrite !size_row_seqmx // minnn.
+    by rewrite size_zipwith !size_seqmx minnn.
+  rewrite /rowseqmx (nth_zipwith _ [::] [::]) ; last by rewrite !size_seqmx minnn.
+  by rewrite size_zipwith !size_row_seqmx // minnn.
+rewrite fun_of_seqmxE (nth_zipwith _ [::] [::]); last by rewrite !size_seqmx // minnn.
+rewrite (nth_zipwith _ 0 0) ; last by rewrite !size_row_seqmx // minnn.
 by rewrite -!fun_of_seqmxE !seqmxE mxE.
 Qed.
 
@@ -256,7 +218,7 @@ by congr seqmx_of_mx; apply/matrixP=> i j ; rewrite !mxE.
 Qed.
 
 Definition trseqmx (M : seqmatrix) : seqmatrix :=
-  foldr (map2 cons) (nseq (size (rowseqmx M 0)) [::]) M.
+  foldr (zipwith cons) (nseq (size (rowseqmx M 0)) [::]) M.
 
 (*
 Lemma trseqmxE (M : 'M_(m.+1,n.+1)) :
@@ -287,11 +249,11 @@ Lemma size_trseqmx (M : 'M_(m.+1, n)) : size (trseqmx (seqmx_of_mx M)) = n.
 Proof.
 rewrite /trseqmx.
 pose P s k := forall i, i < size s -> size (rowseqmx s i) = k.
-have H: forall s1 s2, P s2 (size s1) -> size (foldr (map2 cons) s1 s2) = size s1.
+have H: forall s1 s2, P s2 (size s1) -> size (foldr (zipwith cons) s1 s2) = size s1.
   move=> s1; elim=> // t s2 IHs H.
   have Hs2: (P s2 (size s1)).
    by move=> i Hi; move:(H i.+1 Hi); move:(H 1%N (leq_ltn_trans (leq0n i) Hi))=> <-.
-  by rewrite size_map2 (IHs Hs2) (H 0%N) // minnn.
+  by rewrite size_zipwith (IHs Hs2) (H 0%N) // minnn.
 rewrite H size_nseq size_row_seqmx //.
 by move=> i; rewrite size_seqmx=> Hi; rewrite size_row_seqmx.
 Qed.
@@ -299,12 +261,12 @@ Qed.
 Lemma size_row_trseqmx (M : 'M_(m.+1, n)) i :
   i < n -> size (rowseqmx (trseqmx (seqmx_of_mx M)) i) = m.+1.
 Proof.
-have H: forall k s1 s2, k < size (foldr (map2 cons) s1 s2) -> k < size s1 ->
-size (rowseqmx (foldr (map2 cons) s1 s2) k) = (size s2 + size (rowseqmx s1 k))%N.
+have H: forall k s1 s2, k < size (foldr (zipwith cons) s1 s2) -> k < size s1 ->
+size (rowseqmx (foldr (zipwith cons) s1 s2) k) = (size s2 + size (rowseqmx s1 k))%N.
   move=> k s1; elim=> // t s2 IHs H1 H2.
-  rewrite /rowseqmx (nth_map2 0 [::]).
-    by rewrite /= IHs //; move:H1; rewrite size_map2 leq_minr; case/andP.
-  by rewrite -(size_map2 cons).
+  rewrite /rowseqmx (nth_zipwith _ 0 [::]).
+    by rewrite /= IHs //; move:H1; rewrite size_zipwith leq_minr; case/andP.
+  by rewrite -(size_zipwith cons).
 move=> Hi; rewrite H.
   + by rewrite size_seqmx /rowseqmx nth_nseq; case:ifP.
   + by rewrite size_trseqmx.
@@ -318,11 +280,11 @@ apply/seqmxP; split => [|i Hi|i j].
   + by rewrite size_trseqmx.
   + by rewrite size_row_trseqmx.
 rewrite /trseqmx /fun_of_seqmx.
-have ->: forall s2 k l s1, k < size (foldr (map2 cons) s1 s2) -> (* -> l < size (rowseqmx s1 k) ->*)
-nth 0 (nth [::] (foldr (map2 cons) s1 s2) k) l =
+have ->: forall s2 k l s1, k < size (foldr (zipwith cons) s1 s2) ->
+ nth 0 (nth [::] (foldr (zipwith cons) s1 s2) k) l =
   if l < size s2 then nth (0:mT) (nth [::] s2 l) k else nth 0 (nth [::] s1 k) (l - size s2).
     elim=> [k l s1|t2 s2 IHs k l s1]; first by rewrite subn0.
-    rewrite size_map2 => Hk; rewrite (nth_map2 0 [::]) //.
+    rewrite size_zipwith => Hk; rewrite (nth_zipwith _ 0 [::]) //.
     case:l=> // l; rewrite /= IHs //.
     by rewrite leq_minr in Hk; case/andP:Hk.
   by rewrite size_seqmx ltn_ord mxE -seqmxE.
@@ -374,12 +336,6 @@ Section SeqmxRowCol.
 Variables m m1 m2 n n1 n2 : nat.
 
 (* Block operations *)
-Definition subseqrow i di (s : seqrow) :=
-  take di (drop i s).
-
-Definition sub_seqmx i j di dj (M : seqmatrix) :=
-  map (subseqrow j dj) (take di (drop i M)).
-
 Definition usubseqmx (M : seqmatrix) :=
   take m1 M.
 
@@ -468,44 +424,53 @@ Lemma drsubseqmxE (M:'M[mT]_(m1+m2,n1+n2)) :
   drsubseqmx (seqmx_of_mx M) = seqmx_of_mx (drsubmx M).
 Proof. by rewrite -rsubseqmxE -dsubseqmxE. Qed.
 
-Definition row_seqmx (M N : seqmatrix) :=
-  let aux P Q j := if j < size P then nth 0 P j else nth 0 Q (j-size P) in
-  mkseq (fun i => mkseq (aux (nth [::] M i) (nth [::] N i)) (size (rowseqmx M i) + size (rowseqmx N i))) (size M).
+Definition row_seqmx (M N : seqmatrix) : seqmatrix :=
+  zipwith cat M N.
 
-Definition col_seqmx (M N : seqmatrix) :=
-  mkseq (fun i => if i < size M then nth [::] M i else nth [::] N (i-size M)) (size M + size N).
+Definition col_seqmx (M N : seqmatrix) : seqmatrix :=
+  M ++ N.
 
 Definition block_seqmx Aul Aur Adl Adr : seqmatrix :=
   col_seqmx (row_seqmx Aul Aur) (row_seqmx Adl Adr).
 
-Definition block_seqmx2 Aul Aur Adl Adr : seqmatrix :=
-  (map2 cat Aul Aur) ++ (map2 cat Adl Adr).
+Lemma size_row_row_seqmx (A1 : 'M_(m, n1)) (A2 : 'M_(m, n2)) i :
+  i < m -> size (rowseqmx (row_seqmx (seqmx_of_mx A1) (seqmx_of_mx A2)) i) = (n1 + n2)%N.
+Proof.
+move=> Hi; rewrite /rowseqmx /row_seqmx (nth_zipwith _ [::] [::]).
+  by rewrite size_cat !size_row_seqmx.
+by rewrite !size_seqmx minnn.
+Qed.
 
 Lemma row_seqmxE (A1 : 'M_(m, n1)) (A2 : 'M_(m, n2)) :
   row_seqmx (seqmx_of_mx A1) (seqmx_of_mx A2) = seqmx_of_mx (row_mx A1 A2).
 Proof.
-apply/seqmxP; split=>[|i Hi|i j] ; first by rewrite size_mkseq !size_seqmx.
-  by rewrite /fun_of_seqmx /rowseqmx nth_mkseq ?size_seqmx // size_mkseq !size_row_seqmx.
-rewrite mxE /fun_of_seqmx /rowseqmx !nth_mkseq ?size_seqmx //.
-  case:(splitP j)=> j' -> ; first by rewrite size_row_seqmx ltn_ord // -seqmxE.
-  by rewrite !size_row_seqmx // ltnNge leq_addr addKn -seqmxE.
-by rewrite !size_row_seqmx.
+apply/seqmxP; split=>[|i Hi|i j].
++ by rewrite size_zipwith !size_seqmx minnn.
++ by rewrite size_row_row_seqmx.
++ rewrite mxE /fun_of_seqmx /rowseqmx !(nth_zipwith _ [::] [::]) ?size_seqmx.
+  rewrite nth_cat size_row_seqmx //.
+  by case:(splitP j)=> j' ->; rewrite ?addKn -seqmxE.
+by rewrite minnn.
+Qed.
+
+Lemma size_row_col_seqmx (A1 : 'M_(m1, n)) (A2 : 'M_(m2, n)) i :
+  i < m1 + m2 -> size (rowseqmx (col_seqmx (seqmx_of_mx A1) (seqmx_of_mx A2)) i) = n.
+Proof.
+move=> Hi; rewrite /col_seqmx /rowseqmx nth_cat !size_seqmx.
+case H:(i < m1); first by rewrite size_row_seqmx.
+rewrite size_row_seqmx // -(ltn_add2r m1) subnK; first by rewrite addnC.
+by rewrite leqNgt H.
 Qed.
 
 Lemma col_seqmxE (A1 : 'M_(m1, n)) (A2 : 'M_(m2, n)) :
   col_seqmx (seqmx_of_mx A1) (seqmx_of_mx A2) = seqmx_of_mx (col_mx A1 A2).
 Proof.
-apply/seqmxP; split=>[|i Hi|i j] ; first by rewrite size_mkseq !size_seqmx.
-  rewrite /fun_of_seqmx /rowseqmx nth_mkseq !size_seqmx //.
-  case:ifPn=>H ; first exact:size_row_seqmx.
-  rewrite -leqNgt in H ; have Hi' : i - m1 < m2.
-    by rewrite -(addKn m1 m2) -(ltn_add2r m1) addKn (subnK H) addnC.
-  by rewrite size_row_seqmx.
-rewrite mxE /fun_of_seqmx /rowseqmx nth_mkseq.
-  case:(splitP i)=> i' ->.
-    by rewrite size_seqmx ltn_ord -seqmxE.
-  by rewrite size_seqmx ltnNge leq_addr addKn -seqmxE.
-by rewrite !size_seqmx.
+apply/seqmxP; split=>[|i Hi|i j].
+  by rewrite size_cat !size_seqmx.
+ by rewrite size_row_col_seqmx.
+ rewrite mxE /fun_of_seqmx /rowseqmx.
+rewrite nth_cat size_seqmx.
+by case:(splitP i)=> i' ->; rewrite ?addKn -seqmxE.
 Qed.
 
 End SeqmxRowCol2.
