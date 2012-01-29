@@ -540,4 +540,13 @@ rewrite mxE /fun_of_seqmx /rowseqmx (nth_map [::]) ?size_seqmx // (nth_map 0).
 by rewrite size_row_seqmx.
 Qed.
 
+Definition const_seqmx m n (x : mT) := nseq m (nseq n x).
+
+Lemma const_seqmxE m n x : const_seqmx m n x = @seqmx_of_mx m n (const_mx x).
+Proof.
+apply/seqmxP; split=> [|i Hi|i j]; first by rewrite size_nseq.
+  by rewrite /rowseqmx nth_nseq Hi size_nseq.
+by rewrite /fun_of_seqmx /rowseqmx nth_nseq (ltn_ord i) nth_nseq (ltn_ord j) mxE.
+Qed.
+
 End seqmx.
