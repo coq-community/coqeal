@@ -1,7 +1,7 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype perm.
 Require Import matrix bigop zmodp mxalgebra.
-Require Import seqmatrix.
+Require Import seqmatrix mxtens.
 
 Import GRing.Theory.
 
@@ -27,7 +27,7 @@ Fixpoint ssr_tool (p n:nat) {struct p}: 'M[K]_(p, 1 + n) -> ('M[K]_(p,n) * bool)
          let v := a^-1 *: dlsubmx l in
          let R := drsubmx l - v *m ursubmx l in
          let v0 : 'rV[K]_n := 0 in
-         (xrow 0 (inord p') (col_mx v0 R), true)
+         (castmx (addn1 _, erefl _) (col_mx R v0), true)
      | _ => fun l => (0, false)
 end.
 
@@ -87,13 +87,19 @@ split.
   rewrite -!(eqmxMfull M hD) -{6 7}[M]submxK mulmx_block block_mxEv addsmxC.
   rewrite -!addsmxE; apply/eqmxP; apply:adds_eqmx.
     by rewrite !mul0mx !addr0 !mul1mx -[usubmx M]hsubmxK.
-  rewrite {1}/GRing.zero /= -(@xrow_const _ (1 + m)%N _ 0 (inord m)) !xrowE.
-  rewrite -mul_mx_row; apply/eqmxP.
-  rewrite !eqmxMfull ?row_full_unit ?unitmx_perm // [ulsubmx M]mx11_scalar.
+  rewrite {1}/GRing.zero /=. (* -(@xrow_const _ (1 + m)%N _ 0 (inord m)) !xrowE. *)
+(*  rewrite castmx_mul.
+  rewrite mulmx_cast.
+  rewrite -mul_mx_row;*) apply/eqmxP.
+  (* rewrite !eqmxMfull ?row_full_unit ?unitmx_perm //*)
+rewrite [ulsubmx M]mx11_scalar.
   rewrite !mxE !lshift0 mul_mx_scalar.
   rewrite scalerA mulrC (mulfVK HM00) scaleN1r mul1mx addNr addrC mul1mx.
-  rewrite -scalerA scaleN1r mulNmx -col_mx_const -block_mxEh block_mxEv.
-  by rewrite row_mx_const -!addsmxE !adds0mx; exact/eqmxP.
+  rewrite -(castmx_const (addn1 _, erefl _)).
+  rewrite -castmx_row.
+  rewrite -scalerA scaleN1r mulNmx -col_mx_const.
+  rewrite -block_mxEh block_mxEv.
+  by rewrite !eqmx_cast row_mx_const -!addsmxE !raddf0 !addsmx0; exact/eqmxP.
 by apply:directmx0M; rewrite mxE lshift0 HM00.
 Qed.
 
@@ -106,9 +112,9 @@ Lemma ssr_tool_rank m n (M: 'M[K]_(m, 1 + n)) :
 Proof.
 move:(ssr_toolP M); case:(ssr_tool _)=> R b [v [Hv0 [->]]].
 rewrite mxdirectE /= rank_rV rank_row0mx; move/eqP.
-case:b; rewrite ?Hv0 ?eqxx //.
+case:b; last by rewrite eqxx.
 have -> //: v != 0.
- by apply/eqP=> /matrixP/(_ 0 0)/eqP; rewrite mxE (negbTE Hv0).
+by apply/eqP=> /matrixP/(_ 0 0)/eqP; rewrite mxE (negbTE Hv0).
 Qed.
 
 Fixpoint ssr_rank (m n:nat) {struct n} : 'M[K]_(m,n) -> nat :=
@@ -120,64 +126,48 @@ end.
 Lemma ssr_rankP : forall n m (M: 'M[K]_(m,n)),
   ssr_rank M = \rank M.
 Proof.
-elim=> [m M|n IHn m M] /=.
-  by rewrite thinmx0 mxrank0.
+elim=> [m M|n IHn m M] /=; first by rewrite thinmx0 mxrank0.
 by move:(ssr_tool_rank M); case:(ssr_tool M)=> R b ->; rewrite IHn.
 Qed.
 
-(*
-Fixpoint tool p (vs : seqmatrix K) {struct p}:
-  seqmatrix K ->  (seqmatrix K * bool) :=
+Fixpoint tool p {struct p} : seqmatrix K ->  (seqmatrix K * bool) :=
    match p return seqmatrix K -> (seqmatrix K * bool) with
    | p'.+1 => fun l =>
      let a := l 0%N 0%N in
      if a == 0 then
-       tool p' (col_seqmx2 (ursubseqmx 1 1 l) vs) (dsubseqmx 1 l)
+         let (R,b) := tool p' (dsubseqmx 1 l) in
+         (col_seqmx (ursubseqmx 1 1 l) R, b)
      else
        let v := scaleseqmx a^-1 (dlsubseqmx 1 1 l) in
        let R := subseqmx (drsubseqmx 1 1 l) (mulseqmx v (ursubseqmx 1 1 l)) in
-       let v0 := mkseqmx 1 (size (rowseqmx l 0)).-1 (fun _ _ => 0) in
-         (col_seqmx2 R (col_seqmx2 v0 vs), true)
-   | _ => fun l => (vs, false)
+       let v0 := const_seqmx 1 (size (rowseqmx l 0)).-1 0 in
+         (col_seqmx R v0, true)
+   | _ => fun l => ([::] , false)
 end.
 
-(*
-Goal forall m n p (M : 'M[K]_(m,p)) (N : 'M[K]_(p,n)),
-  mulseqmx (seqmx_of_mx M) (seqmx_of_mx N) = seqmx_of_mx (M *m N).
+Lemma toolE : forall m n (M : 'M_(m, 1 + n)),
+  let (R,b) := (ssr_tool M) in tool m (seqmx_of_mx M) = (seqmx_of_mx R,b).
 Proof.
-move=> m ; case.
-  move=> p M N.
-rewrite [N]thinmx0 mulmx0.
-rewrite /mulseqmx.
-
-
-apply/seqmxP; split.
-
-
-n p M N.
-About mulseqmxE.
-*)
-
-Lemma toolE : forall p m n (vs : 'M_(m, n)) (M : 'M_(p, 1 + n)),
-  let (R,b) := (ssr_tool vs M) in
-  tool p (seqmx_of_mx vs) (seqmx_of_mx M) = (seqmx_of_mx R,b).
-Admitted.
+elim=> [n M /=|m IHm n M /=]; first by rewrite seqmx0n.
+rewrite -seqmxE; case: ifP=> _.
+  move:(IHm _ (@dsubmx _ 1 _ _ M)); case:(ssr_tool (dsubmx _))=> R b.
+  by rewrite dsubseqmxE=> ->; rewrite ursubseqmxE col_seqmxE.
+rewrite cast_seqmx -col_seqmxE subseqmxE -drsubseqmxE -mulseqmxE -scaleseqmxE.
+by rewrite -dlsubseqmxE -ursubseqmxE -const_seqmxE size_row_seqmx.
+Qed.
 
 Fixpoint rank (m n:nat) {struct n} : seqmatrix K -> nat :=
   match n return seqmatrix K -> nat with
-   |  q.+1 => fun M => let:(R,b) := @tool m [::] M in
-     (b + rank m q R)%N
+   |  q.+1 => fun M => let:(R,b) := tool m M in (rank m q R + b)%N
    | _ => fun _ => 0%N
 end.
 
 Lemma rankE : forall m n (M : 'M_(m, n)),
   rank m n (seqmx_of_mx M) = ssr_rank M.
 Proof.
-move=> m; elim=> // n IHn M.
-rewrite /rank /ssr_rank; move:(@toolE m 0 n 0 M); case:(ssr_tool _ _).
-by rewrite addn0=> R b; rewrite seqmx0n=> ->; rewrite -/rank IHn.
+move=> m; elim=> // n IHn M; rewrite /rank /ssr_rank; move:(toolE M).
+by case:(ssr_tool _)=> R b ->; rewrite -/rank IHn.
 Qed.
-*)
 
 End FieldRank.
 
