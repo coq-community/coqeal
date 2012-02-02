@@ -17,8 +17,6 @@ Open Local Scope ring_scope.
 
 (* Structures on positive *)
 
-(* For Coq >= 8.4 *)
-(*
 Definition eqp (p q : positive) : bool :=
   match (p ?= q)%positive with Eq => true | _ => false end.
 
@@ -27,8 +25,9 @@ Proof.
   move=> p q; apply: (iffP  idP)=>[|<-]; last by rewrite /eqp Pos.compare_refl.
   rewrite /eqp; case e: (p ?= q)%positive=> // _; exact: Pcompare_Eq_eq.
 Qed.
-*)
 
+(* For Coq <= 8.3 *)
+(*
 Definition eqp (p q : positive) : bool :=
  match ((p ?= q) Eq)%positive with Eq => true | _ => false end.
 
@@ -37,6 +36,7 @@ Proof.
   move=> p q; apply: (iffP  idP)=>[|<-]; last by rewrite /eqp Pcompare_refl.
   rewrite /eqp; case e: ((p ?= q) Eq)%positive=> // _; exact: Pcompare_Eq_eq.
 Qed.
+*)
 
 Canonical Structure eqp_Mixin := EqMixin eqpP.
 Canonical Structure eqp_eqType := Eval hnf in EqType positive eqp_Mixin.
