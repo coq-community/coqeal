@@ -63,7 +63,7 @@ Lemma eq_mkseqmx_ord f g :
   f =2 g -> mkseqmx_ord f = mkseqmx_ord g.
 Proof. by move=> Hfg; apply:eq_map=> i; apply:eq_map=> j. Qed.
 
-Definition rowseqmx (M : seqmatrix) i := nth [::] M i.
+Definition rowseqmx (M : seqmatrix) i := nosimpl nth [::] M i.
 
 Definition mx_of_seqmx (M:seqmatrix) :=
   \matrix_(i < m, j < n) nth 0%R (rowseqmx M i) j.
