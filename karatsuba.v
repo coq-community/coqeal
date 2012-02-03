@@ -59,7 +59,7 @@ Qed.
 (* Karatsuba multiplication *)
 Fixpoint karatsuba_rec (n : nat) m p q := match n with
   | 0%N   => p * q
-  | n'.+1 => if (size p <= 2) || (size q <= 2) then p * q else
+  | n'.+1 => if (size p <= 3) || (size q <= 3) then p * q else
       let (p1,p2) := splitp m p in
       let (q1,q2) := splitp m q in
       let p1q1    := karatsuba_rec n' m./2 p1 q1 in
@@ -153,7 +153,7 @@ Qed.
 
 Fixpoint karatsuba_rec_seq (n m : nat) (p q : seq CR) := match n with
   | 0%N   => mul_seq p q
-  | n'.+1 => if (size p <= 2) || (size q <= 2) then mul_seq p q else
+  | n'.+1 => if (size p <= 3) || (size q <= 3) then mul_seq p q else
       let (p1,p2) := splitp_seq m p in
       let (q1,q2) := splitp_seq m q in
       let p1q1    := karatsuba_rec_seq n' m./2 p1 q1 in

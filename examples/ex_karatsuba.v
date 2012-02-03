@@ -1,10 +1,17 @@
 Add LoadPath "../".
 
 Require Import seq cseqpoly cssralg Zinfra karatsuba ssrnat.
+Require Import ZArith.
 
 Open Scope Z_scope.
 
+
+Definition p0 := map Z_of_nat (iota 1 100).
+Time Eval vm_compute in mul_seq p0 p0.
+Time Eval vm_compute in karatsuba_seq p0 p0.
+
 Time Eval vm_compute in mul_seq [:: 1; 2; 3; 4] [:: 4; 5; 6; 7].
+
 Time Eval vm_compute in karatsuba_seq [:: 1; 2; 3; 4] [:: 4; 5; 6; 7].
 
 (* 512 element polynomial *)
