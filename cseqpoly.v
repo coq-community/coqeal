@@ -1,11 +1,13 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
-Require Import path choice fintype tuple finset ssralg poly.
+Require Import path choice fintype tuple finset ssralg poly polydiv.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Import Prenex Implicits.
 
 Import GRing.Theory.
+Import RPdiv.
+
 Local Open Scope ring_scope.
 
 Require Import cssralg.
@@ -29,7 +31,7 @@ Qed.
 Definition poly_trans_struct := Trans inj_trans_poly.
 
 Lemma trans_poly0 : trans_poly 0 = [::].
-Proof. by rewrite /trans_poly seq_poly0. Qed.
+Proof. by rewrite /trans_poly polyseq0. Qed.
 
 Lemma trans_poly1 : trans_poly 1 = [:: (one CR)].
 Proof. by rewrite /trans_poly polyseq1 -oneE. Qed.
@@ -82,16 +84,16 @@ Qed.
 Lemma size_poly_neq0 : forall (p: {poly R}),
   (size p != 0%N) = (p != [::] :> seq R).
 Proof.
-by move => p; rewrite (size_poly_eq0 p) -seq_poly0.
+by move => p; rewrite (size_poly_eq0 p) -polyseq0.
 Qed.
 
 Lemma add_seqE : {morph trans_poly : p q / p + q >-> add_seq p q}.
 Proof.
 rewrite /trans_poly.
 elim/poly_ind=> [q| p c IH q].
-  by rewrite add0r seq_poly0.
+  by rewrite add0r polyseq0.
 elim/poly_ind: q => [| q d _] .
-  by rewrite addr0 seq_poly0 add_seqr0.
+  by rewrite addr0 polyseq0 add_seqr0.
 rewrite -!poly_cons_def poly_cons_add !polyseq_cons.
 case: ifP => [|spq].
   case: ifP => sp.
@@ -99,7 +101,7 @@ case: ifP => [|spq].
       rewrite size_poly_neq0 /= -addE trans_eq0.
       case: ifP; rewrite -IH //.
       move: (trans_poly_eq0 (p + q)).
-      rewrite /trans_poly -seq_poly0 => ->.
+      rewrite /trans_poly -polyseq0 => ->.
       by case: ifP=> // /eqP ->; rewrite eqxx.
     rewrite polyseqC.
     have q0: (q == 0) by move/eqP: sq => /eqP; rewrite size_poly_eq0.
@@ -107,7 +109,7 @@ case: ifP => [|spq].
     rewrite -addE trans_eq0.
     rewrite (eqP q0) addr0 add_seqr0 size_poly_neq0 => /negbTE.
     move: (trans_poly_eq0 p).
-    rewrite /trans_poly -seq_poly0 => ->.
+    rewrite /trans_poly -polyseq0 => ->.
     do 2! case: ifP => //.
     by move/eqP->; rewrite eqxx.
   have p0: (p == 0) by move/eqP: sp=> /eqP; rewrite size_poly_eq0.
@@ -117,14 +119,14 @@ case: ifP => [|spq].
   move: H.
   rewrite -addE trans_eq0.
   move: (trans_poly_eq0 q).
-  rewrite /trans_poly -seq_poly0 => ->.
+  rewrite /trans_poly -polyseq0 => ->.
   do 2! case: ifP => //.
   by move/eqP->; rewrite eqxx.
 move/eqP: spq => /eqP.
 rewrite size_poly_eq0 addrC addr_eq0=> /eqP ->.
-rewrite size_opp !polyseqC.
+rewrite /nilp size_opp !polyseqC.
 case: ifP=> h /=.
-  by rewrite -IH subrr seq_poly0 /= -addE trans_eq0; case: ifP.
+  by rewrite -IH subrr polyseq0 /= -addE trans_eq0; case: ifP.
 case c0: (c == 0)=> /=; first by rewrite (eqP c0) add0r.
 case d0: (d == 0)=> /=; first by rewrite (eqP d0) addr0 (negbT c0) /=.
 by rewrite -addE trans_eq0; case: ifP.
@@ -138,18 +140,18 @@ Proof.
 move=> c p.
 rewrite !poly_cons_def.
 apply/polyP=> i.
-rewrite coef_opp_poly !coef_add_poly !coef_mulX.
+rewrite coef_opp_poly !coef_add_poly !coefMX.
 case: i=> [|n].
-  by rewrite eqxx !add0r polyC_opp coef_opp.
-by rewrite coef_opp polyC_opp coef_opp oppr_add.
+  by rewrite eqxx !add0r polyC_opp coefN.
+by rewrite coefN polyC_opp coefN oppr_add.
 Qed.
 
 Lemma opp_seqE : {morph trans_poly : p / - p >-> opp_seq p }.
 Proof.
 rewrite /trans_poly.
 elim/poly_ind=> [|p c IH].
-  by rewrite oppr0 seq_poly0.
-rewrite -!poly_cons_def opp_poly_cons !polyseq_cons size_opp.
+  by rewrite oppr0 polyseq0.
+rewrite -!poly_cons_def opp_poly_cons !polyseq_cons /nilp size_opp.
 case: ifP=> sp /=; first by rewrite -IH oppE.
 by rewrite !polyseqC oppr_eq0; case: (c == 0) => //=; rewrite oppE.
 Qed.
@@ -190,8 +192,11 @@ Definition indet (n : nat) : seq CR := ncons n (@zero R CR) [:: (@one R CR)].
 Lemma indetE : forall n, trans_poly 'X^n = indet n.
 Proof.
 move=> n.
-rewrite /trans_poly seq_polyXn /indet -zeroE -oneE.
-by elim: n => //= n ->.
+rewrite -['X^n]mul1r /trans_poly polyseq_mulXn /indet ?nonzero1r
+  // -zeroE -oneE.
+elim : n => //=; last by move => n ->.
+have := trans_poly1.
+by rewrite /trans_poly oneE => ->.
 Qed.
 
 (* polyC *)
@@ -224,16 +229,16 @@ rewrite -poly_cons_def /trans_poly polyseq_cons.
 case: ifP=> sp /=; last first.
   have p0: (p == 0) by move/eqP: sp; move/eqP; rewrite size_poly_eq0.
   rewrite poly_cons_def (eqP p0) mul0r add0r !polyseqC scale_polyE -polyC_mul.
-  case c0: (c == 0)=> /=; first by rewrite (eqP c0) mulr0 seq_poly0.
+  case c0: (c == 0)=> /=; first by rewrite (eqP c0) mulr0 polyseq0.
   rewrite -mulE trans_eq0.
-  case: ifP=> xc0 /=; first by rewrite (eqP xc0) seq_poly0.
+  case: ifP=> xc0 /=; first by rewrite (eqP xc0) polyseq0.
   by rewrite polyseqC xc0.
 rewrite -IH poly_cons_def !scale_polyE mulr_addr -polyC_mul mulrA -mulE
         trans_eq0.
 case: ifP=> xc0.
   rewrite (eqP xc0) addr0 trans_poly_eq0.
-  case: ifP; first by move/eqP=> ->; rewrite mul0r seq_poly0.
-  by move=> xpnil; rewrite seq_mul_polyX // negbT.
+  case: ifP; first by move/eqP=> ->; rewrite mul0r polyseq0.
+  by move=> xpnil; rewrite polyseq_mulX // negbT.
 rewrite -poly_cons_def -scale_polyE polyseq_cons.
 case: ifP=> // /eqP /eqP; rewrite size_poly_eq0=> /eqP ->.
 by rewrite polyseqC xc0 trans_poly0.
@@ -263,7 +268,7 @@ case: ifP=> [|hf] /=.
   rewrite trans_poly_eq0 => /eqP ->.
   by rewrite mul0r trans_poly0.
 move: (ih p).
-rewrite hf -add1n addnC exprn_addr expr1 mulrA /trans_poly seq_mul_polyX /=.
+rewrite hf -add1n addnC exprn_addr expr1 mulrA /trans_poly polyseq_mulX /=.
   by rewrite zeroE => <-.
 apply/negP.
 rewrite -lead_coef_eq0 lead_coef_mulXn lead_coef_eq0 => /eqP hp.
@@ -284,21 +289,22 @@ Proof. by case. Qed.
 Lemma mul_seqE : {morph trans_poly : p q / p * q >-> mul_seq p q}.
 Proof.
 rewrite /trans_poly.
-elim/poly_ind=> [|p c IH] q; first by rewrite mul0r seq_poly0.
-case q0: (q == 0); first by rewrite (eqP q0) mulr0 seq_poly0 mul_seqr0.
+elim/poly_ind=> [|p c IH] q; first by rewrite mul0r polyseq0.
+case q0: (q == 0); first by rewrite (eqP q0) mulr0 polyseq0 mul_seqr0.
 rewrite -!poly_cons_def polyseq_cons.
 elim/poly_ind: q q0=> [|q d _ /eqP /eqP q0]; first by rewrite eqxx.
+rewrite /nilp.
 case sp: (size p == 0%N) => /=.
   rewrite size_poly_eq0 in sp; rewrite (eqP sp) polyseqC.
   case c0: (c == 0).
-    by rewrite (eqP c0) poly_cons_def mul0r add0r mul0r seq_poly0.
+    by rewrite (eqP c0) poly_cons_def mul0r add0r mul0r polyseq0.
   rewrite /= -scale_seqE -poly_cons_def polyseq_cons poly_cons_def.
   case: ifP=> [sq|].
     by rewrite scale_polyE -trans_poly0 -add_seqE addr0 mul0r add0r.
-  rewrite size_poly_neq0 => /eqP; rewrite -seq_poly0 => /poly_inj ->.
+  rewrite size_poly_neq0 => /eqP; rewrite -polyseq0 => /poly_inj ->.
   rewrite polyseqC.
   case d0: (d == 0).
-    by rewrite (eqP d0) !poly_cons_def mul0r !add0r mulr0 /= seq_poly0.
+    by rewrite (eqP d0) !poly_cons_def mul0r !add0r mulr0 /= polyseq0.
   by rewrite /trans_poly !poly_cons_def scale_polyE mul0r !add0r add_seqr0.
 rewrite -shiftE expr1 -IH.
 rewrite -scale_seqE -poly_cons_def polyseq_cons /=.
@@ -309,9 +315,9 @@ case: ifP => /= sq0.
   by rewrite [d%:P * 'X]mulrC ['X * (q * 'X)]mulrCA.
 rewrite polyseqC.
 move: sq0.
-rewrite size_poly_eq0 => /eqP ->.
+rewrite /nilp size_poly_eq0 => /eqP ->.
 case d0: (d == 0) => /=.
-  by rewrite (eqP d0) !poly_cons_def mul0r addr0 mulr0 seq_poly0.
+  by rewrite (eqP d0) !poly_cons_def mul0r addr0 mulr0 polyseq0.
 rewrite scale_polyE -add_seqE !poly_cons_def mul0r add0r /trans_poly addrC.
 rewrite mulr_addl.
 by rewrite [d%:P * _]mulrC mulrA.
@@ -344,16 +350,17 @@ Definition scalp_seq p q := ((edivp_seq p q).1).1.
 
 Lemma edivp_rec_seqE :
  forall n k (q qq r : {poly R}),
-   let: (l,a,b) := edivp_rec q n k qq r
+   let: (l,a,b) := redivp_rec q k qq r n
    in edivp_rec_seq (trans_poly q) n k (trans_poly qq) (trans_poly r) =
       (l,trans_poly a,trans_poly b).
 Proof.
 elim=> [|n ih] k q qq r /=.
   case: ifP => // h; rewrite !size_trans_poly h //.
   by rewrite -indetE -!lead_coef_seqE -!polyC_seqE -!mul_seqE -add_seqE
-             -sub_seqE.
+             -sub_seqE mul_polyC.
 case: ifP => // h; rewrite !size_trans_poly h //.
-rewrite -indetE -!lead_coef_seqE -!polyC_seqE -!mul_seqE -add_seqE -sub_seqE.
+rewrite -indetE -!lead_coef_seqE -!polyC_seqE -!mul_seqE -add_seqE
+  -sub_seqE mul_polyC.
 exact: ih.
 Qed.
 
