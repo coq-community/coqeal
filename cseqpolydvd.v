@@ -195,8 +195,8 @@ Lemma ediv_seqE : forall p q : {poly K},
 Proof.
 rewrite /ediv /ediv_seq=> p q; rewrite trans_poly_eq0.
 case: ifP => /= _.
-  by rewrite /trans_poly seq_poly0.
-by rewrite size_trans_poly -ediv_rec_seqE /trans_poly seq_poly0.
+  by rewrite /trans_poly polyseq0.
+by rewrite size_trans_poly -ediv_rec_seqE /trans_poly polyseq0.
 Qed.
 
 (* CEuclideanRing structure *)

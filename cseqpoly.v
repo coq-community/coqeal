@@ -195,8 +195,7 @@ move=> n.
 rewrite -['X^n]mul1r /trans_poly polyseq_mulXn /indet ?nonzero1r
   // -zeroE -oneE.
 elim : n => //=; last by move => n ->.
-have := trans_poly1.
-by rewrite /trans_poly oneE => ->.
+by rewrite polyseq1.
 Qed.
 
 (* polyC *)
@@ -366,34 +365,34 @@ Qed.
 
 Lemma edivp_seqE :
   forall p q,
-    let: (l,a,b) := edivp p q
+    let: (l,a,b) := redivp p q
     in edivp_seq (trans_poly p) (trans_poly q) = (l,trans_poly a,trans_poly b).
 Proof.
-rewrite /edivp /edivp_seq=> p q.
+rewrite /redivp /edivp_seq=> p q.
 rewrite trans_poly_eq0 -trans_poly0 size_trans_poly.
 case: ifP => _; first by rewrite trans_poly0.
 exact: edivp_rec_seqE.
 Qed.
 
-Lemma divp_seqE : {morph trans_poly : p q / divp p q >-> divp_seq p q}.
+Lemma divp_seqE : {morph trans_poly : p q / rdivp p q >-> divp_seq p q}.
 Proof.
-rewrite /divp_seq /divp /= => p q.
+rewrite /divp_seq /rdivp /= => p q.
 move: (edivp_seqE p q).
-by case: edivp=> [[a b c]] ->.
+by case: redivp=> [[a b c]] ->.
 Qed.
 
-Lemma modp_seqE : {morph trans_poly : p q / modp p q >-> modp_seq p q}.
+Lemma modp_seqE : {morph trans_poly : p q / rmodp p q >-> modp_seq p q}.
 Proof.
-rewrite /modp_seq /modp /= => p q.
+rewrite /modp_seq /rmodp /= => p q.
 move: (edivp_seqE p q).
-by case: edivp=> [[a b c]] ->.
+by case: redivp=> [[a b c]] ->.
 Qed.
 
-Lemma scalp_seqE : forall p q, scalp p q = scalp_seq (trans_poly p) (trans_poly q).
+Lemma scalp_seqE : forall p q, rscalp p q = scalp_seq (trans_poly p) (trans_poly q).
 Proof.
-rewrite /scalp_seq /scalp /= => p q.
+rewrite /scalp_seq /rscalp /= => p q.
 move: (edivp_seqE p q).
-by case: edivp=> [[a b c]] ->.
+by case: redivp=> [[a b c]] ->.
 Qed.
 
 
@@ -403,15 +402,16 @@ Fixpoint horner_seq (s : seq CR) (x : CR) {struct s} : CR :=
   if s is a :: s' then add (mul (horner_seq s' x) x) a else zero CR.
 
 Lemma horner_seqE : forall p x,
-  trans CR (polyseq p).[x] = horner_seq (trans_poly p) (trans CR x).
+  trans CR p.[x] = horner_seq (trans_poly p) (trans CR x).
 Proof.
 elim/poly_ind => [ x | p c]; first by rewrite horner0 trans_poly0 zeroE.
-rewrite /horner_seq -!poly_cons_def /trans_poly polyseq_cons => ih x.
+rewrite /horner_seq -!poly_cons_def /trans_poly polyseq_cons /nilp => ih x.
 case sp0: (size p == 0%N) => /=.
-  rewrite hornerC polyseqC.
+  move: sp0; rewrite size_poly_eq0 => /eqP ->.
+  rewrite horner_pcons polyseqC horner0 mul0r add0r.
   case c0: (c == 0) => /=; first by rewrite (eqP c0) zeroE.
   by rewrite -zeroE -mulE mul0r -addE add0r.
-by rewrite -ih -mulE -addE.
+by rewrite -ih -mulE -addE horner_pcons.
 Qed.
 
 End SeqPoly.

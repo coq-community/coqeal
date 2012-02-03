@@ -39,7 +39,7 @@ Lemma splitP : forall n p, p = (splitp n p).1 * 'X^n + (splitp n p).2.
 Proof.
 move=> n p /=.
 apply/polyP=> i.
-rewrite coef_add coef_mulXn.
+rewrite coefD coefMXn.
 case: ifP => hin.
   by rewrite coef_Poly add0r nth_take.
 rewrite {1}coef_Poly nth_drop addnC subnK; last first.
@@ -175,8 +175,8 @@ Proof.
 elim=> /= [_|n ih m p q]; first exact: mul_seqE.
 rewrite !size_trans_poly.
 case: ifP=> _; first exact: mul_seqE.
-case/pair_eqP: (splitp_seqE p m); case/andP => /eqP <- /eqP <-.
-case/pair_eqP: (splitp_seqE q m); case/andP => /eqP <- /eqP <-.
+case: (splitp_seqE p m) => <- <-.
+case: (splitp_seqE q m) => <- <-.
 by rewrite -!add_seqE -!ih -!sub_seqE -!shiftE -!add_seqE.
 Qed.
 

@@ -1,9 +1,10 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import path choice fintype tuple finset ssralg.
 Require Import matrix poly. (*  generic_quotient. *)
-Require Import bigop dvdring.
+Require Import bigop polydiv dvdring.
 
 Import GRing.Theory.
+Import RPdiv.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -12,9 +13,9 @@ Import Prenex Implicits.
 (* Local fix for poly notations *)
 Delimit Scope poly_scope with P.
 
-Notation "m %/ d" := (divp m d) : poly_scope.
-Notation "m %% d" := (modp m d) : poly_scope.
-Notation "p %| q" := (dvdp p q) : poly_scope.
+Notation "m %/ d" := (rdivp m d) : poly_scope.
+Notation "m %% d" := (rmodp m d) : poly_scope.
+Notation "p %| q" := (rdvdp p q) : poly_scope.
 Notation "p %= q" := (eqp p q) : poly_scope.
 
 Local Open Scope ring_scope.
@@ -167,7 +168,7 @@ Qed.
 (* Properties of gcdsr *)
 
 Lemma gcdsr0 : gcdsr (0 : {poly R}) = 0.
-Proof. by rewrite seq_poly0. Qed.
+Proof. by rewrite polyseq0. Qed.
 
 Lemma gcdsr1 : gcdsr (1 : {poly R}) %= 1.
 Proof. by rewrite polyseqC nonzero1r /= gcdr0. Qed.
@@ -183,14 +184,14 @@ move=> p c.
 case p0: (p == 0).
   rewrite (eqP p0) mul0r add0r gcdsr0 /gcdsr polyseqC.
   by case c0: (c == 0)=> //=; apply/eqP; rewrite eq_sym (eqP c0) gcdr_eq0 eqxx.
-by rewrite -poly_cons_def polyseq_cons size_poly_eq0; case: p0=> ->.
+by rewrite -poly_cons_def polyseq_cons /nilp size_poly_eq0 p0.
 Qed.
 
 Lemma gcdsr_eq0 : forall p, (gcdsr p == 0) = (p == 0).
 Proof.
 elim/poly_ind=> [|p c IH]; first by rewrite gcdsr0 !eq_refl.
 rewrite gcdsr_gcdl gcdr_eq0 IH -[p * 'X + c%:P == 0]size_poly_eq0 size_amulX.
-rewrite size_poly_eq0 andbC.
+rewrite andbC.
 by apply/idP/idP => [->|] //; case: ifP.
 Qed.
 
@@ -491,9 +492,10 @@ case/andP=> H1 H2.
 rewrite mulf_eq0 in H2.
 case/orP: H2 => G; first by rewrite G in gp0.
 case/nandP: H=> H; last by move: H; rewrite G.
-rewrite size_poly_eq0 mulf_eq0 in H1.
-case/orP: H1; rewrite ?polyC_eq0=> H2; first by move: gp0; rewrite H2.
-by rewrite (eqP H2) size_poly_eq0 eq_refl in H.
+move: H1; rewrite mulf_eq0 -[q == 0]size_poly_eq0.
+case/orP; rewrite ?polyC_eq0=> H2; first by move: gp0; rewrite H2.
+move: H2; rewrite size_poly_eq0 => H2.
+by move: H; rewrite H2.
 Qed.
 
 Lemma dvdrp_spec : forall p q, (p %| q) = (gcdsr p %| gcdsr q) && (pp p %| pp q).
@@ -563,7 +565,7 @@ Qed.
 
 (* gcdp *)
 Fixpoint gcdp_rec (n : nat) (p q : {poly R}) :=
-  let r := modp p q in
+  let r := rmodp p q in
   if r == 0 then q
             else if n is n'.+1 then gcdp_rec n' q (pp r) else pp r.
 
@@ -573,7 +575,9 @@ Definition gcdp p q :=
   d * gcdp_rec (size (pp p1)) (pp p1) (pp q1).
 
 Lemma gcdp_rec0r : forall p n, gcdp_rec n 0 p = p.
-Proof. by move=> p n; rewrite /gcdp_rec; case: n; rewrite mod0p eq_refl. Qed.
+Proof.
+by move=> p n; rewrite /gcdp_rec; case: n; rewrite rmod0p eq_refl.
+Qed.
 
 Lemma gcdp_recr0 : forall p n, primitive p -> gcdp_rec n p 0 %= p.
 Proof.
@@ -581,7 +585,7 @@ move=> p n pp.
 have p0 : (p == 0) = false by apply/negP; move/negP: (primitive0 pp).
 have Hppp : PolyGcdRing.pp p %= p
   by rewrite {2}(ppP p) -{1}[PolyGcdRing.pp p]mul1r eqd_mul // eqd_sym polyC_inj_eqd.
-by case: n=> /= [|n]; rewrite modp0 p0 ?gcdp_rec0r Hppp.
+by case: n=> /= [|n]; rewrite rmodp0 p0 ?gcdp_rec0r Hppp.
 Qed.
 
 (* Show that gcdp_rec return a primitive polynomial that is the gcd of p and q *)
@@ -593,9 +597,9 @@ elim=> /= [p q g|n IH p q g sqn q0 pq].
   by rewrite leqn0 size_poly_eq0=> ->.
 
 (* Recall the specifiction of pseudo-division *)
-move: (divCp_spec p q).
-set lx := lead_coef q ^+ scalp p q.
-rewrite -mul_polyC=> Hdiv.
+have hcomm : GRing.comm q (lead_coef q)%:P by rewrite /GRing.comm mulrC.
+move: (rdivp_eq hcomm p); rewrite mulrC.
+set lx := lead_coef q ^+ rscalp p q => Hdiv.
 have H0: lx != 0.
   apply/negP; rewrite expf_eq0 lead_coef_eq0; case/andP=> _ H0.
   by move: q0; rewrite H0.
@@ -608,8 +612,9 @@ case: ifP=>[pq0|npq0].
   by rewrite (dvdrp_priml H0 H) // (dvdrp_primr gq).
 
 set pp_pq := pp (p %% q)%P.
-have s_pp_pq : (size pp_pq <= n)
-  by rewrite -size_pp; move: (leq_trans (modp_spec p q0) sqn); rewrite ltnS.
+have s_pp_pq : (size pp_pq <= n) by
+  rewrite -size_pp; move: (leq_trans (ltn_rmodpN0 p q0) sqn); rewrite ltnS.
+
 have p_pp_pq : primitive pp_pq by rewrite prim_pp // npq0.
 have pp_pq0 : pp_pq != 0 by rewrite pp_eq0 npq0.
 
