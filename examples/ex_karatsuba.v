@@ -5,7 +5,7 @@ Require Import ZArith.
 
 Open Scope Z_scope.
 
-
+(*
 (* Degree 10 polynomial *)
 Definition p10 := map Z_of_nat (iota 1 10).
 
@@ -18,7 +18,7 @@ Definition p50 := map Z_of_nat (iota 1 50).
 
 Time Eval vm_compute in size (mul_seq p50 p50).
 Time Eval vm_compute in size (karatsuba_seq p50 p50).
-
+*)
 
 (* Degree 100 *)
 Definition p100 := map Z_of_nat (iota 1 100).
