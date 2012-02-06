@@ -57,34 +57,40 @@ by rewrite coef_Poly take_oversize // coef_oversize ?addr0 // (leq_trans sh).
 Qed.
 
 (* Karatsuba multiplication *)
-Fixpoint karatsuba_rec (n : nat) m p q := match n with
+
+
+
+(* Karatsuba multiplication *)
+Fixpoint karatsuba_rec (n : nat) p q := match n with
   | 0%N   => p * q
-  | n'.+1 => if (size p <= 3) || (size q <= 3) then p * q else
+  | n'.+1 => if (size p <= 2) || (size q <= 2) then p * q else
+      let m       := minn (size p)./2 (size q)./2 in
       let (p1,p2) := splitp m p in
       let (q1,q2) := splitp m q in
-      let p1q1    := karatsuba_rec n' m./2 p1 q1 in
-      let p2q2    := karatsuba_rec n' m./2 p2 q2 in
+      let p1q1    := karatsuba_rec n' p1 q1 in
+      let p2q2    := karatsuba_rec n' p2 q2 in
       let p12     := p1 + p2 in
       let q12     := q1 + q2 in
-      let p12q12  := karatsuba_rec n' m./2 p12 q12 in
+      let p12q12  := karatsuba_rec n' p12 q12 in
       p1q1 * 'X^(2 * m) + (p12q12 - p1q1 - p2q2) * 'X^m + p2q2
   end.
 
 Definition karatsuba p q :=
   let (p1,q1) := if size p < size q then (q,p) else (p,q) in
-  karatsuba_rec (size p1) (size p1)./2 p1 q1.
+  karatsuba_rec (size p1) p1 q1.
 
-Lemma karatsuba_recP : forall n p q m, karatsuba_rec n m p q = p * q.
+Lemma karatsuba_recP : forall n p q, karatsuba_rec n p q = p * q.
 Proof.
-elim=> // n ih p q m /=.
+elim=> // n ih p q /=.
 case: ifP=> // sp.
 apply/eqP.
+set m := minn (size p)./2 (size q)./2.
 rewrite eq_sym {1}(splitP m p) {1}(splitP m q) /=.
 rewrite !ih; do ?(by rewrite ?hm ?doubleK).
-set p1 := (splitp m p).1.
-set p2 := (splitp m p).2.
-set q1 := (splitp m q).1.
-set q2 := (splitp m q).2.
+set p1 := (Poly (drop m p)).
+set p2 := (Poly (take m p)).
+set q1 := (Poly (drop m q)).
+set q2 := (Poly (take m q)).
 rewrite !mulr_addl !mulr_addr -!mulrA ['X^m * (_ * _)]mulrCA -exprn_addr addnn
         -mul2n.
 apply/eqP.
@@ -100,6 +106,7 @@ apply/eqP.
 rewrite eq_sym addr_eq0 -addrA addrCA addrC -addrA eq_sym addrC -subr_eq.
 by rewrite -!mulrN -!mulrA mulrNN mulrN mulNr addrC.
 Qed.
+
 
 Lemma karatsubaP : forall p q, karatsuba p q = p * q.
 Proof.
@@ -151,30 +158,32 @@ case: ifP => //= _.
 by case: (x == 0).
 Qed.
 
-Fixpoint karatsuba_rec_seq (n m : nat) (p q : seq CR) := match n with
+Fixpoint karatsuba_rec_seq (n : nat) (p q : seq CR) := match n with
   | 0%N   => mul_seq p q
-  | n'.+1 => if (size p <= 3) || (size q <= 3) then mul_seq p q else
+  | n'.+1 => if (size p <= 2) || (size q <= 2) then mul_seq p q else
+      let m       := minn (size p)./2 (size q)./2 in
       let (p1,p2) := splitp_seq m p in
       let (q1,q2) := splitp_seq m q in
-      let p1q1    := karatsuba_rec_seq n' m./2 p1 q1 in
-      let p2q2    := karatsuba_rec_seq n' m./2 p2 q2 in
+      let p1q1    := karatsuba_rec_seq n' p1 q1 in
+      let p2q2    := karatsuba_rec_seq n' p2 q2 in
       let p12     := add_seq p1 p2 in
       let q12     := add_seq q1 q2 in
-      let p12q12  := karatsuba_rec_seq n' m./2 p12 q12 in
+      let p12q12  := karatsuba_rec_seq n' p12 q12 in
       add_seq (add_seq (shift (2 * m) p1q1)
               (shift m (sub_seq (sub_seq p12q12 p1q1) p2q2))) p2q2
   end.
 
 Definition karatsuba_seq (p q : seq CR) :=
   let (p1,q1) := if size p < size q then (q,p) else (p,q) in
-  karatsuba_rec_seq (size p1) (size p1)./2 p1 q1.
+  karatsuba_rec_seq (size p1) p1 q1.
 
-Lemma karatsuba_rec_seqE : forall n m,
-  {morph (trans_poly CR) : p q / karatsuba_rec n m p q >-> karatsuba_rec_seq n m p q}.
+Lemma karatsuba_rec_seqE : forall n,
+  {morph (trans_poly CR) : p q / karatsuba_rec n p q >-> karatsuba_rec_seq n p q}.
 Proof.
-elim=> /= [_|n ih m p q]; first exact: mul_seqE.
+elim=> /= [|n ih p q]; first exact: mul_seqE.
 rewrite !size_trans_poly.
 case: ifP=> _; first exact: mul_seqE.
+set m := minn (size p)./2 (size q)./2.
 case: (splitp_seqE p m) => <- <-.
 case: (splitp_seqE q m) => <- <-.
 by rewrite -!add_seqE -!ih -!sub_seqE -!shiftE -!add_seqE.
@@ -184,7 +193,7 @@ Lemma karatsuba_seqE : {morph (trans_poly CR) : p q / karatsuba p q >-> karatsub
 Proof.
 move=> p q /=.
 rewrite /karatsuba /karatsuba_seq !size_trans_poly.
-by case: ifP=> _; rewrite karatsuba_rec_seqE size_trans_poly.
+by case: ifP=> _; rewrite karatsuba_rec_seqE !size_trans_poly.
 Qed.
 
 End karatsuba.
