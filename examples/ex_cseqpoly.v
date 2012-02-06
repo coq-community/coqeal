@@ -83,8 +83,15 @@ Definition qxyQ := [:: [:: 1%:Q]; [:: 1%:Q; 1%:Q]; [:: 0%:Q; 1%:Q]].
 Time Eval compute in cdiv pxyQ qxyQ.
 Time Eval compute in gcdp_seq pxyQ qxyQ.
 
+Open Scope Q_scope.
+
+Definition px := [::(-5)%:Q;2%:Q;8%:Q;(-3)%:Q;(-3)%:Q;0%:Q;1%:Q;0%:Q;1%:Q].
+Definition qx := [::21%:Q;(-9)%:Q;(-4)%:Q;0%:Q;5%:Q;0%:Q;3%:Q].
+
+Time Eval compute in gcdp_seq px qx.
+
 Time Eval compute in
-  gcdp_seq [:: (-5)%:Q; 2%:Q; 8%:Q; (-3)%:Q; (-3)%:Q; 0%:Q; 1%:Q; 0%:Q; 1%:Q ]
+  gcdp_seq [:: (-5); 2; 8; (-3); (-3); 0%:Q; 1%:Q; 0%:Q; 1%:Q ]
            [:: 21%:Q; (-9)%:Q; (-4)%:Q; 0%:Q; 5%:Q; 0%:Q; 3%:Q].
 
 
