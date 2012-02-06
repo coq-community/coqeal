@@ -11,6 +11,7 @@ polydvd.v
 cseqpoly.v
 cseqpolydvd.v
 karatsuba.v
+winograd.v
 examples/ex_cseqpoly.v
 examples/ex_karatsuba.v
 examples/ex_Q.v
