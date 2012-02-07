@@ -48,6 +48,11 @@ Time Eval compute in odivp_seq qxy gcdxy.
 
 Time Eval compute in cbezout 2 3.
 
+Time Eval vm_compute in
+  gcdp_seq [:: (-5); 2; 8; (-3); (-3); 0; 1; 0; 1 ]
+           [:: 21; (-9); (-4); 0; 5; 0; 3].
+
+
 End Zxy.
 End Zxy.
 
@@ -83,17 +88,15 @@ Definition qxyQ := [:: [:: 1%:Q]; [:: 1%:Q; 1%:Q]; [:: 0%:Q; 1%:Q]].
 Time Eval compute in cdiv pxyQ qxyQ.
 Time Eval compute in gcdp_seq pxyQ qxyQ.
 
-Open Scope Q_scope.
+Local Open Scope Q_scope.
 
-Definition px := [::(-5)%:Q;2%:Q;8%:Q;(-3)%:Q;(-3)%:Q;0%:Q;1%:Q;0%:Q;1%:Q].
-Definition qx := [::21%:Q;(-9)%:Q;(-4)%:Q;0%:Q;5%:Q;0%:Q;3%:Q].
+(* pxy = 2/3 + 2/3x + 1/2xy + 1/2x^2y *)
+Definition pxy' := map (map Q2Qcb) [:: [:: 2 # 3; 2 # 3] ; [:: 0; 1 # 2; 1 # 2] ].
 
-Time Eval compute in gcdp_seq px qx.
+(* qxy = 2/3 + 2/3y + 1/2xy + 1/2xy^2 *)
+Definition qxy' := map (map Q2Qcb) [:: [:: 2 # 3]; [:: 2 # 3; 1 # 2]; [:: 0; 1 # 2]].
 
-Time Eval compute in
-  gcdp_seq [:: (-5); 2; 8; (-3); (-3); 0%:Q; 1%:Q; 0%:Q; 1%:Q ]
-           [:: 21%:Q; (-9)%:Q; (-4)%:Q; 0%:Q; 5%:Q; 0%:Q; 3%:Q].
-
+Eval vm_compute in gcdp_seq pxy' qxy'.
 
 End Qxy.
 End Qxy.
