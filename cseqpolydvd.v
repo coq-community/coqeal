@@ -87,7 +87,7 @@ Implicit Types p q : seq CR.
 
 Definition gcdsr_seq := foldr (@cgcd R CR) (zero CR).
 
-Lemma gcdsr_seqE : forall p : {poly R}, trans CR (@gcdsr R p) = gcdsr_seq (trans_poly CR p).
+Lemma gcdsr_seqE : forall p : {poly R}, trans (@gcdsr R p) = gcdsr_seq (trans_poly CR p).
 Proof.
 move=> p.
 rewrite /trans_poly.

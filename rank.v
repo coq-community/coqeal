@@ -1,7 +1,7 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype perm.
 Require Import matrix bigop zmodp mxalgebra.
-Require Import seqmatrix mxtens.
+Require Import seqmatrix mxtens cssralg.
 
 Import GRing.Theory.
 
@@ -118,42 +118,45 @@ elim=> [m M|n IHn m M] /=; first by rewrite thinmx0 mxrank0.
 by move:(elim_step_rank M); case:(elim_step M)=> R b ->; rewrite IHn.
 Qed.
 
-Fixpoint elim_step_seqmx p {struct p} : seqmatrix K ->  (seqmatrix K * bool) :=
-   match p return seqmatrix K -> (seqmatrix K * bool) with
+Variable CK : cunitRingType K.
+
+Fixpoint elim_step_seqmx p {struct p} : seqmatrix CK ->  (seqmatrix CK * bool) :=
+   match p return seqmatrix CK -> (seqmatrix CK * bool) with
    | p'.+1 => fun l =>
      let a := l 0%N 0%N in
-     if a == 0 then
+     if a == zero CK then
          let (R,b) := elim_step_seqmx p' (dsubseqmx 1 l) in
          (col_seqmx (ursubseqmx 1 1 l) R, b)
      else
-       let v := scaleseqmx a^-1 (dlsubseqmx 1 1 l) in
+       let v := scaleseqmx (cinv a) (dlsubseqmx 1 1 l) in
        let R := subseqmx (drsubseqmx 1 1 l) (mulseqmx v (ursubseqmx 1 1 l)) in
-       let v0 := const_seqmx 1 (size (rowseqmx l 0)).-1 0 in
+       let v0 := const_seqmx 1 (size (rowseqmx l 0)).-1 (zero CK) in
          (col_seqmx R v0, true)
    | _ => fun l => ([::] , false)
 end.
 
 Lemma elim_step_seqmxE : forall m n (M : 'M_(m, 1 + n)),
   let (R,b) := (elim_step M) in
-  elim_step_seqmx m (seqmx_of_mx M) = (seqmx_of_mx R,b).
+  elim_step_seqmx m (seqmx_of_mx CK M) = (seqmx_of_mx CK R,b).
 Proof.
 elim=> [n M /=|m IHm n M /=]; first by rewrite seqmx0n.
-rewrite -seqmxE; case: ifP=> _.
+rewrite -(inj_eq (@inj_trans K CK) (M 0 0) 0) zeroE -seqmxE; case: ifP=> _.
   move:(IHm _ (@dsubmx _ 1 _ _ M)); case:(elim_step (dsubmx _))=> R b.
   by rewrite dsubseqmxE=> ->; rewrite ursubseqmxE col_seqmxE.
 rewrite cast_seqmx -col_seqmxE subseqmxE -drsubseqmxE -mulseqmxE -scaleseqmxE.
-by rewrite -dlsubseqmxE -ursubseqmxE -const_seqmxE size_row_seqmx.
+rewrite -dlsubseqmxE -ursubseqmxE -const_seqmxE size_row_seqmx //.
+by rewrite cinvE zeroE -seqmxE.
 Qed.
 
-Fixpoint rank_elim_seqmx (m n:nat) {struct n} : seqmatrix K -> nat :=
-  match n return seqmatrix K -> nat with
+Fixpoint rank_elim_seqmx (m n:nat) {struct n} : seqmatrix CK -> nat :=
+  match n return seqmatrix CK -> nat with
    | q.+1 => fun M => let:(R,b) := elim_step_seqmx m M in
        (rank_elim_seqmx m q R + b)%N
    | _ => fun _ => 0%N
 end.
 
 Lemma rank_elim_seqmxE : forall m n (M : 'M_(m, n)),
-  rank_elim_seqmx m n (seqmx_of_mx M) = rank_elim M.
+  rank_elim_seqmx m n (seqmx_of_mx CK M) = rank_elim M.
 Proof.
 move=> m; elim=> // n IHn M; rewrite /rank_elim_seqmx /rank_elim.
 by move:(elim_step_seqmxE M); case:(elim_step _)=> R b ->; rewrite -/rank_elim_seqmx IHn.

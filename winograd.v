@@ -1,7 +1,7 @@
 Require Import Ncring Ncring_tac.
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
-Require Import perm zmodp matrix seqmatrix.
+Require Import perm zmodp matrix seqmatrix cssralg.
 
 Section winograd.
 
@@ -23,6 +23,7 @@ Global Instance Zops : @Ring_ops (matrix_zmodType R n n) 0%R
   (scalar_mx 1) (@addmx R _ _) mulmx (fun M N => M - N) (@oppmx R _ _) eq.
 
 Global Instance Zr: (@Ring _ _ _ _ _ _ _ _ Zops).
+Proof.
 constructor=> //.
   + exact:eq_equivalence.
   + by move=> x y H1 u v H2; rewrite H1 H2.
@@ -102,8 +103,10 @@ by non_commutative_ring.
 by non_commutative_ring.
 Qed.
 
+Variable CR : cringType R.
+
 Fixpoint winogradI k :=
-  match k return let M := seqmatrix R in M -> M -> M with
+  match k return let M := seqmatrix CR in M -> M -> M with
   | 0%N => fun A B => mulseqmx A B
   | l.+1 => fun A B =>
     if l <= 5 then mulseqmx A B else
@@ -144,7 +147,7 @@ Fixpoint winogradI k :=
 Variable k : nat.
 
 Lemma winogradIP :
-  {morph (@seqmx_of_mx _ (exp2 k) (exp2 k)) : M N / winograd M N >-> winogradI k M N}.
+  {morph (@seqmx_of_mx _ CR (exp2 k) (exp2 k)) : M N / winograd M N >-> winogradI k M N}.
 Proof.
 elim:k=> [|k' IHn] /= M N ; first by rewrite /= mulseqmxE.
 rewrite {1}/winogradI {1}/winograd.
@@ -164,6 +167,7 @@ Section winograd_gen.
 Local Open Scope ring_scope.
 
 Variable R : ringType.
+Let K := 32%positive.
 
 Local Coercion nat_of_pos : positive >-> nat.
 
@@ -191,9 +195,9 @@ Proof.
 by elim=> // p IHp /=; rewrite NatTrec.doubleE -addnn; exact:ltn_addl.
 Qed.
 
-Lemma mulseqmx_gt0E {m n p : nat}
+Lemma mulseqmx_gt0E (CR : cringType R) {m n p : nat}
   {M : 'M[R]_(m, p)} {N : 'M_(p, n)} :
-  0 < p -> mulseqmx (seqmx_of_mx M) (seqmx_of_mx N) = seqmx_of_mx (M *m N).
+  0 < p -> mulseqmx (seqmx_of_mx CR M) (seqmx_of_mx CR N) = seqmx_of_mx CR (M *m N).
 Proof.
 by move/prednK=> H; move: M N; rewrite -H; exact:mulseqmxE.
 Qed.
@@ -234,10 +238,7 @@ Definition winograd_step {p : positive} (A B : 'M[R]_(p + p)) f : 'M[R]_(p + p) 
 Lemma winograd_stepP (p : positive) (A B : 'M[R]_(p + p)) f :
   f =2 mulmx -> winograd_step A B f = A *m B.
 Proof.
-move=> Hf.
-rewrite -{2}[A]submxK -{2}[B]submxK.
-rewrite mulmx_block.
-rewrite /winograd_step !Hf.
+move=> Hf; rewrite -{2}[A]submxK -{2}[B]submxK mulmx_block /winograd_step !Hf.
 by congr block_mx; non_commutative_ring.
 Qed.
 
@@ -245,12 +246,12 @@ Fixpoint winograd_peeling {n : positive} {struct n} :=
   match n return let M := 'M[R]_n in M -> M -> M with
   | xH => fun M N => M *m N
   | xO p => fun A B =>
-    if p <= 32 then A *m B else
+    if p <= K then A *m B else
     let A := castmx (addpp p,addpp p) A in
     let B := castmx (addpp p,addpp p) B in
     castmx (esym (addpp p),esym (addpp p)) (winograd_step A B winograd_peeling)
   | xI p => fun M N =>
-    if p <= 32 then M *m N else
+    if p <= K then M *m N else
     let M := castmx (addpp1 p, addpp1 p) M in
     let N := castmx (addpp1 p, addpp1 p) N in
     let M11 := ulsubmx M in
@@ -277,7 +278,9 @@ rewrite /=; case:ifP=> // _.
 by rewrite winograd_stepP // -mulmx_cast castmxK.
 Qed.
 
-Definition winograd_stepI (p : positive) (A B : seqmatrix R) f : seqmatrix R :=
+Variable CR : cringType R.
+
+Definition winograd_stepI (p : positive) (A B : seqmatrix CR) f : seqmatrix CR :=
   let A11 := ulsubseqmx p p A in
   let A12 := ursubseqmx p p A in
   let A21 := dlsubseqmx p p A in
@@ -311,8 +314,8 @@ Definition winograd_stepI (p : positive) (A B : seqmatrix R) f : seqmatrix R :=
   block_seqmx C11 C12 C21 C22.
 
 Lemma winograd_stepIP (p : positive) f fI :
-  {morph (@seqmx_of_mx _ p p) : M N / f M N >-> fI p M N} ->
-  {morph (@seqmx_of_mx _ (p + p) (p + p)) : M N / winograd_step M N f >-> winograd_stepI p M N fI}.
+  {morph (@seqmx_of_mx _ CR p p) : M N / f M N >-> fI p M N} ->
+  {morph (@seqmx_of_mx _ CR (p + p) (p + p)) : M N / winograd_step M N f >-> winograd_stepI p M N fI}.
 Proof.
 move=> Hf M N; rewrite /winograd_stepI !ulsubseqmxE !ursubseqmxE !dlsubseqmxE.
 rewrite !drsubseqmxE -!subseqmxE -!addseqmxE -!subseqmxE -!Hf -!addseqmxE.
@@ -320,13 +323,13 @@ by rewrite -!subseqmxE block_seqmxE.
 Qed.
 
 Fixpoint winograd_peelingI (n : positive) :=
-  match n return let M := seqmatrix R in M -> M -> M with
+  match n return let M := seqmatrix CR in M -> M -> M with
   | xH => fun A B => mulseqmx A B
   | xO p => fun A B =>
-    if p <= 32 then mulseqmx A B else
+    if p <= K then mulseqmx A B else
     winograd_stepI p A B winograd_peelingI
   | xI p => fun M N =>
-    if p <= 32 then mulseqmx M N else
+    if p <= K then mulseqmx M N else
     (* if l <= 5 then mulseqmx A B else *)
     let off := xO p in
     let M11 := ulsubseqmx off off M in
@@ -345,7 +348,7 @@ Fixpoint winograd_peelingI (n : positive) :=
   end.
 
 Lemma winograd_peelingIP : forall (p : positive),
-  {morph (@seqmx_of_mx _ p p) : M N / winograd_peeling M N >-> winograd_peelingI p M N}.
+  {morph (@seqmx_of_mx _ CR p p) : M N / winograd_peeling M N >-> winograd_peelingI p M N}.
 Proof.
 elim=> [p IHp /= M N|p IHp /= M N|M N /=].
 * case:ifP=> _; first by rewrite mulseqmxE.

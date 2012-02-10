@@ -20,7 +20,7 @@ Implicit Type phR : phant R.
 
 Record mixin_of (CR : cringType R) : Type := Mixin {
   cdiv : CR -> CR -> option CR;
-  _ : forall x y, omap (trans CR) (x %/? y) = cdiv (trans CR x) (trans CR y)
+  _ : forall x y, omap trans (x %/? y) = cdiv (trans x) (trans y)
 }.
 
 Structure class_of (V : Type) := Class {
@@ -82,7 +82,7 @@ Variable R : dvdRingType.
 Variable CR : cdvdRingType R.
 
 Lemma cdivE : forall x y,
-  omap (trans CR) (x %/? y) = cdiv (trans CR x) (trans CR y).
+  omap trans (x %/? y) = cdiv (@trans _ CR x) (trans y).
 Proof. by case: CR => ? [] ? []. Qed.
 
 End CDvdRingTheory.
@@ -98,7 +98,7 @@ Implicit Type phR : phant R.
 
 Record mixin_of (CR : cdvdRingType R) : Type := Mixin {
   cgcd : CR -> CR -> CR;
-  _ : {morph (trans CR) : x y / gcdr x y >-> cgcd x y}
+  _ : {morph trans : x y / gcdr x y >-> cgcd x y}
 }.
 
 Record class_of (V : Type) : Type := Class {
@@ -174,7 +174,7 @@ Section CGcdRingTheory.
 Variable R : gcdRingType.
 Variable CR : cgcdRingType R.
 
-Lemma cgcdE : {morph (trans CR) : x y / gcdr x y >-> cgcd x y}.
+Lemma cgcdE : {morph (@trans _ CR) : x y / gcdr x y >-> cgcd x y}.
 Proof. by case: CR => ? [] ? []. Qed.
 
 (* TODO: Add theory about cgcds? *)
@@ -192,8 +192,8 @@ Implicit Type phR : phant R.
 
 Record mixin_of (CR : cgcdRingType R) : Type := Mixin {
   cbezout : CR -> CR -> CR * CR;
-  _ : forall x y, (trans CR (bezout x y).1,trans CR (bezout x y).2) =
-                  cbezout (trans CR x) (trans CR y)
+  _ : forall x y, (trans (bezout x y).1,trans (bezout x y).2) =
+                  cbezout (trans x) (trans y)
 }.
 
 Record class_of (V : Type) : Type := Class {
@@ -259,8 +259,8 @@ Section CBezoutRingTheory.
 Variable R : bezoutRingType.
 Variable CR : cbezoutRingType R.
 
-Lemma cbezoutE : forall x y, (trans CR (bezout x y).1,trans CR (bezout x y).2) =
-                             cbezout (trans CR x) (trans CR y).
+Lemma cbezoutE : forall x y, (@trans _ CR (bezout x y).1,trans (bezout x y).2) =
+                             cbezout (trans x) (trans y).
 Proof. by case: CR => ? [] ? []. Qed.
 
 End CBezoutRingTheory.
@@ -309,8 +309,8 @@ Module CEuclideanRing.
 Record mixin_of (R : euclidRingType) (CR : cringType R) : Type := Mixin {
   cnorm : CR -> nat;
   cediv : CR -> CR -> (CR * CR);
-  _ : forall x, cnorm (trans CR x) = enorm x;
-  _ : forall x y, cediv (trans CR x) (trans CR y) = (trans CR (x %/ y),trans CR (x %% y))
+  _ : forall x, cnorm (trans x) = enorm x;
+  _ : forall x y, cediv (trans x) (trans y) = (trans (x %/ y),trans (x %% y))
 }.
 
 (* Mixins showing that euclidean ring -> bezout and gcd rings *)
@@ -347,11 +347,11 @@ Local Notation cediv := (cediv mR).
 
 Definition czero := (@zero _ [czmodType R of CR]).
 
-Lemma cnormE : forall x, cnorm (trans _ x) = enorm x.
+Lemma cnormE : forall x, cnorm (trans x) = enorm x.
 Proof. by case: mR. Qed.
 
 Lemma cedivE :
-  forall x y, cediv (trans _ x) (trans _ y) = (trans _ (x %/ y),trans _ (x %% y)).
+  forall x y, cediv (trans x) (trans y) = (trans (x %/ y),trans (x %% y)).
 Proof. by case: mR. Qed.
 
 Definition R_dvdMixin := EuclidDvdMixin R cR.
@@ -361,7 +361,7 @@ Definition codiv a b := let (q, r) := cediv a b in
   if r == czero then Some (if b == czero then czero else q) else None.
 
 Lemma odivE : forall x y,
-  omap (trans _) (x %/? y) = codiv (trans _ x) (trans _ y).
+  omap trans (x %/? y) = codiv (trans x) (trans y).
 Proof.
 rewrite /odivr /= /EuclideanRing.Mixins.odiv /codiv => x y.
 rewrite cedivE !trans_eq0 /divr /modr /edivr /=.
@@ -371,7 +371,7 @@ by rewrite zeroE.
 Qed.
 
 Lemma codivE : forall x y,
-  omap (trans _) (x %/? y) = codiv (trans _ x) (trans _ y).
+  omap trans (x %/? y) = codiv (trans x) (trans y).
 Proof.
 move=> x y.
 by rewrite odivE.
@@ -705,11 +705,11 @@ Section CEuclideanRingTheory.
 Variable R : euclidRingType.
 Variable CR : ceuclidRingType R.
 
-Lemma cnormE : forall x, enorm x = cnorm (trans CR x).
+Lemma cnormE : forall x, enorm x = cnorm (@trans _ CR x).
 Proof. by case: CR => ? [] ? []. Qed.
 
-Lemma cedivE : forall x y, (trans CR (x %/ y),trans CR (x %% y)) =
-                           cediv (trans CR x) (trans CR y).
+Lemma cedivE : forall x y, (@trans _ CR (x %/ y),trans (x %% y)) =
+                           cediv (trans x) (trans y).
 Proof. by case: CR => ? [] ? []. Qed.
 
 End CEuclideanRingTheory.

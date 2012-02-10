@@ -87,7 +87,7 @@ Definition opp (V: zmodType) (T: czmodType V) :=
   CZmodule.opp (CZmodule.class T).
 Definition add (V: zmodType) (T: czmodType V) :=
   CZmodule.add (CZmodule.class T).
-Definition trans (V: zmodType) (T: czmodType V) :=
+Definition trans {V: zmodType} {T: czmodType V} :=
   f (CZmodule.tstruct (CZmodule.class T)).
 
 Section CZmoduleTheory.
@@ -109,7 +109,7 @@ Proof. by case: T => ? [] ? []. Qed.
 Lemma oppE : {morph (@trans V T) : x / - x >-> opp x}.
 Proof. by case: T => ? [] ? []. Qed.
 
-Lemma trans_eq0 : forall a, (trans T a == zero T) = (a == 0).
+Lemma trans_eq0 : forall a, (trans a == zero T) = (a == 0).
 Proof.
 move=> a.
 apply/eqP/eqP=> [h|->].
@@ -136,8 +136,8 @@ Module CRing.
 Record mixin_of (R : ringType) (V : czmodType R) : Type := Mixin {
   one : V;
   mul : V -> V -> V;
-  _ : (trans V) 1 = one;
-  _ : {morph (trans V) : x y / x * y >-> mul x y}
+  _ : trans 1 = one;
+  _ : {morph trans : x y / x * y >-> mul x y}
 }.
 
 Section ClassDef.
@@ -226,8 +226,8 @@ Module CUnitRing.
 Record mixin_of (R : unitRingType) (V : cringType R) : Type := Mixin {
   cunit : pred V;
   cinv  : V -> V;
-  _     : forall x, GRing.unit x = cunit (trans V x);
-  _     : {morph (trans V) : x / GRing.inv x >-> cinv x}
+  _     : forall x, GRing.unit x = cunit (trans x);
+  _     : {morph trans : x / GRing.inv x >-> cinv x}
 }.
 
 Section ClassDef.
@@ -294,15 +294,15 @@ Section CUnitRingTheory.
 Variable R : unitRingType.
 Variable CR : cunitRingType R.
 
-Lemma cunitE : forall x, GRing.unit x = cunit (trans CR x).
+Lemma cunitE : forall x, GRing.unit x = cunit (@trans _ CR x).
 Proof. by case: CR => ? [] ? []. Qed.
 
-Lemma cinvE : {morph (trans CR) : x / x^-1 >-> cinv x}.
+Lemma cinvE : {morph (@trans _ CR) : x / x^-1 >-> cinv x}.
 Proof. by case: CR => ? [] ? []. Qed.
 
 Definition cudiv x y : CR := mul x (cinv y).
 
-Lemma cudivE : {morph (trans CR) : x y / x / y >-> cudiv x y}.
+Lemma cudivE : {morph trans : x y / x / y >-> cudiv x y}.
 Proof.
 move=> x y /=.
 by rewrite /cudiv mulE cinvE.

@@ -177,7 +177,7 @@ Qed.
 (* lead_coef *)
 Definition lead_coef_seq (p : seq CR) := nth (@zero R CR) p (size p).-1.
 
-Lemma lead_coef_seqE : forall p, trans CR (lead_coef p) = lead_coef_seq (trans_poly p).
+Lemma lead_coef_seqE : forall p, trans (lead_coef p) = lead_coef_seq (trans_poly p).
 Proof.
 move=> p.
 rewrite /lead_coef_seq /lead_coef size_trans_poly /trans_poly /=.
@@ -201,7 +201,7 @@ Qed.
 (* polyC *)
 Definition polyC_seq x : seq CR := nseq (x != (@zero R CR)) x.
 
-Lemma polyC_seqE : forall x, trans_poly (polyC x) = polyC_seq (trans CR x).
+Lemma polyC_seqE : forall x, trans_poly (polyC x) = polyC_seq (trans x).
 Proof.
 move=> x.
 rewrite /trans_poly polyseqC /polyC_seq trans_eq0.
@@ -219,7 +219,7 @@ Fixpoint scale_seq x p : seq CR := match p with
   end.
 
 Lemma scale_seqE : forall (x : R) (p : {poly R}),
-  trans_poly (scale_poly x p) = scale_seq (trans CR x) (trans_poly p).
+  trans_poly (scale_poly x p) = scale_seq (trans x) (trans_poly p).
 Proof.
 move=> x.
 elim/poly_ind=> [| p c IH].
@@ -402,7 +402,7 @@ Fixpoint horner_seq (s : seq CR) (x : CR) {struct s} : CR :=
   if s is a :: s' then add (mul (horner_seq s' x) x) a else zero CR.
 
 Lemma horner_seqE : forall p x,
-  trans CR p.[x] = horner_seq (trans_poly p) (trans CR x).
+  trans p.[x] = horner_seq (trans_poly p) (trans x).
 Proof.
 elim/poly_ind => [ x | p c]; first by rewrite horner0 trans_poly0 zeroE.
 rewrite /horner_seq -!poly_cons_def /trans_poly polyseq_cons /nilp => ih x.
