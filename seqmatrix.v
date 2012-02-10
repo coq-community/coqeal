@@ -145,7 +145,7 @@ rewrite /rowseqmx (nth_map 0) ; first by rewrite size_map size_enum_ord.
 by rewrite size_enum_ord.
 Qed.
 
-Lemma size_row_mkseqmx f i : 
+Lemma size_row_mkseqmx f i :
   i < m -> size (rowseqmx (mkseqmx m n f) i) = n.
 Proof. by move=> Hi ; rewrite /rowseqmx nth_mkseq // size_mkseq. Qed.
 
