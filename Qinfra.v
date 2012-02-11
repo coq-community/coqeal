@@ -1,4 +1,4 @@
-(* This is based on infra.v written by Assia Mahboubi *)
+(** This files is based on infra.v written by Assia Mahboubi *)
 Require Import QArith.
 Require Import Qcanon.
 Require Import ssreflect ssrbool eqtype ssrnat seq.

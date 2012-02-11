@@ -1,4 +1,5 @@
-(* This file is part of CoqEAL, the Coq Effective Algebra Library *)
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype perm matrix bigop zmodp mxalgebra.
 
@@ -6,10 +7,10 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Import Prenex Implicits.
 
-(* This file contains definitions and lemmas that are generic enough that *)
-(* we could try to integrate them in Math Components' library.            *)
-(* Definitions and theories are gathered according to the file of the     *)
-(* library to which they could be moved.                                  *)
+(** This file contains definitions and lemmas that are generic enough that
+we could try to integrate them in Math Components' library.
+Definitions and theories are gathered according to the file of the
+library which they could be moved to. *)
 
 (********************* seq.v *********************)
 Section Seq.

@@ -1,5 +1,10 @@
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import path choice fintype tuple finset ssralg bigop.
+
+(** This file defines computable structures on top of ssreflect's 
+algebraic structures (from ssralg.v) *)
 
 Import GRing.Theory.
 
@@ -19,7 +24,7 @@ Proof. by move => x y. Qed.
 
 Definition id_trans_struct A := Trans (@id_inj A).
 
-(* "Computable" Z-modules *)
+(** Computable Z-modules *)
 Module CZmodule.
 
 Record mixin_of (V : zmodType) (T: Type) : Type := Mixin {
@@ -129,8 +134,7 @@ End CZmoduleTheory.
 
 Export CZmodule.Exports.
 
-
-(* "Computable" rings *)
+(** Computable rings *)
 Module CRing.
 
 Record mixin_of (R : ringType) (V : czmodType R) : Type := Mixin {
@@ -219,8 +223,7 @@ End CRingTheory.
 
 Export CRing.Exports.
 
-
-(* "Computable" unit rings *)
+(** Computable unit rings *)
 Module CUnitRing.
 
 Record mixin_of (R : unitRingType) (V : cringType R) : Type := Mixin {
@@ -312,8 +315,7 @@ End CUnitRingTheory.
 
 Export CUnitRing.Exports.
 
-
-(* Identity mixins *)
+(** Identity mixins *)
 Module id_Mixins.
 Section id_czMixin.
 

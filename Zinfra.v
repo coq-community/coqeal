@@ -1,4 +1,4 @@
-(* This file is partially based on infra.v by Assia Mahboubi *)
+(** This file is partially based on infra.v by Assia Mahboubi *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div ssralg seq.
 Require Import choice fintype finfun ssrfun bigop.
 (* Require Import zint orderedalg orderedzint. *)

@@ -1,3 +1,5 @@
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import path choice fintype tuple finset ssralg bigop.
 
@@ -41,7 +43,7 @@ end.
 End GUARD.
 
 
-(* Explicit divisibility ring *)
+(** Explicit divisibility ring *)
 Module DvdRing.
 
 (* Specification of division: div_spec a b == b | a *)
@@ -140,7 +142,7 @@ Variable R : dvdRingType.
 
 Implicit Types a b c : R.
 
-(* Properties of odivr *)
+(** Properties of odivr *)
 
 Lemma odivrP : forall a b, DvdRing.div_spec a b (a %/? b).
 Proof. by case: R=> [? [? []]] /=. Qed.
@@ -202,7 +204,7 @@ Lemma odivr_some : forall a b c, a %/? b = Some c -> a = b * c.
 Proof. by move=> a b c; case: odivrP=>// x -> [<-]; rewrite mulrC. Qed.
 
 
-(* Properties of dvdr *)
+(** Properties of dvdr *)
 
 Lemma dvdrP : forall a b, reflect (exists x, b = x * a) (a %| b).
 Proof.
@@ -299,7 +301,7 @@ Proof. by move=> a; apply/dvdrP; exists a; rewrite mulr1. Qed.
 Hint Resolve dvd1r.
 
 
-(* Properties of eqd *)
+(** Properties of eqd *)
 
 Lemma eqd_def : forall a b, a %= b = (a %| b) && (b %| a).
 Proof. by []. Qed.
@@ -476,7 +478,7 @@ by move=> a; apply/idP/idP; rewrite /eqd dvdr1 dvd1r; [move=> ->|case/andP].
 Qed.
 *)
 
-(* Properties of sdvdr *)
+(** Properties of sdvdr *)
 
 Lemma sdvdr_def : forall a b, a %<| b = (a %| b) && ~~(b %| a).
 Proof. by []. Qed.
@@ -947,7 +949,8 @@ Proof.
 by move=> a b; case/dvdrP=> x ->; rewrite (eqd_trans (lcmrC _ _)) // lcmr_mulr.
 Qed.
 
-Lemma gcdsr0 : (@gcdsr R) [::] = 0. Proof. by []. Qed.
+Lemma gcdsr0 : (@gcdsr R) [::] = 0.
+Proof. by []. Qed.
 
 Lemma gcdsr_cons : forall a s, gcdsr (a :: s) = gcdr a (gcdsr s).
 Proof. by []. Qed.
@@ -960,7 +963,8 @@ Proof.
 by move=> l x hx; move: (dvdrr (gcdsr l)); rewrite dvdr_gcds; move/allP; apply.
 Qed.
 
-Lemma lcmsr0 : (@lcmsr R) [::] = 1. Proof. by []. Qed.
+Lemma lcmsr0 : (@lcmsr R) [::] = 1.
+Proof. by []. Qed.
 
 Lemma lcmsr_cons : forall a s, lcmsr (a :: s) = lcmr a (lcmsr s).
 Proof. by []. Qed.
@@ -1032,7 +1036,7 @@ Proof. by move=> a b c; rewrite !(coprimer_sym _ a) coprimer_mulr. Qed.
 (* Qed. *)
 (* *)
 
-(* Irreducible and prime elements *)
+(** Irreducible and prime elements *)
 
 Definition primer a := ((a == 0 = false)
                    * (a %= 1 = false)

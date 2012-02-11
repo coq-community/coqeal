@@ -1,4 +1,5 @@
-(* This file is part of CoqEAL, the Coq Effective Algebra Library *)
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
 Require Import perm zmodp matrix ssrcomplements cssralg.
@@ -6,19 +7,6 @@ Require Import perm zmodp matrix ssrcomplements cssralg.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Import Prenex Implicits.
-
-Section matrix_complements.
-
-Variable R : ringType.
-
-Lemma row_flat_mx (m n : nat) (M : 'M_(m,0)) (N : 'M[R]_(m,n)) :
-  row_mx M N = N.
-Proof.
-apply/matrixP=> i j; rewrite mxE; case:(splitP j)=> [|k H]; first by case.
-by congr fun_of_matrix; exact:val_inj.
-Qed.
-
-End matrix_complements.
 
 Section seqmx.
 
