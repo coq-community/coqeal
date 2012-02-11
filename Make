@@ -5,7 +5,6 @@ cdvdring.v
 Zinfra.v
 Qinfra.v
 seqmatrix.v
-matrix_facts.v
 rank.v
 polydvd.v
 cseqpoly.v
