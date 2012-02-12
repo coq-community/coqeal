@@ -168,13 +168,13 @@ Section SeqmxOp.
 Variables m n p' : nat.
 Local Notation p := p'.+1.
 
-Definition map2seqmx (M N : seqmatrix) (f : CR -> CR -> CR) : seqmatrix :=
+Definition zipwithseqmx (M N : seqmatrix) (f : CR -> CR -> CR) : seqmatrix :=
   zipwith (zipwith f) M N.
 
-Lemma map2seqmxE (M N : 'M_(m,n)) (f : R -> R -> R) (cf : CR -> CR -> CR) :
+Lemma zipwithseqmxE (M N : 'M_(m,n)) (f : R -> R -> R) (cf : CR -> CR -> CR) :
   {morph trans : x y / f x y >-> cf x y} ->
   seqmx_of_mx (\matrix_(i < m, j < n) f (M i j) (N i j)) =
-  map2seqmx (seqmx_of_mx M) (seqmx_of_mx N) cf.
+  zipwithseqmx (seqmx_of_mx M) (seqmx_of_mx N) cf.
 Proof.
 move=> Hf; symmetry; apply/seqmxP ; split=>[|i Hi|i j].
     by rewrite size_zipwith !size_seqmx minnn.
@@ -186,21 +186,21 @@ by rewrite -!fun_of_seqmxE !seqmxE mxE.
 Qed.
 
 Definition addseqmx (M N : seqmatrix) : seqmatrix :=
-  map2seqmx M N (@add R CR).
+  zipwithseqmx M N (fun x y => add x y).
 
 Lemma addseqmxE:
   {morph (@seqmx_of_mx m n) : M N / M + N >-> addseqmx M N}.
 Proof.
-by move=> M N ; rewrite /addseqmx; apply:map2seqmxE; exact:addE.
+by move=> M N ; rewrite /addseqmx; apply:zipwithseqmxE; exact:addE.
 Qed.
 
 Definition subseqmx (M N : seqmatrix) :=
-  map2seqmx M N (@sub R CR).
+  zipwithseqmx M N (fun x y => sub x y).
 
 Lemma subseqmxE:
   {morph (@seqmx_of_mx m n) : M N / M - N >-> subseqmx M N}.
 Proof.
-move=> M N ; rewrite /subseqmx; rewrite -(map2seqmxE M N (subE _)).
+move=> M N ; rewrite /subseqmx; rewrite -(zipwithseqmxE M N (subE _)).
 by congr seqmx_of_mx; apply/matrixP=> i j ; rewrite !mxE.
 Qed.
 
