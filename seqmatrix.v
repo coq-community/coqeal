@@ -4,6 +4,33 @@ Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
 Require Import perm zmodp matrix ssrcomplements cssralg.
 
+(** This file implements dense matrices as sequences of sequences
+ and their basic operations.
+
+mkseqmx m n f == builds a matrix whose coefficients are expressed by f
+mkseqmx_ord f == same as above, when f is defined over ordinals
+seqmx_of_mx M == a reflection operator building a concrete matrix from an
+                 abstract one.
+addseqmx M N  == addition of two concrete matrices M and N
+subseqmx M N  == substraction of two concrete matrices M and N
+trseqmx M     == transpose of a concrete matrix M
+mulseqmx M N  == (naive) multiplication of two concrete matrices M and N
+[u/d]subseqmx m1 M == the up/down block of a column matrix M
+[l/r]subseqmx n1 M == the left/down block of a row matrix M
+[ul/ur/dl/dr]subseqmx m1 n1 M == submatrix of a block matrix M
+row_seqmx M N == the concrete row matrix < M N >
+col_seqmx M N == the concrete column matrix / M \
+                                            \ N /
+block_seqmx Aul Aur Adl Adr == the concrete block matrix / Aul Aur \
+                                                         \ Adl Adr /
+xrowseqmx i j M == the concrete matrix M with rows i and j permuted
+scalar_seqmx n x == the concrete nxn scalar matrix with x on the diagonal
+scaleseqmx x M == left (external) multiplication of the concrete matrix M
+with the scalar x
+const_seqmx m n x == the concrete mxn constant matrix with all coefficients
+equal to x
+*)
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Import Prenex Implicits.
@@ -15,6 +42,7 @@ Local Open Scope ring_scope.
 Variable R : ringType.
 Variable CR : cringType R.
 
+(** Definition of matrices as sequences of sequences over a computable ring *)
 Section SeqmxDef.
 
 Definition seqmatrix := seq (seq CR).
@@ -134,6 +162,7 @@ Qed.
 
 End FixedDim.
 
+(** Basic matrix ring operations *)
 Section SeqmxOp.
 
 Variables m n p' : nat.
@@ -279,11 +308,11 @@ Lemma mulseqmxEnn : forall m (M:'M_m) (N:'M_m),
   mulseqmx (seqmx_of_mx M) (seqmx_of_mx N) = seqmx_of_mx (M *m N).
 Proof. by case=>[M N|m M N]; rewrite ?(flatmx0 M) ?mul0mx ?seqmx0n ?mulseqmxE. Qed.
 
+(** Block operations *)
 Section SeqmxRowCol.
 
 Variables m m1 m2 n n1 n2 : nat.
 
-(* Block operations *)
 Definition usubseqmx (M : seqmatrix) :=
   take m1 M.
 
