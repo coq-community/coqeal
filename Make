@@ -1,3 +1,4 @@
+ssralg_ring_tac.v
 ssrcomplements.v
 cssralg.v
 dvdring.v
