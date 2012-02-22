@@ -142,20 +142,19 @@ Qed.
 
 Definition splitp_seq n (p : seq CR) := (drop n p, take' n p).
 
-Lemma splitp_seqE : forall p n,
-  (trans_poly CR (splitp n p).1,trans_poly CR (splitp n p).2) =
-  splitp_seq n (trans_poly CR p).
+Lemma splitp_seqE p n :
+  (trans (splitp n p).1,trans (splitp n p).2) = splitp_seq n (trans p).
 Proof.
-rewrite /splitp_seq /= => p n.
+rewrite /splitp_seq /=.
 apply/pair_eqP => /=.
 apply/andP.
 case: p => p /= h.
-split; first by rewrite /trans_poly (@PolyK _ 1) ?map_drop // last_drop.
-rewrite {2}/trans_poly /=.
+split; first by rewrite trans_poly_def (@PolyK _ 1) ?map_drop // last_drop.
+rewrite [trans (Polynomial h)]trans_poly_def /=.
 apply/eqP; clear h.
-elim: p n => [[]|x xs ih n] /=; try by rewrite trans_poly0.
-case: n => [|n] /=; first by rewrite trans_poly0.
-rewrite trans_eq0 -ih size_trans_poly /trans_poly polyseq_cons polyseqC.
+elim: p n => [[]|x xs ih n] /=; try by rewrite zeroE.
+case: n => [|n] /=; first by rewrite zeroE.
+rewrite trans_eq0 -ih size_trans_poly trans_poly_def polyseq_cons polyseqC.
 case: ifP => //= _.
 by case: (x == 0).
 Qed.
@@ -180,7 +179,7 @@ Definition karatsuba_seq (p q : seq CR) :=
   karatsuba_rec_seq (size p1) p1 q1.
 
 Lemma karatsuba_rec_seqE : forall n,
-  {morph (trans_poly CR) : p q / karatsuba_rec n p q >-> karatsuba_rec_seq n p q}.
+  {morph trans : p q / karatsuba_rec n p q >-> karatsuba_rec_seq n p q}.
 Proof.
 elim=> /= [|n ih p q]; first exact: mul_seqE.
 rewrite !size_trans_poly.
@@ -191,7 +190,7 @@ case: (splitp_seqE q m) => <- <-.
 by rewrite -!add_seqE -!ih -!sub_seqE -!shiftE -!add_seqE.
 Qed.
 
-Lemma karatsuba_seqE : {morph (trans_poly CR) : p q / karatsuba p q >-> karatsuba_seq p q}.
+Lemma karatsuba_seqE : {morph trans : p q / karatsuba p q >-> karatsuba_seq p q}.
 Proof.
 move=> p q /=.
 rewrite /karatsuba /karatsuba_seq !size_trans_poly.
