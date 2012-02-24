@@ -3,7 +3,7 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import path choice fintype tuple finset ssralg bigop.
 
-(** This file defines computable structures on top of ssreflect's 
+(** This file defines computable structures on top of ssreflect's
 algebraic structures (from ssralg.v) *)
 
 Import GRing.Theory.
