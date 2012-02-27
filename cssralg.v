@@ -1,7 +1,7 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
-Require Import path choice fintype tuple finset ssralg bigop.
+Require Import path fintype tuple finset ssralg bigop.
 
 (** This file defines computable structures on top of ssreflect's
 algebraic structures (from ssralg.v) *)
@@ -42,11 +42,11 @@ Section ClassDef.
 Variable V : zmodType.
 
 Record class_of T := Class {
-  base : Choice.class_of T;
+  base : Equality.class_of T;
   mixin : mixin_of V T
 }.
 
-Local Coercion base : class_of >-> Choice.class_of.
+Local Coercion base : class_of >-> Equality.class_of.
 
 Structure type (phV : phant V) :=
   Pack {sort; _ : class_of sort ; _ : Type}.
@@ -55,24 +55,21 @@ Local Coercion sort : type >-> Sortclass.
 Variables (phV : phant V) (T : Type) (cT : type phV).
 Definition class := let: Pack _ c _ as cT' := cT return class_of cT' in c.
 Definition clone c of phant_id class c := @Pack phV T c T.
-Definition pack b0 (m0 : mixin_of V (@Choice.Pack T b0 T)) :=
-  fun bT b & phant_id (Choice.class bT) b =>
+Definition pack b0 (m0 : mixin_of V (@Equality.Pack T b0 T)) :=
+  fun bT b & phant_id (Equality.class bT) b =>
   fun m & phant_id m0 m => Pack phV (@Class T b m) T.
 
 Definition eqType := Equality.Pack class cT.
-Definition choiceType := Choice.Pack class cT.
 
 End ClassDef.
 
 Module Exports.
 
-Coercion base : class_of >-> Choice.class_of.
+Coercion base : class_of >-> Equality.class_of.
 Coercion mixin : class_of >-> mixin_of.
 Coercion sort : type >-> Sortclass.
 Coercion eqType : type >-> Equality.type.
 Canonical Structure eqType.
-Coercion choiceType : type >-> Choice.type.
-Canonical Structure choiceType.
 Notation czmodType V := (type (Phant V)).
 Notation CZmodType V T m := (@pack _ (Phant V) T _ m _ _ id _ id).
 Notation CZmodMixin := Mixin.
@@ -171,7 +168,6 @@ Definition pack phR T V0 (m0 : mixin_of (@CZmodule.Pack R _ T V0 T)) :=
   fun m & phant_id m0 m => Pack phR (@Class T b m) T.
 
 Definition eqType phR cT := Equality.Pack (@class phR cT) cT.
-Definition choiceType phR cT := Choice.Pack (@class phR cT) cT.
 Definition czmodType phR cT := CZmodule.Pack phR (@class phR cT) cT.
 
 End ClassDef.
@@ -183,8 +179,6 @@ Coercion mixin : class_of >-> mixin_of.
 Coercion sort : type >-> Sortclass.
 Coercion eqType: type >-> Equality.type.
 Canonical Structure eqType.
-Coercion choiceType: type >-> Choice.type.
-Canonical Structure choiceType.
 Coercion czmodType: type >-> CZmodule.type.
 Canonical Structure czmodType.
 
@@ -255,7 +249,6 @@ Definition pack phR T V0 (m0 : mixin_of (@CRing.Pack R _ T V0 T)) :=
   fun m & phant_id m0 m => Pack phR (@Class T b m) T.
 
 Definition eqType phR cT := Equality.Pack (@class phR cT) cT.
-Definition choiceType phR cT := Choice.Pack (@class phR cT) cT.
 Definition czmodType phR cT := CZmodule.Pack phR (@class phR cT) cT.
 Definition cringType phR cT := CRing.Pack phR (@class phR cT) cT.
 
@@ -267,8 +260,6 @@ Coercion mixin : class_of >-> mixin_of.
 Coercion sort : type >-> Sortclass.
 Coercion eqType: type >-> Equality.type.
 Canonical Structure eqType.
-Coercion choiceType: type >-> Choice.type.
-Canonical Structure choiceType.
 Coercion czmodType: type >-> CZmodule.type.
 Canonical Structure czmodType.
 Coercion cringType: type >-> CRing.type.
