@@ -237,7 +237,7 @@ Qed.
 Lemma dvdr_add : forall a b c, a %| b -> a %| c -> a %| b + c.
 Proof.
 move=> a b c; case/dvdrP=>x bax; case/dvdrP=>y cay.
-by apply/dvdrP; exists (x + y); rewrite mulr_addl bax cay.
+by apply/dvdrP; exists (x + y); rewrite mulrDl bax cay.
 Qed.
 
 Lemma dvdrN : forall a b, (a %| (-b)) = (a %| b).
@@ -1210,7 +1210,7 @@ rewrite /dvdr.
 case: odivrP=> //= a1 Ha _.
 case: odivrP=> //= b1 Hb _.
 - apply/(mulIf g_neq0).
-  by rewrite mulr_addl mul1r -!mulrA -Ha -Hb.
+  by rewrite mulrDl mul1r -!mulrA -Ha -Hb.
 - by rewrite eqd_sym.
 - by move : hb; rewrite /dvdr; case: odivrP.
 by  move: ha; rewrite /dvdr; case: odivrP.
@@ -1469,7 +1469,7 @@ Proof.
 move=> a a0; case: (edivP a a)=> q r ha; rewrite a0 /= => hr.
 apply: leq_trans (hr); rewrite ltnS; apply: contraLR hr.
 move/eqP: ha; rewrite addrC -(can2_eq (@addrNK _ _) (@addrK _ _)).
-rewrite -{1}[a]mul1r -mulr_subl eq_sym -leqNgt.
+rewrite -{1}[a]mul1r -mulrBl eq_sym -leqNgt.
 case q1: (1 - q == 0); rewrite ?(eqP q1) ?mul0r; move/eqP->; rewrite ?leqnn //.
 by move=> _; rewrite norm_mul // q1.
 Qed.
@@ -1484,7 +1484,7 @@ case r0: (r == 0)=> //=; constructor.
   by rewrite (eqP r0) addr0; case: ifP=> //; move/eqP->; rewrite !mulr0.
 move=> x; case b0: (b == 0) hr=> /= hr.
   by rewrite (eqP b0) !mulr0 add0r r0.
-rewrite addrC (can2_eq (@addrK _ _) (@addrNK _ _)) -mulr_subl.
+rewrite addrC (can2_eq (@addrK _ _) (@addrNK _ _)) -mulrBl.
 case xq : (x - q == 0); first by rewrite (eqP xq) mul0r r0.
 by apply: contraL hr; rewrite -leqNgt; move/eqP->; rewrite norm_mul ?xq.
 Qed.
@@ -1692,7 +1692,7 @@ have := (ihn b (a %% b) _).
 case: (egcd_rec _ _)=> u v=> /= ihn' /=.
 rewrite (eqd_trans (gcdrE _ _)) ?(eqd_trans (ihn' _ _)) //;
   do ?by rewrite -ltnS (leq_trans (mod_spec _ _)) ?b0 //.
-rewrite mulr_subl addrA [v * a + _]addrC -mulrA -addrA -mulr_subr /div b0.
+rewrite mulrBl addrA [v * a + _]addrC -mulrA -addrA -mulrBr /div b0.
 case: edivP ihn'=> /= q r.
 move/eqP; rewrite addrC -subr_eq; move/eqP=>->.
 by rewrite b0 /= => nrb; apply; rewrite -ltnS (leq_trans nrb).

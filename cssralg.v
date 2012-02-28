@@ -37,6 +37,8 @@ Record mixin_of (V : zmodType) (T: Type) : Type := Mixin {
   _ : {morph (f tstruct) : x y / x + y >-> add x y}
 }.
 
+Prenex Implicits zero opp add.
+
 Section ClassDef.
 
 Variable V : zmodType.
@@ -223,7 +225,7 @@ Module CUnitRing.
 Record mixin_of (R : unitRingType) (V : cringType R) : Type := Mixin {
   cunit : pred V;
   cinv  : V -> V;
-  _     : forall x, GRing.unit x = cunit (trans x);
+  _     : forall x, x \is a GRing.unit = cunit (trans x);
   _     : {morph trans : x / GRing.inv x >-> cinv x}
 }.
 
@@ -288,7 +290,7 @@ Section CUnitRingTheory.
 Variable R : unitRingType.
 Variable CR : cunitRingType R.
 
-Lemma cunitE : forall x, GRing.unit x = cunit (@trans _ CR x).
+Lemma cunitE : forall x, x \is a GRing.unit = cunit (@trans _ CR x).
 Proof. by case: CR => ? [] ? []. Qed.
 
 Lemma cinvE : {morph (@trans _ CR) : x / x^-1 >-> cinv x}.

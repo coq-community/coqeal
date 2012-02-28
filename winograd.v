@@ -45,8 +45,8 @@ constructor=> //.
   + exact:mul1mx.
   + exact:mulmx1.
   + exact:mulmxA.
-  + exact:mulmx_addl.
-  + by move=> M N P ; exact:mulmx_addr.
+  + exact:mulmxDl.
+  + by move=> M N P ; exact:mulmxDr.
   + by move=> M; rewrite /addition /add_notation (addmxC M) addNmx.
 Qed.
 

@@ -35,7 +35,7 @@ Lemma nth_zipwith x1 x2 x3 n s1 s2 :
 Proof.
 elim:s1 n s2=> [n s2|t1 s1 IHs]; first by rewrite min0n ltn0.
 case=>[|n]; first by case.
-by case=> // t2 s2 H ; rewrite /= IHs // ; move:H ; rewrite !leq_minr.
+by case=> // t2 s2 H ; rewrite /= IHs // ; move:H ; rewrite !leq_min.
 Qed.
 
 Fixpoint foldl2 (f : T3 -> T1 -> T2 -> T3) z (s : seq T1) (t : seq T2) {struct s} :=

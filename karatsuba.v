@@ -29,7 +29,7 @@ case i0: (i == 0%N).
   move/eqP: i0 => ->.
   rewrite leqn0 size_poly_eq0 => /eqP ->.
   by rewrite coef0.
-rewrite -poly_cons_def size_poly_cons coef_cons=> h.
+rewrite -cons_poly_def size_cons_poly coef_cons=> h.
 rewrite i0 ih //.
 move: h.
 case: ifP => [|_ spi].
@@ -93,14 +93,14 @@ set p1 := (Poly (drop m p)).
 set p2 := (Poly (take m p)).
 set q1 := (Poly (drop m q)).
 set q2 := (Poly (take m q)).
-rewrite !mulr_addl !mulr_addr -!mulrA ['X^m * (_ * _)]mulrCA -exprn_addr addnn
+rewrite !mulrDl !mulrDr -!mulrA ['X^m * (_ * _)]mulrCA -exprD addnn
         -mul2n.
 apply/eqP.
 rewrite -!addrA.
 congr (_ + _).
-rewrite mulr_addl -!mulrA [p1 * _+ p1 * _]addrC ['X^m * q2]mulrC -!addrA.
+rewrite mulrDl -!mulrA [p1 * _+ p1 * _]addrC ['X^m * q2]mulrC -!addrA.
 congr (_ + _).
-rewrite mulr_addl -!addrA addrCA -!mulrA.
+rewrite mulrDl -!addrA addrCA -!mulrA.
 congr (_ + _).
 rewrite !addrA -{1}[p2*q2]add0r.
 congr (_ + _).
@@ -134,10 +134,10 @@ Fixpoint take' n (s : seq CR) :=  match n, s with
 
 Lemma last_drop : forall (p : seq R) n, last 1 p != 0 -> last 1 (drop n p) != 0.
 Proof.
-elim => /= [| x xs ih n h]; first by rewrite nonzero1r.
+elim => /= [| x xs ih n h]; first by rewrite oner_neq0.
 case: n ih => // n -> //.
 case: xs h => //=.
-by rewrite nonzero1r.
+by rewrite oner_neq0.
 Qed.
 
 Definition splitp_seq n (p : seq CR) := (drop n p, take' n p).

@@ -262,7 +262,7 @@ have H: forall k s1 s2, k < size (foldr (zipwith cons) s1 s2) -> k < size s1 ->
 size (rowseqmx (foldr (zipwith cons) s1 s2) k) = (size s2 + size (rowseqmx s1 k))%N.
   move=> k s1; elim=> // t s2 IHs H1 H2.
   rewrite /rowseqmx (nth_zipwith _ zero [::]).
-    by rewrite /= IHs //; move:H1; rewrite size_zipwith leq_minr; case/andP.
+    by rewrite /= IHs //; move:H1; rewrite size_zipwith leq_min; case/andP.
   by rewrite -(size_zipwith cons).
 move=> Hi; rewrite H.
   + by rewrite size_seqmx /rowseqmx nth_nseq; case:ifP.
@@ -283,7 +283,7 @@ have ->: forall s2 k l s1, k < size (foldr (zipwith cons) s1 s2) ->
     elim=> [k l s1|t2 s2 IHs k l s1]; first by rewrite subn0.
     rewrite size_zipwith => Hk; rewrite (nth_zipwith _ zero [::]) //.
     case:l=> // l; rewrite /= IHs //.
-    by rewrite leq_minr in Hk; case/andP:Hk.
+    by rewrite leq_min in Hk; case/andP:Hk.
   by rewrite size_seqmx ltn_ord mxE -seqmxE.
 by rewrite size_trseqmx.
 Qed.
