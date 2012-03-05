@@ -859,6 +859,12 @@ Qed.
 
 Hint Resolve dvdr_lcmr.
 
+Lemma dvdr_gcdr_lcmr : forall a b, gcdr a b %| lcmr a b.
+Proof.
+move=> a b.
+exact: (dvdr_trans (dvdr_gcdl a b) (dvdr_lcml a b)).
+Qed.
+
 Lemma lcm1r : forall a, lcmr 1 a %= a.
 Proof. by move=> a; rewrite /eqd dvdr_lcm dvdr_lcmr dvdrr dvd1r !andbT. Qed.
 
