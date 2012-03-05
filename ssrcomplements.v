@@ -45,6 +45,16 @@ Fixpoint foldl2 (f : T3 -> T1 -> T2 -> T3) z (s : seq T1) (t : seq T2) {struct s
 
 End Seq.
 
+Section BigOp.
+
+Lemma sumn_big s : sumn s = (\sum_(i <- s) i)%N.
+Proof.
+elim: s=> /= [|a l ->]; first by rewrite big_nil.
+by rewrite big_cons.
+Qed.
+
+End BigOp.
+
 (********************* matrix.v *********************)
 Section Matrix.
 
@@ -87,6 +97,22 @@ Proof.
 apply/rowP => i; rewrite mxE.
 case/mxvec_indexP: i => i j.
 by rewrite !mxvecE !mxE.
+Qed.
+
+Definition pairxx (T : Type) (x : T) := pair x x.
+
+Lemma row_flat_mx (M : 'M_(m,0)) (N : 'M[R]_(m,n)) :
+  row_mx M N = N.
+Proof.
+apply/matrixP=> i j; rewrite mxE; case: (splitP j) => [|k H]; first by case.
+by congr fun_of_matrix; exact: val_inj.
+Qed.
+
+Lemma col_flat_mx (M : 'M[R]_(0, m)) (N : 'M_(n,m)) :
+  col_mx M N = N.
+Proof.
+apply/matrixP=> i j; rewrite !mxE; case (splitP i)=> [| k H]; first by case.
+by congr fun_of_matrix; exact: val_inj.
 Qed.
 
 End Matrix.
