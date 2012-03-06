@@ -279,15 +279,6 @@ Proof.
 by elim: s => [|a l /= <-]; [exact: flatmx0|rewrite -diag_mx_seq_cat].
 Qed.
 
-Lemma diag_mx_seq_scaler m n s a : a *: (diag_mx_seq m n s) =
-  diag_mx_seq m n (map (fun x => a * x) s).
-Proof.
-apply/matrixP=> i j ; rewrite !mxE.
-case: (altP (@idP (i < size s)))=> [Hi|].
-  by rewrite (nth_map 0) // mulrnAr.  
-by rewrite -leqNgt => Hi; rewrite !nth_default ?size_map // mul0rn mulr0.
-Qed.
-
 End diag_mx_seq.
 
 Section diag_mx_seq_comRingType.
@@ -305,12 +296,5 @@ elim: s m=> [[|m]|a l IHl [|m]]; rewrite ?det_mx00 ?leq0n ?take0 ?big_nil //.
 rewrite big_cons ltnS diag_mx_seq_cons (@det_ublock _ 1 m).
 by rewrite IHl det_scalar expr1 mulrnAr.
 Qed.
-
-Lemma det_diag_mx_seq m (s : seq R) :  size s = m ->
- \det (diag_mx_seq m m s) = \prod_(i <- s) i.
-Proof.
-by move=> <-; rewrite det_diag_mx_seq_truncated take_size // leqnn.
-Qed.
-
 
 End diag_mx_seq_comRingType.

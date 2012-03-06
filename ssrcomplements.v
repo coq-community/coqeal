@@ -101,17 +101,17 @@ Qed.
 
 Definition pairxx (T : Type) (x : T) := pair x x.
 
-Lemma row_flat_mx (M : 'M_(m,0)) (N : 'M[R]_(m,n)) :
+Lemma row_thin_mx (M : 'M_(m,0)) (N : 'M[R]_(m,n)) :
   row_mx M N = N.
 Proof.
-apply/matrixP=> i j; rewrite mxE; case: (splitP j) => [|k H]; first by case.
+apply/matrixP=> i j; rewrite mxE; case: splitP => [|k H]; first by case.
 by congr fun_of_matrix; exact: val_inj.
 Qed.
 
 Lemma col_flat_mx (M : 'M[R]_(0, m)) (N : 'M_(n,m)) :
   col_mx M N = N.
 Proof.
-apply/matrixP=> i j; rewrite !mxE; case (splitP i)=> [| k H]; first by case.
+apply/matrixP=> i j; rewrite mxE; case: splitP => [|k H]; first by case.
 by congr fun_of_matrix; exact: val_inj.
 Qed.
 

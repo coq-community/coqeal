@@ -1,4 +1,3 @@
-ssralg_ring_tac.v
 ssrcomplements.v
 cssralg.v
 dvdring.v
@@ -13,6 +12,7 @@ cseqpolydvd.v
 karatsuba.v
 winograd.v
 boolF2.v
+mxstructure.v
 #examples/ex_cseqpoly.v
 #examples/ex_karatsuba.v
 #examples/ex_winograd.v
