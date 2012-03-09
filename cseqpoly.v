@@ -100,7 +100,7 @@ case: ifP => [|spq].
       rewrite /trans_poly -polyseq0 => ->.
       by case: ifP=> // /eqP ->; rewrite eqxx.
     rewrite polyseqC.
-    have q0: (q == 0) by move/eqP: sq => /eqP; rewrite size_poly_eq0.
+    have q0: (q == 0) by move/negbT: sq; rewrite negbK nil_poly.
     case d0: (d == 0)=> /=; first by rewrite (eqP d0) (eqP q0) !addr0.
     rewrite -addE trans_eq0.
     rewrite (eqP q0) addr0 add_seqr0 size_poly_neq0 => /negbTE.
@@ -108,7 +108,7 @@ case: ifP => [|spq].
     rewrite /trans_poly -polyseq0 => ->.
     do 2! case: ifP => //.
     by move/eqP->; rewrite eqxx.
-  have p0: (p == 0) by move/eqP: sp=> /eqP; rewrite size_poly_eq0.
+  have p0: (p == 0) by move/negbT: sp; rewrite negbK nil_poly.
   rewrite (eqP p0) !add0r polyseqC=> H.
   rewrite H; rewrite size_poly_neq0 in H.
   case c0: (c == 0)=> /=; first by rewrite (eqP c0) add0r.
@@ -118,8 +118,8 @@ case: ifP => [|spq].
   rewrite /trans_poly -polyseq0 => ->.
   do 2! case: ifP => //.
   by move/eqP->; rewrite eqxx.
-move/eqP: spq => /eqP.
-rewrite size_poly_eq0 addrC addr_eq0=> /eqP ->.
+move/negbT: spq.
+rewrite negbK nil_poly addrC addr_eq0=> /eqP ->.
 rewrite /nilp size_opp !polyseqC.
 case: ifP=> h /=.
   by rewrite -IH subrr polyseq0 /= -addE trans_eq0; case: ifP.
@@ -219,7 +219,7 @@ Proof.
 elim/poly_ind=> [| p c IH]; first by rewrite scale_polyE mulr0 zeroE.
 rewrite -cons_poly_def !trans_poly_def polyseq_cons.
 case: ifP=> sp /=; last first.
-  have p0: (p == 0) by move/eqP: sp=> /eqP; rewrite size_poly_eq0.
+  have p0: (p == 0) by move/negbT: sp; rewrite negbK nil_poly.
   rewrite cons_poly_def (eqP p0) mul0r add0r !polyseqC scale_polyE -polyC_mul.
   case c0: (c == 0)=> /=; first by rewrite (eqP c0) mulr0 polyseq0.
   rewrite -mulE trans_eq0.
@@ -232,7 +232,7 @@ case: ifP=> xc0.
   case: ifP; first by move/eqP=> ->; rewrite mul0r polyseq0.
   by move=> xpnil; rewrite polyseqMX // negbT.
 rewrite  -cons_poly_def -scale_polyE polyseq_cons.
-case: ifP=> // /eqP /eqP; rewrite size_poly_eq0=> /eqP ->.
+case: ifP=> // /negbT; rewrite negbK nil_poly=> /eqP ->.
 by rewrite zeroE /zero /= polyseqC xc0.
 Qed.
 

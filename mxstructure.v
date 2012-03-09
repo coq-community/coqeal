@@ -297,4 +297,11 @@ rewrite big_cons ltnS diag_mx_seq_cons (@det_ublock _ 1 m).
 by rewrite IHl det_scalar expr1 mulrnAr.
 Qed.
 
+Lemma det_diag_mx_seq m (s : seq R) :  size s = m ->
+ \det (diag_mx_seq m m s) = \prod_(i <- s) i.
+Proof.
+by move=> <-; rewrite det_diag_mx_seq_truncated take_size // leqnn.
+Qed.
+
+
 End diag_mx_seq_comRingType.

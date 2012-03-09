@@ -33,7 +33,7 @@ rewrite -cons_poly_def size_cons_poly coef_cons=> h.
 rewrite i0 ih //.
 move: h.
 case: ifP => [|_ spi].
-  by case/andP=> /eqP ->; rewrite !leq0n.
+  by case/andP; rewrite nil_poly=> /eqP ->; rewrite size_poly0 !leq0n.
 by rewrite -ltnS (prednK (neq0_lt0n i0)).
 Qed.
 
