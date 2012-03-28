@@ -1,8 +1,9 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
-Require Import path fintype tuple finset ssralg cssralg.
-Require Import dvdring.
+Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
+Require Import ssralg fintype perm tuple choice.
+Require Import matrix bigop zmodp mxalgebra poly.
+Require Import cssralg dvdring seqmatrix.
 
 Import GRing.Theory.
 
@@ -258,46 +259,70 @@ Lemma cbezoutE : forall x y, (@trans _ CR (bezout x y).1,trans (bezout x y).2) =
                              cbezout (trans x) (trans y).
 Proof. by case: CR => ? [] ? []. Qed.
 
-End CBezoutRingTheory.
+Definition zero := zero CR.
+Definition one := one CR.
 
-(*
-Definition egcdr a b :=
-  let: (u, v) := bezout a b in
-    let g := u * a + v * b in
-      let a1 := odflt 0 (a %/? g) in
-        let b1 := odflt 0 (b %/? g) in
-          if g == 0 then (0,1,0,1,0) else (g, u, v, a1, b1).
+Definition cegcdr (a b : CR) :=
+  let: (u, v) := cbezout a b in
+    let g := add (mul u a) (mul v b) in
+      let a1 := odflt zero (cdiv a g) in
+        let b1 := odflt zero (cdiv b g) in
+          if g == zero then (zero,one,zero,one,zero) else (g, u, v, a1, b1).
 
-CoInductive egcdr_spec a b : R * R * R * R * R -> Type :=
-  EgcdrSpec g u v a1 b1 of u * a1 + v * b1 = 1
-  & g %= gcdr a b
-  & a = a1 * g & b = b1 * g : egcdr_spec a b (g, u, v, a1, b1).
-
-Lemma egcdrP : forall a b, egcdr_spec a b (egcdr a b).
+Lemma egcdrE : forall x y,
+  let: (g,u,v,a1,b1) := egcdr x y in
+  let: (g',u',v',a1',b1') := cegcdr (trans x) (trans y) in
+  [/\ trans g = g', trans u = u', trans v = v', trans a1 = a1' & trans b1 = b1'].
 Proof.
-move=> a b; rewrite /egcdr; case: bezoutP=> x y hg /=.
-move: (dvdr_gcdr a b) (dvdr_gcdl a b); rewrite !(eqd_dvd hg (eqdd _))=> ha hb.
-have [g_eq0|g_neq0] := boolP (_ == 0).
-  rewrite (eqP g_eq0) eqdr0 in hg.
-  move: (hg); rewrite gcdr_eq0=> /andP[/eqP-> /eqP->].
-  constructor; do ?by rewrite mulr0.
-    by rewrite mulr0 addr0 mulr1.
-  by rewrite eqd_sym gcdr0.
-constructor.
-move: hb ha.
-rewrite /dvdr.
-case: odivrP=> //= a1 Ha _.
-case: odivrP=> //= b1 Hb _.
-- apply/(mulIf g_neq0).
-  by rewrite mulr_addl mul1r -!mulrA -Ha -Hb.
-- by rewrite eqd_sym.
-- by move : hb; rewrite /dvdr; case: odivrP.
-by  move: ha; rewrite /dvdr; case: odivrP.
+move=> x y.
+rewrite /egcdr /cegcdr -cbezoutE -!mulE -addE trans_eq0 -!cdivE.
+case: (bezout x y)=> a b /=.
+case: ifP => _; first by rewrite oneE zeroE.
+by split=> //; case: odivrP => //=; rewrite zeroE.
 Qed.
 
-End BezoutRingTheory.
-*)
+Fixpoint cprincipal_gen n (xs : seqrow CR) : CR := match n with
+  | 0 => zero
+  | S p => let x := head zero xs in
+           let y := cprincipal_gen p (behead xs) in
+           let: (g,_,_,_,_) := cegcdr x y in g
+end.
 
+Definition trans_seqrow n (I : 'rV[R]_n) : seqrow CR :=
+  [seq trans (I 0 i) | i <- enum 'I_n].
+
+Lemma cprincipal_genE : forall n (I : 'rV[R]_n),
+  trans (principal_gen I) = cprincipal_gen n (trans_seqrow I).
+Admitted.
+
+Definition cprincipal n (I : seqrow CR) := [:: cprincipal_gen n I].
+
+Lemma cprincipalE : forall n (I : 'rV[R]_n),
+  trans_seqrow (principal I) = cprincipal n (trans_seqrow I).
+Admitted.
+
+(* (x) \subset (x1...xn) iff exists (v1...vn) such that (x1...xn)(v1...vn)^T = (x) *)
+Fixpoint cprincipal_w1 n (I : seqrow CR) : seqrow CR := match n with
+  | 0 => [::]
+  | S p => let g := cprincipal_gen p (behead I) in
+           let us := cprincipal_w1 p (behead I) in
+           let: (g',u,v,a1,b1) := cegcdr (head zero I) g in
+           u :: [seq mul v u' | u' <- us]
+end.
+
+(* Lemma cprincipal_w1E : forall n (I : 'rV[R]_n), *)
+(*   trans_seqrow (principal_w1 I) = cprincipal_w1 n (trans_seqrow I). *)
+
+(* (x1...xn) \subset (x) iff exists (w1...wn) such that (x)(w1...wn) = (x1...xn) *)
+Fixpoint cprincipal_w2 n (I : seqrow CR) : seqrow CR :=
+  let g := cprincipal_gen n I in
+  [seq odflt zero (cdiv x g) | x <- I].
+
+Lemma cprincipal_w2E : forall n (I : 'rV[R]_n),
+  trans_seqrow (principal_w2 I) = cprincipal_w2 n (trans_seqrow I).
+Admitted.
+
+End CBezoutRingTheory.
 
 Module CEuclideanRing.
 
