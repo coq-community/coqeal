@@ -41,8 +41,8 @@ Section seqmx.
 
 Local Open Scope ring_scope.
 
-Variable R : ringType.
-Variable CR : cringType R.
+Variable R R' : ringType.
+Variable CR CR' : cringType R.
 
 (** Definition of matrices as sequences of sequences over a computable ring *)
 Section SeqmxDef.
@@ -179,6 +179,22 @@ Variables m n p' : nat.
 Local Notation p := p'.+1.
 Local Notation zero := (zero CR).
 
+Definition map_seqmx (f : CR -> CR) (M : seqmatrix) : seqmatrix :=
+  map (map f) M.
+
+Lemma map_seqmxE (M : 'M[R]_(m,n)) (f: R -> R) (cf: CR -> CR) :
+  {morph trans : x / f x >-> cf x} ->
+  seqmx_of_mx (\matrix_(i < m, j < n) f (M i j)) =
+  map_seqmx cf (seqmx_of_mx M).
+Proof.
+move=> Hf; symmetry.
+apply/seqmxP; split=> [|i Hi| i j] ; first by rewrite size_map size_seqmx.
+  by rewrite /rowseqmx (nth_map [::]) ?size_seqmx // size_map size_row_seqmx.
+rewrite mxE /fun_of_seqmx /rowseqmx (nth_map [::]) ?size_seqmx //= (nth_map zero).
+  by rewrite Hf -seqmxE.
+by rewrite size_row_seqmx.
+Qed.
+
 Definition zipwithseqmx (M N : seqmatrix) (f : CR -> CR -> CR) : seqmatrix :=
   zipwith (zipwith f) M N.
 
@@ -207,21 +223,11 @@ Qed.
 
 (* This pattern could be abstract as well *)
 Definition oppseqmx (M : seqmatrix) : seqmatrix :=
-  map (map (fun x => opp x)) M.
+  map_seqmx (fun x => opp x) M.
 
 Lemma oppseqmxE:
   {morph (@seqmx_of_mx m n) : M / - M >-> oppseqmx M}.
-Proof.
-rewrite /oppseqmx=> M /=; symmetry; apply/seqmxP => /=; split.
-- by rewrite size_map size_seqmx.
-- move=> i ih.
-  by rewrite /rowseqmx (nth_map [::]) ?size_seqmx // size_map size_row_seqmx.
-move=> i j.
-rewrite mxE /fun_of_seqmx /rowseqmx (nth_map [::]) ?size_seqmx // (nth_map zero).
-  by rewrite oppE -seqmxE.
-by rewrite size_row_seqmx.
-Qed.
-
+Proof. by rewrite /oppseqmx=> M; rewrite -(map_seqmxE _ (oppE _)). Qed.
 
 Definition subseqmx (M N : seqmatrix) :=
   zipwithseqmx M N (fun x y => sub x y).
@@ -523,17 +529,11 @@ by rewrite zeroE.
 Qed.
 
 Definition scaleseqmx (x : CR) (M : seqmatrix) :=
-  map (map (mul x)) M.
+  map_seqmx (mul x) M.
 
 Lemma scaleseqmxE m n x (M : 'M_(m,n)) :
   scaleseqmx (trans x) (seqmx_of_mx M) = seqmx_of_mx (scalemx x M).
-Proof.
-apply/seqmxP; split=> [|i Hi| i j] ; first by rewrite size_map size_seqmx.
-  by rewrite /rowseqmx (nth_map [::]) ?size_seqmx // size_map size_row_seqmx.
-rewrite mxE /fun_of_seqmx /rowseqmx (nth_map [::]) ?size_seqmx // (nth_map (zero _)).
-  by rewrite mulE -seqmxE.
-by rewrite size_row_seqmx.
-Qed.
+Proof. by rewrite /scaleseqmx -(map_seqmxE _ (mulE _ _)). Qed.
 
 Definition const_seqmx m n (x : CR) := nseq m (nseq n x).
 

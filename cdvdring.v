@@ -87,6 +87,10 @@ Lemma cdivE : forall x y,
   omap trans (x %/? y) = cdiv (@trans _ CR x) (trans y).
 Proof. by case: CR => ? [] ? []. Qed.
 
+Lemma odflt_cdivE x y d :
+  trans (odflt d (x %/? y)) = odflt (@trans _ CR d) (cdiv (trans x) (trans y)).
+Proof. by rewrite -cdivE; case: odivrP. Qed.
+
 End CDvdRingTheory.
 
 
@@ -269,7 +273,7 @@ Definition cegcdr (a b : CR) :=
         let b1 := odflt zero (cdiv b g) in
           if g == zero then (zero,one,zero,one,zero) else (g, u, v, a1, b1).
 
-Lemma egcdrE : forall x y,
+Lemma cegcdrE : forall x y,
   let: (g,u,v,a1,b1) := egcdr x y in
   let: (g',u',v',a1',b1') := cegcdr (trans x) (trans y) in
   [/\ trans g = g', trans u = u', trans v = v', trans a1 = a1' & trans b1 = b1'].
@@ -281,46 +285,84 @@ case: ifP => _; first by rewrite oneE zeroE.
 by split=> //; case: odivrP => //=; rewrite zeroE.
 Qed.
 
-Fixpoint cprincipal_gen n (xs : seqrow CR) : CR := match n with
+Fixpoint cprincipal_gen n (xs : seqmatrix CR) : CR := match n with
   | 0 => zero
-  | S p => let x := head zero xs in
-           let y := cprincipal_gen p (behead xs) in
+  | S p => let x := xs 0%N 0%N in
+           let y := cprincipal_gen p (rsubseqmx 1 xs) in
            let: (g,_,_,_,_) := cegcdr x y in g
 end.
 
-Definition trans_seqrow n (I : 'rV[R]_n) : seqrow CR :=
-  [seq trans (I 0 i) | i <- enum 'I_n].
+(* Definition trans_seqrow n (I : 'rV[R]_n) : seqrow CR := *)
+(*   [seq trans (I 0 i) | i <- enum 'I_n]. *)
 
 Lemma cprincipal_genE : forall n (I : 'rV[R]_n),
-  trans (principal_gen I) = cprincipal_gen n (trans_seqrow I).
-Admitted.
+  trans (principal_gen I) = cprincipal_gen n (trans I).
+Proof.
+elim => /= [_| n ih]; first by rewrite zeroE.
+rewrite [n.+1]/(1 + n)%N=> I.
+rewrite rsubseqmxE -ih.
+have -> : (seqmx_of_mx CR I) 0%N 0%N = trans (I 0 0) by rewrite -seqmxE.
+move: (cegcdrE (I 0 0) (principal_gen (rsubmx I))).
+case: egcdr=> [[[[g ? ? ? ?]]]].
+by case: cegcdr=> [[[[g' ? ? ? ? []]]]].
+Qed.
 
-Definition cprincipal n (I : seqrow CR) := [:: cprincipal_gen n I].
+Definition cprincipal n (I : seqmatrix CR) : seqmatrix CR := [:: [:: cprincipal_gen n I]].
 
 Lemma cprincipalE : forall n (I : 'rV[R]_n),
-  trans_seqrow (principal I) = cprincipal n (trans_seqrow I).
-Admitted.
+  trans (principal I) = cprincipal n (trans I).
+Proof.
+move=> n I.
+by rewrite /cprincipal /principal /trans /= -scalar_seqmxE cprincipal_genE.
+Qed.
 
 (* (x) \subset (x1...xn) iff exists (v1...vn) such that (x1...xn)(v1...vn)^T = (x) *)
-Fixpoint cprincipal_w1 n (I : seqrow CR) : seqrow CR := match n with
+Fixpoint cprincipal_w1 n (I : seqmatrix CR) : seqmatrix CR := match n with
   | 0 => [::]
-  | S p => let g := cprincipal_gen p (behead I) in
-           let us := cprincipal_w1 p (behead I) in
-           let: (g',u,v,a1,b1) := cegcdr (head zero I) g in
-           u :: [seq mul v u' | u' <- us]
+  | S p => let g := cprincipal_gen p (rsubseqmx 1 I) in
+           let us := cprincipal_w1 p (rsubseqmx 1 I) in
+           let: (g',u,v,a1,b1) := cegcdr (I 0%N 0%N) g in
+           [:: u] :: [seq [seq mul v u'' | u'' <- u' ] | u' <- us]
 end.
 
-(* Lemma cprincipal_w1E : forall n (I : 'rV[R]_n), *)
-(*   trans_seqrow (principal_w1 I) = cprincipal_w1 n (trans_seqrow I). *)
+Lemma cprincipal_w1E : forall n (I : 'rV[R]_n),
+  trans (principal_w1 I) = cprincipal_w1 n (trans I).
+Proof.
+elim => /= [_| n ih]; first by rewrite zeroE.
+rewrite [n.+1]/(1 + n)%N=> I.
+rewrite rsubseqmxE -ih -cprincipal_genE.
+have -> : (seqmx_of_mx CR I) 0%N 0%N = trans (I 0 0) by rewrite -seqmxE.
+move: (cegcdrE (I 0 0) (principal_gen (rsubmx I))).
+case: egcdr=> [[[[g u v ? ?]]]].
+case: cegcdr=> [[[[g' u' v' ? ? []]]]] => h1 h2 h3 _ _.
+rewrite /trans /= -[seqmx_of_mx _ (col_mx u%:M (v*:principal_w1 _))]col_seqmxE.
+by rewrite /col_seqmx -scalar_seqmxE -scaleseqmxE h3 /scaleseqmx h2.
+Qed.
 
 (* (x1...xn) \subset (x) iff exists (w1...wn) such that (x)(w1...wn) = (x1...xn) *)
-Fixpoint cprincipal_w2 n (I : seqrow CR) : seqrow CR :=
+Fixpoint cprincipal_w2 n (I : seqmatrix CR) : seqmatrix CR :=
   let g := cprincipal_gen n I in
-  [seq odflt zero (cdiv x g) | x <- I].
+  map_seqmx (fun x => odflt zero (cdiv x g)) I.
 
 Lemma cprincipal_w2E : forall n (I : 'rV[R]_n),
-  trans_seqrow (principal_w2 I) = cprincipal_w2 n (trans_seqrow I).
-Admitted.
+  trans (principal_w2 I) = cprincipal_w2 n (trans I).
+Proof.
+elim => [ /= I| n ih].
+set f := fun x => odflt 0 (x %/? 0).
+set g := fun x => odflt zero (cdiv x zero).
+
+rewrite /map_mx /trans /=.
+rewrite /map_seqmx.
+
+rewrite (@map_seqmxE _ _ _ _ _ f g) /= /map_seqmx.
+done.
+move=> x; rewrite /f  /g /=.
+by rewrite odflt_cdivE zeroE.
+
+rewrite [n.+1]/(1 + n)%N=> I.
+simpl.
+admit.
+Qed.
 
 End CBezoutRingTheory.
 
