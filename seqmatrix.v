@@ -12,7 +12,9 @@ mkseqmx_ord f == same as above, when f is defined over ordinals
 seqmx_of_mx M == a reflection operator building a concrete matrix from an
                  abstract one.
 addseqmx M N  == addition of two concrete matrices M and N
+oppseqmx M N  == negation of a concrete matrix M
 subseqmx M N  == substraction of two concrete matrices M and N
+seqmx0        == concrete zero matrix
 trseqmx M     == transpose of a concrete matrix M
 mulseqmx M N  == (naive) multiplication of two concrete matrices M and N
 [u/d]subseqmx m1 M == the up/down block of a column matrix M
@@ -47,6 +49,7 @@ Section SeqmxDef.
 
 Definition seqmatrix := seq (seq CR).
 Definition seqrow := seq CR.
+Definition seqcol := seq CR.
 
 Variables m n : nat.
 
@@ -120,12 +123,19 @@ Section FixedDim.
 
 Variables m n : nat.
 
-Lemma seqmx_eqP (M N : 'M_(m,n)) :
-  reflect (M = N) (seqmx_of_mx M == seqmx_of_mx N).
+Lemma inj_seqmx_of_mx : injective (@seqmx_of_mx m n).
 Proof.
-apply/(iffP idP)=> [/eqP H|->//]; apply/matrixP=> i j; apply:(@inj_trans _ CR).
+move=> M N H.
+apply/matrixP=> i j; apply:(@inj_trans _ CR).
 by rewrite -!seqmxE H.
 Qed.
+
+Lemma seqmx_eqP (M N : 'M_(m,n)) :
+  reflect (M = N) (seqmx_of_mx M == seqmx_of_mx N).
+Proof. by apply/(iffP idP)=> [/eqP /inj_seqmx_of_mx|->]. Qed.
+
+
+Definition seqmx_trans_struct := Trans inj_seqmx_of_mx.
 
 Lemma size_row_seqmx : forall (M : 'M_(m,n)) i,
   i < m -> size (rowseqmx (seqmx_of_mx M) i) = n.
@@ -167,6 +177,7 @@ Section SeqmxOp.
 
 Variables m n p' : nat.
 Local Notation p := p'.+1.
+Local Notation zero := (zero CR).
 
 Definition zipwithseqmx (M N : seqmatrix) (f : CR -> CR -> CR) : seqmatrix :=
   zipwith (zipwith f) M N.
@@ -181,7 +192,7 @@ move=> Hf; symmetry; apply/seqmxP ; split=>[|i Hi|i j].
   rewrite /rowseqmx (nth_zipwith _ [::] [::]) ; last by rewrite !size_seqmx minnn.
   by rewrite size_zipwith !size_row_seqmx // minnn.
 rewrite fun_of_seqmxE (nth_zipwith _ [::] [::]); last by rewrite !size_seqmx // minnn.
-rewrite (nth_zipwith _ (zero CR) (zero CR)) ; last by rewrite !size_row_seqmx // minnn.
+rewrite (nth_zipwith _ zero zero) ; last by rewrite !size_row_seqmx // minnn.
 by rewrite -!fun_of_seqmxE !seqmxE mxE.
 Qed.
 
@@ -191,8 +202,26 @@ Definition addseqmx (M N : seqmatrix) : seqmatrix :=
 Lemma addseqmxE:
   {morph (@seqmx_of_mx m n) : M N / M + N >-> addseqmx M N}.
 Proof.
-by move=> M N ; rewrite /addseqmx; apply:zipwithseqmxE; exact:addE.
+by rewrite /addseqmx=> M N; apply: zipwithseqmxE; exact: addE.
 Qed.
+
+(* This pattern could be abstract as well *)
+Definition oppseqmx (M : seqmatrix) : seqmatrix :=
+  map (map (fun x => opp x)) M.
+
+Lemma oppseqmxE:
+  {morph (@seqmx_of_mx m n) : M / - M >-> oppseqmx M}.
+Proof.
+rewrite /oppseqmx=> M /=; symmetry; apply/seqmxP => /=; split.
+- by rewrite size_map size_seqmx.
+- move=> i ih.
+  by rewrite /rowseqmx (nth_map [::]) ?size_seqmx // size_map size_row_seqmx.
+move=> i j.
+rewrite mxE /fun_of_seqmx /rowseqmx (nth_map [::]) ?size_seqmx // (nth_map zero).
+  by rewrite oppE -seqmxE.
+by rewrite size_row_seqmx.
+Qed.
+
 
 Definition subseqmx (M N : seqmatrix) :=
   zipwithseqmx M N (fun x y => sub x y).
@@ -200,7 +229,7 @@ Definition subseqmx (M N : seqmatrix) :=
 Lemma subseqmxE:
   {morph (@seqmx_of_mx m n) : M N / M - N >-> subseqmx M N}.
 Proof.
-move=> M N ; rewrite /subseqmx; rewrite -(zipwithseqmxE M N (subE _)).
+rewrite /subseqmx=> M N; rewrite -(zipwithseqmxE M N (subE _)).
 by congr seqmx_of_mx; apply/matrixP=> i j ; rewrite !mxE.
 Qed.
 
@@ -226,7 +255,7 @@ Proof.
 have H: forall k s1 s2, k < size (foldr (zipwith cons) s1 s2) -> k < size s1 ->
 size (rowseqmx (foldr (zipwith cons) s1 s2) k) = (size s2 + size (rowseqmx s1 k))%N.
   move=> k s1; elim=> // t s2 IHs H1 H2.
-  rewrite /rowseqmx (nth_zipwith _ (zero CR) [::]).
+  rewrite /rowseqmx (nth_zipwith _ zero [::]).
     by rewrite /= IHs //; move:H1; rewrite size_zipwith leq_minr; case/andP.
   by rewrite -(size_zipwith cons).
 move=> Hi; rewrite H.
@@ -243,10 +272,10 @@ apply/seqmxP; split => [|i Hi|i j].
   + by rewrite size_row_trseqmx.
 rewrite /trseqmx /fun_of_seqmx.
 have ->: forall s2 k l s1, k < size (foldr (zipwith cons) s1 s2) ->
- nth (zero CR) (nth [::] (foldr (zipwith cons) s1 s2) k) l =
-  if l < size s2 then nth (zero CR) (nth [::] s2 l) k else nth (zero CR) (nth [::] s1 k) (l - size s2).
+ nth zero (nth [::] (foldr (zipwith cons) s1 s2) k) l =
+  if l < size s2 then nth zero (nth [::] s2 l) k else nth zero (nth [::] s1 k) (l - size s2).
     elim=> [k l s1|t2 s2 IHs k l s1]; first by rewrite subn0.
-    rewrite size_zipwith => Hk; rewrite (nth_zipwith _ (zero CR) [::]) //.
+    rewrite size_zipwith => Hk; rewrite (nth_zipwith _ zero [::]) //.
     case:l=> // l; rewrite /= IHs //.
     by rewrite leq_minr in Hk; case/andP:Hk.
   by rewrite size_seqmx ltn_ord mxE -seqmxE.
@@ -372,6 +401,7 @@ End SeqmxRowCol.
 Section SeqmxRowCol2.
 
 Variables m m1 m2 n n1 n2 : nat.
+Local Notation zero := (zero CR).
 
 Definition ulsubseqmx (M : seqmatrix) :=
   map (take n1) (take m1 M).
@@ -513,5 +543,21 @@ apply/seqmxP; split=> [|i Hi|i j]; first by rewrite size_nseq.
   by rewrite /rowseqmx nth_nseq Hi size_nseq.
 by rewrite /fun_of_seqmx /rowseqmx nth_nseq (ltn_ord i) nth_nseq (ltn_ord j) mxE.
 Qed.
+
+
+Local Notation zero := (zero CR).
+
+Definition seqmx0 m n := const_seqmx m n zero.
+
+Lemma seqmx0E m n : seqmx_of_mx (0: 'M[R]_(m,n)) = seqmx0 m n.
+Proof. by rewrite /seqmx0 -const_seqmxE zeroE. Qed.
+
+Definition seqmx_czMixin m n := @CZmodMixin
+  [zmodType of 'M[R]_(m,n)] seqmatrix (seqmx0 m n)
+  oppseqmx (@addseqmx ) (seqmx_trans_struct m n) (seqmx0E m n)
+  (@oppseqmxE m n) (@addseqmxE m n).
+
+Canonical Structure matrix_czType m n :=
+  Eval hnf in CZmodType ('M[R]_(m,n)) seqmatrix (seqmx_czMixin m n).
 
 End seqmx.
