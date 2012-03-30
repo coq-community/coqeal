@@ -87,9 +87,10 @@ Lemma cdivE : forall x y,
   omap trans (x %/? y) = cdiv (@trans _ CR x) (trans y).
 Proof. by case: CR => ? [] ? []. Qed.
 
-Lemma odflt_cdivE x y d :
-  trans (odflt d (x %/? y)) = odflt (@trans _ CR d) (cdiv (trans x) (trans y)).
-Proof. by rewrite -cdivE; case: odivrP. Qed.
+Lemma odflt_cdivE d :
+  {morph trans : x y / odflt d (x %/? y) >-> odflt (@trans _ CR d) (cdiv x y)}.
+Proof. by move=> x y /=; rewrite -cdivE; case: odivrP. Qed.
+
 
 End CDvdRingTheory.
 
@@ -340,28 +341,19 @@ by rewrite /col_seqmx -scalar_seqmxE -scaleseqmxE h3 /scaleseqmx h2.
 Qed.
 
 (* (x1...xn) \subset (x) iff exists (w1...wn) such that (x)(w1...wn) = (x1...xn) *)
-Fixpoint cprincipal_w2 n (I : seqmatrix CR) : seqmatrix CR :=
+Definition cprincipal_w2 n (I : seqmatrix CR) : seqmatrix CR :=
   let g := cprincipal_gen n I in
   map_seqmx (fun x => odflt zero (cdiv x g)) I.
 
 Lemma cprincipal_w2E : forall n (I : 'rV[R]_n),
   trans (principal_w2 I) = cprincipal_w2 n (trans I).
 Proof.
-elim => [ /= I| n ih].
-set f := fun x => odflt 0 (x %/? 0).
-set g := fun x => odflt zero (cdiv x zero).
-
-rewrite /map_mx /trans /=.
-rewrite /map_seqmx.
-
-rewrite (@map_seqmxE _ _ _ _ _ f g) /= /map_seqmx.
-done.
-move=> x; rewrite /f  /g /=.
-by rewrite odflt_cdivE zeroE.
-
-rewrite [n.+1]/(1 + n)%N=> I.
-simpl.
-admit.
+rewrite /principal_w2 /cprincipal_w2 => n I /=.
+suff h : {morph trans : x / odflt 0 (x %/? principal_gen I) >->
+                        odflt zero (cdiv x (cprincipal_gen n (trans I)))}
+  by rewrite -(map_seqmxE _ h).
+move=> x /=.
+by rewrite odflt_cdivE zeroE cprincipal_genE.
 Qed.
 
 End CBezoutRingTheory.

@@ -1276,7 +1276,7 @@ by rewrite -mulmx_addl -!scalar_mxM -rmorphD hbezout mul1mx.
 Qed.
 
 (* (x1...xn) \subset (x) iff exists (w1...wn) such that (x)(w1...wn) = (x1...xn) *)
-Fixpoint principal_w2 n (I : 'rV[R]_n) : 'rV[R]_n :=
+Definition principal_w2 n (I : 'rV[R]_n) : 'rV[R]_n :=
   let g := principal_gen I in
   map_mx (fun x => odflt 0 (x %/? g)) I.
 
@@ -1287,7 +1287,6 @@ move=> n I.
 rewrite mul_scalar_mx.
 apply/matrixP => i j; rewrite !mxE !ord1 /= {i}.
 case: n I j => [I j | n I j]; first by rewrite !thinmx0 /= mul0r !mxE.
-rewrite !mxE.
 case: odivrP => [ x -> | H]; first by rewrite mulrC.
 case/dvdrP: (principal_gen_dvd I j)=> x Hx.
 move: (H x).
