@@ -290,6 +290,7 @@ Qed.
 
 End SeqmxOp.
 
+
 Section SeqmxOp2.
 
 Variables m n p' : nat.
@@ -342,6 +343,7 @@ End SeqmxOp2.
 Lemma mulseqmxEnn : forall m (M:'M_m) (N:'M_m),
   mulseqmx (seqmx_of_mx M) (seqmx_of_mx N) = seqmx_of_mx (M *m N).
 Proof. by case=>[M N|m M N]; rewrite ?(flatmx0 M) ?mul0mx ?seqmx0n ?mulseqmxE. Qed.
+
 
 (** Block operations *)
 Section SeqmxRowCol.
@@ -528,6 +530,13 @@ case:(i == j :> nat)=> //.
 by rewrite zeroE.
 Qed.
 
+Local Notation one := (one CR).
+
+Definition seqmx1 n := scalar_seqmx n one.
+
+Lemma seqmx1E n : seqmx_of_mx (1%:M : 'M[R]_n) = seqmx1 n.
+Proof. by rewrite /seqmx1 -scalar_seqmxE oneE. Qed.
+
 Definition scaleseqmx (x : CR) (M : seqmatrix) :=
   map_seqmx (mul x) M.
 
@@ -544,7 +553,6 @@ apply/seqmxP; split=> [|i Hi|i j]; first by rewrite size_nseq.
 by rewrite /fun_of_seqmx /rowseqmx nth_nseq (ltn_ord i) nth_nseq (ltn_ord j) mxE.
 Qed.
 
-
 Local Notation zero := (zero CR).
 
 Definition seqmx0 m n := const_seqmx m n zero.
@@ -559,5 +567,8 @@ Definition seqmx_czMixin m n := @CZmodMixin
 
 Canonical Structure matrix_czType m n :=
   Eval hnf in CZmodType ('M[R]_(m,n)) seqmatrix (seqmx_czMixin m n).
+
+
+
 
 End seqmx.
