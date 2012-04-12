@@ -54,4 +54,7 @@ Import GRing.Theory.
 Variable R : ringType.
 Variable n m : nat.
 
+Lemma scalar_mx0 : 0%:M = 0 :> 'M[R]_n.
+Proof. by rewrite -scalemx1 scale0r. Qed.
+
 End Matrix.
