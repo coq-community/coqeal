@@ -115,4 +115,13 @@ apply/matrixP=> i j; rewrite mxE; case: splitP => [|k H]; first by case.
 by congr fun_of_matrix; exact: val_inj.
 Qed.
 
+Lemma exp_block_mx (A: 'M[R]_m.+1) (B : 'M_n.+1) k :
+  (block_mx A 0 0 B) ^+ k = block_mx (A ^+ k) 0 0 (B ^+ k).
+Proof.
+elim: k=> [|k IHk]. 
+  by rewrite !expr0 -scalar_mx_block.
+rewrite !exprS IHk /GRing.mul /= (mulmx_block A 0 0 B (A ^+ k)).
+by rewrite !mulmx0 !mul0mx !add0r !addr0.
+Qed.
+
 End Matrix.

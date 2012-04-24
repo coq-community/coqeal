@@ -181,6 +181,21 @@ elim=> [s|n s IHn x] /=; rewrite big_cons.
 by rewrite IHn.
 Qed.
 
+Lemma ext_F s (F1 F2 : forall n, nat -> 'M_n.+1) : 
+(forall i, i < size s -> 
+  (F1 (nth 0%N s i) i) = (F2 (nth 0%N s i) i)) ->
+  diag_block_mx s F1 = diag_block_mx s F2.
+Proof.
+case: s=> // a l.
+elim: l a F1 F2=> /= [a F1 F2 Hi|b l IHl a F1 F2 Hi].
+  exact: (Hi 0%N). 
+set F3 := fun n i => _.
+set F4 := fun n i => _.
+rewrite (Hi 0%N) // (IHl b F3 F4) //.
+by move=> i Hi2; apply: (Hi i.+1).
+Qed.
+
+
 Lemma upper_triangular_diag_block (s : seq nat) 
   (F : (forall n, nat -> 'M[R]_n.+1)) :
   (forall j, upper_triangular_mx (F (nth 0%N s j) j)) ->
@@ -193,13 +208,60 @@ apply: (@upper_triangular_block _ a.+1 _ a.+1)=> //.
 by apply: IHl=> j; exact: (H j.+1).
 Qed.
 
-Lemma diag_block_add s F1 F2 :
+
+Lemma scalar_diag_block_mx c x s (F : forall n, nat -> 'M_n.+1) :
+ (forall i, i < size (x :: s) -> F (nth 0%N (x :: s) i) i = c%:M ) ->
+ diag_block_mx (x :: s) F = c%:M. 
+Proof.
+elim: s x F=> /= [a F Hi| b l IHl a F Hi].
+  exact: (Hi 0%N).
+rewrite (Hi 0%N) // IHl -?scalar_mx_block // => i Hi2.
+exact: (Hi i.+1).
+Qed.
+
+
+Lemma diag_block_mx0 s (F : forall n, nat -> 'M_n.+1) :
+ (forall i, i < size s -> F (nth 0%N s i) i = 0) ->
+ diag_block_mx s F = 0. 
+Proof.
+case: s=> // a l Hi.
+rewrite -(scale0r 1%:M) scalemx1.
+apply: scalar_diag_block_mx=> i H.
+by rewrite Hi // -(scale0r 1%:M) scalemx1.
+Qed.
+
+Lemma add_diag_block s F1 F2 :
  diag_block_mx s F1 + diag_block_mx s F2 = 
  diag_block_mx s (fun n i => F1 n i + F2 n i).
 Proof.
 case: s=> [|a l]; first by rewrite addr0.
 elim: l a F1 F2=> //= b l IHl a F1 F2.
 by rewrite -IHl (add_block_mx (F1 a 0%N)) !addr0.
+Qed.
+
+Lemma mulmx_diag_block s F1 F2 :
+  diag_block_mx s F1 *m diag_block_mx s F2 =
+  diag_block_mx s (fun n i => F1 n i *m F2 n i).
+Proof. 
+case: s=>[|a l]; first by rewrite mulmx0.
+elim: l a F1 F2=> //= b l IHl a F1 F2.
+rewrite -IHl (mulmx_block (F1 a 0%N) 0 0 _ (F2 a 0%N)).
+by rewrite !mul0mx !mulmx0 addr0 !add0r.
+Qed.
+
+Lemma exp_diag_block_S s F k : 
+ (diag_block_mx s F)^+ k.+1 = diag_block_mx s (fun n i => (F n i)^+ k.+1).
+Proof.
+case: s=>[|a l]; first by rewrite expr0n /=.
+elim: l a F=> //= b l IHl a F.
+by rewrite -IHl exp_block_mx.
+Qed.
+
+Lemma exp_diag_block_cons x s F k :
+ (diag_block_mx (x :: s) F)^+ k = diag_block_mx (x :: s) (fun n i => (F n i)^+ k).
+Proof.
+elim: s x F => //= a l IHl x F.
+by rewrite -IHl exp_block_mx.
 Qed.
 
 End diag_block_ringType.
@@ -222,19 +284,26 @@ by rewrite (det_ublock (F n 0%N)) big_ord_recl IHl.
 Qed.
 
 
-
-(* Lemma diag_block_horner_mx (p : {poly R}) s : *)
-(*   let eqs := (eq_size_sumr  *)
-(*     (fun n => (fun M : 'M_n.+1 => (@horner_mx _ n M p))) s) in *)
-(*   horner_mx (diag_block_mx s) p =  *)
-(*   castmx (pairxx eqs) *)
-(*     (diag_block_mx [seq existTmx (horner_mx (projT2 x) p) | x <- s]). *)
-(* Proof. *)
-(* elim/poly_ind: p=> /=. *)
-(*   rewrite !rmorph0. *)
-(* admit. *)
-(* move=> p c IHp. *)
-
+Lemma horner_mx_diag_block (p : {poly R}) x s F : 
+  horner_mx (diag_block_mx (x :: s) F) p = 
+  diag_block_mx (x :: s) (fun n i => horner_mx (F n i) p).
+Proof.
+elim/poly_ind: p.
+  rewrite rmorph0 diag_block_mx0 // => i _.
+  by rewrite rmorph0.
+move=> p c IHp.
+set s1 := _ :: _.
+set F1 := fun n i => _ _ (_ + _).
+pose F2 := fun n i => horner_mx (F n i) p *m (F n i) + horner_mx (F n i) c%:P.
+have Hi: forall i, i < size s1 -> F1 (nth 0%N s1 i) i = F2 (nth 0%N s1 i) i. 
+  by move=> i _; rewrite /F1 /F2 rmorphD rmorphM /= horner_mx_X.
+rewrite (ext_F Hi) /F2 -add_diag_block -mulmx_diag_block.
+rewrite rmorphD rmorphM /=.
+rewrite horner_mx_X horner_mx_C IHp.
+set F3 := fun n i => _ _ c%:P.
+rewrite -(@scalar_diag_block_mx _ c _ _ F3) // => i Hi2.
+by rewrite /F3 horner_mx_C.
+Qed.
 
 
 End diag_block_comRingType.
