@@ -145,121 +145,66 @@ Variable R : ringType.
 Local Open Scope ring_scope.
 Import GRing.Theory.
 
-Fixpoint size_sum_rec  m (a : 'M[R]_m.+1) (l : seq {n : nat & 'M[R]_n.+1}) :=
-  match l with
-   | nil=> m
-   | existT p M :: tl => (m + (size_sum_rec M tl).+1)%N
+
+Fixpoint szmxr k (s : seq nat) : nat :=
+  match s with
+   | nil => k
+   | x :: s' => (k + (szmxr x s').+1)%N
  end.
 
-Fixpoint diag_block_mx_rec m (a : 'M_m.+1) (l : seq {n : nat & 'M[R]_n.+1}) : 
-  'M[R]_((size_sum_rec a l).+1) :=
-  match l return 'M[R]_((size_sum_rec a l).+1) with
-  | nil => a
-  | existT p M :: tl => block_mx a 0 0 (diag_block_mx_rec M tl)
+  
+Fixpoint dgbmxr k (s : seq nat) (F : (forall n, nat -> 'M[R]_n.+1)) :=
+  match s return 'M_((szmxr k s).+1) with
+    | nil => F k 0%N
+    | x :: l => block_mx (F k 0%N) 0 0 (dgbmxr x l (fun n i => F n i.+1))
   end.
 
-Fixpoint size_sum (s : seq {n : nat & 'M[R]_n.+1}) :=
-   match s with
-     | nil => 0%N
-     | existT p M :: tl => size_sum_rec M tl
-  end.
 
-Fixpoint diag_block_mx (l : seq {n : nat & 'M[R]_n.+1}) : 
-  'M[R]_((size_sum l).+1) :=
- match l with
-   | nil => 0
-   | existT p M :: tl => diag_block_mx_rec M tl
+Fixpoint size_sum s :=
+  match s with
+   |nil => 0%N
+   |x :: s' => szmxr x s'
  end.
+ 
+Fixpoint diag_block_mx s F :=
+  match s return 'M_((size_sum s).+1) with
+    |nil => 0
+    | x :: s' => dgbmxr x s' F
+  end.
 
-Definition existTmx n M := existT (fun n => 'M[R]_n.+1) n M. 
 
-Lemma size_sum_big : forall s x, 
-  (size_sum (x :: s)).+1 = (\sum_(p <- x :: s) (projT1 p).+1)%N.
+Lemma size_sum_big : forall s x,
+  (size_sum (x :: s)).+1 = (\sum_(k <- x :: s) k.+1)%N.
 Proof.
-by elim=> [x|[p1 M1] l IHl [p2 M2]]; rewrite big_cons ?big_nil // -IHl.
+elim=> [s|n s IHn x] /=; rewrite big_cons.
+   by rewrite big_nil addn0.
+by rewrite IHn.
 Qed.
 
-
-(** maybe we cannot reapeat  have -> ... **)
-Lemma upper_triangular_diag_block (s : seq {n : nat & 'M_n.+1}) :
-  (forall M, M \in s -> upper_triangular_mx (projT2 M)) ->
-  upper_triangular_mx (diag_block_mx s).
+Lemma upper_triangular_diag_block (s : seq nat) 
+  (F : (forall n, nat -> 'M[R]_n.+1)) :
+  (forall j, upper_triangular_mx (F (nth 0%N s j) j)) ->
+  upper_triangular_mx (diag_block_mx s F).
 Proof.
-case: s=> [_|[p M] l]; first exact: upper_triangular_mx0.
-elim: l p M=> [p M Hs /=|[p0 M0] l IHl p M Hs]. 
-  have ->: M = (projT2 (existTmx M)) by [].
-  by apply: (Hs (existTmx M)); rewrite mem_head.
-apply: (@upper_triangular_block _ p.+1 _ p.+1)=> //.
-  have ->: M = (projT2 (existTmx M)) by [].
-  by apply: (Hs (existTmx M)); rewrite mem_head.
-by apply: IHl=> M1 HM1; apply: Hs; rewrite mem_behead.
+case: s=>[_|a l]; first exact: upper_triangular_mx0.
+elim: l a F=> /= [a F H|b l IHl a F H]; first exact: (H 0%N).
+apply: (@upper_triangular_block _ a.+1 _ a.+1)=> //.
+  exact: (H 0%N).
+by apply: IHl=> j; exact: (H j.+1).
 Qed.
 
-Lemma size_sum_cat  m (a : 'M_m.+1) n (b : 'M_n.+1) s1 s2 :
- (size_sum ((existTmx a) :: s1 ++ (existTmx b) :: s2)).+1 =
-((size_sum ((existTmx a) :: s1)).+1 + (size_sum ((existTmx b) :: s2)).+1)%N.
-Proof. by rewrite !size_sum_big -cat_cons big_cat. Qed.
-
-Lemma diag_block_mx_cat : forall s1 s2 m (a : 'M_m.+1) n (b : 'M_n.+1), 
-  diag_block_mx (((existTmx a) :: s1) ++ ((existTmx b) :: s2)) =
-  castmx (pairxx (esym (size_sum_cat a b s1 s2)))
-  (block_mx (diag_block_mx ((existTmx a) :: s1)) 0 0 (diag_block_mx ((existTmx b) :: s2))).
+Lemma diag_block_add s F1 F2 :
+ diag_block_mx s F1 + diag_block_mx s F2 = 
+ diag_block_mx s (fun n i => F1 n i + F2 n i).
 Proof.
-elim=> [s2 m a n b|[k M] l IHl s2 m a n b].
-  by rewrite castmx_id.
-rewrite /GRing.zero /= -(row_mx_const _ m.+1) -(col_mx_const m.+1).
-rewrite (castmx_sym (@block_mxA _ _ _ _ _ _ _ a _ _ _ _ _ _ _ _)).
-rewrite esymK row_mx_const col_mx_const; apply:castmx_sym.
-rewrite (castmx_sym (IHl s2 _ M _ b)).
-rewrite -[a](castmx_id (erefl _,erefl _)).
-rewrite -(castmx_const ((size_sum_cat M b _ s2),erefl _)).
-rewrite -(castmx_const (erefl _,(size_sum_cat M b _ s2))).
-rewrite esymK -castmx_block ?size_sum_cat ?addnA // => eq1 eq2.
-rewrite castmx_comp castmx_id.
-by congr castmx; congr pair; apply: nat_irrelevance.
-Qed.
-
-Lemma cast_flatten s :  (forall x, x \in s -> x != [::]) -> 
-  (size_sum [seq existTmx (diag_block_mx x) | x <- s]).+1 = 
-  (size_sum (flatten s)).+1.
-Proof.
-elim: s => //= a [] => [IH H|b l IHl Hx].
-  by rewrite cats0. 
-have IHx: forall x : seq {i : nat & 'M_i.+1}, x \in b :: l -> x != [::].
-  by move=> x H; apply: Hx; rewrite mem_behead.  
-have {Hx}: a != [::] by apply: Hx; rewrite mem_head.
-have: b != [::] by apply: IHx; rewrite mem_head.
-case: a=> // [][p M] a; case: b IHx IHl=> // [][p1 M1] b IHx IHl _ _.
-by rewrite size_sum_cat -IHl.
-Qed.
-
-Lemma diag_block_mx_flatten s (Hs : forall x, x \in s -> x != [::]) : 
-  castmx (pairxx (cast_flatten Hs))
-  (diag_block_mx (map (fun x => existTmx (diag_block_mx x)) s)) =
-   diag_block_mx (flatten s).
-Proof.
-elim: s Hs=> [Hs| a].
-  by rewrite castmx_id.
-case=> /= [_ Hs|b l IHl Hs]. 
-  by move: (cast_flatten Hs)=> /=; rewrite cats0=> H; rewrite castmx_id.
-have IHs: forall x : seq {i : nat & 'M_i.+1}, x \in b :: l -> x != [::].
-  by move=> x Hx; apply: Hs; rewrite mem_behead.
-have: a != [::] by apply: Hs; rewrite mem_head.
-have: b != [::] by apply: IHs; rewrite mem_head.
-case: a Hs => // [][p M] a; case: b IHl IHs=> // [][p1 M1] b IHl IHs Hs _ _.
-rewrite (castmx_sym (esym (IHl IHs))) /GRing.zero /=.
-rewrite -[(diag_block_mx_rec M a)](castmx_id (erefl _,erefl _)).
-rewrite -(castmx_const ((esym (cast_flatten IHs)),erefl _)).
-rewrite -(castmx_const (erefl _,(esym (cast_flatten IHs)))).
-rewrite -castmx_block -?cast_flatten // => eq1 eq2.
-rewrite (castmx_sym (diag_block_mx_cat a _ M M1)).
-by rewrite !castmx_comp !castmx_id.
+case: s=> [|a l]; first by rewrite addr0.
+elim: l a F1 F2=> //= b l IHl a F1 F2.
+by rewrite -IHl (add_block_mx (F1 a 0%N)) !addr0.
 Qed.
 
 End diag_block_ringType.
 
-
-
+ 
 Section diag_block_comRingType.
 
 Variable R : comRingType.
@@ -267,14 +212,33 @@ Local Open Scope ring_scope.
 Import GRing.Theory.
 
 
-Lemma det_diag_block : forall (l : seq {n : nat & 'M[R]_n.+1}) x,
-   \det (diag_block_mx (x :: l)) = \prod_(m <- (x :: l)) \det (projT2 m).
-Proof.
-elim=> [x|[n M] l Hl [p M1]]; first by rewrite big_cons big_nil mulr1.
-by rewrite big_cons -Hl /= (det_lblock M1).
+Lemma det_diag_block n s (F : forall n, nat -> 'M[R]_n.+1) : 
+  \det (diag_block_mx (n :: s) F) = 
+  \prod_(i < size (n :: s)) \det (F (nth 0%N (n :: s) i) i).
+Proof.  
+elim: s n F=>[n F|a l IHl n F] /=.
+  by rewrite big_ord_recl big_ord0 mulr1 /=.
+by rewrite (det_ublock (F n 0%N)) big_ord_recl IHl.
 Qed.
 
+
+
+(* Lemma diag_block_horner_mx (p : {poly R}) s : *)
+(*   let eqs := (eq_size_sumr  *)
+(*     (fun n => (fun M : 'M_n.+1 => (@horner_mx _ n M p))) s) in *)
+(*   horner_mx (diag_block_mx s) p =  *)
+(*   castmx (pairxx eqs) *)
+(*     (diag_block_mx [seq existTmx (horner_mx (projT2 x) p) | x <- s]). *)
+(* Proof. *)
+(* elim/poly_ind: p=> /=. *)
+(*   rewrite !rmorph0. *)
+(* admit. *)
+(* move=> p c IHp. *)
+
+
+
 End diag_block_comRingType.
+
 
 Section diag_mx_seq.
 
@@ -297,16 +261,16 @@ by apply/matrixP=> i j; rewrite !mxE nth_nil mul0rn.
 Qed.
 
 Lemma diag_mx_seq_cons m n x (s :  seq R) :
-  diag_mx_seq (1 + m) (1 + n) (x :: s) = 
+  diag_mx_seq (1 + m) (1 + n) (x :: s) =
   block_mx x%:M 0 0 (diag_mx_seq m n s).
 Proof.
 apply/matrixP => i j; rewrite !mxE.
 by case: splitP => i' ->; rewrite !mxE; case:splitP => j' ->; rewrite !mxE ?ord1.
 Qed.
 
-Lemma diag_mx_seq_cat m1 m2 n1 n2 (s1 s2 : seq R) : 
+Lemma diag_mx_seq_cat m1 m2 n1 n2 (s1 s2 : seq R) :
   size s1 = m1 -> size s1 = n1 ->
-  diag_mx_seq (m1 + m2) (n1 + n2) (s1 ++ s2) = 
+  diag_mx_seq (m1 + m2) (n1 + n2) (s1 ++ s2) =
   block_mx (diag_mx_seq m1 n1 s1) 0 0 (diag_mx_seq m2 n2 s2).
 Proof.
 elim: s1 s2 m1 n1=> [s2 m1 n1 Hn1 Hn2|a s1 IHs1 s2 m1 n1 /eqP Hm1 /eqP Hn1].
@@ -316,24 +280,27 @@ rewrite diag_mx_seq_cons IHs1; apply/eqP=> //; rewrite diag_mx_seq_cons.
 by rewrite -row_mx0 -col_mx0 block_mxA castmx_id row_mx0 col_mx0.
 Qed.
 
-Lemma diag_mx_seq_flatten (s : seq (seq R)) :
-  let s' := 
-   [seq existTmx (diag_mx_seq (size x).-1.+1 (size x).-1.+1 x) |  x <- s] in
-  (forall l, l \in s -> l != [::]) -> 
-  diag_mx_seq (size_sum s').+1 (size_sum s').+1 (flatten s) = diag_block_mx s'.
-Proof.
-elim: s=> /= [|a []]; first by rewrite diag_mx_seq_nil.
-  by   rewrite /size_sum /= cats0 . 
-move=> b l; rewrite map_cons /= => IH Hl.
-rewrite -IH -?diag_mx_seq_cat // ?prednK // ?lt0n ?size_eq0.
-    by apply: Hl; rewrite mem_head.
-  by apply: Hl; rewrite mem_head.
-by move=> s' Hs'; apply: Hl; rewrite mem_behead.
-Qed.
+
+(* Lemma diag_mx_seq_flatten (s : seq (seq R)) : *)
+  
+
+(*   let s' := *)
+(*    [seq existTmx (diag_mx_seq (size x).-1.+1 (size x).-1.+1 x) |  x <- s] in *)
+(*   (forall l, l \in s -> l != [::]) -> *)
+(*   diag_mx_seq (size_sum s').+1 (size_sum s').+1 (flatten s) = diag_block_mx s'. *)
+(* Proof. *)
+(* elim: s=> /= [|a []]; first by rewrite diag_mx_seq_nil. *)
+(*   by   rewrite /size_sum /= cats0 . *)
+(* move=> b l; rewrite map_cons /= => IH Hl. *)
+(* rewrite -IH -?diag_mx_seq_cat // ?prednK // ?lt0n ?size_eq0. *)
+(*     by apply: Hl; rewrite mem_head. *)
+(*   by apply: Hl; rewrite mem_head. *)
+(* by move=> s' Hs'; apply: Hl; rewrite mem_behead. *)
+(* Qed. *)
 
 Lemma diag_mx_seq_take n (s: seq R) :
   diag_mx_seq n n (take n s) = diag_mx_seq n n s.
-Proof. 
+Proof.
 by apply/matrixP=> i j; rewrite !mxE nth_take.
 Qed.
 
