@@ -209,10 +209,11 @@ by apply: IHl=> j; exact: (H j.+1).
 Qed.
 
 
-Lemma scalar_diag_block_mx c x s (F : forall n, nat -> 'M_n.+1) :
- (forall i, i < size (x :: s) -> F (nth 0%N (x :: s) i) i = c%:M ) ->
- diag_block_mx (x :: s) F = c%:M. 
+Lemma scalar_diag_block_mx c s (F : forall n, nat -> 'M_n.+1) :
+ s != [::] -> (forall i, i < size s -> F (nth 0%N s i) i = c%:M ) ->
+ diag_block_mx s F = c%:M. 
 Proof.
+case: s => // x s _.
 elim: s x F=> /= [a F Hi| b l IHl a F Hi].
   exact: (Hi 0%N).
 rewrite (Hi 0%N) // IHl -?scalar_mx_block // => i Hi2.
@@ -221,14 +222,20 @@ Qed.
 
 
 Lemma diag_block_mx0 s (F : forall n, nat -> 'M_n.+1) :
- (forall i, i < size s -> F (nth 0%N s i) i = 0) ->
+ (forall i, i < size s -> F (nth 0%N s i) i = 0) <->
  diag_block_mx s F = 0. 
 Proof.
-case: s=> // a l Hi.
-rewrite -(scale0r 1%:M) scalemx1.
-apply: scalar_diag_block_mx=> i H.
-by rewrite Hi // -(scale0r 1%:M) scalemx1.
+split; case: s=> //a l Hi.
+  rewrite -(scale0r 1%:M) scalemx1.
+  apply: scalar_diag_block_mx=> // i H.
+  by rewrite Hi // -(scale0r 1%:M) scalemx1.
+elim: l a F Hi => /= [a F Ha i|b l Ihl a F].
+  by rewrite ltnS leqn0=> /eqP ->.
+rewrite {3}/GRing.zero /= -(@block_mx_const _ a.+1 _ a.+1)=> Ha.
+have [HFa _ _ H] := (@eq_block_mx _ _ _ _ _ (F a 0%N) _ _ _ _ _ _ _ Ha).
+by case=> // i Hi; apply: (Ihl b _ H).
 Qed.
+
 
 Lemma add_diag_block s F1 F2 :
  diag_block_mx s F1 + diag_block_mx s F2 = 
@@ -257,9 +264,10 @@ elim: l a F=> //= b l IHl a F.
 by rewrite -IHl exp_block_mx.
 Qed.
 
-Lemma exp_diag_block_cons x s F k :
- (diag_block_mx (x :: s) F)^+ k = diag_block_mx (x :: s) (fun n i => (F n i)^+ k).
+Lemma exp_diag_block_cons s F k : s != [::] -> 
+ (diag_block_mx s F)^+ k = diag_block_mx s (fun n i => (F n i)^+ k).
 Proof.
+case: s=> // x s _.
 elim: s x F => //= a l IHl x F.
 by rewrite -IHl exp_block_mx.
 Qed.
@@ -274,22 +282,26 @@ Local Open Scope ring_scope.
 Import GRing.Theory.
 
 
-Lemma det_diag_block n s (F : forall n, nat -> 'M[R]_n.+1) : 
-  \det (diag_block_mx (n :: s) F) = 
-  \prod_(i < size (n :: s)) \det (F (nth 0%N (n :: s) i) i).
+Lemma det_diag_block s (F : forall n, nat -> 'M[R]_n.+1) :
+  s != [::] -> 
+  \det (diag_block_mx s F) = 
+  \prod_(i < size s) \det (F (nth 0%N s i) i).
 Proof.  
+case: s=> // n s _.
 elim: s n F=>[n F|a l IHl n F] /=.
   by rewrite big_ord_recl big_ord0 mulr1 /=.
 by rewrite (det_ublock (F n 0%N)) big_ord_recl IHl.
 Qed.
 
 
-Lemma horner_mx_diag_block (p : {poly R}) x s F : 
-  horner_mx (diag_block_mx (x :: s) F) p = 
-  diag_block_mx (x :: s) (fun n i => horner_mx (F n i) p).
+Lemma horner_mx_diag_block (p : {poly R}) s F :
+  s != [::] -> 
+  horner_mx (diag_block_mx s F) p = 
+  diag_block_mx s (fun n i => horner_mx (F n i) p).
 Proof.
+case: s=> // x s _.
 elim/poly_ind: p.
-  rewrite rmorph0 diag_block_mx0 // => i _.
+  rewrite rmorph0; apply: esym; apply/diag_block_mx0=> // i _.
   by rewrite rmorph0.
 move=> p c IHp.
 set s1 := _ :: _.
@@ -301,7 +313,7 @@ rewrite (ext_F Hi) /F2 -add_diag_block -mulmx_diag_block.
 rewrite rmorphD rmorphM /=.
 rewrite horner_mx_X horner_mx_C IHp.
 set F3 := fun n i => _ _ c%:P.
-rewrite -(@scalar_diag_block_mx _ c _ _ F3) // => i Hi2.
+rewrite -(@scalar_diag_block_mx _ c (x :: s) F3) // => i Hi2.
 by rewrite /F3 horner_mx_C.
 Qed.
 
