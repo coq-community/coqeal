@@ -361,6 +361,37 @@ rewrite diag_mx_seq_cons IHs1; apply/eqP=> //; rewrite diag_mx_seq_cons.
 by rewrite -row_mx0 -col_mx0 block_mxA castmx_id row_mx0 col_mx0.
 Qed.
 
+Lemma diag_mx_seq_block s :
+  let l := nseq (size s) 0%N in
+  let F := (fun n i => (@scalar_mx _ n.+1  s`_i)) in
+  diag_mx_seq (size_sum l).+1 (size_sum l).+1 s = 
+  diag_block_mx l F.
+Proof.
+case: s=> /= [|a l]; first by rewrite diag_mx_seq_nil. 
+have Ha: forall a, diag_mx_seq 1 1 [:: a] = a%:M.
+    by move=> b; apply/matrixP=> i j; rewrite !mxE ord1.
+elim: l a=> //= b l IHl a.
+by rewrite -IHl -cat1s (@diag_mx_seq_cat 1 _ 1) // Ha.
+Qed.
+
+Lemma diag_block_mx_seq s (F : forall n, nat -> 'M_n.+1) : 
+  let n := size_sum s in
+  let l := mkseq (fun i => (F 0%N i) ord0 ord0) (size s) in
+  (forall i, nth 0%N s i = 0%N) ->
+  diag_block_mx s F =
+  diag_mx_seq n.+1 n.+1 l.
+Proof.
+move=> /= Hs.
+set s1 := mkseq _ _.
+have ->: s = nseq (size s1) 0%N.
+  apply: (@eq_from_nth _ 0%N); first by rewrite size_mkseq size_nseq.
+  by move=> i Hi; rewrite Hs nth_nseq size_mkseq Hi.
+rewrite diag_mx_seq_block.
+apply: ext_F=> i; rewrite size_nseq size_mkseq => Hi.
+rewrite nth_nseq Hi nth_mkseq //.
+by apply/matrixP=> k l; rewrite !mxE !ord1.
+Qed.
+
 
 (* Lemma diag_mx_seq_flatten (s : seq (seq R)) : *)
   
