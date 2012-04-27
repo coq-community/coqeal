@@ -173,13 +173,18 @@ Fixpoint diag_block_mx s F :=
   end.
 
 
-Lemma size_sum_big : forall s x,
+Lemma size_sum_big_cons : forall s x,
   (size_sum (x :: s)).+1 = (\sum_(k <- x :: s) k.+1)%N.
 Proof.
 elim=> [s|n s IHn x] /=; rewrite big_cons.
    by rewrite big_nil addn0.
 by rewrite IHn.
 Qed.
+
+Lemma size_sum_big s : s != [::] ->
+  (size_sum s).+1 = (\sum_(k <- s) k.+1)%N.
+Proof. by case: s=> // a l _; rewrite size_sum_big_cons. Qed.
+
 
 Lemma ext_F s (F1 F2 : forall n, nat -> 'M_n.+1) : 
 (forall i, i < size s -> 
@@ -272,6 +277,15 @@ elim: s x F => //= a l IHl x F.
 by rewrite -IHl exp_block_mx.
 Qed.
 
+Lemma tr_diag_block_mx s F : 
+  (diag_block_mx s F)^T = diag_block_mx s (fun n i => (F n i)^T).
+Proof.
+case: s=> [|a l] /=; first by rewrite trmx0.
+elim: l a F=> //= b l IHl a F.
+by rewrite (tr_block_mx (F a 0%N)) !trmx0 IHl.
+Qed.
+
+
 End diag_block_ringType.
 
  
@@ -319,6 +333,38 @@ Qed.
 
 
 End diag_block_comRingType.
+
+Section diag_block_comUnitRingType.
+
+Variable R : comUnitRingType.
+Local Open Scope ring_scope.
+Import GRing.Theory.
+
+Lemma unitmx_diag_block s (F : forall n, nat -> 'M[R]_n.+1) :
+  s != [::] ->
+  (forall i, i < size s -> (F (nth 0%N s i) i) \in unitmx) ->
+  (diag_block_mx s F) \in unitmx.
+Proof.
+case: s=> // a l _ H.
+have Ha: (F a 0%N) \in unitmx by exact: (H 0%N).
+elim: l a F Ha H=> //= b l IHl a F Ha H.
+rewrite unitmxE (det_ublock (F a 0%N)) unitrM -!unitmxE Ha.
+apply: IHl=> [|i]; first exact: (H 1%N).
+exact: (H i.+1).
+Qed.
+
+Lemma invmx_diag_block s (F : forall n, nat -> 'M[R]_n.+1) :
+ (diag_block_mx s F) \in unitmx ->
+(diag_block_mx s F)^-1 = diag_block_mx s (fun n i => (F n i)^-1).
+Proof.
+case: s=> [|a l]; first by rewrite unitr0.
+elim: l a F => //= b l IHl a F H.
+rewrite invmx_block // IHl //.
+by move: H; rewrite !unitmxE (det_ublock (F a 0%N)) unitrM; case/andP.
+Qed.
+
+
+End diag_block_comUnitRingType.
 
 
 Section diag_mx_seq.

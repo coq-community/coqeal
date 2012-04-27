@@ -99,6 +99,9 @@ case/mxvec_indexP: i => i j.
 by rewrite !mxvecE !mxE.
 Qed.
 
+Variable R2 : comUnitRingType.
+Variable n m : nat.
+
 Definition pairxx (T : Type) (x : T) := pair x x.
 
 Lemma row_thin_mx (M : 'M_(m,0)) (N : 'M[R]_(m,n)) :
@@ -122,6 +125,21 @@ elim: k=> [|k IHk].
   by rewrite !expr0 -scalar_mx_block.
 rewrite !exprS IHk /GRing.mul /= (mulmx_block A 0 0 B (A ^+ k)).
 by rewrite !mulmx0 !mul0mx !add0r !addr0.
+Qed.
+
+
+Lemma invmx_block n1 n2  (Aul : 'M[R2]_n1.+1) (Adr : 'M[R2]_n2.+1) :
+   (block_mx Aul 0 0 Adr) \in unitmx ->
+  (block_mx Aul 0 0 Adr)^-1 = block_mx Aul^-1 0 0 Adr^-1.
+Proof.
+move=> Hu.
+have Hu2: (block_mx Aul 0 0 Adr) \is a GRing.unit by [].
+rewrite unitmxE det_ublock unitrM in Hu.
+case/andP: Hu; rewrite -!unitmxE => HAul HAur.
+have H: block_mx Aul 0 0 Adr *  block_mx Aul^-1 0 0 Adr^-1 = 1.
+  rewrite /GRing.mul /= (mulmx_block Aul _ _ _ Aul^-1) !mulmxV //.
+  by rewrite !mul0mx !mulmx0 !add0r addr0 -scalar_mx_block.   
+by apply: (mulrI Hu2); rewrite H mulrV.
 Qed.
 
 End Matrix.
