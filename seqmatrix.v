@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
-Require Import perm zmodp matrix ssrcomplements cssralg.
+Require Import perm zmodp matrix ssrcomplements cssralg cperm.
 
 (** This file implements dense matrices as sequences of sequences
  and their basic operations.
@@ -551,7 +551,14 @@ apply/seqmxP; split=> [||i0 j0]; first by rewrite size_map size_iota.
 by rewrite mkseqmxE // mxE; case: ifP; rewrite ?oneE ?zeroE.
 Qed.
 
+Definition row_perm_seqmx m (s : nat -> nat) (M : seqmatrix) : seqmatrix :=
+  mkseq (fun i => nth [::] M (s i)) m.
+
 Local Notation one := (one CR).
+
+Section CZmod.
+
+(* Computable Z-module structure *)
 
 Definition seqmx1 n := scalar_seqmx n one.
 

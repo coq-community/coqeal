@@ -16,9 +16,9 @@ Variable K : fieldType.
 
 Local Open Scope ring_scope.
 
-Fixpoint elim_step {p n:nat} {struct p} :=
-  match p return 'M[K]_(p, 1 + n) ->   ('M[K]_(p, n) * bool) with
-  | p'.+1 =>   fun (l : 'M_(1 + p', 1 + n)) =>
+Fixpoint elim_step {p n:nat} {struct p} : 'M[K]_(p, 1 + n) ->  ('M[K]_(p, n) * bool) :=
+  match p return 'M[K]_(p, 1 + n) ->  ('M[K]_(p, n) * bool) with
+  | p'.+1 => fun (l : 'M_(1 + p', 1 + n)) =>
     let a := l 0 0 in
     if a == 0 then
       let (R,b) := elim_step (dsubmx l) in

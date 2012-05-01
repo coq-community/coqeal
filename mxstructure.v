@@ -194,12 +194,11 @@ Proof.
 case: s=> // a l.
 elim: l a F1 F2=> /= [a F1 F2 Hi|b l IHl a F1 F2 Hi].
   exact: (Hi 0%N). 
-set F3 := fun n i => _.
-set F4 := fun n i => _.
+set F3 := (fun n i : nat => _).
+set F4 := (fun n i : nat => _).
 rewrite (Hi 0%N) // (IHl b F3 F4) //.
 by move=> i Hi2; apply: (Hi i.+1).
 Qed.
-
 
 Lemma upper_triangular_diag_block (s : seq nat) 
   (F : (forall n, nat -> 'M[R]_n.+1)) :
@@ -438,7 +437,6 @@ rewrite nth_nseq Hi nth_mkseq //.
 by apply/matrixP=> k l; rewrite !mxE !ord1.
 Qed.
 
-
 (* Lemma diag_mx_seq_flatten (s : seq (seq R)) : *)
   
 
@@ -456,16 +454,71 @@ Qed.
 (* by move=> s' Hs'; apply: Hl; rewrite mem_behead. *)
 (* Qed. *)
 
-Lemma diag_mx_seq_take n (s: seq R) :
-  diag_mx_seq n n (take n s) = diag_mx_seq n n s.
+Lemma diag_mx_seq_takel m n (s : seq R) :
+  diag_mx_seq m n (take m s) = diag_mx_seq m n s.
+Proof. by apply/matrixP=> i j; rewrite !mxE nth_take. Qed.
+
+Lemma diag_mx_seq_taker m n (s : seq R) :
+  diag_mx_seq m n (take n s) = diag_mx_seq m n s.
 Proof.
-by apply/matrixP=> i j; rewrite !mxE nth_take.
+apply/matrixP=> i j; rewrite !mxE.
+by have [-> | //] := altP (i =P j :> nat); rewrite nth_take.
+Qed.
+
+Lemma diag_mx_seq_take_min m n (s : seq R) :
+  diag_mx_seq m n (take (minn (minn m n) (size s)) s) = diag_mx_seq m n s.
+Proof.
+have [/minn_idPl -> | /ltnW/minn_idPr ->] := leqP (minn m n) (size s).
+  have [/minn_idPl -> | /ltnW/minn_idPr ->] := leqP m n.
+    exact: diag_mx_seq_takel.
+  exact: diag_mx_seq_taker.
+by rewrite take_size.
+Qed.
+
+Lemma tr_diag_mx_seq m n s : (diag_mx_seq m n s)^T = diag_mx_seq n m s.
+Proof.
+apply/matrixP=> i j; rewrite !mxE eq_sym.
+by have [-> | //] := altP (i =P j :> nat).
+Qed.
+
+Lemma mul_pid_mx_diag m n p r s :
+  r <= p ->
+  @pid_mx R m p r *m diag_mx_seq p n s = diag_mx_seq m n (take r s).
+Proof.
+move=> le_r_p; apply/matrixP=> i j; rewrite !mxE.
+have [le_p_i | lt_i_p] := leqP p i.
+  rewrite big1; last first.
+    by move=> k _; rewrite !mxE eqn_leq leqNgt (leq_trans (ltn_ord k) le_p_i) mul0r.
+  rewrite nth_default ?mul0rn // size_take.
+  case:ltnP=> [_|le_s_r]; first exact:(leq_trans le_r_p).
+  by apply:(leq_trans le_s_r); exact:(leq_trans le_r_p).
+rewrite (bigD1 (Ordinal lt_i_p)) //= !mxE big1; last first.
+  by move=> k; rewrite /eq_op /= => neq_k_i; rewrite !mxE eq_sym (negbTE neq_k_i) mul0r.
+rewrite eqxx addr0 /=.
+have [lt_i_r | le_r_i] := ltnP i r; first by rewrite nth_take // mul1r.
+rewrite mul0r nth_default ?mul0rn // size_take; case:ltnP=> // le_s_r.
+exact:(leq_trans le_s_r).
 Qed.
 
 End diag_mx_seq.
 
-Section diag_mx_seq_comRingType.
+Section diag_mx_seq2.
 
+Variable R : ringType.
+Local Open Scope ring_scope.
+Import GRing.Theory.
+
+Lemma mul_diag_mx_pid m n p r s :
+  r <= p ->
+  diag_mx_seq m p s *m @pid_mx R p n r  = diag_mx_seq m n (take r s).
+Proof.
+move=> le_r_p; rewrite -[_ *m _]trmxK trmx_mul_rev tr_pid_mx tr_diag_mx_seq.
+by rewrite mul_pid_mx_diag // tr_diag_mx_seq.
+Qed.
+
+End diag_mx_seq2.
+
+Section diag_mx_seq_comRingType.
 
 Variable R : comRingType.
 Local Open Scope ring_scope.
@@ -488,3 +541,37 @@ Qed.
 
 
 End diag_mx_seq_comRingType.
+
+Section diag_mx_idomain.
+
+Variable R : idomainType.
+Local Open Scope ring_scope.
+Import GRing.Theory.
+
+Lemma mul_mx_diag_seq_min m r (s : seq R) (A : 'M_(m, r)) (B : 'M_(r, m)) :
+  all (predC1 0) s -> m <= size s ->
+  A *m B = diag_mx_seq _ _ s -> m <= r.
+Proof.
+move=> neq0_s le_m_s ABd; rewrite leqNgt; apply/negP=> /subnKC; rewrite addSnnS.
+move: (_ - _)%N => m' def_m; move: le_m_s ABd; rewrite -{m}def_m in A B *.
+rewrite -(vsubmxK A) -(hsubmxK B) mul_col_row => le_m_s.
+have lt_r_s : r < size s.
+  by move:le_m_s; rewrite addnS; apply:leq_ltn_trans; exact: leq_addr.
+rewrite -[s](cat_take_drop r) diag_mx_seq_cat ?size_take ?lt_r_s //.
+case/eq_block_mx=> AuBld AuBr0 AdBl0 AdBrd.
+have detBl0: \det (lsubmx B) = 0.
+  apply/eqP/det0P; exists (nz_row (dsubmx A)).
+    rewrite nz_row_eq0; apply/eqP=> Ad0; move/matrixP/(_ 0 0):AdBrd.
+    rewrite Ad0 mul0mx !mxE nth_drop addn0.
+    move/(all_nthP 0)/(_ r)/(_ lt_r_s): neq0_s.
+    by rewrite mulr1n /= eq_sym; move/eqP.
+  rewrite /nz_row; case:pickP=> /= [i|_]; last by rewrite mul0mx.
+  by rewrite -row_mul AdBl0 row0.
+have: \det (diag_mx_seq r r (take r s)) = 0.
+  by rewrite -AuBld det_mulmx detBl0 mulr0.
+rewrite det_diag_mx_seq ?size_take ?lt_r_s //; move/eqP; rewrite prodf_seq_eq0.
+apply/negP; move:neq0_s; rewrite -{1}[s](cat_take_drop r) all_cat all_predC.
+by case/andP.
+Qed.
+
+End diag_mx_idomain.
