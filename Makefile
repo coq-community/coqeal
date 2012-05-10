@@ -30,14 +30,20 @@ endif
 CAMLP4LIB:=$(shell $(CAMLP4BIN)$(CAMLP4) -where)
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 $(COQMAKEFILE) config:
 	$(COQBIN)coq_makefile -I $(SSRSRC) -R $(SSRLIB) Ssreflect -f Make  -o $(COQMAKEFILE)
 =======
+=======
+>>>>>>> Stashed changes
 ##########################
 #                        #
 # Libraries definitions. #
 #                        #
 ##########################
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 OCAMLLIBS:=-I .
