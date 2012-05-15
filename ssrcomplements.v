@@ -52,9 +52,28 @@ Local Open Scope ring_scope.
 Import GRing.Theory.
 
 Variable R : ringType.
-Variable n m : nat.
 
-Lemma scalar_mx0 : 0%:M = 0 :> 'M[R]_n.
+Lemma scalar_mx0 (n : nat) : 0%:M = 0 :> 'M[R]_n.
 Proof. by rewrite -scalemx1 scale0r. Qed.
+
+(*
+ These three lemmas are not in the library and follow from transposition
+*)
+Lemma colE (m n : nat) i (A : 'M[R]_(m, n)) : col i A = A *m delta_mx i 0.
+Proof.
+apply/colP=> j; rewrite !mxE (bigD1 i) //= mxE !eqxx mulr1.
+by rewrite big1 ?addr0 // => i' ne_i'i; rewrite mxE /= (negbTE ne_i'i) mulr0.
+Qed.
+
+Lemma col_matrixP (m n : nat) :
+  forall (A B : 'M[R]_(m,n)), (forall i, col i A = col i B) <-> A = B.
+Proof.
+split=> [eqAB | -> //]; apply/matrixP=> i j.
+by move/colP/(_ i): (eqAB j); rewrite !mxE.
+Qed.
+
+Lemma col_mul m n p (i : 'I_p) (A : 'M[R]_(m,n)) (B : 'M[R]_(n, p)) :
+  col i (A *m B) = A *m col i B.
+Proof. by rewrite !colE mulmxA. Qed.
 
 End Matrix.
