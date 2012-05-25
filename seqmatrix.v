@@ -293,19 +293,38 @@ End SeqmxOp.
 
 Section SeqmxOp2.
 
-Variables m n p' : nat.
-Local Notation p := p'.+1.
+Definition const_seqmx m n (x : CR) := nseq m (nseq n x).
 
-Definition mulseqmx (M N: seqmatrix) : seqmatrix :=
+Lemma const_seqmxE m n x : const_seqmx m n (trans x) = @seqmx_of_mx m n (const_mx x).
+Proof.
+apply/seqmxP; split=> [|i Hi|i j]; first by rewrite size_nseq.
+  by rewrite /rowseqmx nth_nseq Hi size_nseq.
+by rewrite /fun_of_seqmx /rowseqmx nth_nseq (ltn_ord i) nth_nseq (ltn_ord j) mxE.
+Qed.
+
+Local Notation zero := (zero CR).
+
+Definition seqmx0 m n := const_seqmx m n zero.
+
+Lemma seqmx0E m n : seqmx_of_mx (0: 'M[R]_(m,n)) = seqmx0 m n.
+Proof. by rewrite /seqmx0 -const_seqmxE zeroE. Qed.
+
+Definition mulseqmx (n p:nat) (M N: seqmatrix) : seqmatrix :=
   let N := trseqmx N in
-  map (fun r => map (foldl2 (fun z x y => add (mul x y) z) (zero CR) r) N) M.
+  if n == O then seqmx0 (size M) p else
+  map (fun r => map (foldl2 (fun z x y => add (mul x y) z) zero r) N) M.
 
 Lemma minSS (p q : nat) : minn p.+1 q.+1 = (minn p q).+1.
 Proof. by rewrite /minn ltnS; case:ifP. Qed.
 
-Lemma mulseqmxE (M:'M_(m,p)) (N:'M_(p,n)) :
-  mulseqmx (seqmx_of_mx M) (seqmx_of_mx N) = seqmx_of_mx (M *m N).
+Lemma mulseqmxE p m n (M:'M_(m,p)) (N:'M_(p,n)) :
+  mulseqmx p n (seqmx_of_mx M) (seqmx_of_mx N) = seqmx_of_mx (M *m N).
 Proof.
+rewrite /mulseqmx.
+case: ifP => [/eqP hn0 | hn].
+- move: M N; rewrite hn0 => M N.
+  by rewrite flatmx0 thinmx0 mul0mx size_seqmx seqmx0E.
+case: p hn M N => [ | p] //= => _ M N.
 apply/seqmxP; split => [|i Hi|i j]; first by rewrite size_map size_seqmx.
   rewrite /rowseqmx (nth_map [::]) size_map.
     by rewrite size_trseqmx.
@@ -318,11 +337,11 @@ rewrite /mulseqmx mxE /fun_of_seqmx /rowseqmx (nth_map [::]).
   rewrite (nth_map 0) ?size_enum_ord //.
   rewrite (nth_map (0 : 'I_n'.+1)) ?size_enum_ord //.
   have->: forall z, foldl2 F z
-     [seq trans (M (enum 'I_m'.+1)`_i j0) |  j0 <- enum 'I_p]
-     [seq trans (N^T (enum 'I_n'.+1)`_j j0) |  j0 <- enum 'I_p] =
+     [seq trans (M (enum 'I_m'.+1)`_i j0) |  j0 <- enum 'I_(p.+1)]
+     [seq trans (N^T (enum 'I_n'.+1)`_j j0) |  j0 <- enum 'I_(p.+1)] =
   foldl2 (fun z x y => add (mul (trans x) (trans y)) z) z
-  [seq M i j0 | j0 <- enum 'I_p]  [seq N^T j i0 | i0 <- enum 'I_p].
-   by elim:(enum 'I_p)=> // a s IHs /= z; rewrite IHs /= !nth_ord_enum.
+  [seq M i j0 | j0 <- enum 'I_(p.+1)]  [seq N^T j i0 | i0 <- enum 'I_(p.+1)].
+   by elim:(enum 'I_(p.+1))=> // a s IHs /= z; rewrite IHs /= !nth_ord_enum.
   rewrite -zeroE.
   have ->: forall s1 s2 (x : R),
     (foldl2 (fun z x y => add (mul (trans x) (trans y)) z) (trans x) s1 s2) =
@@ -333,17 +352,12 @@ rewrite /mulseqmx mxE /fun_of_seqmx /rowseqmx (nth_map [::]).
     by rewrite /= -mulE -addE IHs minSS big_nat_recl [_ + x]GRing.addrC GRing.addrA.
   rewrite GRing.add0r size_map size_enum_ord size_map size_enum_ord minnn big_mkord.
   congr trans; apply:eq_bigr=>k _; rewrite (nth_map 0) ?size_enum_ord //.
-  rewrite (nth_map (0 : 'I_p)) ?size_enum_ord // mxE.
+  rewrite [X in _ * X](nth_map (0 : 'I_p.+1)) ?size_enum_ord // mxE.
   by rewrite nth_ord_enum.
 by rewrite size_seqmx.
 Qed.
 
 End SeqmxOp2.
-
-Lemma mulseqmxEnn : forall m (M:'M_m) (N:'M_m),
-  mulseqmx (seqmx_of_mx M) (seqmx_of_mx N) = seqmx_of_mx (M *m N).
-Proof. by case=>[M N|m M N]; rewrite ?(flatmx0 M) ?mul0mx ?seqmx0n ?mulseqmxE. Qed.
-
 
 (** Block operations *)
 Section SeqmxRowCol.
@@ -543,22 +557,6 @@ Definition scaleseqmx (x : CR) (M : seqmatrix) :=
 Lemma scaleseqmxE m n x (M : 'M_(m,n)) :
   scaleseqmx (trans x) (seqmx_of_mx M) = seqmx_of_mx (scalemx x M).
 Proof. by rewrite /scaleseqmx -(map_seqmxE _ (mulE _ _)). Qed.
-
-Definition const_seqmx m n (x : CR) := nseq m (nseq n x).
-
-Lemma const_seqmxE m n x : const_seqmx m n (trans x) = @seqmx_of_mx m n (const_mx x).
-Proof.
-apply/seqmxP; split=> [|i Hi|i j]; first by rewrite size_nseq.
-  by rewrite /rowseqmx nth_nseq Hi size_nseq.
-by rewrite /fun_of_seqmx /rowseqmx nth_nseq (ltn_ord i) nth_nseq (ltn_ord j) mxE.
-Qed.
-
-Local Notation zero := (zero CR).
-
-Definition seqmx0 m n := const_seqmx m n zero.
-
-Lemma seqmx0E m n : seqmx_of_mx (0: 'M[R]_(m,n)) = seqmx0 m n.
-Proof. by rewrite /seqmx0 -const_seqmxE zeroE. Qed.
 
 Definition seqmx_czMixin m n := @CZmodMixin
   [zmodType of 'M[R]_(m,n)] seqmatrix (seqmx0 m n)
