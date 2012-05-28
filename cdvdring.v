@@ -162,13 +162,12 @@ Definition cgcd (R: gcdRingType) (T: cgcdRingType R) :=
   CGcdRing.cgcd (CGcdRing.class T).
 
 (* TODO:
-     - Add computable lcm
-     - Add computable gcdsr ??
-     - Add computable lcmsr ??
+     - Add computable gcdsr
+     - Add computable lcmsr
 *)
+
+
 (*
-Definition clcm R a b := nosimpl
-  if (a == 0) || (b == 0) then 0 else odflt 0 ((a * b) %/? (@gcdr R a b)).
 Definition cgcds R CR := foldr (@cgcd R CR) (zero CR).
 Definition lcmsr R := foldr (@lcmr R) 1.
 *)
@@ -180,6 +179,18 @@ Variable CR : cgcdRingType R.
 
 Lemma cgcdE : {morph (@trans _ CR) : x y / gcdr x y >-> cgcd x y}.
 Proof. by case: CR => ? [] ? []. Qed.
+
+Definition clcm (a b : CR) :=
+  if (a == zero CR) || (b == zero CR) then zero CR
+  else odflt (zero CR) (cdiv (mul a b) (cgcd a b)).
+
+Lemma clcmE : {morph (@trans _ CR) : x y / lcmr x y >-> clcm x y}.
+Proof.
+rewrite /lcmr /clcm => x y /=; rewrite !trans_eq0.
+case: ifP => _; first by rewrite zeroE.
+rewrite -mulE -cgcdE -cdivE.
+by case: odivrP => //;  rewrite zeroE.
+Qed.
 
 (* TODO: Add theory about cgcds? *)
 

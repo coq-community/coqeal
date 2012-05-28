@@ -537,11 +537,18 @@ Lemma scalar_seqmxE n x :
 Proof.
 apply/seqmxP ; split=> [||i j] ; first by rewrite size_map size_iota.
   exact:size_row_mkseqmx.
-rewrite mkseqmxE // mxE.
-rewrite /=.
-rewrite {2}/eq_op /=.
-case:(i == j :> nat)=> //.
-by rewrite zeroE.
+by rewrite mkseqmxE // mxE /= {2}/eq_op /=; case:(i == j :> nat)=> //; rewrite zeroE.
+Qed.
+
+Definition delta_seqmx (m n : nat) (i0 : 'I_m) (j0 : 'I_n) :=
+  mkseqmx m n (fun i j => if (i == i0) && (j == j0) then one CR else zero CR).
+
+Lemma delta_seqmxE m n (i : 'I_m) (j : 'I_n) :
+  delta_seqmx i j = seqmx_of_mx (delta_mx i j).
+Proof.
+apply/seqmxP; split=> [||i0 j0]; first by rewrite size_map size_iota.
+  exact:size_row_mkseqmx.
+by rewrite mkseqmxE // mxE; case: ifP; rewrite ?oneE ?zeroE.
 Qed.
 
 Local Notation one := (one CR).
@@ -566,7 +573,7 @@ Definition seqmx_czMixin m n := @CZmodMixin
 Canonical Structure matrix_czType m n :=
   Eval hnf in CZmodType ('M[R]_(m,n)) seqmatrix (seqmx_czMixin m n).
 
-
-
+Lemma seqmx_of_mx_eq0 m n (M : 'M[R]_(m,n)) : (seqmx_of_mx M == seqmx0 m n) = (M == 0).
+Proof. by move: (@trans_eq0 _ (matrix_czType m n) M); rewrite /trans. Qed.
 
 End seqmx.
