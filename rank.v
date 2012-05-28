@@ -122,16 +122,16 @@ Qed.
 
 Variable CK : cunitRingType K.
 
-Fixpoint elim_step_seqmx p {struct p} : seqmatrix CK ->  (seqmatrix CK * bool) :=
+Fixpoint elim_step_seqmx p n {struct p} : seqmatrix CK ->  (seqmatrix CK * bool) :=
    match p return seqmatrix CK -> (seqmatrix CK * bool) with
    | p'.+1 => fun l =>
      let a := l 0%N 0%N in
      if a == zero CK then
-         let (R,b) := elim_step_seqmx p' (dsubseqmx 1 l) in
+         let (R,b) := elim_step_seqmx p' n (dsubseqmx 1 l) in
          (col_seqmx (ursubseqmx 1 1 l) R, b)
      else
        let v := scaleseqmx (cinv a) (dlsubseqmx 1 1 l) in
-       let R := subseqmx (drsubseqmx 1 1 l) (mulseqmx v (ursubseqmx 1 1 l)) in
+       let R := subseqmx (drsubseqmx 1 1 l) (mulseqmx 1 n  v (ursubseqmx 1 1 l)) in
        let v0 := const_seqmx 1 (size (rowseqmx l 0)).-1 (zero CK) in
          (col_seqmx R v0, true)
    | _ => fun l => ([::] , false)
@@ -139,7 +139,7 @@ end.
 
 Lemma elim_step_seqmxE : forall m n (M : 'M_(m, 1 + n)),
   let (R,b) := (elim_step M) in
-  elim_step_seqmx m (seqmx_of_mx CK M) = (seqmx_of_mx CK R,b).
+  elim_step_seqmx m (1 + n) (seqmx_of_mx CK M) = (seqmx_of_mx CK R,b).
 Proof.
 elim=> [n M /=|m IHm n M /=]; first by rewrite seqmx0n.
 rewrite -(inj_eq (@inj_trans K CK) (M 0 0) 0) zeroE -seqmxE; case: ifP=> _.
@@ -152,7 +152,7 @@ Qed.
 
 Fixpoint rank_elim_seqmx (m n:nat) {struct n} : seqmatrix CK -> nat :=
   match n return seqmatrix CK -> nat with
-   | q.+1 => fun M => let:(R,b) := elim_step_seqmx m M in
+   | q.+1 => fun M => let:(R,b) := elim_step_seqmx m n M in
        (rank_elim_seqmx m q R + b)%N
    | _ => fun _ => 0%N
 end.
@@ -161,7 +161,7 @@ Lemma rank_elim_seqmxE : forall m n (M : 'M_(m, n)),
   rank_elim_seqmx m n (seqmx_of_mx CK M) = rank_elim M.
 Proof.
 move=> m; elim=> // n IHn M; rewrite /rank_elim_seqmx /rank_elim.
-by move:(elim_step_seqmxE M); case:(elim_step _)=> R b ->; rewrite -/rank_elim_seqmx IHn.
+by move:(elim_step_seqmxE M); case: (elim_step _)=> R b ->; rewrite -/rank_elim_seqmx IHn.
 Qed.
 
 End FieldRank.

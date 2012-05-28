@@ -110,9 +110,9 @@ Variable CR : cringType R.
 
 Fixpoint winograd_exp2_seqmx k :=
   match k return let M := seqmatrix CR in M -> M -> M with
-  | 0%N => fun A B => mulseqmx A B
+  | 0%N => fun A B => mulseqmx (exp2 k) (exp2 k) A B
   | l.+1 => fun A B =>
-    if l <= 5 then mulseqmx A B else
+    if l <= 5 then mulseqmx (exp2 k) (exp2 k) A B else
     let off := exp2 l in
     let A11 := ulsubseqmx off off A in
     let A12 := ursubseqmx off off A in
@@ -155,7 +155,7 @@ Lemma winograd_exp2_seqmxP :
 Proof.
 elim:k=> [|k' IHn] /= M N ; first by rewrite /= mulseqmxE.
 rewrite {1}/winograd_exp2_seqmx {1}/winograd_exp2.
-case:ifP=> _; first by rewrite mulseqmxEnn.
+case:ifP=> _; first by rewrite mulseqmxE.
 rewrite -/winograd_exp2_seqmx -/winograd_exp2.
 rewrite !drsubseqmxE !dlsubseqmxE !ulsubseqmxE !ursubseqmxE.
 rewrite -!{1}subseqmxE -!{1}addseqmxE -!{1}subseqmxE.
@@ -199,9 +199,9 @@ Qed.
 
 Lemma mulseqmx_gt0E (CR : cringType R) {m n p : nat}
   {M : 'M[R]_(m, p)} {N : 'M_(p, n)} :
-  0 < p -> mulseqmx (seqmx_of_mx CR M) (seqmx_of_mx CR N) = seqmx_of_mx CR (M *m N).
+  mulseqmx p n (seqmx_of_mx CR M) (seqmx_of_mx CR N) = seqmx_of_mx CR (M *m N).
 Proof.
-by move/prednK=> H; move: M N; rewrite -H; exact:mulseqmxE.
+by move: M N; exact:mulseqmxE.
 Qed.
 
 Definition winograd_step {p : positive} (A B : 'M[R]_(p + p)) f : 'M[R]_(p + p) :=
