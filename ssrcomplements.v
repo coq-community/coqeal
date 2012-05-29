@@ -127,7 +127,6 @@ rewrite !exprS IHk /GRing.mul /= (mulmx_block A 0 0 B (A ^+ k)).
 by rewrite !mulmx0 !mul0mx !add0r !addr0.
 Qed.
 
-
 Lemma invmx_block n1 n2  (Aul : 'M[R2]_n1.+1) (Adr : 'M[R2]_n2.+1) :
    (block_mx Aul 0 0 Adr) \in unitmx ->
   (block_mx Aul 0 0 Adr)^-1 = block_mx Aul^-1 0 0 Adr^-1.
