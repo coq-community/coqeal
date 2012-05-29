@@ -275,8 +275,8 @@ Lemma cbezoutE : forall x y, (@trans _ CR (bezout x y).1,trans (bezout x y).2) =
                              cbezout (trans x) (trans y).
 Proof. by case: CR => ? [] ? []. Qed.
 
-Definition zero := zero CR.
-Definition one := one CR.
+Let zero := zero CR.
+Let one := one CR.
 
 Definition cegcdr (a b : CR) :=
   let: (u, v) := cbezout a b in
