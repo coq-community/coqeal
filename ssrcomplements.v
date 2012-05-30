@@ -56,9 +56,7 @@ Variable R : ringType.
 Lemma scalar_mx0 (n : nat) : 0%:M = 0 :> 'M[R]_n.
 Proof. by rewrite -scalemx1 scale0r. Qed.
 
-(*
- These three lemmas are not in the library and follow from transposition
-*)
+(* Lemmas about column operations *)
 Lemma colE (m n : nat) i (A : 'M[R]_(m, n)) : col i A = A *m delta_mx i 0.
 Proof.
 apply/colP=> j; rewrite !mxE (bigD1 i) //= mxE !eqxx mulr1.
@@ -75,5 +73,20 @@ Qed.
 Lemma col_mul m n p (i : 'I_p) (A : 'M[R]_(m,n)) (B : 'M[R]_(n, p)) :
   col i (A *m B) = A *m col i B.
 Proof. by rewrite !colE mulmxA. Qed.
+
+(* Lemma about mxvec *)
+Lemma mxvec0 m n : mxvec (0 : 'M[R]_(m,n)) = 0 :> 'rV[R]_(m * n).
+Proof. by apply/eqP; rewrite mxvec_eq0. Qed.
+
+Lemma tr_mxvec m n (M : 'M[R]_(m,n)) i j :
+  (mxvec M) 0 (mxvec_index i j) = (mxvec M^T) 0 (mxvec_index j i).
+Proof. by rewrite !mxvecE mxE. Qed.
+
+Lemma scale_mxvec m n x (M : 'M[R]_(m,n)) : mxvec (x *: M) = x *: mxvec M.
+Proof.
+apply/rowP => i; rewrite mxE.
+case/mxvec_indexP: i => i j.
+by rewrite !mxvecE !mxE.
+Qed.
 
 End Matrix.
