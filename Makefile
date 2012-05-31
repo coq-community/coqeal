@@ -12,7 +12,7 @@ all: $(COQMAKEFILE)
 	$(COQMAKE) all
 
 $(COQMAKEFILE) config:
-	$(COQBIN)coq_makefile -I $(SSRSRC) -I $(SSRLIB) -f Make  -o $(COQMAKEFILE)
+	$(COQBIN)coq_makefile -I $(SSRSRC) -R $(SSRLIB) Ssreflect -f Make  -o $(COQMAKEFILE)
 
 clean: $(COQMAKEFILE)
 	$(COQMAKE) clean
