@@ -15,6 +15,7 @@ boolF2.v
 mxstructure.v
 cperm.v
 smith.v
+invmx.v
 #examples/ex_cseqpoly.v
 #examples/ex_karatsuba.v
 #examples/ex_winograd.v

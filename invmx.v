@@ -101,7 +101,7 @@ Fixpoint cfast_invmx (m : nat) (M : seqmatrix CR) :=
   | S p =>
    let: N := cfast_invmx p (drsubseqmx 1 1 M) in
    block_seqmx (seqmx1 _ 1) (seqmx0 _ 1 p)
-               (mulseqmx (oppseqmx N) (dlsubseqmx 1 1 M)) N
+               (mulseqmx p 1 (oppseqmx N) (dlsubseqmx 1 1 M)) N
   | O => seqmx1 _ O
   end.
 
@@ -110,13 +110,7 @@ Lemma cfast_invmxP : forall (m : nat),
 Proof.
 elim=> [M|m ih]; first by rewrite seqmx1E.
 rewrite [m.+1]/(1 + m)%N => M /=.
-rewrite -(@block_seqmxE _ _ 1 _ 1) seqmx1E seqmx0E ih -drsubseqmxE; f_equal.
-(* Ask Maxime to fix mulseqmxE! *)
-have -> : seqmx_of_mx CR (- fast_invmx (drsubmx M) *m dlsubmx M) =
-          mulseqmx (seqmx_of_mx CR (- fast_invmx (drsubmx M))) (seqmx_of_mx CR (dlsubmx M)).
-  clear ih.
-  case: m M => [|n] M; last by rewrite mulseqmxE.
-    by rewrite !thinmx0 mul0mx flatmx0 !seqmx0E /=.
+rewrite -(@block_seqmxE _ _ 1 _ 1) seqmx1E seqmx0E ih -drsubseqmxE -mulseqmxE.
 by rewrite oppseqmxE ih -drsubseqmxE -dlsubseqmxE.
 Qed.
 
