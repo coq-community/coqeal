@@ -1272,7 +1272,7 @@ have -> : lsubmx I = (I 0 0)%:M.
   apply/matrixP => i j.
    by rewrite !mxE !ord1 eqxx /= mulr1n lshift0.
 rewrite h1 -scalar_mxM mulrC mulrA !scalar_mxM -mul_scalar_mx mulmxA.
-by rewrite -mulmx_addl -!scalar_mxM -rmorphD hbezout mul1mx.
+by rewrite -mulmxDl -!scalar_mxM -rmorphD hbezout mul1mx.
 Qed.
 
 (* (x1...xn) \subset (x) iff exists (w1...wn) such that (x)(w1...wn) = (x1...xn) *)
