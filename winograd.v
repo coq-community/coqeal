@@ -197,13 +197,6 @@ Proof.
 by elim=> // p IHp /=; rewrite NatTrec.doubleE -addnn; exact:ltn_addl.
 Qed.
 
-Lemma mulseqmx_gt0E (CR : cringType R) {m n p : nat}
-  {M : 'M[R]_(m, p)} {N : 'M_(p, n)} :
-  mulseqmx p n (seqmx_of_mx CR M) (seqmx_of_mx CR N) = seqmx_of_mx CR (M *m N).
-Proof.
-by move: M N; exact:mulseqmxE.
-Qed.
-
 Definition winograd_step {p : positive} (A B : 'M[R]_(p + p)) f : 'M[R]_(p + p) :=
   let A11 := ulsubmx A in
   let A12 := ursubmx A in
@@ -332,12 +325,12 @@ Qed.
 
 Fixpoint winograd_seqmx (n : positive) :=
   match n return let M := seqmatrix CR in M -> M -> M with
-  | xH => fun A B => mulseqmx A B
+  | xH => fun A B => mulseqmx n n A B
   | xO p => fun A B =>
-    if p <= K then mulseqmx A B else
+    if p <= K then mulseqmx n n A B else
     winograd_step_seqmx p A B winograd_seqmx
   | xI p => fun M N =>
-    if p <= K then mulseqmx M N else
+    if p <= K then mulseqmx n n M N else
     let off := xO p in
     let M11 := ulsubseqmx off off M in
     let M12 := ursubseqmx off off M in
@@ -347,10 +340,10 @@ Fixpoint winograd_seqmx (n : positive) :=
     let N12 := ursubseqmx off off N in
     let N21 := dlsubseqmx off off N in
     let N22 := drsubseqmx off off N in
-    let R12 := addseqmx (mulseqmx M11 N12) (mulseqmx M12 N22) in
-    let R21 := addseqmx (mulseqmx M21 N11) (mulseqmx M22 N21) in
-    let R22 := addseqmx (mulseqmx M21 N12) (mulseqmx M22 N22) in
-    let C := addseqmx (winograd_step_seqmx p M11 N11 winograd_seqmx) (mulseqmx M12 N21) in
+    let R12 := addseqmx (mulseqmx off 1 M11 N12) (mulseqmx 1 1 M12 N22) in
+    let R21 := addseqmx (mulseqmx off off M21 N11) (mulseqmx 1 off M22 N21) in
+    let R22 := addseqmx (mulseqmx off 1 M21 N12) (mulseqmx 1 1 M22 N22) in
+    let C := addseqmx (winograd_step_seqmx p M11 N11 winograd_seqmx) (mulseqmx 1 off M12 N21) in
     block_seqmx C R12 R21 R22
   end.
 
@@ -364,19 +357,16 @@ elim=> [p IHp /= M N|p IHp /= M N|M N /=].
     rewrite -!ulsubseqmxE -!ursubseqmxE -!dlsubseqmxE !cast_seqmx.
     by rewrite addnn -NatTrec.doubleE.
   + rewrite addseqmxE -!mulseqmxE.
-    rewrite -mulseqmx_gt0E; last by apply: ltn_addl; exact: lt0p.
     rewrite -ulsubseqmxE -!ursubseqmxE -drsubseqmxE !cast_seqmx addnn.
     by rewrite -NatTrec.doubleE.
   + rewrite addseqmxE -!mulseqmxE.
-    rewrite -mulseqmx_gt0E; last by apply: ltn_addl; exact: lt0p.
     rewrite -ulsubseqmxE -!dlsubseqmxE -drsubseqmxE !cast_seqmx.
     by rewrite addnn -NatTrec.doubleE.
   + rewrite addseqmxE -!mulseqmxE.
-    rewrite -mulseqmx_gt0E; last by apply: ltn_addl; exact: lt0p.
     rewrite -dlsubseqmxE -!drsubseqmxE -ursubseqmxE !cast_seqmx.
     by rewrite addnn -NatTrec.doubleE.
 * case:ifP=> _.
-    by rewrite mulseqmx_gt0E // NatTrec.doubleE -addnn; apply: ltn_addl; exact: lt0p.
+    by rewrite mulseqmxE // NatTrec.doubleE -addnn.
   by rewrite cast_seqmx (winograd_step_seqmxP _ _ (winograd_seqmx)) // !cast_seqmx.
 by rewrite mulseqmxE.
 Qed.
