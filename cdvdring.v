@@ -1,5 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
+
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg fintype perm tuple choice.
 Require Import matrix bigop zmodp mxalgebra poly.
@@ -91,6 +92,10 @@ Lemma odflt_cdivE d :
   {morph trans : x y / odflt d (x %/? y) >-> odflt (@trans _ CR d) (cdiv x y)}.
 Proof. by move=> x y /=; rewrite -cdivE; case: odivrP. Qed.
 
+Definition cdvd x y := @cdiv R CR y x : bool.
+
+Lemma cdvdE x y : x %| y  = cdvd (trans x) (trans y).
+Proof. by rewrite /dvdr /cdvd -cdivE; case: odivrP. Qed.
 
 End CDvdRingTheory.
 
