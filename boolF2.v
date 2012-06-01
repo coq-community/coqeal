@@ -1,115 +1,64 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq div choice.
-Require Import fintype bigop finset prime fingroup ssralg finalg.
+Require Import fintype bigop finset prime fingroup ssralg zmodp finalg cssralg.
 
-(* Additive group structure. *)
-
-Lemma bool_add0z : left_id false xorb.
-Proof. by case. Qed.
-
-Lemma bool_addNz : left_inverse false id xorb.
-Proof. by case. Qed.
-
-Lemma bool_addA : associative xorb.
-Proof. by case; case; case. Qed.
-
-Lemma bool_addC : commutative xorb.
-Proof. by case; case. Qed.
-
-Definition bool_zmodMixin := ZmodMixin bool_addA bool_addC bool_add0z bool_addNz.
-Canonical Structure bool_zmodType := Eval hnf in ZmodType bool bool_zmodMixin.
-Canonical Structure bool_finZmodType := Eval hnf in [finZmodType of bool].
-Canonical Structure bool_baseFinGroupType :=
-  Eval hnf in [baseFinGroupType of bool for +%R].
-Canonical Structure bool_finGroupType :=
-  Eval hnf in [finGroupType of bool for +%R].
-
-(* Ring operations *)
-
-Lemma bool_mul_addr : right_distributive andb xorb.
-Proof. by case; case; case. Qed.
-
-Lemma bool_mul_addl : left_distributive andb xorb.
-Proof. by case; case; case. Qed.
-
-Lemma bool_nontrivial : (1 != 0)%bool. Proof. by []. Qed.
-
-Definition bool_ringMixin :=
-  ComRingMixin andbA andbC andTb bool_mul_addl
-               bool_nontrivial.
-Canonical Structure bool_ringType := Eval hnf in RingType bool bool_ringMixin.
-Canonical Structure bool_finRingType := Eval hnf in [finRingType of bool].
-Canonical Structure bool_comRingType := Eval hnf in ComRingType bool andbC.
-Canonical Structure bool_finComRingType := Eval hnf in [finComRingType of bool].
-
-Lemma bool_mulVz : {in pred1 true, left_inverse true id *%R}.
-Proof. by move=> b; rewrite !inE; move/eqP=> ->. Qed.
-
-Lemma bool_mulzV x : x == true -> andb x (id x) = true.
-Proof. by move/eqP=> ->. Qed.
-
-Lemma bool_boolro_unit : forall x y, andb y x = true -> pred1 true x.
-Proof. by case; case. Qed.
-
-Lemma bool_inv_out : {in predC (pred1 true), id =1 id}.
-Proof. by []. Qed.
-
-Definition bool_unitRingMixin :=
-  @ComUnitRingMixin bool_comRingType (pred1 true) id bool_mulVz bool_boolro_unit bool_inv_out.
-Canonical Structure bool_unitRingType :=
-  Eval hnf in UnitRingType bool bool_unitRingMixin.
-Canonical Structure bool_finUnitRingType := Eval hnf in [finUnitRingType of bool].
-Canonical Structure bool_comUnitRingType := Eval hnf in [comUnitRingType of bool].
-Canonical Structure bool_finComUnitRingType :=
-  Eval hnf in [finComUnitRingType of bool].
-
-Lemma bool_fieldMixin : GRing.Field.mixin_of bool_unitRingType.
-Proof. by case. Qed.
-
-Definition bool_idomainMixin := FieldIdomainMixin bool_fieldMixin.
-
-Canonical bool_idomainType := Eval hnf in IdomainType bool  bool_idomainMixin.
-Canonical bool_finIdomainType := Eval hnf in [finIdomainType of bool].
-Canonical bool_fieldType := Eval hnf in FieldType bool bool_fieldMixin.
-Canonical bool_finFieldType := Eval hnf in [finFieldType of bool].
-Canonical bool_decFieldType :=
-  Eval hnf in [decFieldType of bool for bool_finFieldType].
-
-
-
-(* Computable ring structure *)
-Require Import cssralg.
+Section definition.
 
 Local Open Scope ring_scope.
 
-Implicit Types x y : bool.
+Definition bool_trans (x : 'F_2) := x != 0.
 
-Definition bid : bool -> bool := @id bool.
+Lemma inj_bool_trans : injective bool_trans.
+Proof.
+move=> [x Hx] [y Hy]; move: x y Hx Hy.
+case; do 3?case=> //; move=> Hx Hy _; exact: val_inj.
+Qed.
 
-Definition bool_czMixin := id_Mixins.id_czMixin [zmodType of bool].
+Definition bool_trans_struct := Trans inj_bool_trans.
+
+Lemma bool_trans0 : bool_trans 0 = false.
+Proof. by []. Qed.
+
+Lemma oppbE : {morph bool_trans : x / - x >-> id x}.
+Proof. by move=> x; rewrite /bool_trans /= GRing.oppr_eq0. Qed.
+
+Lemma addbE : {morph bool_trans : x y / x + y >-> xorb x y}.
+Proof.
+move=> [x Hx] [y Hy]; move: x y Hx Hy.
+case; do 3?case=> //; move=> Hx Hy _; exact: val_inj.
+Qed.
+
+(* CZmodule structure *)
+Definition bool_czMixin := @CZmodMixin
+  [zmodType of 'F_2] bool false
+  id xorb bool_trans_struct bool_trans0 oppbE addbE.
 
 Canonical Structure bool_czType :=
-  Eval hnf in CZmodType bool bool bool_czMixin.
+  Eval hnf in CZmodType 'F_2 bool bool_czMixin.
 
-Lemma bool1 : bid true = true.
+Lemma bool_trans1 : bool_trans 1 = true.
 Proof. by []. Qed.
 
-Lemma qmulP : {morph bid : x y / x * y >-> x * y}.
-Proof. by []. Qed.
+Lemma mulbE : {morph bool_trans : x y / x * y >-> andb x y}.
+Proof.
+move=> x y; rewrite /bool_trans /= GRing.mulf_eq0.
+by case: (x == 0); case: (y == 0).
+Qed.
 
-Definition bool_cringMixin := @CRingMixin [ringType of bool] [czmodType bool of bool]
-  1 (fun x y => x * y) bool1 qmulP.
+Definition bool_cringMixin := CRingMixin bool_trans1 mulbE.
 
 Canonical Structure bool_cringType :=
-  Eval hnf in CRingType [ringType of bool] bool_cringMixin.
+  Eval hnf in CRingType 'F_2 bool_cringMixin.
 
-Lemma unitbool : forall x, pred1 true x = pred1 true (bid x).
-Proof. by []. Qed.
+Lemma cunitE : (forall x : 'F_2, (x \is a GRing.unit) = xpred1 true (bool_trans x)).
+Proof. by move=> x; rewrite GRing.unitfE /bool_trans eqb_id. Qed.
 
-Lemma invbool : {morph bid : x / id x >-> id x}.
-Proof. by []. Qed.
+Lemma invbE : {morph bool_trans : x / x^-1 >-> id x}.
+Proof. by do 3?case. Qed.
 
-Definition bool_cunitRingMixin := @CUnitRingMixin [unitRingType of bool] [cringType bool of bool]
-  (pred1 true) id unitbool invbool.
+Definition bool_cunitRingMixin := @CUnitRingMixin [unitRingType of 'F_2]
+  bool_cringType (xpred1 true) id cunitE invbE.
 
 Canonical Structure bool_cunitRingType :=
-  Eval hnf in CUnitRingType [unitRingType of bool] bool_cunitRingMixin.
+  Eval hnf in CUnitRingType 'F_2 bool_cunitRingMixin.
+
+End definition.
