@@ -596,5 +596,4 @@ Lemma seqmx_of_mx_eq0 m n (M : 'M[R]_(m,n)) : (seqmx_of_mx M == seqmx0 m n) = (M
 Proof. by move: (@trans_eq0 _ (matrix_czType m n) M); rewrite /trans. Qed.
 
 End CZmod.
-
 End seqmx.
