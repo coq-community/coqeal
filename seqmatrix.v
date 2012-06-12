@@ -502,6 +502,18 @@ rewrite nth_cat size_seqmx.
 by case:(splitP i)=> i' ->; rewrite ?addKn -seqmxE.
 Qed.
 
+Definition colseqmx i (M : seqmatrix) :=
+  [seq [:: nth zero r i] | r <- M].
+
+Lemma colseqmxE (i : 'I_n) (M : 'M[R]_(m,n)) :
+  colseqmx i (seqmx_of_mx M) = seqmx_of_mx (col i M).
+Proof.
+apply/seqmxP; split => [|j h|j h]; first by rewrite size_map size_seqmx.
+  by rewrite /rowseqmx (nth_map [::]) ?size_seqmx // size_take size_row_seqmx.
+rewrite /fun_of_seqmx /rowseqmx (nth_map [::]) ?size_seqmx //.
+by rewrite mxE -seqmxE ord1.
+Qed.
+
 End SeqmxRowCol2.
 
 Section SeqmxBlock.
