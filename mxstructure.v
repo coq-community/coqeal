@@ -538,6 +538,19 @@ move=> le_r_p; rewrite -[_ *m _]trmxK trmx_mul_rev tr_pid_mx tr_diag_mx_seq.
 by rewrite mul_pid_mx_diag // tr_diag_mx_seq.
 Qed.
 
+Lemma mul_diag_mx_copid m n r s :
+  minn (minn m n) (size s) <= r ->
+  diag_mx_seq m n s *m @copid_mx R n r = 0.
+Proof.
+move=> le_s_r; apply/matrixP=> i j; rewrite !mxE big1 // => k _; rewrite !mxE.
+have [eq_i_k|] := altP (i =P k :> nat); last by rewrite mul0r.
+have [le_s_k|lt_k_s] := leqP (size s) k.
+  by rewrite eq_i_k nth_default // mul0rn mul0r.
+have -> : k < r.
+  by apply: (leq_trans _ le_s_r); rewrite !leq_min lt_k_s -{1}eq_i_k !ltn_ord.
+by rewrite eqE /=; case H: (k == j :> nat); rewrite subrr mulr0.
+Qed.
+
 End diag_mx_seq2.
 
 Section diag_mx_seq_comRingType.
