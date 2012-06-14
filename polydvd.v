@@ -816,4 +816,18 @@ Canonical Structure poly_priType := PriRingType {poly F} poly_priMixin.
 Canonical Structure poly_euclidType := EuclidRingType {poly F} poly_euclidMixin.
 
 End PolyPriField.
+
+(****)
+Section PolyPriFieldTheory.
+
+Variable F : fieldType.
+
+Lemma dvdr_dvdp (p q : {poly F}) : (dvdr p q) = (dvdp p q).
+Proof.
+exact: (sameP (dvdrP p q) (dvdpP q p)).
+Qed.
+
+End PolyPriFieldTheory.
+(****)
 End PolyPriField.
+

@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg fintype perm tuple choice.
-Require Import matrix bigop zmodp mxalgebra poly.
+Require Import matrix bigop zmodp mxalgebra poly generic_quotient.
 
 (* Require Import generic_quotient. (* testing *) *)
 
@@ -214,6 +214,28 @@ case: odivrP=> //= [x|] hx; constructor; first by exists x.
 by case=> x; move/eqP; apply: negP (hx _).
 Qed.
 
+(****)
+Lemma eqdP  (m n :  R) : reflect  (exists2 c12 : R,
+     (c12 \is a GRing.unit) & c12 * m = n) 
+  (m %= n).
+Proof.
+apply: (iffP idP). 
+  case/andP=> /dvdrP [x Hx] /dvdrP [y Hy].
+  case: (altP (@eqP _ n 0))=> Hn. 
+    rewrite Hn mulr0 in Hy.
+    by exists 1; rewrite ?unitr1 // Hy mulr0 Hn.
+  exists x; last by rewrite Hx. 
+  apply/GRing.unitrPr; exists y.
+  rewrite Hy mulrA in Hx.
+  by apply: (mulIf Hn); rewrite -Hx mul1r.
+case=> c Hc H; apply/andP; split; apply/dvdrP.
+  by exists c; rewrite H.
+exists (c^-1); apply: (@mulfI _ c).
+  by apply/eqP=> Habs; rewrite Habs unitr0 in Hc.
+by rewrite mulrA mulrV // mul1r.
+Qed.
+(****)
+
 Lemma dvdrr : forall a, a %| a.
 Proof. by move=> a; apply/dvdrP; exists 1; rewrite mul1r. Qed.
 
@@ -404,6 +426,39 @@ apply/idP/idP; first by move/(dvdr_trans ac); move/dvdr_trans; apply.
 by move/(dvdr_trans ca); move/dvdr_trans; apply.
 Qed.
 
+(****)
+Lemma eqd_dvdr (q p d : R) : p %= q -> (d %| p) = (d %| q).  
+Proof.
+exact: eqd_dvd. 
+Qed.
+
+Lemma eqd_dvdl (q p d : R) : p %= q -> (p %| d) = (q %| d).  
+Proof.
+by move/eqd_dvd; apply. 
+Qed.
+
+Lemma eqd_ltrans : left_transitive (@eqd R).
+Proof.
+exact: (left_trans eqd_sym eqd_trans).
+Qed.
+
+Lemma eqd_rtrans : right_transitive (@eqd R).
+Proof.
+exact: (right_trans eqd_sym eqd_trans).
+Qed.
+
+Lemma eqd_mulr (q p r : R) : p %= q -> p * r %= q * r.
+Proof.
+by move/eqd_mul; apply.
+Qed.
+
+Lemma eqd_mull (q p r : R) : p %= q -> r * p %= r * q.
+Proof.
+exact: eqd_mul.
+Qed.
+(****)
+
+
 (* dvdr + unit *)
 
 Lemma dvdr1 : forall a, (a %| 1) = (a %= 1).
@@ -495,6 +550,37 @@ Proof. by move=> a; rewrite sdvdr_def dvdr0 dvd0r. Qed.
 
 Lemma sdvd0r : forall a, 0 %<| a = false.
 Proof. by move=> a; rewrite sdvdr_def dvdr0 andbF. Qed.
+
+(****)
+(** bigop **)
+
+Lemma big_dvdr  (I : finType) (d : R) (F : I -> R) (P : pred I) :
+  (forall i,  d %| F i) -> d %| \sum_(i : I | P i) (F i).
+Proof.
+move=> H; elim: (index_enum I)=> [|a l IHl].
+  by rewrite big_nil dvdr0.
+rewrite big_cons; case: (P a).
+  by rewrite dvdr_addl; [apply: H | apply: IHl].
+exact: IHl.
+Qed.
+
+Lemma eqd_big_mul n (P : pred 'I_n) (F1 F2 : 'I_n -> R) :
+  (forall i, P i -> F1 i %= F2 i) -> 
+  \prod_(i | P i) F1 i %= \prod_(i | P i) F2 i.
+Proof.
+apply: (big_ind2 (@eqd R))=> // a b c d. 
+exact: eqd_mul.
+Qed.
+
+
+Lemma eqd_big_mul1 n (P : pred 'I_n) (F : 'I_n -> R) :
+   \prod_(i < n | P i) F i %= 1 -> (forall i, P i -> F i %= 1).
+Proof.
+case: n P F=> [ ? ? ? []|n P F Hb i Hi] //.
+rewrite (bigD1 i) //= -unitd1 unitrM unitd1 in Hb.
+by case/andP: Hb.
+Qed.
+(****)
 
 End DvdRingTheory.
 
@@ -1085,6 +1171,35 @@ case/orP; case/andP; move/(dvdr_trans _)=> h; move/h.
   by rewrite dvdr_mull_l ?b0 // => ->; rewrite orbT.
 by rewrite dvdr_mulr_l ?c0 // => ->.
 Qed.
+
+(****)
+(** bigop **)
+
+
+Lemma big_dvdr_gcdr (I : finType) (F : I -> R) :
+   forall i, \big[(@gcdr R)/0]_i F i %| F i.
+Proof.
+move=> i; elim: (index_enum I) (mem_index_enum i)=> // a l IHl.
+rewrite in_cons big_cons; case/orP=> [/eqP ->|H].
+  by rewrite dvdr_gcdl.
+exact: (dvdr_trans (dvdr_gcdr _ _) (IHl H)).
+Qed.
+ 
+Lemma big_gcdrP (I : finType) (F : I -> R) d :
+  (forall i, d %| F i) -> d %| \big[(@gcdr R)/0]_(i : I) F i.
+Proof.
+move=> Hd ; elim: (index_enum I)=> [|a l IHl].
+  by rewrite big_nil dvdr0.
+rewrite big_cons dvdr_gcd.
+by apply/andP; split; [apply: Hd | apply: IHl].
+Qed.
+
+Lemma big_gcdr_def (I : finType) (F : I -> R) d :
+  (exists k, F k %| d) -> \big[(@gcdr R)/0]_(i : I) F i %| d.
+Proof.
+by case=> k; apply: dvdr_trans; apply: big_dvdr_gcdr. 
+Qed.
+(****)
 
 End GCDRingTheory.
 
@@ -1883,5 +1998,23 @@ Qed.
 
 Lemma dvdr_mod : forall a b g, (g %| a) && (g %| b) = (g %| b) && (g %| a %% b).
 Proof. exact: EuclideanRing.Mixins.dvd_mod. Qed.
+
+(****)
+Lemma divr_mulKr a b : b != 0 -> (b * a) %/ b = a.
+Proof.
+move=> H.
+have: (b * a) %% b = 0.
+  by apply/eqP; rewrite modr_eq0 dvdr_mulr // dvdrr. 
+rewrite /divr /modr.
+case: edivrP=> c r He Hb /= Hr.
+rewrite Hr addr0 mulrC in He.
+by apply: (mulIf H).
+Qed.
+
+Lemma divr_mulKl a b : b != 0 -> (a * b) %/ b = a.
+Proof.
+by rewrite mulrC; apply: divr_mulKr.
+Qed.
+(****)
 
 End EuclideanRingTheory.

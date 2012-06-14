@@ -133,8 +133,25 @@ apply: leq_add=> //; case H: (i <= k)=> //.
 by rewrite (ltnW (leq_ltn_trans H Hij)).
 Qed.
 
-
 End SquareTriangular.
+
+
+Section SquareTriangular2.
+
+Local Open Scope ring_scope.
+Variable R : comRingType.
+
+
+Lemma char_poly_triangular_mx n (M : 'M[R]_n) :
+  upper_triangular_mx M -> char_poly M = \prod_i ('X - (M i i)%:P).
+Proof.
+move=> Ht; rewrite /char_poly det_triangular_mx ?char_poly_mx_triangular_mx //.
+by apply: eq_bigr=> i _; rewrite !mxE eqxx.
+Qed.
+ 
+End SquareTriangular2.
+
+
 
 (************************************************************)
 (******************* Block Diagonal Matrices ****************)
@@ -437,22 +454,27 @@ rewrite nth_nseq Hi nth_mkseq //.
 by apply/matrixP=> k l; rewrite !mxE !ord1.
 Qed.
 
-(* Lemma diag_mx_seq_flatten (s : seq (seq R)) : *)
-  
+Lemma diag_mx_seq_deltal n m (i : 'I_n) (j : 'I_m) (s : seq R) :
+  delta_mx i j *m diag_mx_seq m m s = s`_j *: delta_mx i j. 
+Proof.
+apply/matrixP=> k l; rewrite !mxE (bigD1 l) //= big1 ?addr0.
+  rewrite !mxE eqxx; case Hjl: (l == j); last by rewrite andbF mulr0 mul0r.
+  rewrite (eqP Hjl); case: (k == i); last by rewrite mulr0 mul0r.
+  by rewrite mulr1 mul1r.
+move=> p; rewrite !mxE=> /negbTE; rewrite (inj_eq (@ord_inj _))=> ->.
+by rewrite mulr0.
+Qed.
 
-(*   let s' := *)
-(*    [seq existTmx (diag_mx_seq (size x).-1.+1 (size x).-1.+1 x) |  x <- s] in *)
-(*   (forall l, l \in s -> l != [::]) -> *)
-(*   diag_mx_seq (size_sum s').+1 (size_sum s').+1 (flatten s) = diag_block_mx s'. *)
-(* Proof. *)
-(* elim: s=> /= [|a []]; first by rewrite diag_mx_seq_nil. *)
-(*   by   rewrite /size_sum /= cats0 . *)
-(* move=> b l; rewrite map_cons /= => IH Hl. *)
-(* rewrite -IH -?diag_mx_seq_cat // ?prednK // ?lt0n ?size_eq0. *)
-(*     by apply: Hl; rewrite mem_head. *)
-(*   by apply: Hl; rewrite mem_head. *)
-(* by move=> s' Hs'; apply: Hl; rewrite mem_behead. *)
-(* Qed. *)
+Lemma diag_mx_seq_deltar n m (i : 'I_n) (j : 'I_m) (s : seq R) :
+  diag_mx_seq n n s *m  delta_mx i j  = s`_i *: delta_mx i j. 
+Proof.
+apply/matrixP=> k l; rewrite !mxE (bigD1 k) //= big1 ?addr0.
+  rewrite !mxE eqxx; case Hjl: (k == i); last by rewrite !mulr0. 
+  rewrite (eqP Hjl); case: (l == j); last by rewrite andbF !mulr0. 
+  by rewrite !mulr1.
+move=> p; rewrite !mxE=> /negbTE; rewrite (inj_eq (@ord_inj _)) eq_sym=> ->.
+by rewrite mul0r.
+Qed.
 
 Lemma diag_mx_seq_takel m n (s : seq R) :
   diag_mx_seq m n (take m s) = diag_mx_seq m n s.
