@@ -26,6 +26,7 @@ col_seqmx M N == the concrete column matrix / M \
 block_seqmx Aul Aur Adl Adr == the concrete block matrix / Aul Aur \
                                                          \ Adl Adr /
 xrowseqmx i j M == the concrete matrix M with rows i and j permuted
+xcolseqmx i j M == the concrete matrix M with columns i and j permuted
 scalar_seqmx n x == the concrete nxn scalar matrix with x on the diagonal
 scaleseqmx x M == left (external) multiplication of the concrete matrix M
 with the scalar x
@@ -535,9 +536,15 @@ rewrite -seqmxE ; congr fun_of_seqmx ; move: (H1) (H2) M ; rewrite H1 H2=> H3 H4
 by rewrite castmx_id.
 Qed.
 
+Definition swap (T : Type) (x : T) (s : seq T) :=
+  let r := set_nth x s m1 (nth x s m2) in
+  set_nth x r m2 (nth x s m1).
+
 Definition xrowseqmx (M : seqmatrix) : seqmatrix :=
-  let R := set_nth [::] M m1 (nth [::] M m2) in
-  set_nth [::] R m2 (nth [::] M m1).
+  swap [::] M.
+
+Definition xcolseqmx (M : seqmatrix) : seqmatrix :=
+  [seq swap (zero _) s | s <- M].
 
 End SeqmxBlock.
 
