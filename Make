@@ -10,7 +10,7 @@ polydvd.v
 cseqpoly.v
 cseqpolydvd.v
 karatsuba.v
-winograd.v
+strassen.v
 boolF2.v
 mxstructure.v
 cperm.v
@@ -20,6 +20,6 @@ minor.v
 binetcauchy.v
 #examples/ex_cseqpoly.v
 #examples/ex_karatsuba.v
-#examples/ex_winograd.v
+#examples/ex_strassen.v
 #examples/ex_Q.v
 #examples/ex_Z.v
