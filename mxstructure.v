@@ -15,17 +15,16 @@ Section Triangular.
 Local Open Scope ring_scope.
 
 Variable R : ringType.
-Variables m n : nat.
 
-Definition upper_part_mx (M : 'M[R]_(m,n)) := 
+Definition upper_part_mx m n (M : 'M[R]_(m,n)) := 
   \matrix_(i, j) (M i j *+ (i <= j)).
 
-Definition lower_part_mx (M : 'M[R]_(m,n)) := 
+Definition lower_part_mx m n (M : 'M[R]_(m,n)) := 
   \matrix_(i, j) (M i j *+ (j <= i)).
 
-Definition upper_triangular_mx M := M == upper_part_mx M.
+Definition upper_triangular_mx m n (M : 'M[R]_(m,n)) := M == upper_part_mx M.
 
-Lemma upper_triangular_mxP {M : 'M_(m,n)} :
+Lemma upper_triangular_mxP m n {M : 'M_(m,n)} :
   reflect (forall (i : 'I_m) (j : 'I_n), j < i -> M i j = 0) 
           (upper_triangular_mx M).
 Proof.
@@ -36,14 +35,23 @@ apply/eqP/matrixP=> i j; rewrite mxE leqNgt; move:(H i j).
 by case:(j < i)=> // ->.
 Qed.
 
-Definition lower_triangular_mx M := M == lower_part_mx M.
+Definition lower_triangular_mx m n (M : 'M[R]_(m,n)) := M == lower_part_mx M.
 
-Definition is_triangular_mx M := upper_triangular_mx M || lower_triangular_mx M.
+Definition is_triangular_mx m n (M : 'M[R]_(m,n)) :=
+   upper_triangular_mx M || lower_triangular_mx M.
 
-Lemma upper_triangular_mx0 : upper_triangular_mx 0.
+Lemma upper_triangular_mx0 m n : upper_triangular_mx (0 : 'M[R]_(m,n)).
 Proof. by apply/upper_triangular_mxP=> i j; rewrite mxE. Qed.
 
-
+Lemma lower_triangular_mxP m n (M : 'M[R]_(m,n)) :
+  lower_triangular_mx M <-> upper_triangular_mx M^T.
+Proof. 
+rewrite /lower_triangular_mx /upper_triangular_mx.
+rewrite /lower_part_mx /upper_part_mx.
+split=> [/eqP ->|/eqP H]; apply/eqP.
+  by apply/matrixP=> i j; rewrite !mxE; case: (i <= j).
+by rewrite -[M]trmxK H; apply/matrixP=> i j; rewrite !mxE; case: (j <= i).
+Qed.
 
 End Triangular.
 
