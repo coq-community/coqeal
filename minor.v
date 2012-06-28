@@ -1,6 +1,6 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg fintype perm choice finfun.
-Require Import matrix  bigop zmodp mxalgebra poly.
+Require Import matrix  bigop zmodp mxalgebra poly mxpoly.
 
 Import GRing.Theory.
 
@@ -10,23 +10,6 @@ Import Prenex Implicits.
 
 Open Scope ring_scope.
 
-Section prelude.
-Variable R : comRingType.
-
-Let lreg := GRing.lreg.
-Lemma lregM2 : forall (a b: R) , lreg (a * b) -> lreg b.
-Proof.
-move => a b hab z h heq.
-have : a * (b * z) = a * (b * h) by rewrite heq.
-rewrite !mulrA.
-by apply/hab.
-Qed.
-
-Lemma det00 : forall (M: 'M[R]_0) ,  \det M = 1.
-Proof. by move=> M; rewrite -[1](det1 R 0) [M]flatmx0 [1%:M]flatmx0. Qed.
-
-End prelude.
-
 Section submatrix_section.
 Variable R : comRingType.
 Variable m n p q:nat.
@@ -35,13 +18,6 @@ Variable f2: 'I_q -> 'I_n.
 
 Definition submatrix (A: 'M[R]_(m,n)):=
   \matrix_(i < p, j < q) A (f1 i) (f2 j).
-
-Lemma submatrix_scale : forall A a,
-  submatrix (a *: A) = a *: submatrix A.
-Proof.
-rewrite /submatrix => A a.
-by apply/matrixP => i j; rewrite !mxE.
-Qed.
 
 End submatrix_section.
 
@@ -61,6 +37,12 @@ Qed.
 (* subset [0 .. k-1] of [0 .. n-1] *)
 Definition step_fun (n k:nat) (h : k <= n) : 'I_k -> 'I_n :=
   fun x => widen_ord h x.
+
+Lemma step_fun_eq (n k : nat) (h h' : k <= n) : step_fun h =1 step_fun h'.
+Proof.
+rewrite /step_fun => x.
+by apply/ord_inj.
+Qed.
 
 (* transform [a .. b] into [0, a+1, .., b+1] *)
 Definition lift_pred (n k:nat) (f: 'I_k -> 'I_n)
@@ -302,26 +284,39 @@ apply/ord_inj.
 by have /= : widen_ord h x = widen_ord h y :> nat by rewrite hxy.
 Qed.
 
-Lemma help2: forall x : 'I_2, 0 < x -> x = 1.
-Proof.
-rewrite [2]/(1 + 1)%nat => x.
-case: (splitP x) => a.
-- by rewrite [a]ord1 => ->.
-move => h.
-have -> : x = lift 0 a by apply/ord_inj.
-rewrite [a]ord1 => _.
-by apply/ord_inj.
-Qed.
+Lemma submatrix_scale m n p k (A: 'M[R]_(m,n))
+  (f : 'I_p -> 'I_m) (g : 'I_k -> 'I_n) a:
+  submatrix f g (a *: A) = a *: submatrix f g A.
+Proof. by apply/matrixP => i j; rewrite !mxE. Qed.
 
-Lemma submatrix_mult m n p k l (A: 'M[R]_(m,n)) (B: 'M[R]_(n,p))
+Lemma submatrix_add m n p k (A B : 'M[R]_(m,n))
+  (f : 'I_p -> 'I_m) (g : 'I_k -> 'I_n):
+  submatrix f g (A + B) = submatrix f g A + submatrix f g B.
+Proof. by apply/matrixP => i j; rewrite !mxE. Qed.
+
+Lemma submatrix_opp m n p k (A: 'M[R]_(m,n))
+  (f : 'I_p -> 'I_m) (g : 'I_k -> 'I_n) :
+  submatrix f g (- A ) = - submatrix f g A.
+Proof. by apply/matrixP => i j; rewrite !mxE. Qed.
+
+Lemma submatrix_mul m n p k l (A: 'M[R]_(m,n)) (B: 'M[R]_(n,p))
   (f : 'I_k -> 'I_m) (g : 'I_l -> 'I_p):
   submatrix f g (A *m B) = (submatrix f id A) *m (submatrix id g B).
 Proof.
-rewrite /submatrix.
 apply/matrixP => i j; rewrite !mxE.
 by apply/eq_big => // x _; rewrite !mxE /=.
 Qed.
 
+Lemma submatrix_char_poly_mx : forall m p(M: 'M[R]_m)
+  (f1: 'I_p -> 'I_m), injective f1 ->
+  submatrix f1 f1 (char_poly_mx M) = char_poly_mx (submatrix f1 f1 M).
+Proof.
+rewrite /submatrix /char_poly_mx => m p M f1 hf.
+apply/matrixP => i j; rewrite !mxE.
+case h : (f1 i == f1 j).
+- by rewrite (hf _ _ (eqP h)) eqxx.
+case h': (i == j) => //.
+by move: h; rewrite (eqP h') eqxx.
+Qed.
+
 End Theory.
-
-
