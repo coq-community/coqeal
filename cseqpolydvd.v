@@ -6,7 +6,7 @@ Require Import dvdring cdvdring polydvd cseqpoly cssralg.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Import Prenex Implicits.
+Unset Printing Implicit Defensives.
 
 Import GRing.Theory.
 Local Open Scope ring_scope.

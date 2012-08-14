@@ -6,7 +6,7 @@ Import GRing.Theory.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Import Prenex Implicits.
+Unset Printing Implicit Defensives.
 
 Open Scope ring_scope.
 
