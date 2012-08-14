@@ -151,7 +151,7 @@ by rewrite fz_tilt_0.
 Qed.
 
 Definition strictf (p q: nat) (f: 'I_p -> 'I_q) :=
-  forallb x : 'I_p, forallb y: 'I_p, (x < y) == (f x < f y).
+  [forall x : 'I_p, [forall y : 'I_p, (x < y) == (f x < f y)]].
 
 Lemma inj_strictf (p q : nat) (f: 'I_p -> 'I_q) : strictf f -> injective f.
 Proof.
@@ -290,7 +290,7 @@ Qed.
    compatible, but I couldn't try *)
 
 Definition same_codomb m n (f g: {ffun 'I_m -> 'I_n}) : bool :=
-  forallb x, (x \in codom f) == (x \in codom g).
+  [forall x, (x \in codom f) == (x \in codom g)].
 Definition same_codom m n (f g: {ffun 'I_m -> 'I_n}) :=
   forall x, (x \in codom f) = (x \in codom g).
 

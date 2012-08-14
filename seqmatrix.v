@@ -168,7 +168,7 @@ Lemma seqmx_of_funE (f : 'I_m -> 'I_n -> R) :
   seqmx_of_mx (\matrix_(i < m, j < n) f i j) = mkseqmx_ord (fun i j => trans (f i j)).
 Proof.
 rewrite /mkseqmx_ord /seqmx_of_mx !ord_enum_eqE.
-by apply:eq_map=> i; rewrite enumT unlock; apply:eq_map=> j; rewrite mxE.
+by apply:eq_map=> i; apply: eq_map=> j; rewrite mxE.
 Qed.
 
 End FixedDim.
@@ -214,12 +214,13 @@ by rewrite -!fun_of_seqmxE !seqmxE mxE.
 Qed.
 
 Definition addseqmx (M N : seqmatrix) : seqmatrix :=
-  zipwithseqmx M N (fun x y => add x y).
+  zipwithseqmx M N (@add _ _).
 
 Lemma addseqmxE:
   {morph (@seqmx_of_mx m n) : M N / M + N >-> addseqmx M N}.
 Proof.
-by rewrite /addseqmx=> M N; apply: zipwithseqmxE; exact: addE.
+rewrite /addseqmx=> M N; rewrite -(zipwithseqmxE _ _ (addE _)).
+by congr seqmx_of_mx; apply/matrixP=> i j; rewrite !mxE.
 Qed.
 
 (* This pattern could be abstract as well *)
@@ -228,7 +229,10 @@ Definition oppseqmx (M : seqmatrix) : seqmatrix :=
 
 Lemma oppseqmxE:
   {morph (@seqmx_of_mx m n) : M / - M >-> oppseqmx M}.
-Proof. by rewrite /oppseqmx=> M; rewrite -(map_seqmxE _ (oppE _)). Qed.
+Proof.
+rewrite /oppseqmx=> M; rewrite -(map_seqmxE _ (oppE _)).
+by congr seqmx_of_mx; apply/matrixP=> i j; rewrite !mxE.
+Qed.
 
 Definition subseqmx (M N : seqmatrix) :=
   zipwithseqmx M N (fun x y => sub x y).
@@ -589,7 +593,10 @@ Definition scaleseqmx (x : CR) (M : seqmatrix) :=
 
 Lemma scaleseqmxE m n x (M : 'M_(m,n)) :
   scaleseqmx (trans x) (seqmx_of_mx M) = seqmx_of_mx (scalemx x M).
-Proof. by rewrite /scaleseqmx -(map_seqmxE _ (mulE _ _)). Qed.
+Proof.
+rewrite /scaleseqmx -(map_seqmxE _ (mulE _ _)).
+by congr seqmx_of_mx; apply/matrixP=> i j; rewrite !mxE.
+Qed.
 
 Definition seqmx_czMixin m n := @CZmodMixin
   [zmodType of 'M[R]_(m,n)] seqmatrix (seqmx0 m n)

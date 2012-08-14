@@ -8,7 +8,7 @@ Unset Strict Implicit.
 Import Prenex Implicits.
 
 Import GRing.Theory.
-Import RPdiv.
+Import Pdiv.Ring.
 
 Local Open Scope ring_scope.
 
@@ -50,7 +50,7 @@ Qed.
 Lemma size_trans_poly : forall p, size (trans_poly p) = size p.
 Proof.
 rewrite /trans_poly.
-elim=> xs /= _.
+case=> xs /= _.
 by elim: xs => //= x xs ->.
 Qed.
 
@@ -179,7 +179,7 @@ Lemma lead_coef_seqE p : trans (lead_coef p) = lead_coef_seq (trans p).
 Proof.
 rewrite /lead_coef_seq /lead_coef trans_poly_def size_trans_poly /=.
 remember (size p).-1; rewrite -Heqn; clear Heqn.
-elim: p => xs /= _.
+case: p => xs /= _.
 by elim: n xs => [[] //=|n ih [] //=]; rewrite zeroE.
 Qed.
 
@@ -348,14 +348,13 @@ rewrite -indetE -!lead_coef_seqE -!polyC_seqE -!mul_seqE -add_seqE
 exact: ih.
 Qed.
 
-Lemma edivp_seqE : forall p q,
+Lemma edivp_seqE p q :
   let: (l,a,b) := redivp p q
   in edivp_seq (trans p) (trans q) = (l,trans a,trans b).
 Proof.
-rewrite /redivp /edivp_seq=> p q.
-rewrite trans_eq0 -trans_poly0 size_trans_poly; unlock.
-case: ifP => _ //.
-exact: edivp_rec_seqE.
+rewrite /redivp unlock /redivp_expanded_def.
+rewrite /edivp_seq trans_eq0 -trans_poly0 size_trans_poly.
+by case: ifP => _ //=; apply: edivp_rec_seqE.
 Qed.
 
 Lemma divp_seqE : {morph trans : p q / rdivp p q >-> divp_seq p q}.
