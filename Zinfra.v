@@ -197,10 +197,7 @@ Proof. by move=> x; rewrite inE; case/pred2P => ->. Qed.
 
 (* Zmult_1_inversion_r does not exist *)
 Lemma unitZPl : forall x y, y * x = 1 -> Zunit x.
-Proof.
-move=> x y; rewrite mulrC -[y * x]/(Zmult y x); move/Zmult_1_inversion_l.
-by case=> ->.
-Qed.
+Proof. by move=> x y; rewrite mulrC => /Zmult_1_inversion_l [] ->. Qed.
 
 Lemma  Zinv_out : {in predC Zunit, Zinv =1 id}.
 Proof. exact. Qed.
