@@ -6,7 +6,7 @@ Require Import matrix poly. (*  generic_quotient. *)
 Require Import bigop polydiv dvdring.
 
 Import GRing.Theory.
-Import RPdiv.
+Import Pdiv.Ring Pdiv.Idomain Pdiv.RingComRreg dvdring.Notations.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -154,7 +154,7 @@ elim/poly_ind; first by exists 0; exists 0; rewrite mul0r add0r.
 by move=> p c [_ [_]] _; exists p; exists c.
 Qed.
 
-Lemma polyC_inj_dvdr : forall a b, a %| b -> a%:P %| b %:P.
+Lemma polyC_inj_dvdr : forall a b, (a %| b)%R -> a%:P %| b %:P.
 Proof.
 move=> a b.
 case/dvdrP=> x Hx; apply/dvdrP; exists (x%:P).
@@ -233,7 +233,7 @@ Proof.
 move=> a.
 elim/poly_ind=> [|p c IH q]; first by move=> q; rewrite mulr0 add0r eqdd.
 rewrite mulrDr mulrA -polyC_mul addrC addrA -[q]polyseqK.
-elim: q=> /= q _; case: q=> /= [|d p1].
+case: q=> /= q _; case: q=> /= [|d p1].
   rewrite add0r gcdsr_gcdl (eqd_trans (gcdrA a _ _)) // -[a*c]addr0.
   rewrite (eqd_trans (eqd_gcd (gcdr_addl_mul a 0 c) (eqdd _))) //.
   by rewrite (eqd_trans (eqd_gcd (gcdr0 a) (eqdd _))) // -[_ * p]addr0 (IH 0).
@@ -243,7 +243,6 @@ rewrite (eqd_trans ((eqd_gcd (gcdr_addl_mul a d c)) (eqdd _))) //.
 rewrite (eqd_trans (gcdrAC _ _ _)) ?(eqd_trans (eqd_gcd (IH _) (eqdd d))) //.
 rewrite (eqd_trans (gcdrAC _ _ _)) // eqd_sym (eqd_trans (gcdrA _ _ _)) //.
 Qed.
-
 
 (* Primitive polynomials *)
 
@@ -823,9 +822,7 @@ Section PolyPriFieldTheory.
 Variable F : fieldType.
 
 Lemma dvdr_dvdp (p q : {poly F}) : (dvdr p q) = (dvdp p q).
-Proof.
-exact: (sameP (dvdrP p q) (dvdpP q p)).
-Qed.
+Proof. exact: (sameP (dvdrP _ _) (Pdiv.Field.dvdpP _ _)). Qed.
 
 End PolyPriFieldTheory.
 (****)

@@ -366,10 +366,10 @@ Lemma cprincipal_w2E : forall n (I : 'rV[R]_n),
 Proof.
 rewrite /principal_w2 /cprincipal_w2 => n I /=.
 suff h : {morph trans : x / odflt 0 (x %/? principal_gen I) >->
-                        odflt zero (cdiv x (cprincipal_gen n (trans I)))}
-  by rewrite -(map_seqmxE _ h).
-move=> x /=.
-by rewrite odflt_cdivE zeroE cprincipal_genE.
+                        odflt zero (cdiv x (cprincipal_gen n (trans I)))}.
+  rewrite -(map_seqmxE _ h); congr trans.
+  by apply/matrixP => i j; rewrite !mxE.
+by move=> x /=; rewrite odflt_cdivE zeroE cprincipal_genE.
 Qed.
 
 End CBezoutRingTheory.

@@ -122,20 +122,25 @@ Export DvdRing.Exports.
 
 Definition odivr R := DvdRing.div (DvdRing.class R).
 Definition dvdr R a b := @odivr R b a : bool.
+Definition eqd (R : dvdRingType) (a b : R) := (dvdr a b) && (dvdr b a).
+
+Definition sdvdr (R : dvdRingType) (x y : R) := (dvdr x y) && ~~(dvdr y x).
+
+Module Notations.
+
+Notation "%=R" := (@eqd _) : ring_scope.
+Notation "a %= b" := (@eqd _ a b) (at level 70, no associativity): ring_scope.
 Notation "%|%R" := (@dvdr _) : ring_scope.
 Notation "a %| b" := (dvdr a b) : ring_scope.
 Notation "%/?%R" := (@odivr _) : ring_scope.
 Notation "a %/? b" := (odivr a b)
   (at level 70, no associativity): ring_scope.
 
-Definition eqd (R : dvdRingType) (a b : R) := (a %| b) && (b %| a).
-Notation "%=R" := (@eqd _) : ring_scope.
-Notation "a %= b" := (@eqd _ a b) (at level 70, no associativity): ring_scope.
-
-
-Definition sdvdr (R : dvdRingType) (x y : R) := (x %| y) && ~~(y %| x).
 Notation "%<|R" := (@sdvdr _).
 Notation "x %<| y" := (sdvdr x y) (at level 70, no associativity).
+
+End Notations.
+Export Notations.
 
 Section DvdRingTheory.
 
