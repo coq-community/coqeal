@@ -89,7 +89,7 @@ we do not intend to be specially clever wrt normalization at this point *)
 Record Qcb : Type := QcbMake { qcb_val :> Q; _ : Qred qcb_val == qcb_val }.
 
 Canonical Structure qcb_subType :=
-  Eval hnf in [subType for qcb_val by Qcb_rect].
+  Eval hnf in [subType for qcb_val].
 
 Definition qcb_eqMixin := Eval hnf in [eqMixin of qcb_subType by <:].
 Canonical Structure qcb_eqType  := Eval hnf in EqType Qcb qcb_eqMixin.
