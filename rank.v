@@ -3,7 +3,8 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype perm.
 Require Import matrix bigop zmodp mxalgebra.
-Require Import seqmatrix mxtens cssralg.
+
+Require Import seqmatrix cssralg ssrcomplements.
 
 Import GRing.Theory.
 

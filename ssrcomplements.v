@@ -46,12 +46,12 @@ Fixpoint foldl2 (f : T3 -> T1 -> T2 -> T3) z (s : seq T1) (t : seq T2) {struct s
   else z.
 
 Lemma seq2_ind (P : seq T1 -> seq T2 -> Prop) : P [::] [::] ->
- (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) -> 
-  forall s1 s2, size s1 = size s2 -> P s1 s2. 
+ (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) ->
+  forall s1 s2, size s1 = size s2 -> P s1 s2.
 Proof.
 move=> HP IHP.
 elim=> [|x1 l1 IH1]; case=> // x2 l2 /= Hs.
-apply: IHP; apply: IH1.    
+apply: IHP; apply: IH1.
 by move/eqnP: Hs=> /= /eqnP.
 Qed.
 
@@ -61,7 +61,7 @@ Proof. by elim: k=> // n /= ->. Qed.
 Lemma nseq_cat m n (x : T1) : nseq m x ++ nseq n x = nseq (m + n) x.
 Proof. by elim: m=> // m /= ->. Qed.
 
-Lemma count_rcons P (a : T1) (l : seq T1) : 
+Lemma count_rcons P (a : T1) (l : seq T1) :
   count P (rcons l a) = (P a + count P l)%N.
 Proof. by elim: l=> //= b l ->; rewrite addnA (addnC (P b)) addnA. Qed.
 
@@ -77,7 +77,7 @@ rewrite nth_default // size_take; case: ifP=> // /negbT.
 by rewrite -leqNgt=> H; apply: leq_trans Hi.
 Qed.
 
-Lemma flatten_map (g : T1 -> T2) (s : seq (seq T1)) : 
+Lemma flatten_map (g : T1 -> T2) (s : seq (seq T1)) :
   map g (flatten s) = flatten (map (map g) s).
 Proof.
 by elim: s=> // a l IHl /=; rewrite map_cat IHl.
@@ -93,14 +93,14 @@ Qed.
 Variable T4 T5 : eqType.
 
 Lemma undup_nil (s : seq T4) : (undup s == [::]) = (s == [::]).
-Proof. 
-elim: s=> // a l /=. 
+Proof.
+elim: s=> // a l /=.
 case: ifP=> // Ha ->.
-by case: l Ha.  
+by case: l Ha.
 Qed.
 
 Lemma mem_flatten (l : seq T4) (ss : seq (seq T4)) x :
-  x \in l -> l \in ss -> x \in (flatten ss). 
+  x \in l -> l \in ss -> x \in (flatten ss).
 Proof.
 elim: ss=> // a s IH Hxl.
 rewrite in_cons=> Hls /=.
@@ -109,29 +109,29 @@ case/orP: Hls=> [/eqP <-| Hl]; [left|right]=> //.
 exact: IH.
 Qed.
 
-Lemma mem_flattenP (ss : seq (seq T4)) x : 
-  reflect (exists2 s, x \in s & s \in ss) (x \in (flatten ss)). 
+Lemma mem_flattenP (ss : seq (seq T4)) x :
+  reflect (exists2 s, x \in s & s \in ss) (x \in (flatten ss)).
 Proof.
 apply: (iffP idP)=> [H|].
   pose g := (fix loop  (ll : seq (seq T4)) x :=
     if ll is l :: tll then (if (x \in l) then l else (loop tll x))
-    else [::]). 
+    else [::]).
   exists (g ss x); elim: ss H=>// aa ll IH /=; rewrite mem_cat; case/orP=>[H|H].
-    +by rewrite H.       
+    +by rewrite H.
     -by case: ifP=> H2 //; apply: IH.
-    +by rewrite H mem_head.  
+    +by rewrite H mem_head.
   case: ifP=> _; first by rewrite mem_head.
-  by rewrite mem_behead //; apply: (IH H).    
+  by rewrite mem_behead //; apply: (IH H).
 case=> l Hl1 Hl2.
 exact: (mem_flatten Hl1).
 Qed.
 
 Lemma mem_nseq i n (a : T4) : i \in nseq n a -> i = a.
 Proof.
-by elim: n=> // n IHn; rewrite /= in_cons; case/orP=> // /eqP. 
+by elim: n=> // n IHn; rewrite /= in_cons; case/orP=> // /eqP.
 Qed.
 
-Lemma map_perm_eq (g : T4 -> T5) s1 s2 : injective g -> 
+Lemma map_perm_eq (g : T4 -> T5) s1 s2 : injective g ->
   perm_eq (map g s1) (map g s2) -> perm_eq s1 s2.
 Proof.
 move=> Hg; rewrite /perm_eq /same_count1=> /allP H.
@@ -182,13 +182,13 @@ by rewrite H // mem_behead.
 Qed.
 
 (*****  Lemma about sorted ****************)
- 
+
 Lemma sorted_trans (leT1 leT2 : rel T4) s :
   {in s &, (forall x y, leT1 x y -> leT2 x y)} ->
   sorted leT1 s -> sorted leT2 s.
 Proof.
 elim: s=> // a [] //= b l IHl HleT /andP [H1 H2].
-apply/andP; split. 
+apply/andP; split.
 apply: HleT=> //.
     exact: mem_head.
   by rewrite mem_behead // mem_head.
@@ -202,14 +202,14 @@ Proof.
 case: (ltnP n (size s))=> [|H]; last by rewrite take_oversize.
 elim: s n=> // a l IHl [] // n.
 rewrite /= ltnS.
-case: l IHl n=> // b l IHl [] // n Hn /andP [H1 H2].  
+case: l IHl n=> // b l IHl [] // n Hn /andP [H1 H2].
 apply/andP; split=> //.
 exact: (IHl n.+1).
 Qed.
 
-Lemma sorted_nth (leT : rel T4) x0 (s :seq T4) : 
-  reflexive leT -> transitive leT -> 
-  sorted leT s -> forall i j, j < size s -> i <= j -> 
+Lemma sorted_nth (leT : rel T4) x0 (s :seq T4) :
+  reflexive leT -> transitive leT ->
+  sorted leT s -> forall i j, j < size s -> i <= j ->
   leT (nth x0 s i) (nth x0 s j).
 Proof.
 move=> Hr Ht; elim: s => [_ i j H _| a l IHl Hs i j] //.
@@ -223,7 +223,7 @@ have IHij: i <= j by [].
 by rewrite -!nth_behead; apply: IHl.
 Qed.
 
-Lemma sorted_nthr (leT : rel T4) x0 (s :seq T4) : 
+Lemma sorted_nthr (leT : rel T4) x0 (s :seq T4) :
   reflexive leT -> transitive leT -> {in s, (forall x, leT x x0)} ->
   sorted leT s -> forall i j, i <= j -> leT (nth x0 s i) (nth x0 s j).
 Proof.
@@ -234,12 +234,12 @@ case: (ltnP i (size s))=> Hi.
 by rewrite !nth_default.
 Qed.
 
-Lemma sorted_map (leT1 : rel T4) (leT2 : rel T5) 
-  (g : T4 -> T5) s :  
+Lemma sorted_map (leT1 : rel T4) (leT2 : rel T5)
+  (g : T4 -> T5) s :
   {in s &, (forall x y, leT1 x y -> leT2 (g x) (g y))} -> sorted leT1 s ->
   sorted leT2 (map g s).
 Proof.
-elim: s=> // a. 
+elim: s=> // a.
 case=> // b l /= IHl HleT /andP [H1 H2].
 apply/andP; split.
 apply: HleT=> //.
@@ -254,22 +254,22 @@ Variable Ri : comRingType.
 Local Open Scope ring_scope.
 Import GRing.Theory.
 
-Lemma prod_seq_count (s : seq T4) (F : T4 -> Ri) : 
-  \prod_(i <- s) F i = 
+Lemma prod_seq_count (s : seq T4) (F : T4 -> Ri) :
+  \prod_(i <- s) F i =
   \prod_(i <- (undup s)) ((F i) ^+ (count (xpred1 i) s)).
 Proof.
 elim: s=> /= [|a l IHl]; first by rewrite !big_nil.
 rewrite big_cons IHl.
 set r:= if _ then _ else _.
-have ->: \big[*%R/1]_(i <- r) (F i) ^+ ((a == i) + count (eq_op^~ i) l) = 
-         \big[*%R/1]_(i <- r) (F i) ^+ (a == i) * 
+have ->: \big[*%R/1]_(i <- r) (F i) ^+ ((a == i) + count (eq_op^~ i) l) =
+         \big[*%R/1]_(i <- r) (F i) ^+ (a == i) *
          \big[*%R/1]_(i <- r) (F i) ^+ (count (eq_op^~ i) l).
   by rewrite -big_split /=; apply: eq_bigr=> i _; rewrite exprD.
 have ->: \big[*%R/1]_(i <- r) (F i) ^+ (a == i) = F a.
   rewrite /r; case Hal: (a \in l).
-    have Ha: a \in undup l by rewrite mem_undup.  
+    have Ha: a \in undup l by rewrite mem_undup.
     rewrite (bigD1_seq _ Ha (undup_uniq l)) /= eqxx big1 ?mulr1 //.
-    by move=> i /negbTE Hai; rewrite eq_sym Hai.       
+    by move=> i /negbTE Hai; rewrite eq_sym Hai.
   rewrite big_cons eqxx big1_seq ?mulr1 // => i /= Hi.
   case Hai: (a == i)=> //.
   by rewrite (eqP Hai) -mem_undup Hi in Hal.
@@ -316,8 +316,8 @@ Import GRing.Theory.
 
 Variable R : ringType.
 
-Lemma matrix_comp k l m n (E : 'I_k -> 'I_l -> R) (F : 'I_n -> 'I_k) 
-  (G : 'I_m -> 'I_l) :  \matrix_(i, j) (E (F i) (G j)) = 
+Lemma matrix_comp k l m n (E : 'I_k -> 'I_l -> R) (F : 'I_n -> 'I_k)
+  (G : 'I_m -> 'I_l) :  \matrix_(i, j) (E (F i) (G j)) =
   \matrix_(i < n, j < m) ((\matrix_(i0 < k, j0 < l) E i0 j0) (F i) (G j)) .
 Proof.
 by apply/matrixP=> i j; rewrite !mxE.
@@ -344,7 +344,7 @@ Lemma col_mul m n p (i : 'I_p) (A : 'M[R]_(m,n)) (B : 'M[R]_(n, p)) :
   col i (A *m B) = A *m col i B.
 Proof. by rewrite !colE mulmxA. Qed.
 
-Lemma col_id_mulmx m n (M : 'M[R]_(m,n)) i : 
+Lemma col_id_mulmx m n (M : 'M[R]_(m,n)) i :
   M *m col i 1%:M = col i M.
 Proof.
 apply/matrixP=> k l; rewrite !mxE.
@@ -360,9 +360,9 @@ apply/matrixP=> k l; rewrite !mxE.
 rewrite (bigD1 i) // big1 /= ?addr0 ?mxE ?eqxx ?mul1r // => j /negbTE Hj.
 by rewrite !mxE eq_sym Hj mul0r.
 Qed.
- 
+
 (* not use*)
-Lemma row'_col'C (T : Type) n m (i : 'I_n) (j : 'I_m) (A : 'M[T]_(n,m)) : 
+Lemma row'_col'C (T : Type) n m (i : 'I_n) (j : 'I_m) (A : 'M[T]_(n,m)) :
   row' i (col' j A) = col' j (row' i A).
 Proof. by apply/matrixP=> k l; rewrite !mxE. Qed.
 
@@ -385,9 +385,9 @@ Qed.
 Lemma delta_mul_delta k n (A : 'M[R]_n) (i : 'I_k) (j : 'I_n) :
   delta_mx i j *m A *m delta_mx j i = (A j j) *: delta_mx i i.
 Proof.
-apply/matrixP=> l m; rewrite !mxE (bigD1 j) //= big1 ?addr0=>[|p]. 
+apply/matrixP=> l m; rewrite !mxE (bigD1 j) //= big1 ?addr0=>[|p].
   rewrite !mxE (bigD1 j) //= mxE big1 ?addr0=> [|p].
-    rewrite !eqxx; case: (l == i); first by rewrite mul1r. 
+    rewrite !eqxx; case: (l == i); first by rewrite mul1r.
     by rewrite !mul0r mulr0.
   by rewrite mxE=> /negbTE ->; rewrite andbF mul0r.
 by rewrite !mxE => /negbTE ->; rewrite mulr0.
@@ -395,7 +395,7 @@ Qed.
 
 (* Lemma about detrminant *)
 (* there are two proof of equality to not use the irrelevance *)
-Lemma det_castmx n m(M : 'M[R]_n) (eq1 : n = m) 
+Lemma det_castmx n m(M : 'M[R]_n) (eq1 : n = m)
  (eq2 : n = m) :
   \det (castmx (eq1,eq2) M) = \det M.
 Proof. by case: m / eq1 eq2=> eq2; rewrite castmx_id. Qed.
@@ -422,7 +422,7 @@ Qed.
 
 Lemma block_flat_mx (M : 'M[R]_(0,m)) (N : 'M_(n, 0)) (P : 'M_(0,0))
   (Q : 'M_(n,m)) : block_mx P M N Q = Q.
-Proof. 
+Proof.
 by rewrite /block_mx !row_thin_mx col_flat_mx.
 Qed.
 (**)
@@ -430,7 +430,7 @@ Qed.
 Lemma exp_block_mx (A: 'M[R]_m.+1) (B : 'M_n.+1) k :
   (block_mx A 0 0 B) ^+ k = block_mx (A ^+ k) 0 0 (B ^+ k).
 Proof.
-elim: k=> [|k IHk]. 
+elim: k=> [|k IHk].
   by rewrite !expr0 -scalar_mx_block.
 rewrite !exprS IHk /GRing.mul /= (mulmx_block A 0 0 B (A ^+ k)).
 by rewrite !mulmx0 !mul0mx !add0r !addr0.
@@ -446,21 +446,21 @@ rewrite unitmxE det_ublock unitrM in Hu.
 case/andP: Hu; rewrite -!unitmxE => HAul HAur.
 have H: block_mx Aul 0 0 Adr *  block_mx Aul^-1 0 0 Adr^-1 = 1.
   rewrite /GRing.mul /= (mulmx_block Aul _ _ _ Aul^-1) !mulmxV //.
-  by rewrite !mul0mx !mulmx0 !add0r addr0 -scalar_mx_block.   
+  by rewrite !mul0mx !mulmx0 !add0r addr0 -scalar_mx_block.
 by apply: (mulrI Hu2); rewrite H mulrV.
 Qed.
 
 Variable R3 : fieldType.
 
 (* mx_poly *)
-Lemma horner_mx_dvdp (p q : {poly R3}) (A : 'M_n.+1) : 
+Lemma horner_mx_dvdp (p q : {poly R3}) (A : 'M_n.+1) :
   (dvdp p q) -> horner_mx A p = 0 -> horner_mx A q = 0.
 Proof.
 by case/dvdpP=> r ->; rewrite rmorphM=> /= ->; rewrite mulr0.
 Qed.
 
-Lemma mxminpolyP (A : 'M[R3]_n.+1) (p : {poly R3}) : 
-  p \is monic -> horner_mx A p = 0 -> 
+Lemma mxminpolyP (A : 'M[R3]_n.+1) (p : {poly R3}) :
+  p \is monic -> horner_mx A p = 0 ->
   (forall q, horner_mx A q = 0 -> (dvdp p q)) ->
   p = mxminpoly A.
 Proof.
@@ -478,10 +478,23 @@ Proof.
 by case: m / eq; rewrite !castmx_id.
 Qed.
 
-
-
 End Matrix.
 
+(* Lemmas borrowed from mxtens *)
+Section mxtens.
+
+(* Cyril's lemma about cast of row_mx from mxtens *)
+Lemma castmx_row (R : Type) (m m' n1 n2 n1' n2' : nat)
+  (eq_n1 : n1 = n1') (eq_n2 : n2 = n2') (eq_n12 : (n1 + n2 = n1' + n2')%N)
+  (eq_m : m = m') (A1 : 'M[R]_(m, n1)) (A2 : 'M_(m, n2)) :
+  castmx (eq_m, eq_n12) (row_mx A1 A2) =
+  row_mx (castmx (eq_m, eq_n1) A1) (castmx (eq_m, eq_n2) A2).
+Proof.
+case: _ / eq_n1 in eq_n12 *; case: _ / eq_n2 in eq_n12 *.
+by case: _ / eq_m; rewrite castmx_id.
+Qed.
+
+End mxtens.
 
 Section Polynomial.
 
@@ -490,9 +503,9 @@ Section binomial_poly.
 Variable R : comRingType.
 Local Open Scope ring_scope.
 Import GRing.Theory.
- 
-(*maybe with (X - x) *)Lemma Newton (x : R) n : 
-  ('X + x%:P)^+n = \poly_(i < n.+1) ((x^+ (n - i)) *+ 'C(n,i)).  
+
+(*maybe with (X - x) *)Lemma Newton (x : R) n :
+  ('X + x%:P)^+n = \poly_(i < n.+1) ((x^+ (n - i)) *+ 'C(n,i)).
 Proof.
 rewrite poly_def addrC exprDn.
 apply: eq_big=> // i _.
@@ -515,8 +528,8 @@ Variable R : idomainType.
 Import GRing.Theory.
 Local Open Scope ring_scope.
 
-Lemma size_prod_pos (s : seq {poly R}) : (forall p, p \in s -> 0 < size p) -> 
-  0 < size (\prod_(x <- s) x)%R. 
+Lemma size_prod_pos (s : seq {poly R}) : (forall p, p \in s -> 0 < size p) ->
+  0 < size (\prod_(x <- s) x)%R.
 Proof.
 elim: s=> [|a l IHl Hp]; first by rewrite big_nil size_poly1.
 have IHp : forall p, p \in l -> 0 < size p.
@@ -538,10 +551,10 @@ by rewrite add0r -mulrBr -rmorphB -rmorphM mulVr // eqpxx.
 Qed.
 
 Lemma coprimepn : forall n (sP_ : 'I_n -> {poly R}),
-  (forall i j, i != j -> coprimep (sP_ i) (sP_ j)) <-> 
+  (forall i j, i != j -> coprimep (sP_ i) (sP_ j)) <->
   (forall i, coprimep (sP_ i) (\prod_(j | i != j) sP_ j)).
 Proof.
-move=> n sP_; split=> H i. 
+move=> n sP_; split=> H i.
   apply: (big_ind (coprimep (sP_ i))).
   -by apply: coprimep1.
   -by move=> x y Hcx Hcy; rewrite coprimep_mulr; apply/andP.
@@ -570,14 +583,14 @@ Proof.
 by move=> H; apply/monicP; rewrite lead_coef_scale mulVr.
 Qed.
 
-Lemma coprimep_irreducible (p q : {poly Ri}) : ~~(p %= q) -> 
+Lemma coprimep_irreducible (p q : {poly Ri}) : ~~(p %= q) ->
   irreducible_poly p -> irreducible_poly q -> coprimep p q.
 Proof.
 move=> H [Hsp Hp] [Hsq Hq].
-have Hdl:= (dvdp_gcdl p q).  
+have Hdl:= (dvdp_gcdl p q).
 have Hdr:= (dvdp_gcdr p q).
 (* maybe there is a better way to prove that *)
-case: (altP (@eqP _ (size (gcdp p q)) 1%N))=> [/eqP|Hb] //. 
+case: (altP (@eqP _ (size (gcdp p q)) 1%N))=> [/eqP|Hb] //.
 have:= (Hp _ Hb Hdl); rewrite eqp_sym /eqp dvdp_gcd.
 case/andP=> [/andP [ _ Hpq]] _.
 have:= (Hq _ Hb Hdr); rewrite eqp_sym /eqp dvdp_gcd.
@@ -585,14 +598,14 @@ case/andP=> [/andP [Hqp _]] _.
 by move: H; rewrite /eqp Hpq Hqp.
 Qed.
 
-Lemma irreducible_dvdp_seq (p r: {poly Ri}) s : 
+Lemma irreducible_dvdp_seq (p r: {poly Ri}) s :
     irreducible_poly p -> p \is monic -> (dvdp p r) ->
     (forall q, q \in s -> irreducible_poly q) ->
-    (forall q, q \in s -> q \is monic) ->  
-    r = \prod_(t <- s) t -> 
+    (forall q, q \in s -> q \is monic) ->
+    r = \prod_(t <- s) t ->
     p \in s.
 Proof.
-move=> HpIrr Hpm. 
+move=> HpIrr Hpm.
 elim: s r => [r Hpr _ _|a l IHl r Hpr Hirr Hm].
   rewrite big_nil=> H; move: Hpr HpIrr.
   rewrite H dvdp1 /irreducible_poly=> /eqP ->.
@@ -606,7 +619,7 @@ move/negbT=> H.
 have Hcpa := coprimep_irreducible H HpIrr Hia.
 move: Hd; rewrite (Gauss_dvdpr _ Hcpa)=> Hd.
 apply/mem_behead/(IHl _ Hd)=> // q Hq.
-  by apply: Hirr; rewrite mem_behead. 
+  by apply: Hirr; rewrite mem_behead.
 by apply: Hm; rewrite mem_behead.
 Qed.
 
@@ -620,19 +633,19 @@ Lemma unicity_decomposition (s1 s2 : seq {poly Ri}) : forall (p : {poly Ri}),
 Proof.
 elim: s1 s2=> [|a1 l1 IHl s2 p Hirr1 Hirr2 Hm1 Hm2].
   case=> // a l p _ Hirr2 _ Hm2->.
-  rewrite big_nil big_cons=> H.   
+  rewrite big_nil big_cons=> H.
   have: irreducible_poly a by apply: Hirr2; rewrite mem_head.
-  rewrite /irreducible_poly; case.  
+  rewrite /irreducible_poly; case.
   by rewrite ltnNge leq_eqVlt -dvdp1 H dvdp_mulr.
-rewrite big_cons=> Hp1 Hp2 /=. 
+rewrite big_cons=> Hp1 Hp2 /=.
 have Ha1s2: a1 \in s2.
   apply: (irreducible_dvdp_seq _ _ _ Hirr2 Hm2 Hp2).
-  +by apply: Hirr1; rewrite mem_head.        
+  +by apply: Hirr1; rewrite mem_head.
   -by apply: Hm1; rewrite mem_head.
   by rewrite Hp1 dvdp_mulr.
-rewrite perm_eq_sym. 
+rewrite perm_eq_sym.
 apply:  (perm_eq_trans (perm_to_rem Ha1s2)).
-rewrite perm_cons perm_eq_sym. 
+rewrite perm_cons perm_eq_sym.
 have Ha1: a1 != 0.
   by apply: irredp_neq0; apply: Hirr1; rewrite mem_head.
 move: Hp2; rewrite (eq_big_perm _ (perm_to_rem Ha1s2)) /= big_cons Hp1.
@@ -652,7 +665,7 @@ Variable T0 : idomainType.
 Variable T : fieldType.
 
 (*?*)
-Lemma lead_eq_eqp (p q : {poly T}) : (lead_coef p) \is a GRing.unit -> 
+Lemma lead_eq_eqp (p q : {poly T}) : (lead_coef p) \is a GRing.unit ->
  lead_coef p = lead_coef q ->  reflect (p = q) (p %= q).
 Proof.
 move=> H1 Hl; apply: (iffP idP).
@@ -662,7 +675,7 @@ by move=> ->; rewrite eqpxx.
 Qed.
 
 (**********not use but not in library *********************)
-Lemma gcdpA (p q r : {poly T0}): 
+Lemma gcdpA (p q r : {poly T0}):
  (gcdp p (gcdp q r) %= gcdp (gcdp p q) r).
 Proof.
 apply/andP; split; rewrite dvdp_gcd; apply/andP; split.

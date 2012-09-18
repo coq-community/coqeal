@@ -1,6 +1,7 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype perm poly mxpoly.
-Require Import matrix bigop zmodp mxtens.
+Require Import matrix bigop zmodp.
+
 Require Import ssrcomplements.
 
 Set Implicit Arguments.
@@ -16,16 +17,16 @@ Local Open Scope ring_scope.
 
 Variable R : ringType.
 
-Definition upper_part_mx m n (M : 'M[R]_(m,n)) := 
+Definition upper_part_mx m n (M : 'M[R]_(m,n)) :=
   \matrix_(i, j) (M i j *+ (i <= j)).
 
-Definition lower_part_mx m n (M : 'M[R]_(m,n)) := 
+Definition lower_part_mx m n (M : 'M[R]_(m,n)) :=
   \matrix_(i, j) (M i j *+ (j <= i)).
 
 Definition upper_triangular_mx m n (M : 'M[R]_(m,n)) := M == upper_part_mx M.
 
 Lemma upper_triangular_mxP m n {M : 'M_(m,n)} :
-  reflect (forall (i : 'I_m) (j : 'I_n), j < i -> M i j = 0) 
+  reflect (forall (i : 'I_m) (j : 'I_n), j < i -> M i j = 0)
           (upper_triangular_mx M).
 Proof.
 apply/(iffP idP)=> [H i j Hij|H].
@@ -45,7 +46,7 @@ Proof. by apply/upper_triangular_mxP=> i j; rewrite mxE. Qed.
 
 Lemma lower_triangular_mxP m n (M : 'M[R]_(m,n)) :
   lower_triangular_mx M <-> upper_triangular_mx M^T.
-Proof. 
+Proof.
 rewrite /lower_triangular_mx /upper_triangular_mx.
 rewrite /lower_part_mx /upper_part_mx.
 split=> [/eqP ->|/eqP H]; apply/eqP.
@@ -156,7 +157,7 @@ Proof.
 move=> Ht; rewrite /char_poly det_triangular_mx ?char_poly_mx_triangular_mx //.
 by apply: eq_bigr=> i _; rewrite !mxE eqxx.
 Qed.
- 
+
 End SquareTriangular2.
 
 
@@ -177,7 +178,7 @@ Fixpoint szmxr k (s : seq nat) : nat :=
    | x :: s' => (k + (szmxr x s').+1)%N
  end.
 
-  
+
 Fixpoint dgbmxr k (s : seq nat) (F : (forall n, nat -> 'M[R]_n.+1)) :=
   match s return 'M_((szmxr k s).+1) with
     | nil => F k 0%N
@@ -190,7 +191,7 @@ Fixpoint size_sum s :=
    |nil => 0%N
    |x :: s' => szmxr x s'
  end.
- 
+
 Fixpoint diag_block_mx s F :=
   match s return 'M_((size_sum s).+1) with
     |nil => 0
@@ -211,21 +212,21 @@ Lemma size_sum_big s : s != [::] ->
 Proof. by case: s=> // a l _; rewrite size_sum_big_cons. Qed.
 
 
-Lemma ext_F s (F1 F2 : forall n, nat -> 'M_n.+1) : 
-(forall i, i < size s -> 
+Lemma ext_F s (F1 F2 : forall n, nat -> 'M_n.+1) :
+(forall i, i < size s ->
   (F1 (nth 0%N s i) i) = (F2 (nth 0%N s i) i)) ->
   diag_block_mx s F1 = diag_block_mx s F2.
 Proof.
 case: s=> // a l.
 elim: l a F1 F2=> /= [a F1 F2 Hi|b l IHl a F1 F2 Hi].
-  exact: (Hi 0%N). 
+  exact: (Hi 0%N).
 set F3 := (fun n i : nat => _).
 set F4 := (fun n i : nat => _).
 rewrite (Hi 0%N) // (IHl b F3 F4) //.
 by move=> i Hi2; apply: (Hi i.+1).
 Qed.
 
-Lemma upper_triangular_diag_block (s : seq nat) 
+Lemma upper_triangular_diag_block (s : seq nat)
   (F : (forall n, nat -> 'M[R]_n.+1)) :
   (forall j, upper_triangular_mx (F (nth 0%N s j) j)) ->
   upper_triangular_mx (diag_block_mx s F).
@@ -240,7 +241,7 @@ Qed.
 
 Lemma scalar_diag_block_mx c s (F : forall n, nat -> 'M_n.+1) :
  s != [::] -> (forall i, i < size s -> F (nth 0%N s i) i = c%:M ) ->
- diag_block_mx s F = c%:M. 
+ diag_block_mx s F = c%:M.
 Proof.
 case: s => // x s _.
 elim: s x F=> /= [a F Hi| b l IHl a F Hi].
@@ -252,7 +253,7 @@ Qed.
 
 Lemma diag_block_mx0 s (F : forall n, nat -> 'M_n.+1) :
  (forall i, i < size s -> F (nth 0%N s i) i = 0) <->
- diag_block_mx s F = 0. 
+ diag_block_mx s F = 0.
 Proof.
 split; case: s=> //a l Hi.
   rewrite -(scale0r 1%:M) scalemx1.
@@ -267,7 +268,7 @@ Qed.
 
 
 Lemma add_diag_block s F1 F2 :
- diag_block_mx s F1 + diag_block_mx s F2 = 
+ diag_block_mx s F1 + diag_block_mx s F2 =
  diag_block_mx s (fun n i => F1 n i + F2 n i).
 Proof.
 case: s=> [|a l]; first by rewrite addr0.
@@ -278,14 +279,14 @@ Qed.
 Lemma mulmx_diag_block s F1 F2 :
   diag_block_mx s F1 *m diag_block_mx s F2 =
   diag_block_mx s (fun n i => F1 n i *m F2 n i).
-Proof. 
+Proof.
 case: s=>[|a l]; first by rewrite mulmx0.
 elim: l a F1 F2=> //= b l IHl a F1 F2.
 rewrite -IHl (mulmx_block (F1 a 0%N) 0 0 _ (F2 a 0%N)).
 by rewrite !mul0mx !mulmx0 addr0 !add0r.
 Qed.
 
-Lemma exp_diag_block_S s F k : 
+Lemma exp_diag_block_S s F k :
  (diag_block_mx s F)^+ k.+1 = diag_block_mx s (fun n i => (F n i)^+ k.+1).
 Proof.
 case: s=>[|a l]; first by rewrite expr0n /=.
@@ -293,7 +294,7 @@ elim: l a F=> //= b l IHl a F.
 by rewrite -IHl exp_block_mx.
 Qed.
 
-Lemma exp_diag_block_cons s F k : s != [::] -> 
+Lemma exp_diag_block_cons s F k : s != [::] ->
  (diag_block_mx s F)^+ k = diag_block_mx s (fun n i => (F n i)^+ k).
 Proof.
 case: s=> // x s _.
@@ -301,7 +302,7 @@ elim: s x F => //= a l IHl x F.
 by rewrite -IHl exp_block_mx.
 Qed.
 
-Lemma tr_diag_block_mx s F : 
+Lemma tr_diag_block_mx s F :
   (diag_block_mx s F)^T = diag_block_mx s (fun n i => (F n i)^T).
 Proof.
 case: s=> [|a l] /=; first by rewrite trmx0.
@@ -312,7 +313,7 @@ Qed.
 
 End diag_block_ringType.
 
- 
+
 Section diag_block_comRingType.
 
 Variable R : comRingType.
@@ -321,10 +322,10 @@ Import GRing.Theory.
 
 
 Lemma det_diag_block s (F : forall n, nat -> 'M[R]_n.+1) :
-  s != [::] -> 
-  \det (diag_block_mx s F) = 
+  s != [::] ->
+  \det (diag_block_mx s F) =
   \prod_(i < size s) \det (F (nth 0%N s i) i).
-Proof.  
+Proof.
 case: s=> // n s _.
 elim: s n F=>[n F|a l IHl n F] /=.
   by rewrite big_ord_recl big_ord0 mulr1 /=.
@@ -333,8 +334,8 @@ Qed.
 
 
 Lemma horner_mx_diag_block (p : {poly R}) s F :
-  s != [::] -> 
-  horner_mx (diag_block_mx s F) p = 
+  s != [::] ->
+  horner_mx (diag_block_mx s F) p =
   diag_block_mx s (fun n i => horner_mx (F n i) p).
 Proof.
 case: s=> // x s _.
@@ -345,7 +346,7 @@ move=> p c IHp.
 set s1 := _ :: _.
 set F1 := fun n i => _ _ (_ + _).
 pose F2 := fun n i => horner_mx (F n i) p *m (F n i) + horner_mx (F n i) c%:P.
-have Hi: forall i, i < size s1 -> F1 (nth 0%N s1 i) i = F2 (nth 0%N s1 i) i. 
+have Hi: forall i, i < size s1 -> F1 (nth 0%N s1 i) i = F2 (nth 0%N s1 i) i.
   by move=> i _; rewrite /F1 /F2 rmorphD rmorphM /= horner_mx_X.
 rewrite (ext_F Hi) /F2 -add_diag_block -mulmx_diag_block.
 rewrite rmorphD rmorphM /=.
@@ -434,17 +435,17 @@ Qed.
 Lemma diag_mx_seq_block s :
   let l := nseq (size s) 0%N in
   let F := (fun n i => (@scalar_mx _ n.+1  s`_i)) in
-  diag_mx_seq (size_sum l).+1 (size_sum l).+1 s = 
+  diag_mx_seq (size_sum l).+1 (size_sum l).+1 s =
   diag_block_mx l F.
 Proof.
-case: s=> /= [|a l]; first by rewrite diag_mx_seq_nil. 
+case: s=> /= [|a l]; first by rewrite diag_mx_seq_nil.
 have Ha: forall a, diag_mx_seq 1 1 [:: a] = a%:M.
     by move=> b; apply/matrixP=> i j; rewrite !mxE ord1.
 elim: l a=> //= b l IHl a.
 by rewrite -IHl -cat1s (@diag_mx_seq_cat 1 _ 1) // Ha.
 Qed.
 
-Lemma diag_block_mx_seq s (F : forall n, nat -> 'M_n.+1) : 
+Lemma diag_block_mx_seq s (F : forall n, nat -> 'M_n.+1) :
   let n := size_sum s in
   let l := mkseq (fun i => (F 0%N i) ord0 ord0) (size s) in
   (forall i, nth 0%N s i = 0%N) ->
@@ -463,7 +464,7 @@ by apply/matrixP=> k l; rewrite !mxE !ord1.
 Qed.
 
 Lemma diag_mx_seq_deltal n m (i : 'I_n) (j : 'I_m) (s : seq R) :
-  delta_mx i j *m diag_mx_seq m m s = s`_j *: delta_mx i j. 
+  delta_mx i j *m diag_mx_seq m m s = s`_j *: delta_mx i j.
 Proof.
 apply/matrixP=> k l; rewrite !mxE (bigD1 l) //= big1 ?addr0.
   rewrite !mxE eqxx; case Hjl: (l == j); last by rewrite andbF mulr0 mul0r.
@@ -474,11 +475,11 @@ by rewrite mulr0.
 Qed.
 
 Lemma diag_mx_seq_deltar n m (i : 'I_n) (j : 'I_m) (s : seq R) :
-  diag_mx_seq n n s *m  delta_mx i j  = s`_i *: delta_mx i j. 
+  diag_mx_seq n n s *m  delta_mx i j  = s`_i *: delta_mx i j.
 Proof.
 apply/matrixP=> k l; rewrite !mxE (bigD1 k) //= big1 ?addr0.
-  rewrite !mxE eqxx; case Hjl: (k == i); last by rewrite !mulr0. 
-  rewrite (eqP Hjl); case: (l == j); last by rewrite andbF !mulr0. 
+  rewrite !mxE eqxx; case Hjl: (k == i); last by rewrite !mulr0.
+  rewrite (eqP Hjl); case: (l == j); last by rewrite andbF !mulr0.
   by rewrite !mulr1.
 move=> p; rewrite !mxE=> /negbTE; rewrite (inj_eq (@ord_inj _)) eq_sym=> ->.
 by rewrite mul0r.
