@@ -822,7 +822,7 @@ Section PolyPriFieldTheory.
 Variable F : fieldType.
 
 Lemma dvdr_dvdp (p q : {poly F}) : (dvdr p q) = (dvdp p q).
-Proof. exact: (sameP (dvdrP _ _) (Pdiv.Field.dvdpP _ _)). Qed.
+Proof. by apply/dvdrP/Pdiv.Field.dvdpP. Qed.
 
 End PolyPriFieldTheory.
 (****)

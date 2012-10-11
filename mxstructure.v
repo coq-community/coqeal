@@ -171,33 +171,20 @@ Variable R : ringType.
 Local Open Scope ring_scope.
 Import GRing.Theory.
 
+Fixpoint size_sum_rec k (s : seq nat) : nat :=
+  if s is x :: l then (k + (size_sum_rec x l).+1)%N else k.
 
-Fixpoint szmxr k (s : seq nat) : nat :=
-  match s with
-   | nil => k
-   | x :: s' => (k + (szmxr x s').+1)%N
- end.
+Fixpoint diag_block_mx_rec k (s : seq nat) 
+ (F : (forall n, nat -> 'M[R]_n.+1)) :=
+  if s is x :: l return 'M_((size_sum_rec k s).+1)
+   then block_mx (F k 0%N) 0 0 (diag_block_mx_rec x l (fun n i => F n i.+1))
+   else F k 0%N.
 
+Definition size_sum s := if s is x :: l then size_sum_rec x l else 0%N.
 
-Fixpoint dgbmxr k (s : seq nat) (F : (forall n, nat -> 'M[R]_n.+1)) :=
-  match s return 'M_((szmxr k s).+1) with
-    | nil => F k 0%N
-    | x :: l => block_mx (F k 0%N) 0 0 (dgbmxr x l (fun n i => F n i.+1))
-  end.
-
-
-Fixpoint size_sum s :=
-  match s with
-   |nil => 0%N
-   |x :: s' => szmxr x s'
- end.
-
-Fixpoint diag_block_mx s F :=
-  match s return 'M_((size_sum s).+1) with
-    |nil => 0
-    | x :: s' => dgbmxr x s' F
-  end.
-
+Definition diag_block_mx s F := 
+  if s is x :: l return 'M_((size_sum s).+1) 
+  then diag_block_mx_rec x l F else 0. 
 
 Lemma size_sum_big_cons : forall s x,
   (size_sum (x :: s)).+1 = (\sum_(k <- x :: s) k.+1)%N.
