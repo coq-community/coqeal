@@ -313,10 +313,10 @@ Section Matrix.
 
 Local Open Scope ring_scope.
 Import GRing.Theory.
-
+Variable T : Type.
 Variable R : ringType.
 
-Lemma matrix_comp k l m n (E : 'I_k -> 'I_l -> R) (F : 'I_n -> 'I_k)
+Lemma matrix_comp k l m n (E : 'I_k -> 'I_l -> T) (F : 'I_n -> 'I_k)
   (G : 'I_m -> 'I_l) :  \matrix_(i, j) (E (F i) (G j)) =
   \matrix_(i < n, j < m) ((\matrix_(i0 < k, j0 < l) E i0 j0) (F i) (G j)) .
 Proof.
@@ -362,7 +362,7 @@ by rewrite !mxE eq_sym Hj mul0r.
 Qed.
 
 (* not use*)
-Lemma row'_col'C (T : Type) n m (i : 'I_n) (j : 'I_m) (A : 'M[T]_(n,m)) :
+Lemma row'_col'C (T1 : Type) n m (i : 'I_n) (j : 'I_m) (A : 'M[T1]_(n,m)) :
   row' i (col' j A) = col' j (row' i A).
 Proof. by apply/matrixP=> k l; rewrite !mxE. Qed.
 

@@ -1,6 +1,7 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg fintype perm choice finfun.
 Require Import matrix  bigop zmodp mxalgebra poly mxpoly.
+Require Import ssrcomplements.
 
 Import GRing.Theory.
 
@@ -11,22 +12,32 @@ Unset Printing Implicit Defensives.
 Open Scope ring_scope.
 
 Section submatrix_section.
-Variable R : comRingType.
-Variable m n p q:nat.
-Variable f1 : 'I_p -> 'I_m.
-Variable f2: 'I_q -> 'I_n.
+Variable T : Type.
 
-Definition submatrix (A: 'M[R]_(m,n)):=
-  \matrix_(i < p, j < q) A (f1 i) (f2 j).
+Definition submatrix m n p q 
+ (f : 'I_p -> 'I_m) (g : 'I_q -> 'I_n) (A: 'M[T]_(m,n)):= 
+    \matrix_(i < p, j < q) A (f i) (g j).
+
+Lemma sub_submx k k' l l' m n (A : 'M[T]_(m,n)) (f' : 'I_k -> 'I_m) 
+ (f : 'I_k' -> 'I_k) (g' : 'I_l -> 'I_n) (g : 'I_l' -> 'I_l) : 
+  submatrix f g (submatrix f' g' A) = submatrix (f' \o f) (g' \o g) A.
+Proof.
+by rewrite /submatrix -matrix_comp.
+Qed.
 
 End submatrix_section.
 
-Section minor_section.
-Variable R : comRingType.
+Section minor_def.
+Variable R : ringType.
 
 Definition minor (m n k: nat) (f1 : 'I_k -> 'I_m) (f2: 'I_k -> 'I_n)
  (A: 'M[R]_(m,n)) := \det (submatrix f1 f2 A).
 
+End minor_def.
+
+Section minor_section.
+Variable R : comRingType.
+ 
 Lemma minor1 : forall (m n: nat) (A: 'M[R]_(m,n)) i j,
   minor (fun _: 'I_1 => i) (fun _ : 'I_1 => j) A = A i j.
 Proof.
@@ -91,7 +102,7 @@ by apply/ord_inj.
 Qed.
 
 Lemma minorn : forall (n:nat) (A: 'M[R]_n),
-  @minor _ _ n id id A = \det A.
+  @minor _ _ _ n id id A = \det A.
 Proof.
 rewrite /minor /submatrix => n A.
 f_equal.

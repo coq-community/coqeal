@@ -1,8 +1,8 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
-Require Import ssralg fintype perm poly mxpoly.
+Require Import ssralg fintype perm poly mxpoly finfun.
 Require Import matrix bigop zmodp.
 
-Require Import ssrcomplements.
+Require Import ssrcomplements minor.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -551,6 +551,25 @@ Proof.
 by move=> <-; rewrite det_diag_mx_seq_truncated take_size // leqnn.
 Qed.
 
+Lemma minor_diag_mx_seq k n (f : {ffun 'I_k -> 'I_n}) (s : seq R) :
+  injective f -> minor f f (diag_mx_seq n n s) = \prod_i s`_(f i).
+Proof.
+rewrite /minor.
+elim: k f=>[f|k IHk f Hf]; first by rewrite det_mx00 big_ord0.
+rewrite (expand_det_row _ ord0) big_ord_recl /= big1.
+  rewrite /cofactor !mxE.
+  set A := diag_mx_seq _ _ _.
+  set M := row' _ _.
+  pose g := [ffun x => f (lift ord0 x)].
+  have Hg: injective g.
+    by move=> x y; rewrite /g !ffunE=> /Hf/lift_inj H.
+  have ->: M = submatrix g g A.     
+    by apply/matrixP=> r t; rewrite !mxE !ffunE.
+  rewrite (IHk g Hg) exprD -expr2 sqrr_sign mul1r eqxx addr0 big_ord_recl.
+  by congr GRing.mul; apply: eq_bigr=> i _; rewrite ffunE.
+move=> i _; rewrite !mxE (inj_eq (@ord_inj _)) (inj_eq Hf).
+by rewrite -(inj_eq (@ord_inj _)) mul0r.
+Qed.
 
 End diag_mx_seq_comRingType.
 
