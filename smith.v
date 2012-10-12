@@ -300,7 +300,7 @@ Fixpoint smith {m n} : 'M_(m,n) -> 'M_(m) * seq R * 'M_(n) :=
   end.
 
 CoInductive smith_spec {m n} M : 'M[R]_m * seq R * 'M[R]_n -> Type :=
-  HalfSmithSpec L0 d R0 of L0 *m M *m R0 = diag_mx_seq m n d
+  SmithSpec L0 d R0 of L0 *m M *m R0 = diag_mx_seq m n d
   & sorted (@dvdr R) d
   & L0 \in unitmx & R0 \in unitmx : smith_spec M (L0, d, R0).
 
