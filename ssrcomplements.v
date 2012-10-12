@@ -711,6 +711,7 @@ Qed.
 
 End polydiv.
 
+
 Section Closed_Field.
 
 
@@ -907,7 +908,7 @@ Lemma coprimep_linear_factor_seq p :
 Proof.
 move=> [i Hi] [j Hj]; move: Hi Hj; rewrite !size_map=> Hi Hj Hij.
 rewrite !(nth_map (0,0%N)) ?size_map //.
-apply: coprimep_expl; apply: coprimep_expr. apply: coprimep_factor.
+apply/coprimep_expl/coprimep_expr/coprimep_factor.
 by rewrite unitfE subr_eq0 !(nth_map 0) //= nth_uniq // ?undup_uniq // eq_sym.
 Qed.
 
@@ -974,4 +975,104 @@ End decomposition.
 End Closed_Field.
 
 End Polynomial.
+
+
+Import GRing.Theory.
+
+Import Pdiv.Ring.
+Import Pdiv.RingMonic.
+
+Local Open Scope ring_scope.
+
+Module RPdiv.
+
+Section RingPseudoDivision.
+
+Variable R : ringType.
+Implicit Types d p q r : {poly R}.
+
+Definition id_converse_def := (fun x : R => x : R^c).
+Lemma add_id : additive id_converse_def.
+Proof. by []. Qed.
+
+Definition id_converse := Additive add_id.
+
+Lemma expr_rev (x : R) k : (x : R^c) ^+ k = x ^+ k.
+Proof. by elim:k=> // k IHk; rewrite exprS exprSr IHk. Qed.
+
+Definition phi (p : {poly R}^c) := map_poly id_converse p.
+
+Fact phi_is_rmorphism : rmorphism phi.
+Proof.
+split=> //; first exact:raddfB.
+split=> [p q|]; apply/polyP=> i; last by rewrite coef_map !coef1.
+by rewrite coefMr coef_map coefM; apply: eq_bigr => j _; rewrite !coef_map.
+Qed.
+
+Canonical phi_rmorphism := RMorphism phi_is_rmorphism.
+
+Definition phi_inv (p : {poly R^c}) :=
+  map_poly (fun x : R^c => x : R) p : {poly R}^c.
+
+Lemma phiK : cancel phi phi_inv.
+Proof. by move=> p; rewrite /phi_inv -map_poly_comp_id0 // map_poly_id. Qed.
+
+Lemma phi_invK : cancel phi_inv phi.
+Proof. by move=> p; rewrite /phi -map_poly_comp_id0 // map_poly_id. Qed.
+
+Lemma phi_bij : bijective phi.
+Proof. by exists phi_inv; first exact: phiK; exact: phi_invK. Qed.
+
+Lemma monic_map_inj (aR rR : ringType) (f : aR -> rR) (p : {poly aR}) :
+  injective f -> f 0 = 0 -> f 1 = 1 -> map_poly f p \is monic = (p \is monic).
+Proof.
+move=> inj_f eq_f00 eq_f11; rewrite !monicE lead_coef_map_inj ?rmorph0 //.
+by rewrite -eq_f11 inj_eq.
+Qed.
+
+Definition redivp_l (p q : {poly R}) : nat * {poly R} * {poly R} :=
+  let:(d,q,p) := (redivp (phi p) (phi q)) in
+  (d, phi_inv q, phi_inv p).
+
+Definition rdivp_l p q := ((redivp_l p q).1).2.
+Definition rmodp_l p q := (redivp_l p q).2.
+Definition rscalp_l p q := ((redivp_l p q).1).1.
+Definition rdvdp_l p q := rmodp_l q p == 0.
+Definition rmultp_l := [rel m d | rdvdp_l d m].
+
+Lemma ltn_rmodp_l p q : (size (rmodp_l p q) < size q) = (q != 0).
+Proof.
+have := ltn_rmodp (phi p) (phi q).
+rewrite -(rmorph0 phi_rmorphism) (inj_eq (can_inj phiK)) => <-.
+rewrite /rmodp_l /redivp_l /rmodp; case: (redivp _ _)=> [[k q'] r'] /=.
+by rewrite !size_map_inj_poly.
+Qed.
+
+End RingPseudoDivision.
+
+Module mon.
+
+Section MonicDivisor.
+
+Variable R : ringType.
+Implicit Types p q r : {poly R}.
+
+Variable d : {poly R}.
+Hypothesis mond : d \is monic.
+
+Lemma rdivp_l_eq p : 
+  p = d * (rdivp_l p d) + (rmodp_l p d).
+Proof.
+have mon_phi_d: phi d \is monic by rewrite monic_map_inj.
+apply:(can_inj (@phiK R)); rewrite {1}[phi p](rdivp_eq mon_phi_d) rmorphD.
+rewrite rmorphM /rdivp_l /rmodp_l /redivp_l /rdivp /rmodp.
+by case: (redivp _ _)=> [[k q'] r'] /=; rewrite !phi_invK.
+Qed.
+
+End MonicDivisor.
+
+End mon.
+
+End RPdiv.
+
 
