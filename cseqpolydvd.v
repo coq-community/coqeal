@@ -90,7 +90,7 @@ Definition gcdsr_seq := foldr (@cgcd R CR) (zero _).
 Lemma gcdsr_seqE (p : {poly R}) : trans (gcdsr p) = gcdsr_seq (trans p).
 Proof.
 rewrite trans_poly_def.
-elim: p => xs /= _.
+case: p => xs /= _.
 elim: xs => [|x xs ih] /=; first by rewrite zeroE.
 by rewrite -ih cgcdE.
 Qed.
