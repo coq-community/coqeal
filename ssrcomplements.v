@@ -374,6 +374,19 @@ suff ->: (lift i k == lift i l) = (k == l) => //.
 by apply/inj_eq/lift_inj.
 Qed.
 
+(*vrai aussi pour A B C D (modulo map_mx polyC)*)
+Lemma char_block_mx m n (A : 'M[R]_m) (B : 'M[R]_n) :
+  char_poly_mx (block_mx A 0 0 B) =
+  block_mx (char_poly_mx A) 0 0 (char_poly_mx B).
+Proof.
+apply/matrixP=> i j; rewrite !mxE.
+case: splitP=> k Hk; rewrite !mxE; case: splitP=> l Hl; rewrite !mxE;
+rewrite -!(inj_eq (@ord_inj _)) Hk Hl ?subr0 ?eqn_add2l //.
+  by rewrite ltn_eqF // ltn_addr. 
+by rewrite gtn_eqF // ltn_addr.
+Qed.
+
+
 
 (* Lemma about mxvec *)
 Lemma mxvec0 m n : mxvec (0 : 'M[R]_(m,n)) = 0 :> 'rV[R]_(m * n).

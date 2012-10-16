@@ -35,14 +35,20 @@ Definition minor (m n k: nat) (f1 : 'I_k -> 'I_m) (f2: 'I_k -> 'I_n)
 
 End minor_def.
 
+(* Notation "[ '\minor_' k 'of' A 'using' f & g ]" := 
+  (\det (@submatrix _ _ _ k k f g A))
+   (at level 0, f at level 99,
+    format "[ '\minor_' k  'of'  A  'using'  f  &  g ]") : form_scope. *)
+
+
 Section minor_section.
 Variable R : comRingType.
  
 Lemma minor1 : forall (m n: nat) (A: 'M[R]_(m,n)) i j,
-  minor (fun _: 'I_1 => i) (fun _ : 'I_1 => j) A = A i j.
+ minor (fun _ : 'I_1 => i) (fun _ => j) A = A i j.
 Proof.
-rewrite /minor => m n A i j.
-by rewrite [submatrix _ _ _]mx11_scalar det_scalar1 !mxE.
+move => m n A i j.
+by rewrite /minor [submatrix _ _ _]mx11_scalar det_scalar1 !mxE.
 Qed.
 
 (* subset [0 .. k-1] of [0 .. n-1] *)
@@ -121,7 +127,7 @@ by repeat f_equal; apply/ord_inj.
 Qed.
 
 Lemma minor2 : forall (m n:nat) (A: 'M[R]_(m,n))
-  (f1 : 'I_2 -> 'I_m) (f2 : 'I_2 -> 'I_n),
+  (f1 : 'I_2 -> 'I_m) f2,
   minor f1 f2 A =
     A (f1 0) (f2 0) * A (f1 1) (f2 1) -
     A (f1 1) (f2 0) * A (f1 0) (f2 1).
@@ -129,13 +135,14 @@ Proof.
 rewrite /minor /submatrix => m n A f1 f2.
 by rewrite det2 !mxE.
 Qed.
+
 End minor_section.
 
 Section Theory.
 Variable R: comRingType.
 
-Lemma minor_alternate_f : forall (m n p:nat) (f: 'I_p -> 'I_m)
-  (g: 'I_p -> 'I_n) (M: 'M[R]_(m,n)),
+Lemma minor_alternate_f : forall (m n p:nat) 
+  (f : 'I_p -> 'I_m) g (M: 'M[R]_(m,n)),
   (exists x, exists y, (x != y) /\ (f x == f y)) -> minor f g M = 0.
 Proof.
 rewrite /minor => m n p f g M [x [y [hxy hf]]].
@@ -143,8 +150,8 @@ apply: (determinant_alternate hxy) => a /=.
 by rewrite !mxE (eqP hf).
 Qed.
 
-Lemma minor_alternate_g : forall (m n p:nat) (f: 'I_p -> 'I_m)
-  (g: 'I_p -> 'I_n) (M: 'M[R]_(m,n)),
+Lemma minor_alternate_g : forall (m n p:nat) 
+   (f : 'I_p -> 'I_m) g (M: 'M[R]_(m,n)),
   (exists x, exists y, (x != y) /\ (g x == g y)) -> minor f g M = 0.
 Proof.
 rewrite /minor => m n p f g M [x [y [hxy hg]]].
@@ -153,8 +160,8 @@ apply: (determinant_alternate hxy) => a /=.
 by rewrite !mxE (eqP hg).
 Qed.
 
-Lemma minor_f_not_injective : forall (m n p:nat) (f: 'I_p -> 'I_m)
-  (g: 'I_p -> 'I_n) (M: 'M[R]_(m,n)),
+Lemma minor_f_not_injective : forall (m n p:nat) 
+   (f : 'I_p -> 'I_m) g (M: 'M[R]_(m,n)),
    ~ injective f -> minor f g M = 0.
 Proof.
 move => m n p f g M /injectiveP /injectivePn [x [y hxy hf]].
@@ -162,8 +169,8 @@ apply minor_alternate_f.
 by exists x; exists y; split => //; rewrite hf.
 Qed.
 
-Lemma minor_g_not_injective : forall (m n p:nat) (f: 'I_p -> 'I_m)
-  (g: 'I_p -> 'I_n) (M: 'M[R]_(m,n)),
+Lemma minor_g_not_injective : forall (m n p:nat) 
+  (f : 'I_p -> 'I_m) g (M: 'M[R]_(m,n)),
    ~ injective g -> minor f g M = 0.
 Proof.
 move => m n p f g M /injectiveP /injectivePn [x [y hxy hg]].
@@ -180,8 +187,8 @@ rewrite /submatrix => m n p q f1 f1' f2 f2' M h1 h2.
 by apply/matrixP => i j; rewrite !mxE (h1 i) (h2 j).
 Qed.
 
-Lemma minor_eq : forall (m n k:nat) (f1 g1: 'I_k -> 'I_m)
-  (f2 g2: 'I_k -> 'I_n) (M: 'M[R]_(m,n)),
+Lemma minor_eq : forall (m n k:nat) 
+  (f1 : 'I_k -> 'I_m) g1 f2 g2 (M: 'M[R]_(m,n)),
   (f1 =1 g1) -> (f2 =1 g2) -> minor f1 f2 M = minor g1 g2 M.
 Proof.
 rewrite /minor => m n k f1 g1 f2 g2 M h1 h2.
@@ -261,8 +268,7 @@ by move => n m p q f1 f2; apply/matrixP => i j; rewrite !mxE.
 Qed.
 
 Lemma minor_lift_block : forall (m n p :nat)
-  (f1 : 'I_p -> 'I_m) (f2 : 'I_p -> 'I_n) a
-  (M: 'M[R]_(m,n)) (l: 'rV[R]_n),
+  (f1 : 'I_p -> 'I_m) f2 a (M: 'M[R]_(m,n)) (l: 'rV[R]_n),
   minor (lift_pred f1) (lift_pred f2) (block_mx a%:M l 0 M) =
   a * minor f1 f2 M.
 Proof.

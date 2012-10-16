@@ -292,6 +292,24 @@ Qed.
 
 End diag_block_ringType.
 
+Section diag_block_ringType2.
+
+Variable R : ringType.
+Local Open Scope ring_scope.
+Import GRing.Theory.
+
+Lemma char_diag_block_mx s (F : forall n, nat -> 'M[R]_n.+1) : 
+ s != [::] -> char_poly_mx (diag_block_mx s F) =
+  diag_block_mx s (fun n i => char_poly_mx (F n i)).
+Proof.
+case: s=> //= a l _. 
+elim: l a F=> //= b l IHl a F.
+by rewrite -IHl -char_block_mx.
+Qed.
+
+End diag_block_ringType2.
+
+
 
 Section diag_block_comRingType.
 
