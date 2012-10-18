@@ -1,13 +1,11 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
-Require Import ssralg fintype perm poly mxpoly finfun.
-Require Import matrix bigop zmodp.
-
-Require Import ssrcomplements minor.
+Require Import ssralg fintype perm poly mxpoly finfun tuple.
+Require Import matrix bigop zmodp polydiv.
+Require Import ssrcomplements.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-
 
 (***************** Triangular Matrices **************************)
 
@@ -99,7 +97,6 @@ Qed.
 
 End TriangularBlock.
 
-
 Section SquareTriangular.
 
 Local Open Scope ring_scope.
@@ -141,7 +138,6 @@ Qed.
 
 End SquareTriangular.
 
-
 Section SquareTriangular2.
 
 Local Open Scope ring_scope.
@@ -180,7 +176,6 @@ Definition diag_block_mx s F :=
   if s is x :: l return 'M_((size_sum s).+1) 
   then diag_block_mx_rec x l F else 0. 
 
-(*******************)
 Lemma size_sum_big_cons : forall s x,
   (size_sum (x :: s)).+1 = (\sum_(k <- x :: s) k.+1)%N.
 Proof.
@@ -192,9 +187,8 @@ Qed.
 Lemma size_sum_big s : s != [::] ->
   (size_sum s).+1 = (\sum_(k <- s) k.+1)%N.
 Proof. by case: s=> // a l _; rewrite size_sum_big_cons. Qed.
-(**************)
 
-Lemma ext_F s (F1 F2 : forall n, nat -> 'M_n.+1) :
+Lemma ext_block s (F1 F2 : forall n, nat -> 'M_n.+1) :
 (forall i, i < size s ->
   (F1 (nth 0%N s i) i) = (F2 (nth 0%N s i) i)) ->
   diag_block_mx s F1 = diag_block_mx s F2.
@@ -230,7 +224,6 @@ elim: s x F=> /= [a F Hi| b l IHl a F Hi].
 rewrite (Hi 0%N) // IHl -?scalar_mx_block // => i Hi2.
 exact: (Hi i.+1).
 Qed.
-
 
 Lemma diag_block_mx0 s (F : forall n, nat -> 'M_n.+1) :
  (forall i, i < size s -> F (nth 0%N s i) i = 0) <->
@@ -309,8 +302,6 @@ Qed.
 
 End diag_block_ringType2.
 
-
-
 Section diag_block_comRingType.
 
 Variable R : comRingType.
@@ -343,7 +334,7 @@ set F1 := fun n i => _ _ (_ + _).
 pose F2 := fun n i => horner_mx (F n i) p *m (F n i) + horner_mx (F n i) c%:P.
 have Hi: forall i, i < size s1 -> F1 (nth 0%N s1 i) i = F2 (nth 0%N s1 i) i.
   by move=> i _; rewrite /F1 /F2 rmorphD rmorphM /= horner_mx_X.
-rewrite (ext_F Hi) /F2 -add_diag_block -mulmx_diag_block.
+rewrite (ext_block Hi) /F2 -add_diag_block -mulmx_diag_block.
 rewrite rmorphD rmorphM /=.
 rewrite horner_mx_X horner_mx_C IHp.
 set F3 := fun n i => _ _ c%:P.
@@ -418,6 +409,21 @@ rewrite diag_mx_seq_cons IHs1; apply/eqP=> //; rewrite diag_mx_seq_cons.
 by rewrite -row_mx0 -col_mx0 block_mxA castmx_id row_mx0 col_mx0.
 Qed.
 
+Lemma diag_mx_seq_block_mx m m' n n' s : 
+  size s <= minn m n ->
+  diag_mx_seq (m + m') (n + n') s = block_mx (diag_mx_seq m n s) 0 0 0.
+Proof.
+move=> H; apply/matrixP=> i j; rewrite !mxE.
+case: (splitP _)=> k Hk; rewrite mxE; case: (splitP _)=> l Hl; rewrite mxE Hk Hl //.
+  +case: (altP (k =P (n + l)%N :> nat))=> // ->.
+   rewrite nth_default ?mul0rn // (leq_trans H) //.
+   by rewrite (leq_trans (geq_minr m n)) // leq_addr.
+  -rewrite nth_default ?mul0rn // (leq_trans H) //.
+   by rewrite (leq_trans (geq_minl m n)) // leq_addr.
+  +rewrite nth_default ?mul0rn // (leq_trans H) //.
+   by rewrite (leq_trans (geq_minl m n)) // leq_addr.
+Qed.
+
 Lemma diag_mx_seq_block s :
   let l := nseq (size s) 0%N in
   let F := (fun n i => (@scalar_mx _ n.+1  s`_i)) in
@@ -444,11 +450,11 @@ have ->: s = nseq (size s1) 0%N.
   apply: (@eq_from_nth _ 0%N); first by rewrite size_mkseq size_nseq.
   by move=> i Hi; rewrite Hs nth_nseq size_mkseq Hi.
 rewrite diag_mx_seq_block.
-apply: ext_F=> i; rewrite size_nseq size_mkseq => Hi.
+apply: ext_block=> i; rewrite size_nseq size_mkseq => Hi.
 rewrite nth_nseq Hi nth_mkseq //.
 by apply/matrixP=> k l; rewrite !mxE !ord1.
 Qed.
-(*************************************)
+
 Lemma diag_mx_seq_deltal m n (i : 'I_m) (j : 'I_n) (s : seq R) :
   delta_mx i j *m diag_mx_seq n n s = s`_j *: delta_mx i j.
 Proof.
@@ -470,7 +476,7 @@ apply/matrixP=> k l; rewrite !mxE (bigD1 k) //= big1 ?addr0.
 move=> p; rewrite !mxE=> /negbTE; rewrite (inj_eq (@ord_inj _)) eq_sym=> ->.
 by rewrite mul0r.
 Qed.
-(*************************)
+
 Lemma diag_mx_seq_takel m n (s : seq R) :
   diag_mx_seq m n (take m s) = diag_mx_seq m n s.
 Proof. by apply/matrixP=> i j; rewrite !mxE nth_take. Qed.
@@ -563,30 +569,10 @@ rewrite big_cons ltnS diag_mx_seq_cons (@det_ublock _ 1 m).
 by rewrite IHl det_scalar expr1 mulrnAr.
 Qed.
 
-Lemma det_diag_mx_seq m (s : seq R) :  size s = m ->
+ Lemma det_diag_mx_seq m (s : seq R) :  size s = m ->
  \det (diag_mx_seq m m s) = \prod_(i <- s) i.
 Proof.
 by move=> <-; rewrite det_diag_mx_seq_truncated take_size // leqnn.
-Qed.
-
-Lemma minor_diag_mx_seq k n (f : {ffun 'I_k -> 'I_n}) (s : seq R) :
-  injective f -> minor f f (diag_mx_seq n n s) = \prod_i s`_(f i).
-Proof.
-rewrite /minor.
-elim: k f=>[f|k IHk f Hf]; first by rewrite det_mx00 big_ord0.
-rewrite (expand_det_row _ ord0) big_ord_recl /= big1.
-  rewrite /cofactor !mxE.
-  set A := diag_mx_seq _ _ _.
-  set M := row' _ _.
-  pose g := [ffun x => f (lift ord0 x)].
-  have Hg: injective g.
-    by move=> x y; rewrite /g !ffunE=> /Hf/lift_inj H.
-  have ->: M = submatrix g g A.     
-    by apply/matrixP=> r t; rewrite !mxE !ffunE.
-  rewrite (IHk g Hg) exprD -expr2 sqrr_sign mul1r eqxx addr0 big_ord_recl.
-  by congr GRing.mul; apply: eq_bigr=> i _; rewrite ffunE.
-move=> i _; rewrite !mxE (inj_eq (@ord_inj _)) (inj_eq Hf).
-by rewrite -(inj_eq (@ord_inj _)) mul0r.
 Qed.
 
 End diag_mx_seq_comRingType.

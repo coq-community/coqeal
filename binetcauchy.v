@@ -414,8 +414,8 @@ rewrite ffunE.
 by rewrite (perm_fE h1 h2).
 Qed.
 
-Lemma one_step (g: {ffun 'I_k -> 'I_l}) : injective g ->
-  minor id g A * minor g id B =
+Lemma one_step (g : {ffun 'I_k -> 'I_l}) : injective g ->
+  minor k id g A * minor k g id B =
   \sum_(fz : Z | good g fz.1) weight fz.1 fz.2.
 Proof.
 move => hg.
@@ -464,7 +464,7 @@ Lemma gather_by_strictness :
   \sum_(g : {ffun 'I_k -> 'I_l} | strictf g)
      \sum_(fz : Z | good g fz.1) weight fz.1 fz.2 =
   \sum_(g : {ffun 'I_k -> 'I_l} | strictf g)
-     (minor id g A) * (minor g id B).
+     (minor k id g A) * (minor k g id B).
 Proof.
 apply/eq_big => // g hg.
 rewrite one_step //.
@@ -609,7 +609,7 @@ Qed.
 
 Lemma BinetCauchy:
   \det (A *m B) = \sum_(f: {ffun 'I_k -> 'I_l} | strictf f)
-                       ((minor id f A) * (minor f id B)).
+                       ((minor k id f A) * (minor k f id B)).
 Proof.
 pose cond := fun fz : Z => injectiveb fz.1.
 pose ffstrictf := fun (f: {ffun 'I_k -> 'I_l}) => strictf f.

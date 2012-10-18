@@ -1,7 +1,7 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
-Require Import ssralg fintype perm matrix bigop zmodp mxalgebra.
+Require Import ssralg fintype finfun perm matrix bigop zmodp mxalgebra.
 Require Import choice poly polydiv polyorder mxpoly binomial.
 
 Set Implicit Arguments.
@@ -16,8 +16,9 @@ library which they could be moved to. *)
 (********************* seq.v *********************)
 Section Seq.
 
-Variables (T1 T2 T3 : Type) (f : T1 -> T2 -> T3).
+Section seq_Type.
 
+Variables (T1 T2 T3 : Type) (f : T1 -> T2 -> T3).
 
 Fixpoint zipwith (s1 : seq T1) (s2 : seq T2) :=
   if s1 is x1 :: s1' then
@@ -68,7 +69,6 @@ Proof. by elim: l=> //= b l ->; rewrite addnA (addnC (P b)) addnA. Qed.
 Lemma count_nseq P n (a : T1) : count P (nseq n a) = (n * (P a))%N.
 Proof. by elim: n=> //= n ->; rewrite mulSn. Qed.
 
-
 Lemma nth_dflt_take x0 (s : seq T1) n :
   forall i, n <= i -> nth x0 (take n s) i = x0.
 Proof.
@@ -83,23 +83,25 @@ Proof.
 by elim: s=> // a l IHl /=; rewrite map_cat IHl.
 Qed.
 
-(*?*)
 Lemma size_filter (s : seq T1) P : size (filter P s) <= size s.
 Proof.
 by elim: s=> //= a l IHl; case: (P a)=> //=; apply: (leq_trans IHl).
 Qed.
 
-(*eqType*)
-Variable T4 T5 : eqType.
+End seq_Type.
 
-Lemma undup_nil (s : seq T4) : (undup s == [::]) = (s == [::]).
+Section seq_eqType.
+
+Variable T1 T2 : eqType.
+
+Lemma undup_nil (s : seq T1) : (undup s == [::]) = (s == [::]).
 Proof.
 elim: s=> // a l /=.
 case: ifP=> // Ha ->.
 by case: l Ha.
 Qed.
 
-Lemma mem_flatten (l : seq T4) (ss : seq (seq T4)) x :
+Lemma mem_flatten (l : seq T1) (ss : seq (seq T1)) x :
   x \in l -> l \in ss -> x \in (flatten ss).
 Proof.
 elim: ss=> // a s IH Hxl.
@@ -109,11 +111,11 @@ case/orP: Hls=> [/eqP <-| Hl]; [left|right]=> //.
 exact: IH.
 Qed.
 
-Lemma mem_flattenP (ss : seq (seq T4)) x :
+Lemma mem_flattenP (ss : seq (seq T1)) x :
   reflect (exists2 s, x \in s & s \in ss) (x \in (flatten ss)).
 Proof.
 apply: (iffP idP)=> [H|].
-  pose g := (fix loop  (ll : seq (seq T4)) x :=
+  pose g := (fix loop  (ll : seq (seq T1)) x :=
     if ll is l :: tll then (if (x \in l) then l else (loop tll x))
     else [::]).
   exists (g ss x); elim: ss H=>// aa ll IH /=; rewrite mem_cat; case/orP=>[H|H].
@@ -126,12 +128,12 @@ case=> l Hl1 Hl2.
 exact: (mem_flatten Hl1).
 Qed.
 
-Lemma mem_nseq i n (a : T4) : i \in nseq n a -> i = a.
+Lemma mem_nseq i n (a : T1) : i \in nseq n a -> i = a.
 Proof.
 by elim: n=> // n IHn; rewrite /= in_cons; case/orP=> // /eqP.
 Qed.
 
-Lemma map_perm_eq (g : T4 -> T5) s1 s2 : injective g ->
+Lemma map_perm_eq (g : T1 -> T2) s1 s2 : injective g ->
   perm_eq (map g s1) (map g s2) -> perm_eq s1 s2.
 Proof.
 move=> Hg; rewrite /perm_eq /same_count1=> /allP H.
@@ -145,8 +147,7 @@ have Hp: preim g (pred1 (g x)) =1 pred1 x.
 by rewrite !(eq_count Hp).
 Qed.
 
-(*?*)
-Lemma count_rem P (l : seq T4) x : x \in l ->
+Lemma count_rem P (l : seq T1) x : x \in l ->
   count P (rem x l) = if P x then (count P l).-1 else count P l.
 Proof.
 elim: l=> // a l IHl Hx /=.
@@ -162,8 +163,7 @@ case HP: (P x); case Hax: (a == x)=> /=.
    by rewrite IHl // HP.
 Qed.
 
-(*?*)
-Lemma count_perm_eq (s1 s2 : seq T4) :
+Lemma count_perm_eq (s1 s2 : seq T1) :
   size s1 = size s2 ->
   (forall x, x \in s1 -> count (xpred1 x) s1 = count (xpred1 x) s2) ->
   perm_eq s1 s2.
@@ -183,7 +183,7 @@ Qed.
 
 (*****  Lemma about sorted ****************)
 
-Lemma sorted_trans (leT1 leT2 : rel T4) s :
+Lemma sorted_trans (leT1 leT2 : rel T1) s :
   {in s &, (forall x y, leT1 x y -> leT2 x y)} ->
   sorted leT1 s -> sorted leT2 s.
 Proof.
@@ -196,7 +196,7 @@ apply: IHl=> // x y Hx Hy.
 by apply/HleT; apply: mem_behead.
 Qed.
 
-Lemma sorted_take (leT : rel T4) (s :seq T4) n :
+Lemma sorted_take (leT : rel T1) (s :seq T1) n :
   sorted leT s -> sorted leT (take n s).
 Proof.
 case: (ltnP n (size s))=> [|H]; last by rewrite take_oversize.
@@ -207,7 +207,7 @@ apply/andP; split=> //.
 exact: (IHl n.+1).
 Qed.
 
-Lemma sorted_nth (leT : rel T4) x0 (s :seq T4) :
+Lemma sorted_nth (leT : rel T1) x0 (s :seq T1) :
   reflexive leT -> transitive leT ->
   sorted leT s -> forall i j, j < size s -> i <= j ->
   leT (nth x0 s i) (nth x0 s j).
@@ -223,7 +223,7 @@ have IHij: i <= j by [].
 by rewrite -!nth_behead; apply: IHl.
 Qed.
 
-Lemma sorted_nthr (leT : rel T4) x0 (s :seq T4) :
+Lemma sorted_nthr (leT : rel T1) x0 (s :seq T1) :
   reflexive leT -> transitive leT -> {in s, (forall x, leT x x0)} ->
   sorted leT s -> forall i j, i <= j -> leT (nth x0 s i) (nth x0 s j).
 Proof.
@@ -234,8 +234,8 @@ case: (ltnP i (size s))=> Hi.
 by rewrite !nth_default.
 Qed.
 
-Lemma sorted_map (leT1 : rel T4) (leT2 : rel T5)
-  (g : T4 -> T5) s :
+Lemma sorted_map (leT1 : rel T1) (leT2 : rel T2)
+  (g : T1 -> T2) s :
   {in s &, (forall x y, leT1 x y -> leT2 (g x) (g y))} -> sorted leT1 s ->
   sorted leT2 (map g s).
 Proof.
@@ -249,12 +249,16 @@ apply: IHl=> // x y Hx Hy.
 by apply: HleT; apply: mem_behead.
 Qed.
 
-(*comRingType*)
-Variable Ri : comRingType.
+End seq_eqType.
+
+Section seq_comRingType.
+
 Local Open Scope ring_scope.
 Import GRing.Theory.
+Variable R : comRingType.
+Variable T : eqType.
 
-Lemma prod_seq_count (s : seq T4) (F : T4 -> Ri) :
+Lemma prod_seq_count (s : seq T) (F : T -> R) :
   \prod_(i <- s) F i =
   \prod_(i <- (undup s)) ((F i) ^+ (count (xpred1 i) s)).
 Proof.
@@ -280,7 +284,39 @@ have->: count (xpred1 a) l = 0%N.
 by rewrite mul1r.
 Qed.
 
+End seq_comRingType.
+
 End Seq.
+
+Section FinType.
+
+Lemma enum_ord_enum n : enum 'I_n = ord_enum n.
+Proof. by rewrite enumT unlock. Qed.
+
+End FinType.
+
+
+Section Finfun.
+
+Variables (aT : finType) (rT : eqType).
+Variables (f g : aT -> rT).
+Variable (P : pred aT).
+Hypothesis (Hf : injective f) (Hg : injective g).
+
+Lemma uniq_image (h : aT -> rT):
+  injective h -> uniq (image h P).
+Proof. by move/map_inj_uniq=> ->; rewrite enum_uniq. Qed.
+ 
+Lemma perm_eq_image :  {subset (image f P) <= (image g P)} ->
+  perm_eq (image f P) (image g P).
+Proof.
+move=> Hsub.
+rewrite uniq_perm_eq // ?uniq_image //.
+have []:= (leq_size_perm (uniq_image Hf) Hsub)=> //.
+by rewrite !size_map.
+Qed.
+
+End Finfun.
 
 Section BigOp.
 
@@ -313,31 +349,74 @@ Section Matrix.
 
 Local Open Scope ring_scope.
 Import GRing.Theory.
-Variable T : Type.
-Variable R : ringType.
 
-Lemma matrix_comp k l m n (E : 'I_k -> 'I_l -> T) (F : 'I_n -> 'I_k)
-  (G : 'I_m -> 'I_l) :  \matrix_(i, j) (E (F i) (G j)) =
-  \matrix_(i < n, j < m) ((\matrix_(i0 < k, j0 < l) E i0 j0) (F i) (G j)) .
+Section matrix_Type.
+
+Variable T : Type.
+
+(* It is a definition for castmx on square matrices *)
+Definition pairxx (x : T) := pair x x.
+
+Lemma matrix_comp k l m n (E : 'I_k -> 'I_l -> T) (F : 'I_n -> 'I_k) G :  
+  \matrix_(i < n, j < m) ((\matrix_(i0 < k, j0 < l) E i0 j0) (F i) (G j)) =
+  \matrix_(i, j) (E (F i) (G j)).
+Proof. by apply/matrixP=> i j; rewrite !mxE. Qed.
+
+Lemma col_matrixP (m n : nat) :
+  forall (A B : 'M[T]_(m,n)), (forall i, col i A = col i B) <-> A = B.
 Proof.
-by apply/matrixP=> i j; rewrite !mxE.
+split=> [eqAB | -> //]; apply/matrixP=> i j.
+by move/colP/(_ i): (eqAB j); rewrite !mxE.
 Qed.
 
-Lemma scalar_mx0 (n : nat) : 0%:M = 0 :> 'M[R]_n.
-Proof. by rewrite -scalemx1 scale0r. Qed.
+Lemma row'_col'C n m (i : 'I_n) (j : 'I_m) (A : 'M[T]_(n,m)) :
+  row' i (col' j A) = col' j (row' i A).
+Proof. by apply/matrixP=> k l; rewrite !mxE. Qed.
+
+Lemma row_thin_mx  p q (M : 'M_(p,0)) (N : 'M[T]_(p,q)) :
+  row_mx M N = N.
+Proof.
+apply/matrixP=> i j; rewrite mxE; case: splitP=> [|k H]; first by case.
+by congr fun_of_matrix; exact: val_inj.
+Qed.
+
+Lemma col_flat_mx p q (M : 'M[T]_(0, q)) (N : 'M_(p,q)) :
+  col_mx M N = N.
+Proof.
+apply/matrixP=> i j; rewrite mxE; case: splitP => [|k H]; first by case.
+by congr fun_of_matrix; exact: val_inj.
+Qed.
+
+Lemma block_flat_mx m n (M : 'M[T]_(0,m)) (N : 'M_(n, 0)) (P : 'M_(0,0))
+  (Q : 'M_(n,m)) : block_mx P M N Q = Q.
+Proof.
+by rewrite /block_mx !row_thin_mx col_flat_mx.
+Qed.
+
+Lemma tr_mxvec m n (M : 'M[T]_(m,n)) i j :
+  (mxvec M) 0 (mxvec_index i j) = (mxvec M^T) 0 (mxvec_index j i).
+Proof. by rewrite !mxvecE mxE. Qed.
+
+End matrix_Type.
+
+Section matrix_zmodType.
+
+Variable V : zmodType.
+
+Lemma mxvec0 m n : mxvec (0 : 'M[V]_(m,n)) = 0 :> 'rV[V]_(m * n).
+Proof. by apply/eqP; rewrite mxvec_eq0. Qed.
+
+End matrix_zmodType.
+
+Section matrix_ringType.
+
+Variable R : ringType.
 
 (* Lemmas about column operations *)
 Lemma colE (m n : nat) i (A : 'M[R]_(m, n)) : col i A = A *m delta_mx i 0.
 Proof.
 apply/colP=> j; rewrite !mxE (bigD1 i) //= mxE !eqxx mulr1.
 by rewrite big1 ?addr0 // => i' ne_i'i; rewrite mxE /= (negbTE ne_i'i) mulr0.
-Qed.
-
-Lemma col_matrixP (m n : nat) :
-  forall (A B : 'M[R]_(m,n)), (forall i, col i A = col i B) <-> A = B.
-Proof.
-split=> [eqAB | -> //]; apply/matrixP=> i j.
-by move/colP/(_ i): (eqAB j); rewrite !mxE.
 Qed.
 
 Lemma col_mul m n p (i : 'I_p) (A : 'M[R]_(m,n)) (B : 'M[R]_(n, p)) :
@@ -352,7 +431,6 @@ rewrite (bigD1 i) // big1 /= ?addr0 ?mxE ?eqxx ?mulr1 // => j /negbTE Hj.
 by rewrite !mxE Hj mulr0.
 Qed.
 
-(*?*)
 Lemma row_id_mulmx m n (M : 'M[R]_(m,n)) i :
    row i 1%:M *m M = row i M.
 Proof.
@@ -360,11 +438,6 @@ apply/matrixP=> k l; rewrite !mxE.
 rewrite (bigD1 i) // big1 /= ?addr0 ?mxE ?eqxx ?mul1r // => j /negbTE Hj.
 by rewrite !mxE eq_sym Hj mul0r.
 Qed.
-
-(* not use*)
-Lemma row'_col'C (T1 : Type) n m (i : 'I_n) (j : 'I_m) (A : 'M[T1]_(n,m)) :
-  row' i (col' j A) = col' j (row' i A).
-Proof. by apply/matrixP=> k l; rewrite !mxE. Qed.
 
 Lemma row'_col'_char_poly_mx m i (M : 'M[R]_m) :
   row' i (col' i (char_poly_mx M)) = char_poly_mx (row' i (col' i M)).
@@ -386,16 +459,7 @@ rewrite -!(inj_eq (@ord_inj _)) Hk Hl ?subr0 ?eqn_add2l //.
 by rewrite gtn_eqF // ltn_addr.
 Qed.
 
-
-
 (* Lemma about mxvec *)
-Lemma mxvec0 m n : mxvec (0 : 'M[R]_(m,n)) = 0 :> 'rV[R]_(m * n).
-Proof. by apply/eqP; rewrite mxvec_eq0. Qed.
-
-Lemma tr_mxvec m n (M : 'M[R]_(m,n)) i j :
-  (mxvec M) 0 (mxvec_index i j) = (mxvec M^T) 0 (mxvec_index j i).
-Proof. by rewrite !mxvecE mxE. Qed.
-
 Lemma scale_mxvec m n x (M : 'M[R]_(m,n)) : mxvec (x *: M) = x *: mxvec M.
 Proof.
 apply/rowP => i; rewrite mxE.
@@ -416,40 +480,14 @@ by rewrite !mxE => /negbTE ->; rewrite mulr0.
 Qed.
 
 (* Lemma about detrminant *)
+
 (* there are two proof of equality to not use the irrelevance *)
-Lemma det_castmx n m(M : 'M[R]_n) (eq1 : n = m)
- (eq2 : n = m) :
+Lemma det_castmx n m(M : 'M[R]_n) (eq1 : n = m) (eq2 : n = m) :
   \det (castmx (eq1,eq2) M) = \det M.
 Proof. by case: m / eq1 eq2=> eq2; rewrite castmx_id. Qed.
 
-Variable R2 : comUnitRingType.
-Variable n m : nat.
 
-Definition pairxx (T : Type) (x : T) := pair x x.
-
-(**)
-Lemma row_thin_mx  p q (M : 'M_(p,0)) (N : 'M[R]_(p,q)) :
-  row_mx M N = N.
-Proof.
-apply/matrixP=> i j; rewrite mxE; case: splitP=> [|k H]; first by case.
-by congr fun_of_matrix; exact: val_inj.
-Qed.
-
-Lemma col_flat_mx p q (M : 'M[R]_(0, q)) (N : 'M_(p,q)) :
-  col_mx M N = N.
-Proof.
-apply/matrixP=> i j; rewrite mxE; case: splitP => [|k H]; first by case.
-by congr fun_of_matrix; exact: val_inj.
-Qed.
-
-Lemma block_flat_mx (M : 'M[R]_(0,m)) (N : 'M_(n, 0)) (P : 'M_(0,0))
-  (Q : 'M_(n,m)) : block_mx P M N Q = Q.
-Proof.
-by rewrite /block_mx !row_thin_mx col_flat_mx.
-Qed.
-(**)
-
-Lemma exp_block_mx (A: 'M[R]_m.+1) (B : 'M_n.+1) k :
+Lemma exp_block_mx m n (A: 'M[R]_m.+1) (B : 'M_n.+1) k :
   (block_mx A 0 0 B) ^+ k = block_mx (A ^+ k) 0 0 (B ^+ k).
 Proof.
 elim: k=> [|k IHk].
@@ -458,7 +496,19 @@ rewrite !exprS IHk /GRing.mul /= (mulmx_block A 0 0 B (A ^+ k)).
 by rewrite !mulmx0 !mul0mx !add0r !addr0.
 Qed.
 
-Lemma invmx_block n1 n2  (Aul : 'M[R2]_n1.+1) (Adr : 'M[R2]_n2.+1) :
+Lemma char_castmx m n(A : 'M[R]_n) (eq : n = m) :
+ castmx_nn eq (char_poly_mx A) = char_poly_mx (castmx_nn eq A).
+Proof.
+by case: m / eq; rewrite !castmx_id.
+Qed.
+
+End matrix_ringType.
+
+Section matrix_comUnitRingType.
+
+Variable R : comUnitRingType.
+
+Lemma invmx_block n1 n2  (Aul : 'M[R]_n1.+1) (Adr : 'M[R]_n2.+1) :
    (block_mx Aul 0 0 Adr) \in unitmx ->
   (block_mx Aul 0 0 Adr)^-1 = block_mx Aul^-1 0 0 Adr^-1.
 Proof.
@@ -472,16 +522,20 @@ have H: block_mx Aul 0 0 Adr *  block_mx Aul^-1 0 0 Adr^-1 = 1.
 by apply: (mulrI Hu2); rewrite H mulrV.
 Qed.
 
-Variable R3 : fieldType.
+End matrix_comUnitRingType.
+
+Section matrix_fieldType.
+
+Variable F : fieldType.
 
 (* mx_poly *)
-Lemma horner_mx_dvdp (p q : {poly R3}) (A : 'M_n.+1) :
+Lemma horner_mx_dvdp n (p q : {poly F}) (A : 'M_n.+1) :
   (dvdp p q) -> horner_mx A p = 0 -> horner_mx A q = 0.
 Proof.
 by case/dvdpP=> r ->; rewrite rmorphM=> /= ->; rewrite mulr0.
 Qed.
 
-Lemma mxminpolyP (A : 'M[R3]_n.+1) (p : {poly R3}) :
+Lemma mxminpolyP n (A : 'M[F]_n.+1) (p : {poly F}) :
   p \is monic -> horner_mx A p = 0 ->
   (forall q, horner_mx A q = 0 -> (dvdp p q)) ->
   p = mxminpoly A.
@@ -493,12 +547,7 @@ apply/andP; split.
 exact: mxminpoly_min.
 Qed.
 
-(*?*)
-Lemma char_castmx (A : 'M[R]_n) (eq : n = m) :
- castmx_nn eq (char_poly_mx A) = char_poly_mx (castmx_nn eq A).
-Proof.
-by case: m / eq; rewrite !castmx_id.
-Qed.
+End matrix_fieldType.
 
 End Matrix.
 
@@ -516,6 +565,9 @@ case: _ / eq_n1 in eq_n12 *; case: _ / eq_n2 in eq_n12 *.
 by case: _ / eq_m; rewrite castmx_id.
 Qed.
 
+(* We also use the lemma castmx_block, it is another lemma of section
+ExtraMx of file mxtens. *)
+
 End mxtens.
 
 Section Polynomial.
@@ -526,7 +578,7 @@ Variable R : comRingType.
 Local Open Scope ring_scope.
 Import GRing.Theory.
 
-(*maybe with (X - x) *)Lemma Newton (x : R) n :
+Lemma Newton (x : R) n :
   ('X + x%:P)^+n = \poly_(i < n.+1) ((x^+ (n - i)) *+ 'C(n,i)).
 Proof.
 rewrite poly_def addrC exprDn.
@@ -534,8 +586,11 @@ apply: eq_big=> // i _.
 by rewrite -scalerMnl -mul_polyC rmorphX.
 Qed.
 
+Lemma Newton_XsubC (x : R) n :
+  ('X - x%:P)^+n = \poly_(i < n.+1) (((-x)^+ (n - i)) *+ 'C(n,i)).
+Proof. by rewrite -polyC_opp Newton. Qed.
 
-(*same *)Lemma Newton_coef (x : R) n i : (('X + x%:P)^+n)`_i = (x^+ (n - i)) *+ 'C(n,i).
+Lemma Newton_coef (x : R) n i : (('X + x%:P)^+n)`_i = (x^+ (n - i)) *+ 'C(n,i).
 Proof.
 rewrite Newton coef_poly.
 case H: (i < n.+1)=> //.
@@ -543,9 +598,27 @@ rewrite bin_small; first by rewrite mulr0n.
 by rewrite ltnNge negbT.
 Qed.
 
+Lemma Newton_coef_XsubC (x : R) n i : 
+ (('X - x%:P)^+n)`_i = ((-x)^+ (n - i)) *+ 'C(n,i).
+Proof. by rewrite -polyC_opp Newton_coef. Qed.
+
 End binomial_poly.
 
-Section Idomain_poly. 
+Section poly_ringType.
+
+Open Scope ring_scope.
+Variable R : ringType.
+
+Lemma monic_size_1 (p : {poly R}) : p \is monic -> size p <= 1 -> p = 1.
+Proof. 
+move/monicP=> H Hp; rewrite [p]size1_polyC //.
+have <- : (size p).-1 = 0%N by apply/eqP; rewrite -subn1 subn_eq0.
+by rewrite -lead_coefE H.
+Qed.
+
+End poly_ringType.
+
+Section poly_idomainType. 
 
 Variable R : idomainType.
 Import GRing.Theory.
@@ -585,8 +658,6 @@ move=> n sP_; split=> H i.
 by move=> j Hij; move: (H i); rewrite (bigD1 j) // coprimep_mulr; case/andP.
 Qed.
 
-
-
 Lemma lead_coef_prod (s : seq {poly R}) :
   \prod_(p <- s) lead_coef p = lead_coef (\prod_(p <- s) p).
 Proof.
@@ -594,16 +665,23 @@ elim: s=> [|a l IHl]; first by rewrite !big_nil lead_coef1.
 by rewrite !big_cons lead_coefM -IHl.
 Qed.
 
-(*?*)
 Lemma lead_coef_scale (a : R) p : lead_coef (a *: p) = a * lead_coef p.
 Proof.
 by rewrite -mul_polyC lead_coefM lead_coefC.
 Qed.
 
-Lemma monic_p (p : {poly R}) : (lead_coef p) \is a GRing.unit ->
+Lemma monic_leadVMp (p : {poly R}) : (lead_coef p) \is a GRing.unit ->
   ((lead_coef p)^-1 *: p) \is monic.
 Proof.
 by move=> H; apply/monicP; rewrite lead_coef_scale mulVr.
+Qed.
+
+Lemma lead_eq_eqp (p q : {poly R}) : (lead_coef p) \is a GRing.unit ->
+ lead_coef p = lead_coef q ->  reflect (p = q) (p %= q).
+Proof.
+move=> H1 Hl; apply: (iffP idP).
+  by move/eqp_eq; rewrite -Hl => /scaler_injl ->.
+by move=> ->; rewrite eqpxx.
 Qed.
 
 Lemma coprimep_irreducible (p q : {poly R}) : ~~(p %= q) ->
@@ -612,8 +690,7 @@ Proof.
 move=> H [Hsp Hp] [Hsq Hq].
 have Hdl:= (dvdp_gcdl p q).
 have Hdr:= (dvdp_gcdr p q).
-(* maybe there is a better way to prove that *)
-case: (altP (@eqP _ (size (gcdp p q)) 1%N))=> [/eqP|Hb] //.
+case: (altP (size (gcdp p q) =P 1%N))=> [/eqP|Hb] //.
 have:= (Hp _ Hb Hdl); rewrite eqp_sym /eqp dvdp_gcd.
 case/andP=> [/andP [ _ Hpq]] _.
 have:= (Hq _ Hb Hdr); rewrite eqp_sym /eqp dvdp_gcd.
@@ -621,7 +698,7 @@ case/andP=> [/andP [Hqp _]] _.
 by move: H; rewrite /eqp Hpq Hqp.
 Qed.
 
-Lemma irreducible_dvdp_seq (p r: {poly R}) s :
+Lemma irreducible_dvdp_seq (p r : {poly R}) s :
     irreducible_poly p -> p \is monic -> (dvdp p r) ->
     (forall q, q \in s -> irreducible_poly q) ->
     (forall q, q \in s -> q \is monic) ->
@@ -681,54 +758,21 @@ apply: (IHl _ q)=> // [r Hr|r Hr|r Hr|r Hr].
   -by apply: Hm2; rewrite (mem_rem Hr).
 Qed.
 
-End Idomain_poly.
-
-Open Scope ring_scope.
-Variable Ri : ringType.
-
-Lemma monic_size_1 (p : {poly Ri}) : p \is monic -> size p <= 1 -> p = 1.
-Proof. 
-move/monicP=> H Hp; rewrite [p]size1_polyC //.
-have <- : (size p).-1 = 0%N by apply/eqP; rewrite -subn1 subn_eq0.
-by rewrite -lead_coefE H.
-Qed.
-
-Section polydiv.
-
-Variable T0 : idomainType.
-Variable T : fieldType.
-Import GRing.Theory.
-
-(*?*)
-Lemma lead_eq_eqp (p q : {poly T}) : (lead_coef p) \is a GRing.unit ->
- lead_coef p = lead_coef q ->  reflect (p = q) (p %= q).
-Proof.
-move=> H1 Hl; apply: (iffP idP).
-  move/eqp_eq; rewrite -Hl; move/scalerI.
-  by apply; rewrite -unitfE.
-by move=> ->; rewrite eqpxx.
-Qed.
-
-(**********not use but not in library *********************)
-Lemma gcdpA (p q r : {poly T0}):
+Lemma gcdpA (p q r : {poly R}):
  (gcdp p (gcdp q r) %= gcdp (gcdp p q) r).
 Proof.
 apply/andP; split; rewrite dvdp_gcd; apply/andP; split.
   +rewrite dvdp_gcd; apply/andP; split; first exact: dvdp_gcdl.
-   by apply: (dvdp_trans (dvdp_gcdr _ _) (dvdp_gcdl _ _)).
-  +by apply: (dvdp_trans (dvdp_gcdr _ _) (dvdp_gcdr _ _)).
-  +by apply: (dvdp_trans (dvdp_gcdl _ _) (dvdp_gcdl _ _)).
+   exact: (dvdp_trans (dvdp_gcdr _ _) (dvdp_gcdl _ _)).
+  +exact: (dvdp_trans (dvdp_gcdr _ _) (dvdp_gcdr _ _)).
+  +exact: (dvdp_trans (dvdp_gcdl _ _) (dvdp_gcdl _ _)).
   +rewrite dvdp_gcd; apply/andP; split; last exact: dvdp_gcdr.
-   by apply: (dvdp_trans (dvdp_gcdl _ _) (dvdp_gcdr _ _)).
+   exact: (dvdp_trans (dvdp_gcdl _ _) (dvdp_gcdr _ _)).
 Qed.
 
-End polydiv.
+End poly_idomainType.
 
-
-Section Closed_Field.
-
-
-Section decomposition.
+Section poly_closedFieldType.
 
 Variable F :  closedFieldType.
 Import GRing.Theory.
@@ -983,15 +1027,16 @@ apply: (@eq_from_nth _ 0)=>[|i]; rewrite !size_map //.
 by move=> Hi; rewrite (nth_map (0,0%N)) ?size_map // (nth_map 0) //.
 Qed.
 
-End decomposition.
-
-End Closed_Field.
+End poly_closedFieldType.
 
 End Polynomial.
 
-
+(****************************************************************************)
+(****************************************************************************)
+(************ left pseudo division, it is complement of polydiv. ************)
+(****************************************************************************)
+(****************************************************************************)
 Import GRing.Theory.
-
 Import Pdiv.Ring.
 Import Pdiv.RingMonic.
 
@@ -1088,4 +1133,7 @@ End mon.
 
 End RPdiv.
 
-
+(****************************************************************************)
+(****************************************************************************)
+(****************************************************************************)
+(****************************************************************************)
