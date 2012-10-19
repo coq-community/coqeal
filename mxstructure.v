@@ -3,6 +3,33 @@ Require Import ssralg fintype perm poly mxpoly finfun tuple.
 Require Import matrix bigop zmodp polydiv.
 Require Import ssrcomplements.
 
+(******************************************************************************)
+(*   This file contains three parts about different structures of matrices.   *)
+(*                                                                            *)
+(*    *** Lower and upper triangular matrices :                               *)
+(*   upper_triangular_mx M == The BOOLEAN predicate that hold if              *)
+(*                            M is an upper traiangular matrix.               *)
+(*   lower_triangular_mx M == The same as upper_trianglar_mx but for          *)
+(*                            lower_triangular matrices.                      *)
+(*      is_triangular_mx M == M is upper or lower triangular matrix.          *)
+(*                                                                            *)
+(*    *** Block diagonal matrices :                                           *)
+(*       diag_block_mx s F == The block diagonal matrix where the ith block   *)
+(*                            is F (nth 0 s i) i. F n i is a square matrix    *)
+(*                            of dimension n.+1, and s is the sequence        *)
+(*                            of dimension of each block minus 1.             *)
+(*                            It is defined by calling recursivly the         *)
+(*                            function block_mx.                              *)
+(*         (size_sum s).+1 == It is the type of the matrix diag_block_mx s F. *)
+(*                                                                            *)
+(*    *** Diagonal matrices :                                                 *)
+(*       diag_mx_seq m n s == The diagonal matrix of type 'M_(m,n) where      *)
+(*                            the ith diagonal coefficient is the ith         *)
+(*                            element of s.                                   *)
+(*                                                                            *)
+(******************************************************************************)
+  
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -29,8 +56,9 @@ Lemma upper_triangular_mxP m n {M : 'M_(m,n)} :
 Proof.
 apply/(iffP idP)=> [H i j Hij|H].
   rewrite /upper_triangular_mx in H.
-  by move/eqP:H=> ->; rewrite mxE leqNgt Hij.
-apply/eqP/matrixP=> i j; rewrite mxE leqNgt; move:(H i j).
+  by move/eqP: H=> ->; rewrite mxE leqNgt Hij.
+apply/eqP/matrixP=> i j; rewrite mxE leqNgt.
+have:= (H i j).
 by case:(j < i)=> // ->.
 Qed.
 
@@ -152,7 +180,7 @@ Qed.
 
 End SquareTriangular2.
 
-(************************************************************)
+
 (******************* Block Diagonal Matrices ****************)
 
 Section diag_block_ringType.
@@ -374,6 +402,8 @@ by move: H; rewrite !unitmxE (det_ublock (F a 0%N)) unitrM; case/andP.
 Qed.
 
 End diag_block_comUnitRingType.
+
+(****************** Diagonal Matrices *********************************)
 
 Section diag_mx_seq.
 
