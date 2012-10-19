@@ -280,7 +280,7 @@ Qed.
 
 End improve_pivot_correct.
 
-Fixpoint smith {m n} : 'M_(m,n) -> 'M_(m) * seq R * 'M_(n) :=
+Fixpoint Smith {m n} : 'M_(m,n) -> 'M_(m) * seq R * 'M_(n) :=
   match m, n return 'M_(m, n) -> 'M_(m) * seq R * 'M_(n) with
   | _.+1, _.+1 => fun A : 'M_(1 + _, 1 + _) =>
       if [pick ij | A ij.1 ij.2 != 0] is Some (i, j) then
@@ -291,7 +291,7 @@ Fixpoint smith {m n} : 'M_(m,n) -> 'M_(m) * seq R * 'M_(n) :=
       let u := dlsubmx A in let v := ursubmx A in
       let v' := map_mx (fun x => odflt 0 (x %/? a)) v in
       let A := (drsubmx A) - (const_mx 1 *m v) in
-      let:(L', d, R') := smith (map_mx (fun x => odflt 0 (x %/? a)) A) in
+      let:(L', d, R') := Smith (map_mx (fun x => odflt 0 (x %/? a)) A) in
       (lift0_mx L' *m block_mx 1 0 (-const_mx 1) 1%:M *m (xcol i 0 L),
        a :: [seq x * a | x <- d],
        (xrow j 0 R) *m block_mx 1 (-v') 0 1%:M *m lift0_mx R')
@@ -299,12 +299,12 @@ Fixpoint smith {m n} : 'M_(m,n) -> 'M_(m) * seq R * 'M_(n) :=
   | _, _ => fun A => (1%:M, [::], 1%:M)
   end.
 
-CoInductive smith_spec {m n} M : 'M[R]_m * seq R * 'M[R]_n -> Type :=
+CoInductive Smith_spec {m n} M : 'M[R]_m * seq R * 'M[R]_n -> Type :=
   SmithSpec L0 d R0 of L0 *m M *m R0 = diag_mx_seq m n d
   & sorted (@dvdr R) d
-  & L0 \in unitmx & R0 \in unitmx : smith_spec M (L0, d, R0).
+  & L0 \in unitmx & R0 \in unitmx : Smith_spec M (L0, d, R0).
 
-Lemma smithP : forall (m n : nat) (M : 'M_(m,n)), smith_spec M (smith M).
+Lemma SmithP : forall (m n : nat) (M : 'M_(m,n)), Smith_spec M (Smith M).
 Proof.
 elim=> [n M|m IHn]; first constructor; rewrite ?unitmx1 //.
   rewrite [M]flatmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
@@ -312,7 +312,7 @@ elim=> [n M|m IHn]; first constructor; rewrite ?unitmx1 //.
 case=> [M|n M]; first constructor; rewrite ?sorted_nil ?mxE ?unitmx1 //.
   rewrite [M]thinmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
   by case:(i == j :> nat).
-rewrite /smith -{1}/smith.
+rewrite /Smith -{1}/Smith.
 case:pickP=>[[i j] HMij | H].
   case:improve_pivotP=> [||L A R0 HA Hdiv HAi0 HA00]; rewrite ?mxE ?tpermR ?leqnn //.
   set A' := map_mx _ _; set v' := map_mx _ _.
