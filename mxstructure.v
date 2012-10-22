@@ -3,8 +3,7 @@ Require Import ssralg fintype perm poly mxpoly finfun tuple.
 Require Import matrix bigop zmodp polydiv.
 Require Import ssrcomplements.
 
-(**
-    This file contains three parts about different structures of matrices.
+(**  This file contains three parts about different structures of matrices.
 
      *** Lower and upper triangular matrices :
     upper_triangular_mx M == The BOOLEAN predicate that hold if
