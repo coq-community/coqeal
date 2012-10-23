@@ -9,11 +9,11 @@ Require Import ssrcomplements.
     upper_triangular_mx M == The BOOLEAN predicate that hold if
                              M is an upper traiangular matrix.
     lower_triangular_mx M == The same as upper_trianglar_mx but for
-                             lower_triangular matrices.
+                             lower triangular matrices.
        is_triangular_mx M == M is upper or lower triangular matrix.
 
      *** Block diagonal matrices :
-        diag_block_mx s F == The block diagonal matrix where the ith block
+        diag_block_mx s F == A block diagonal matrix where the ith block
                              is F (nth 0 s i) i. F n i is a square matrix
                              of dimension n.+1, and s is the sequence
                              of dimension of each block minus 1.
@@ -22,7 +22,7 @@ Require Import ssrcomplements.
           (size_sum s).+1 == It is the type of the matrix diag_block_mx s F.
 
      *** Diagonal matrices :
-        diag_mx_seq m n s == The diagonal matrix of type 'M_(m,n) where
+        diag_mx_seq m n s == A diagonal matrix of type 'M_(m,n) where
                              the ith diagonal coefficient is the ith
                              element of s.
 
