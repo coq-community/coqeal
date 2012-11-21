@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg fintype finfun perm matrix bigop zmodp mxalgebra.
-Require Import choice poly polydiv polyorder mxpoly binomial.
+Require Import choice poly polydiv mxpoly binomial.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -772,6 +772,7 @@ Qed.
 
 End poly_idomainType.
 
+<<<<<<< HEAD
 Section poly_closedFieldType.
 
 Variable F :  closedFieldType.
@@ -1029,6 +1030,8 @@ Qed.
 
 End poly_closedFieldType.
 
+=======
+>>>>>>> 604bd9bc659be9dc8395d0fd447e8c0d9c44ae0a
 End Polynomial.
 
 (****************************************************************************)
