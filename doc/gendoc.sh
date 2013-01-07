@@ -6,5 +6,5 @@ do
 done
 coqdep -noglob -I . ../*.v > depend
 ~/coqfinitgroup/trunk/doc/makeDot/makedot depend
-dot -Tpng -o html/depend.png -Tcmapx -o html/depend.map depend.dot
-dot -Tsvg -o html/depend.svg depend.dot
+dot -Tpng -o depend.png -Tcmapx -o depend.map depend.dot
+dot -Tsvg -o depend.svg depend.dot
