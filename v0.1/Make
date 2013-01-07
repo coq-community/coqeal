@@ -1,0 +1,28 @@
+-R . CoqEAL
+ssrcomplements.v
+cssralg.v
+dvdring.v
+cdvdring.v
+Zinfra.v
+Qinfra.v
+seqmatrix.v
+rank.v
+polydvd.v
+cseqpoly.v
+cseqpolydvd.v
+karatsuba.v
+strassen.v
+boolF2.v
+mxstructure.v
+cperm.v
+smith.v
+invmx.v
+minor.v
+binetcauchy.v
+#examples/ex_cseqpoly.v
+#examples/ex_karatsuba.v
+#examples/ex_strassen.v
+#examples/ex_Q.v
+#examples/ex_Z.v
+OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
+COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"

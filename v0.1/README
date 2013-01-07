@@ -1,5 +1,5 @@
-                The Coq Effective Algebra Library - CoqEAL
-=================================================================================
+              The Coq Effective Algebra Library -- CoqEAL v0.1
+===================================================================================
 
 In order to compile this library, you have to set three environment variables:
   - COQBIN should be the path to Coq's binaries (coqc, coqdep,...)
