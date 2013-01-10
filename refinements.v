@@ -99,19 +99,68 @@ Local Notation " R ==> S " := (@respectful_gen _ _ _ _ R S)
 
 Section MorphTheory.
 
+Local Open Scope signature_scope.
+
 (* TODO: Need something more general to handle arbitrary operations! *)
 Variables A B C : Type.
 Context `{Implem A B, Implem B C,
-          a : A, b : B, c : C,
-          mAB : !Morph implem a b, mBC : !Morph implem b c}.
 
-Global Program Instance MorphTrans : Morph implem a c.
+          f0 : A, g0 : B, h0 : C,
+          mFG0 : !Morph implem f0 g0, 
+          mGH0 : !Morph implem g0 h0,
+
+          f1 : A -> A, g1 : B -> B, h1 : C -> C,
+          mFG1 : !Morph (implem ==> implem) f1 g1, 
+          mGH1 : !Morph (implem ==> implem) g1 h1,
+
+          f2 : A -> A -> A, g2 : B -> B -> B, h2 : C -> C -> C,
+          mFG2 : !Morph (implem ==> implem ==> implem) f2 g2, 
+          mGH2 : !Morph (implem ==> implem ==> implem) g2 h2}.
+
+Global Program Instance MorphImplem0 : Morph implem f0 h0.
+Obligation 1. 
+by rewrite /implem /implem_op /ImplemTrans /= mFG0 mGH0.
+Qed.
+
+Global Program Instance MorphImplem1 : Morph (implem ==> implem) f1 h1.
 Obligation 1.
-move: mAB mBC.
-by rewrite /Morph /ImplemTrans /implem /implem_op /= => -> ->.
+rewrite /implem /implem_op /ImplemTrans /= => a c h.
+by rewrite (@mFG1 _ (|a|)) // (@mGH1 _ (|a|)) // -h.
+Qed.
+
+(* g cannot me automatically inferred by eapply, but apply: works... *)
+Global Program Instance MorphTrans2 : Morph (implem ==> implem ==> implem) f2 h2.
+Obligation 1.
+rewrite /implem /implem_op /ImplemTrans /= => a1 c1 h3 a2 c2 h4.
+rewrite (@mFG2 _ (| a1 |) _ _ (| a2 |)) //.
+by rewrite (@mGH2 _ (| | a1 | |) _ _ (| | a2 | |)) // -h3 -h4.
 Qed.
 
 End MorphTheory.
+
+(* Section MorphTheory3. *)
+
+(* Local Open Scope signature_scope. *)
+
+(* Variables A B C D E F: Type. *)
+
+(* Context `{Implem A C, Implem B D, Implem C E, Implem D F,  *)
+(*           f : A -> B, g : C -> D, h : E -> F, *)
+(*           mAB : !Morph (implem ==> implem) f g,  *)
+(*           mBC : !Morph (implem ==> implem) g h}. *)
+
+(* Global Program Instance MorphTrans3 : Morph (implem ==> implem) f h. *)
+(* Obligation 1. *)
+(* move: mAB mBC. *)
+(* rewrite /Morph /ImplemTrans /implem /implem_op /=. *)
+(* move=> h1 h2 a1 e1 h3. *)
+(* rewrite (h1 _ (| a1 |)) //.  *)
+(* rewrite (h2 _ (| | a1 | |)) //.   *)
+(* by rewrite -h3. *)
+(* Qed. *)
+
+(* End MorphTheory3. *)
+
 End Morphisms. 
 
 Notation " R ==> S " := (@respectful_gen _ _ _ _ R S)

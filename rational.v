@@ -59,23 +59,23 @@ Global Program Instance ZeroMorphRational : Morph implem (0 : rat) 0%C.
 Obligation 1. by rewrite /implem /implem_op /quot_implem unlock. Qed.
 
 (* Addition *)
-(* TODO: Fix the bug! *)
 Definition add_rational (a b : rational) : rational.
-exists ((val_rational a).1 + (val_rational b).1,
-        (val_rational a).2 + (val_rational b).2).
+exists ((val_rational a).1 * (val_rational b).2 + (val_rational a).2 * (val_rational b).1,
+        (val_rational a).2 * (val_rational b).2).
 simpl.
 case: a => /= a a0.
 case: b => /= b b0.
-exact: addr_gt0.
+exact: mulr_gt0.
 Defined.
 
 Global Program Instance AddRational : Add rational := add_rational.
 
-(* This seems to suffice as it implies that both normalize and denormalize are
-   morphisms for addition *)
-Lemma add_rational_mono : {mono \pi_rat : x y / (x + y)%C >-> repr (x + y) }.
+Lemma add_rational_mono : 
+  {mono (@repr _ [quotType of rat]) : x y / (x + y) >-> \pi_(rat) (x + y)%C }.
 Proof.
 move=> x y /=.
+
+have := (@reprK _ _ x).
 admit.
 Qed.
 
@@ -83,25 +83,25 @@ Qed.
    then adding *)
 Lemma add_rational_correct : {morph \pi_rat : x y / (x + y)%C >-> x + y }.
 Proof.
-move=> x y.
-have _ : normalize ((fun x0 : rational => [eta add_rational x0]) x y) = normalize (add_rational x y) by [].
-by rewrite -add_rational_mono reprK.
+move=> x y /=.
+
+admit.
 Qed.
 
-(* We can also prove that denormalize is a morphism for addition *)
+(* This is wrong! *)
 Lemma implies_morph :
   {morph (@repr _ [quotType of rat]) : a1 a2 / a1 + a2 >-> (a1 + a2)%C}.
 Proof.
 move=> x y /=.
-by rewrite -add_rational_mono !reprK.
+rewrite -add_rational_mono add_rational_correct !reprK.
+admit.
 Qed.
 
-(* Now we only need mono... *)
-Global Program Instance AddMorph_rat' : Morph (implem ==> implem ==> implem)
+Global Program Instance AddMorphRational : Morph (implem ==> implem ==> implem)
         (fun x y : rat => x + y) (fun x y => x + y)%C.
 Obligation 1.
-rewrite /implem => x _ <- y _ <-.
-by rewrite /implem_op /quot_implem implies_morph.
+(* This is wrong! *)
+admit.
 Qed.
 
 End rational.
@@ -113,10 +113,11 @@ Section refines.
 Variable B : Type.
 
 (* Build a context with proper sharing and the necessary refinements *)
-Context `{impl : Implem int B, Add B, One B, Zero B}
+Context `{impl : Implem int B, Mul B, Add B, One B, Zero B}
         `{!Refines impl,
           zeroE : !Morph implem 0 0%C, oneE : !Morph implem 1 1%C,
-          addE : !Morph (implem ==> implem ==> implem) (fun x y : int => x + y) (fun x y => x + y)%C}.
+          addE : !Morph (implem ==> implem ==> implem) (fun x y : int => x + y) (fun x y => x + y)%C,
+          mulE : !Morph (implem ==> implem ==> implem) (fun x y : int => x * y) (fun x y => x * y)%C}.
 
 Global Program Instance rat'_implem : Implem rational (B * B) :=
   fun r => match val_rational r with
@@ -146,13 +147,19 @@ Qed.
 
 Global Program Instance ZeroMorph_rat : Morph implem (0 : rat) (0 : B*B)%C.
 Obligation 1.
-exact: (@MorphTrans rat).
+exact: (@MorphImplem0 rat).
 Qed.
 
-Global Program Instance Add_BB : Add (B * B) :=
-  fun x y => (add x.1 y.1, add x.2 y.2).
+
+Definition add_bb :=  fun x y : B * B => ((x.1 * y.2) + (x.2 * y.1), x.2 * y.2)%C.
+
+Global Program Instance AddBB : Add (B * B) := add_bb.
+
+(* WHY DO I NEED THIS???? *)
+Instance MulInt : Mul int := fun x y => x * y.
+
 (* Morphism from rat' to B * B for addition *)
-Global Program Instance AddMorph_BB : Morph (implem ==> implem ==> implem )
+Global Program Instance AddMorphBB : Morph (implem ==> implem ==> implem )
   (fun x y : rational => x + y)%C (fun x y : B * B => x + y)%C.
 Obligation 1.
 rewrite /Morph /implem /= => x _ <- y _ <- /=.
@@ -160,15 +167,19 @@ rewrite /implem_op /rat'_implem /=.
 case: (val_rational x) => a b.
 case: (val_rational y) => c d /=.
 (* ARRGH! Why do we have to give these explicitly??? *)
-rewrite (@addE _ (| a |)%C _ _ (| c |)%C) //.
-by rewrite (@addE _ (| b |)%C _ _ (| d |)%C).
+rewrite /add /AddBB /add_bb /=.
+rewrite (@mulE _ (| b |)%C _ _ (| d |)%C) //.
+rewrite (@addE (a * d) (| a * d |)%C _ (b * c) (| b * c |)%C) //.
+rewrite (@mulE _ (| a |)%C _ _ (| d |)%C) //.
+by rewrite (@mulE _ (| b |)%C _ _ (| c |)%C).
 Qed.
 
-Global Instance AddMorph_rat :
+(* Print HintDb typeclass_instances. *)
+
+Global Program Instance AddMorph_rat :
   Morph (implem ==> implem ==> implem) (fun x y : rat => x + y) (fun x y : B * B => x + y)%C.
-Proof.
-(* have := (@MorphTrans rat rat' (B*B) _ rat'_implem _ _ _ _ AddMorph_BB). *)
-admit.
+Obligation 1.
+exact: MorphTrans2.
 Qed.
 
 End refines.
