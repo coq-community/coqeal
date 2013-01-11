@@ -82,12 +82,16 @@ Section Morphisms.
 
 Local Open Scope computable_scope.
 
-Class Morph {A B} (R : A -> B -> Prop) (m : A) (n : B) :=
+Class Morph {A B} (R : A -> B -> Prop) (m : A) (n : B) := 
   morph_prf : R m n.
 
+(* A very simple tactic that rewrite with morphisms. Could be improved to solve Morph *)
+Ltac morph := match goal with
+  | [ H : Morph _ _ _ |- _ ] => setoid_rewrite H => //; morph
+  end.
+
 (* Turn implem into a relation on A and B *)
-Definition implem {A B} `{Implem A B} : A -> B -> Prop :=
-  fun x y => | x | = y.
+Definition implem {A B} `{Implem A B} x y := | x | = y.
 
 (* We can build relations on function spaces *)
 Definition respectful_gen {A B C D : Type}
@@ -106,38 +110,41 @@ Variables A B C : Type.
 Context `{Implem A B, Implem B C,
 
           f0 : A, g0 : B, h0 : C,
-          mFG0 : !Morph implem f0 g0, 
+          mFG0 : !Morph implem f0 g0,
           mGH0 : !Morph implem g0 h0,
 
           f1 : A -> A, g1 : B -> B, h1 : C -> C,
-          mFG1 : !Morph (implem ==> implem) f1 g1, 
+          mFG1 : !Morph (implem ==> implem) f1 g1,
           mGH1 : !Morph (implem ==> implem) g1 h1,
 
           f2 : A -> A -> A, g2 : B -> B -> B, h2 : C -> C -> C,
-          mFG2 : !Morph (implem ==> implem ==> implem) f2 g2, 
+          mFG2 : !Morph (implem ==> implem ==> implem) f2 g2,
           mGH2 : !Morph (implem ==> implem ==> implem) g2 h2}.
 
 Global Program Instance MorphImplem0 : Morph implem f0 h0.
-Obligation 1. 
+Obligation 1.
 by rewrite /implem /implem_op /ImplemTrans /= mFG0 mGH0.
 Qed.
 
 Global Program Instance MorphImplem1 : Morph (implem ==> implem) f1 h1.
 Obligation 1.
 rewrite /implem /implem_op /ImplemTrans /= => a c h.
-by rewrite (@mFG1 _ (|a|)) // (@mGH1 _ (|a|)) // -h.
+by morph.
+(* by rewrite (@mFG1 _ (|a|)) // (@mGH1 _ (|a|)) // -h. *)
 Qed.
 
 (* g cannot me automatically inferred by eapply, but apply: works... *)
 Global Program Instance MorphTrans2 : Morph (implem ==> implem ==> implem) f2 h2.
 Obligation 1.
 rewrite /implem /implem_op /ImplemTrans /= => a1 c1 h3 a2 c2 h4.
-rewrite (@mFG2 _ (| a1 |) _ _ (| a2 |)) //.
-by rewrite (@mGH2 _ (| | a1 | |) _ _ (| | a2 | |)) // -h3 -h4.
+by morph.
+(* rewrite (@mFG2 _ (| a1 |) _ _ (| a2 |)) //. *)
+(* by rewrite (@mGH2 _ (| | a1 | |) _ _ (| | a2 | |)) // -h3 -h4. *)
 Qed.
 
 End MorphTheory.
 
+(* Failed attempt at something more general... *)
 (* Section MorphTheory3. *)
 
 (* Local Open Scope signature_scope. *)
@@ -161,7 +168,11 @@ End MorphTheory.
 
 (* End MorphTheory3. *)
 
-End Morphisms. 
+End Morphisms.
+
+Ltac morph := match goal with
+  | [ H : Morph _ _ _ |- _ ] => setoid_rewrite H => //; morph
+  end.
 
 Notation " R ==> S " := (@respectful_gen _ _ _ _ R S)
     (right associativity, at level 55) : signature_scope.
@@ -179,18 +190,19 @@ Local Notation "1" := one_op : computable_scope.
 
 (* Unary operations *)
 Class Opp B := opp : B -> B.
+Local Notation "-%C" := opp.
 Local Notation "- x" := (opp x) : computable_scope.
 
 (* Binary operations *)
-(* TODO: Fix binding prorities *)
 Class Add B := add : B -> B -> B.
+Local Notation "+%C" := add.
 Local Notation "x + y" := (add x y) : computable_scope.
-(* Notation "+%C" := add : computable_scope. *)
 
 Class Sub B := sub : B -> B -> B.
 Local Notation "x - y" := (sub x y) : computable_scope.
 
 Class Mul B := mul : B -> B -> B.
+Local Notation "*%C" := mul.
 Local Notation "x * y" := (mul x y) : computable_scope.
 
 Class Div B := div : B -> B -> B.
@@ -210,8 +222,8 @@ Lemma implem_eq0 (A : zmodType) B
                    (fun x y => x == y) (fun x y => x == y)%C,
     zeroE : !Morph implem 0 0%C} a :
   (a == 0) = (| a | == 0)%C.
-Proof.
-by apply/eqP/idP => [->|]; rewrite -zeroE -compE // => /eqP ->.
+Proof. by morph.
+(* by apply/eqP/idP => [->|]; rewrite -zeroE -compE // => /eqP ->. *)
 Qed.
 
 End OperationsTheory.
@@ -219,9 +231,12 @@ End Operations.
 
 Notation "0"      := zero : computable_scope.
 Notation "1"      := one_op : computable_scope.
+Notation "-%C"    := opp.
 Notation "- x"    := (opp x) : computable_scope.
+Notation "+%C"    := add.
 Notation "x + y"  := (add x y) : computable_scope.
 Notation "x - y"  := (sub x y) : computable_scope.
+Notation "*%C"    := mul.
 Notation "x * y"  := (mul x y) : computable_scope.
 Notation "x / y"  := (div x y) : computable_scope.
 Notation "x == y" := (comp x y) : computable_scope.
