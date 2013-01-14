@@ -193,6 +193,9 @@ Class Opp B := opp : B -> B.
 Local Notation "-%C" := opp.
 Local Notation "- x" := (opp x) : computable_scope.
 
+Class Inv B := inv : B -> B.
+Local Notation "x ^-1" := (inv x) : computable_scope.
+
 (* Binary operations *)
 Class Add B := add : B -> B -> B.
 Local Notation "+%C" := add.
@@ -233,6 +236,7 @@ Notation "0"      := zero : computable_scope.
 Notation "1"      := one_op : computable_scope.
 Notation "-%C"    := opp.
 Notation "- x"    := (opp x) : computable_scope.
+Notation "x ^-1"  := (inv x) : computable_scope.
 Notation "+%C"    := add.
 Notation "x + y"  := (add x y) : computable_scope.
 Notation "x - y"  := (sub x y) : computable_scope.

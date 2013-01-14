@@ -7,7 +7,7 @@ Require Import generic_quotient refinements.
 (******************************************************************************)
 (* Non-normalized rational numbers refinest SSReflects rational numbers (rat) *) 
 (*                                                                            *)
-(* ??? == some documentation                                                  *)
+(* rational == Type of non normalized rational numbers                        *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -22,11 +22,11 @@ Local Open Scope signature_scope.
 Import GRing.Theory.
 Import Num.Theory.
 
-(* Non normalized rational numbers *)
+(* rational - Non normalized rational numbers *)
 Section rational.
 
-Record rational : Set := Rational {
-  valr : (int * int) ;
+Record rational := Rational {
+  valr     : (int * int) ;
   valr_gt0 : (0 < valr.2)
 }.
 
@@ -40,10 +40,7 @@ Definition denormalize (r : rat) : rational := @Rational (valq r) (denq_gt0 r).
 Definition normalize (r : rational) : rat := fracq (valr r).
 
 Lemma normalizeK : cancel denormalize normalize.
-Proof.
-move=> x.
-by rewrite /normalize /denormalize valqK.
-Qed.
+Proof. by move=> x; rewrite /normalize /denormalize valqK. Qed.
 
 (* We have a quotient type where rat is the quotients of rat' *)
 Definition quotClass := QuotClass normalizeK.
@@ -56,44 +53,129 @@ Global Program Instance ZeroRational : Zero rational := zero_rational.
 Global Program Instance ZeroMorphRational : Morph implem (0 : rat) 0%C.
 Obligation 1. by rewrite /implem /implem_op /quot_implem unlock. Qed.
 
+(* One - Use repr_of to avoid lock on repr *)
+Definition one_rational : rational := repr_of (1 : rat).
+
+Global Program Instance OneRational : One rational := one_rational.
+Global Program Instance OneMorphRational : Morph implem (1 : rat) 1%C.
+Obligation 1. by rewrite /implem /implem_op /quot_implem unlock. Qed.
+
 (* Addition *)
-Definition add_rational (a b : rational) : rational.
-exists ((valr a).1 * (valr b).2 + (valr b).1 * (valr a).2,
-        (valr a).2 * (valr b).2).
-case: a => /= a a0.
-case: b => /= b b0.
-exact: mulr_gt0.
-Defined.
+Fact add_rational_sub : forall a b, 0 < (addq_subdef (valr a) (valr b)).2.
+Proof. by case => a a0 [b b0]; rewrite mulr_gt0. Qed.
+
+Definition add_rational a b := Rational (add_rational_sub a b).
 
 Global Program Instance AddRational : Add rational := add_rational.
 
 (* Adding and then normalizing should be the same as first normalizing and
    then adding *)
-Lemma addE : {morph \pi_rat : x y / (x + y)%C >-> x + y }.
+Lemma add_rationalE : {morph \pi_rat : a b / (a + b)%C >-> a + b }.
 Proof.
-rewrite unlock /pi_of /= /normalize /valr => [[[x1 x2]] /= h1 [[y1 y2]] /= h2].
-have hx2_neq0 : x2 != 0 by apply/negP => h0; move: h1; rewrite (eqP h0).
-have hy2_neq0 : y2 != 0 by apply/negP => h0; move: h2; rewrite (eqP h0).
-by rewrite {h1 h2} !fracqE addf_div ?intq_eq0 //= -!intrM -intrD.
+rewrite unlock /pi_of /= /normalize /valr => [[[a1 a2]] /= h1 [[b1 b2]] /= h2].
+have ha2_neq0 : a2 != 0 by apply/negP => h0; move: h1; rewrite (eqP h0).
+have hb2_neq0 : b2 != 0 by apply/negP => h0; move: h2; rewrite (eqP h0).
+by rewrite -addq_frac.
 Qed.
 
 Lemma add_rational_mono : 
-  {mono (@repr _ [quotType of rat]) : x y / (x + y) >-> \pi_(rat) (x + y)%C }.
-Proof. by move=> x y /=; rewrite addE !reprK. Qed.
+  {mono (@repr _ [quotType of rat]) : a b / (a + b) >-> \pi_(rat) (a + b)%C }.
+Proof. by move=> x y /=; rewrite add_rationalE !reprK. Qed.
 
-Global Program Instance implem_rat' : Implem rational rat := \pi_(rat).
-
-(* This is funny! *)
-Global Program Instance AddMorphRational : 
-  Morph (implem ==> implem ==> implem) (fun x y : rational => x + y)%C (fun x y : rat => x + y).
-Obligation 1.
-rewrite /implem /implem_op /implem_rat' /= => x1 y1 h1 x2 y2 h2.
-by rewrite addE h1 h2.
-Qed.
+(* (* This is funny! *) *)
+(* Global Program Instance implem_rat' : Implem rational rat := \pi_(rat). *)
+(* Global Program Instance AddMorphRational :  *)
+(*   Morph (implem ==> implem ==> implem) (fun x y : rational => x + y)%C (fun x y : rat => x + y). *)
+(* Obligation 1. *)
+(* rewrite /implem /implem_op /implem_rat' /= => x1 y1 h1 x2 y2 h2. *)
+(* by rewrite addE h1 h2. *)
+(* Qed. *)
 
 (* (* This is wrong! *) *)
 (* Global Program Instance AddMorphRational : Morph (implem ==> implem ==> implem) *)
 (*         (fun x y : rat => x + y) (fun x y => x + y)%C. *)
+
+(* Negation *)
+Fact opp_rational_sub : forall a, 0 < (oppq_subdef (valr a)).2.
+Proof. by case. Qed.
+
+Definition opp_rational a := Rational (opp_rational_sub a).
+
+Global Program Instance OppRational : Opp rational := opp_rational.
+
+Lemma opp_rationalE : {morph \pi_rat : a / (- a)%C >-> - a }.
+Proof. by rewrite unlock /pi_of /= /normalize => a; rewrite -oppq_frac. Qed.
+
+(* Multiplication *)
+Fact mul_rational_sub : forall a b, 0 < (mulq_subdef (valr a) (valr b)).2.
+Proof. by case => a a0 [b b0]; rewrite mulr_gt0. Qed.
+
+Definition mul_rational a b := Rational (mul_rational_sub a b).
+
+Global Program Instance MulRational : Mul rational := mul_rational.
+
+Lemma mul_rationalE : {morph \pi_rat : a b / (a * b)%C >-> a * b }.
+Proof. 
+rewrite unlock /pi_of /= /normalize /valr => [[[a1 a2]] /= h1 [[b1 b2]] /= h2].
+have ha2_neq0 : a2 != 0 by apply/negP => h0; move: h1; rewrite (eqP h0).
+have hb2_neq0 : b2 != 0 by apply/negP => h0; move: h2; rewrite (eqP h0).
+by rewrite -mulq_frac.
+Qed.
+
+(* Inverse *)
+Definition inv_rational_subdef (a : int * int) := 
+  valq (fracq (invq_subdef a)).
+
+Fact inv_rational_sub : forall a, 0 < (inv_rational_subdef (valr a)).2.
+Proof.
+case => [[a1 a2] /= h0].
+have [//|a1_neq0] := altP (a1 =P 0). 
+rewrite ltz_nat divn_gt0 dvdn_leq //; first by rewrite absz_gt0.
+  by rewrite dvdn_gcdr.
+by rewrite gcdn_gt0 !absz_gt0 a1_neq0 orbT.
+Qed.
+
+Definition inv_rational a := Rational (inv_rational_sub a).
+
+Global Program Instance InvRational : Inv rational := inv_rational.
+
+Lemma inv_rationalE : {morph \pi_rat : a / (a^-1)%C >-> a^-1 }.
+Proof. 
+rewrite unlock /pi_of /= /normalize /valr  => [[[a1 a2]] /= h1].
+have [->|a1_neq0] := altP (a1 =P 0). 
+  by rewrite /inv_rational_subdef valqK fracq0 frac0q invr0.
+rewrite /GRing.inv /= invq_frac //= /inv_rational_subdef ?valqK //.
+by apply/negP => ha2_eq0; move: h1; rewrite (eqP ha2_eq0).
+Qed.
+
+(* Subtraction *)
+Definition sub_rational (a b : rational) := (a + - b)%C.
+
+Global Program Instance SubRational : Sub rational := sub_rational.
+
+Lemma sub_rationalE : {morph \pi_rat : a b / (a - b)%C >-> a - b }.
+Proof. 
+move=> a b /=.
+by rewrite /sub /SubRational /sub_rational add_rationalE opp_rationalE.
+Qed.
+
+(* Division *)
+Definition div_rational (a b : rational) := (a * b^-1)%C.
+
+Global Program Instance DivRational : Div rational := div_rational.
+
+Lemma div_rationalE : {morph \pi_rat : a b / (a / b)%C >-> a / b }.
+Proof. 
+move=> a b /=.
+by rewrite /div /DivRational /div_rational mul_rationalE inv_rationalE.
+Qed.
+
+
+(* TODO: 
+     - normq
+     - le_rat
+     - lt_rat
+*)
 
 End rational.
 
