@@ -1,8 +1,11 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-Require Import path choice fintype tuple finset ssralg bigop generic_quotient.
+Require Import path choice fintype tuple finset ssralg bigop.
 Require Import Morphisms.
+Require generic_quotient.
+
+Module qT := generic_quotient.
 
 (** This file implements the basic theory of refinements using operational
 type classes and arbitrary arity morphism lemmas 
@@ -18,6 +21,10 @@ Unset Printing Implicit Defensive.
 
 (* Reserved Notation "| f |" (at level 10, format "| f |"). *)
 (* Reserved Notation "R \==> S" (at level 55, right associativity). *)
+Reserved Notation "\implem_ B" (at level 0, format "\implem_ B").
+Reserved Notation "\implem" (at level 0, format "\implem").
+Reserved Notation "\pi_ Q" (at level 0, format "\pi_ Q").
+Reserved Notation "\pi" (at level 0, format "\pi").
 
 Delimit Scope computable_scope with C.
 Delimit Scope signature_scope with S.
@@ -26,156 +33,59 @@ Local Open Scope ring_scope.
 
 Import GRing.Theory.
 
-Section Refinements. 
+Class has_implem A B := HasImplem {implem : A -> B; implem_inj : injective implem}.
+Notation "\implem_ B" := (@implem _ B _) : computable_scope.
+Notation "\implem" := (@implem _ _ _) (only parsing) : computable_scope.
 
-Class Implem A B := implem_op : A -> B.
-Local Notation "|  x |" := (implem_op x) (at level 10) : computable_scope.
-Class Refines {A B} `(Implem A B) := { inj_implem : injective implem_op }.
+Global Program Instance has_implem_trans {A B C} `{has_implem A B, has_implem B C} :
+  has_implem A C := @HasImplem _ _ (implem \o implem) _.
+Obligation 1. by apply: inj_comp; apply: implem_inj. Qed.
 
-Section RefinesTheory.
+Class quotient_of T qT := QuotClass {
+  repr : qT -> T;
+  quot_pi : T -> qT;
+  _ : cancel repr quot_pi
+}.
+Notation "\pi_ Q" := (@quot_pi _ Q _) : computable_scope.
+Notation "\pi" := (@quot_pi _ _ _) (only parsing) : computable_scope.
 
-Global Program Instance ImplemId {A} : Implem A A := id.
-Global Program Instance ImplemTrans {A B C} `{Implem A B, Implem B C} : 
-  Implem A C := implem_op \o implem_op.
+Lemma reprK  (T Q : Type) (qT : quotient_of T Q) : cancel repr \pi%C.
+Proof. by case: qT. Qed.
 
-Global Program Instance RefinesId {A} : Refines (@ImplemId A).
-Obligation 1. by []. Qed.
+Lemma repr_inj (T Q : Type) (qT : quotient_of T Q) : injective repr.
+Proof. exact: (can_inj (reprK _)). Qed.
 
-Global Program Instance RefinesTrans {A B C} 
-  `{H1 : Refines A B, H2 : Refines B C} : Refines ImplemTrans.
-Obligation 1.
-apply: inj_comp => //.
-by case: H2.
-Qed.
+Global Program Instance quotType_quotient_of B (A : qT.quotType B) : quotient_of B (qT.quot_sort A) :=
+  QuotClass (@qT.reprK _ _).
 
-(* Refinements from quotients *)
-Section Quotients.
+Class refinement_of (A B C : Type) `{quotient_of B A} `{has_implem B C} := Refinement {}.
+Arguments refinement_of A B C {_ _}.
+Arguments Refinement {_ _ _ _ _}.
 
-Variable T : Type.
-Variable qT : quotType T.
+Class refines (A B C : Type) `{refinement_of A B C} (a : A) (c : C) := Refines {
+  refine_repr : B;
+  refines_pi : \pi_A%C refine_repr = a;
+  refines_implem : \implem_C%C refine_repr = c
+}.
 
-Local Open Scope quotient_scope.
+Arguments refine_repr {A B C _ _ _} a c {_}.
+Arguments refines {A B C _ _ _} a c.
+Arguments Refines {A B C _ _ _ _ _} refine_repr _ _.
 
-(* It might make sense to use repr_of to avoid the lock on repr so that implem
-   computes for quotients compute in the end. *)
-(* Lemma repr_ofK : cancel (@repr_of _ qT) \pi_(qT). *)
-(* Proof. by move: (@reprK _ qT); rewrite unlock. Qed. *)
-(* Lemma inj_repr_of : injective (@repr_of _ qT). *)
-(* Proof. exact: (can_inj repr_ofK). Qed. *)
+Global Instance id_quot_class A : quotient_of A A := @QuotClass A A id id (fun _ => erefl).
+(* Definition id_quotType A := QuotType A (@id_quot_class A). *)
 
-Lemma inj_repr : injective (@repr _ qT).
-Proof. exact: (can_inj (@reprK _ qT)). Qed.
+Global Program Instance has_implem_bool : has_implem bool bool :=
+  @HasImplem _ _ id (fun _ _ _ => erefl).
+Global Program Instance bool_refinement_of_bool : refinement_of bool bool bool := Refinement.
 
-(* Build implem and refines instances *)
-Global Program Instance quot_implem : Implem qT T := @repr _ qT.
-Global Program Instance quot_refines : Refines quot_implem.
-Obligation 1. exact: inj_repr. Qed.
+Global Program Instance refines_bool (a : bool) : refines a a :=
+  @Refines _ _ _ _ _ _ _ _ a _ _.
 
-End Quotients.
-End RefinesTheory.
-End Refinements.
+(* Local Open Scope computable_scope. *)
 
-Notation "|  x |" := (implem_op x) (at level 10) : computable_scope.
-
-(* Arbitrary arity morphisms a la Proper *)
-Section Morphisms.
-
-Local Open Scope computable_scope.
-
-Class Morph {A B} (R : A -> B -> Prop) (m : A) (n : B) := 
-  morph_prf : R m n.
-
-(* A very simple tactic that rewrite with morphisms. Could be improved to solve Morph *)
-Ltac morph := match goal with
-  | [ H : Morph _ _ _ |- _ ] => setoid_rewrite H => //; morph
-  end.
-
-(* Turn implem into a relation on A and B *)
-Definition implem {A B} `{Implem A B} x y := | x | = y.
-
-(* We can build relations on function spaces *)
-Definition respectful_gen {A B C D : Type}
-  (R : A -> B -> Prop) (R' : C -> D -> Prop) : (A -> C) -> (B -> D) -> Prop :=
-  respectful_hetero _ _ _ _ R (fun x y => R').
-
-Local Notation " R ==> S " := (@respectful_gen _ _ _ _ R S)
-    (right associativity, at level 55) : signature_scope.
-
-Section MorphTheory.
-
-Local Open Scope signature_scope.
-
-(* TODO: Need something more general to handle arbitrary operations! *)
-Variables A B C : Type.
-Context `{Implem A B, Implem B C,
-
-          f0 : A, g0 : B, h0 : C,
-          mFG0 : !Morph implem f0 g0,
-          mGH0 : !Morph implem g0 h0,
-
-          f1 : A -> A, g1 : B -> B, h1 : C -> C,
-          mFG1 : !Morph (implem ==> implem) f1 g1,
-          mGH1 : !Morph (implem ==> implem) g1 h1,
-
-          f2 : A -> A -> A, g2 : B -> B -> B, h2 : C -> C -> C,
-          mFG2 : !Morph (implem ==> implem ==> implem) f2 g2,
-          mGH2 : !Morph (implem ==> implem ==> implem) g2 h2}.
-
-Global Program Instance MorphImplem0 : Morph implem f0 h0.
-Obligation 1.
-by rewrite /implem /implem_op /ImplemTrans /= mFG0 mGH0.
-Qed.
-
-Global Program Instance MorphImplem1 : Morph (implem ==> implem) f1 h1.
-Obligation 1.
-rewrite /implem /implem_op /ImplemTrans /= => a c h.
-by morph.
-(* by rewrite (@mFG1 _ (|a|)) // (@mGH1 _ (|a|)) // -h. *)
-Qed.
-
-(* g cannot me automatically inferred by eapply, but apply: works... *)
-Global Program Instance MorphTrans2 : Morph (implem ==> implem ==> implem) f2 h2.
-Obligation 1.
-rewrite /implem /implem_op /ImplemTrans /= => a1 c1 h3 a2 c2 h4.
-by morph.
-(* rewrite (@mFG2 _ (| a1 |) _ _ (| a2 |)) //. *)
-(* by rewrite (@mGH2 _ (| | a1 | |) _ _ (| | a2 | |)) // -h3 -h4. *)
-Qed.
-
-End MorphTheory.
-
-(* Failed attempt at something more general... *)
-(* Section MorphTheory3. *)
-
-(* Local Open Scope signature_scope. *)
-
-(* Variables A B C D E F: Type. *)
-
-(* Context `{Implem A C, Implem B D, Implem C E, Implem D F,  *)
-(*           f : A -> B, g : C -> D, h : E -> F, *)
-(*           mAB : !Morph (implem ==> implem) f g,  *)
-(*           mBC : !Morph (implem ==> implem) g h}. *)
-
-(* Global Program Instance MorphTrans3 : Morph (implem ==> implem) f h. *)
-(* Obligation 1. *)
-(* move: mAB mBC. *)
-(* rewrite /Morph /ImplemTrans /implem /implem_op /=. *)
-(* move=> h1 h2 a1 e1 h3. *)
-(* rewrite (h1 _ (| a1 |)) //.  *)
-(* rewrite (h2 _ (| | a1 | |)) //.   *)
-(* by rewrite -h3. *)
-(* Qed. *)
-
-(* End MorphTheory3. *)
-
-End Morphisms.
-
-Ltac morph := match goal with
-  | [ H : Morph _ _ _ |- _ ] => setoid_rewrite H => //; morph
-  end.
-
-Notation " R ==> S " := (@respectful_gen _ _ _ _ R S)
-    (right associativity, at level 55) : signature_scope.
+(* Instance implem_default A B `{Implem A B} (a : A) :  a (\implem_B%C a) | 999. *)
+(* Proof. done. Qed. *)
 
 Section Operations.
 
@@ -215,21 +125,6 @@ Local Notation "x / y" := (div x y) : computable_scope.
 Class Comp B := comp : B -> B -> bool.
 Local Notation "x == y" := (comp x y) : computable_scope.
 
-Section OperationsTheory.
-
-(* This might be a nice lemma, anyway it shows how to write lemmas
-   and that sharing of impl works *)
-Lemma implem_eq0 (A : zmodType) B
-  `{Comp B, Zero B, Implem A B,
-    compE : !Morph (implem ==> implem ==> implem)
-                   (fun x y => x == y) (fun x y => x == y)%C,
-    zeroE : !Morph implem 0 0%C} a :
-  (a == 0) = (| a | == 0)%C.
-Proof. by morph.
-(* by apply/eqP/idP => [->|]; rewrite -zeroE -compE // => /eqP ->. *)
-Qed.
-
-End OperationsTheory.
 End Operations.
 
 Notation "0"      := zero : computable_scope.
