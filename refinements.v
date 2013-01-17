@@ -33,54 +33,46 @@ Local Open Scope ring_scope.
 
 Import GRing.Theory.
 
-Class has_implem A B := HasImplem {implem : A -> B; implem_inj : injective implem}.
-Notation "\implem_ B" := (@implem _ B _) : computable_scope.
-Notation "\implem" := (@implem _ _ _) (only parsing) : computable_scope.
-
-Global Program Instance has_implem_trans {A B C} `{has_implem A B, has_implem B C} :
-  has_implem A C := @HasImplem _ _ (implem \o implem) _.
-Obligation 1. by apply: inj_comp; apply: implem_inj. Qed.
-
 Class quotient_of T qT := QuotClass {
   repr : qT -> T;
-  quot_pi : T -> qT;
-  _ : cancel repr quot_pi
+  quot_pi : T -> option qT;
+  _ : pcancel repr quot_pi
 }.
 Notation "\pi_ Q" := (@quot_pi _ Q _) : computable_scope.
 Notation "\pi" := (@quot_pi _ _ _) (only parsing) : computable_scope.
 
-Lemma reprK  (T Q : Type) (qT : quotient_of T Q) : cancel repr \pi%C.
+Lemma reprK  (T Q : Type) (qT : quotient_of T Q) : pcancel repr \pi%C.
 Proof. by case: qT. Qed.
 
 Lemma repr_inj (T Q : Type) (qT : quotient_of T Q) : injective repr.
-Proof. exact: (can_inj (reprK _)). Qed.
+Proof. exact: (pcan_inj (reprK _)). Qed.
 
+(*
 Global Program Instance quotType_quotient_of B (A : qT.quotType B) : quotient_of B (qT.quot_sort A) :=
   QuotClass (@qT.reprK _ _).
+*)
 
+(*
 Class refinement_of (A B C : Type) `{quotient_of B A} `{has_implem B C} := Refinement {}.
 Arguments refinement_of A B C {_ _}.
 Arguments Refinement {_ _ _ _ _}.
+*)
 
-Class refines (A B C : Type) `{refinement_of A B C} (a : A) (c : C) := Refines {
-  refine_repr : B;
-  refines_pi : \pi_A%C refine_repr = a;
-  refines_implem : \implem_C%C refine_repr = c
+Class refines {A B : Type} `{quotient_of B A} (a : A) (b : B) := Refines {
+  spec_refines : \pi_A%C b = Some a
 }.
 
-Arguments refine_repr {A B C _ _ _} a c {_}.
-Arguments refines {A B C _ _ _} a c.
-Arguments Refines {A B C _ _ _ _ _} refine_repr _ _.
+Global Instance id_quot_class A : quotient_of A A := @QuotClass A A id (@Some _) (fun _ => erefl).
 
-Global Instance id_quot_class A : quotient_of A A := @QuotClass A A id id (fun _ => erefl).
 (* Definition id_quotType A := QuotType A (@id_quot_class A). *)
 
+(*
 Global Program Instance has_implem_bool : has_implem bool bool :=
   @HasImplem _ _ id (fun _ _ _ => erefl).
 Global Program Instance bool_refinement_of_bool : refinement_of bool bool bool := Refinement.
+*)
 
-Global Program Instance refines_bool (a : bool) : refines a a :=
-  @Refines _ _ _ _ _ _ _ _ a _ _.
+Global Program Instance refines_bool (a : bool) : refines a a.
 
 (* Local Open Scope computable_scope. *)
 
