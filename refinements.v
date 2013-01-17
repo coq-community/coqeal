@@ -47,6 +47,14 @@ Proof. by case: qT. Qed.
 Lemma repr_inj (T Q : Type) (qT : quotient_of T Q) : injective repr.
 Proof. exact: (pcan_inj (reprK _)). Qed.
 
+Lemma repr_composeK A B C `{quotient_of B A, quotient_of C B} : 
+  pcancel (repr \o repr) (obind \pi_(A)%C \o \pi_(B)%C).
+Proof. by move=> a /=; rewrite reprK /= reprK. Qed.
+
+Global Program Instance quot_trans A B C
+  (qab : quotient_of B A) (qbc : quotient_of C B) : quotient_of C A := 
+  QuotClass (@repr_composeK _ _ _ qab qbc).
+
 (*
 Global Program Instance quotType_quotient_of B (A : qT.quotType B) : quotient_of B (qT.quot_sort A) :=
   QuotClass (@qT.reprK _ _).
@@ -62,19 +70,19 @@ Class refines {A B : Type} `{quotient_of B A} (a : A) (b : B) := Refines {
   spec_refines : \pi_A%C b = Some a
 }.
 
-Global Instance id_quot_class A : quotient_of A A := @QuotClass A A id (@Some _) (fun _ => erefl).
+Global Program Instance id_quot_class A : quotient_of A A := QuotClass (fun _ => erefl).
 
 (* Definition id_quotType A := QuotType A (@id_quot_class A). *)
 
-(*
-Global Program Instance has_implem_bool : has_implem bool bool :=
-  @HasImplem _ _ id (fun _ _ _ => erefl).
-Global Program Instance bool_refinement_of_bool : refinement_of bool bool bool := Refinement.
-*)
+(* Global Program Instance has_implem_bool : has_implem bool bool := *)
+(*   @HasImplem _ _ id (fun _ _ _ => erefl). *)
+(* Global Program Instance bool_refinement_of_bool : refinement_of bool bool bool := Refinement. *)
 
 Global Program Instance refines_bool (a : bool) : refines a a.
 
-(* Local Open Scope computable_scope. *)
+Global Program Instance refines_trans A B C a b c
+  `{quotient_of C B, quotient_of B A, !refines a b, !refines b c} : refines a c.
+Obligation 1. by rewrite spec_refines /= spec_refines. Qed.
 
 (* Instance implem_default A B `{Implem A B} (a : A) :  a (\implem_B%C a) | 999. *)
 (* Proof. done. Qed. *)
