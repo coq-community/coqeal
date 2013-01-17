@@ -26,7 +26,7 @@ Import Num.Theory.
 Section rational.
 
 Definition rational (B : Type) := (B * B)%type.
-Local Notation rat' := {r : rational int | r.2 != 0}.
+Local Notation rat' := (rational int).
 
 (* Canonical rational_subType := Eval hnf in [subType for valr]. *)
 
@@ -34,11 +34,15 @@ Local Notation rat' := {r : rational int | r.2 != 0}.
 (* Proof. exact: val_inj. Qed. *)
 
 (* denormalize = repr *) (* normalize = \pi_rat *)
-Definition denormalize (r : rat) : rat' := exist _ (val r) (denq_neq0 r).
-Definition normalize (r : rat') : rat := fracq (val r).
+Definition denormalize (r : rat) : rat' := (val r).
+Definition normalize (r : rat') : option rat :=
+  if r.2 == 0 then None else Some (fracq r).
 
-Lemma normalizeK : cancel denormalize normalize.
-Proof. by move=> x; rewrite /normalize /denormalize valqK. Qed.
+Lemma normalizeK : pcancel denormalize normalize.
+Proof. move=> x; rewrite /normalize; case:ifPn => //.
+admit.
+admit.
+Qed.
 
 (* We have a quotient type where rat is the quotients of rat' *)
 Global Instance rat_quotient : quotient_of rat' rat := QuotClass normalizeK.
@@ -100,6 +104,7 @@ Program Instance : Comp int := eq_op.
 Definition zero_rational_indom : (0%C : rati).2 != 0. Proof. done. Qed.
 Definition one_rational_indom : (1%C : rati).2 != 0. Proof. done. Qed.
 
+(*
 Definition add_rational_indom (x y : rat') : (val x + val y)%C.2 != 0.
 Proof. by move: x y => [a a0] [b b0]; rewrite mulf_neq0. Qed.
 
@@ -115,6 +120,7 @@ move: x => [x px] /=.
 rewrite /inv /InvRational /inv_rational -[(_ == 0)%C]/(_ == 0).
 by have [] := altP (x.1 =P 0).
 Qed.
+*)
 
 (* Addition *)
 
@@ -191,12 +197,13 @@ Qed.
 Section refines.
 
 (* B is a type that should implement int *)
-Variables (A B : Type).
+Variable (B : Type).
 
 (* Build a context with proper sharing and the necessary refinements *)
 Context `{Zero B, One B, Add B, Opp B, Mul B, Comp B}.
-Context `{refinement_of int A B}
-        `{!refines 0%R 0%C, !refines 1 1%C,
+Context `{quotient_of B int}.
+
+Context `{!refines 0%R 0%C, !refines 1 1%C,
           forall (x y : int) (a b : B) `{!refines x a, !refines y b},
             refines (x + y)%R (a + b)%C,
           forall (x : int) (a : B) `{!refines x a},
@@ -206,10 +213,13 @@ Context `{refinement_of int A B}
           forall (x y : int) (a b : B) `{!refines x a, !refines y b},
             refines (x == y)%R (a == b)%C}.
 
-Local Notation ratA := (rational A).
+(*
 Local Notation ratA' := {r : ratA | \pi%C r.2 != 0}.
+*)
+
 Local Notation ratB := (rational B).
 
+(*
 Definition rational_implem (r : ratA') : ratB := 
   (implem (val r).1, implem (val r).2).
 
@@ -220,6 +230,7 @@ rewrite /rational_implem => x y /= h; apply/val_inj => /=.
 move: (val x) (val y) h => [a b] [c d] /= [h1 h2] /=.
 by have [-> ->] := (implem_inj h1, implem_inj h2).
 Qed.
+*)
 
 (* Definition rat'_pi (r : rat') : rat := ((val r).1)%:Q / ((val r).2)%:Q. *)
 (* Definition rat'_repr (r : rat) : rat' := exist _ (numq r, denq r) (denq_neq0 _). *)
@@ -227,44 +238,71 @@ Qed.
 (* Proof. by move=> r; rewrite /rat'_pi /=; case: ratP. Qed. *)
 (* Global Program Instance quotient_rat' : quotient_of rat' rat := QuotClass rat'_reprK. *)
 
-Definition rational_pi (r : ratA') : rat := (\pi%C (val r).1)%:Q / (\pi%C (val r).2)%:Q.
-Program Definition rational_repr (r : rat) : ratA' := exist _ (repr (numq r), repr (denq r)) _.
-Next Obligation. by rewrite reprK denq_neq0. Qed.
+Definition rational_pi (r : ratB) : option rat :=
+  match \pi_int%C r.1, \pi_int%C r.2 with
+  | Some u, Some v => if v == 0 then None else Some (u%:Q / v%:Q)
+  | _, _ => None
+  end.
 
-Lemma rational_reprK : cancel rational_repr rational_pi.
+Definition rational_repr (r : rat) : ratB := 
+  (repr (numq r), repr (denq r)).
+
+Lemma rational_reprK : pcancel rational_repr rational_pi.
 Proof.
 by move=> r; rewrite /rational_pi /rational_repr /= !reprK; case: ratP.
 Qed.
 
-Global Program Instance quotient_rat : quotient_of ratA' rat := QuotClass rational_reprK.
+Global Program Instance quotient_rat : quotient_of (ratB) rat := QuotClass rational_reprK.
 
-Global Program Instance refinement_of_rat : refinement_of rat ratA' ratB :=
-  Refinement.
-
-Global Program Instance refines_rat_0 : refines (0 : rat)%R (0 : ratB)%C := 
-  Refines (exist _ (refine_repr 0%R 0%C, refine_repr 1 1%C) _) _ _.
-Next Obligation. by rewrite refines_pi. Qed.
-Next Obligation. by rewrite /rational_pi /= !refines_pi. Qed.
-Next Obligation. by rewrite /rational_implem /= !refines_implem. Qed.
+Global Program Instance refines_rat_0 : refines (0 : rat)%R (0 : ratB)%C.
+Next Obligation.
+by rewrite /rational_pi !spec_refines oner_eq0.
+Qed.
 
 (* Global Program Instance ZeroMorph_rat : implem_of (0 : rat) (0 : B*B)%C. *)
 (* Obligation 1. *)
 (* exact: (@MorphImplem0 rat). *)
 (* Qed. *)
 
+Lemma refines_rat_inv x a b :
+  refines x (a,b) -> exists u v : int,
+    [/\ refines u a, refines v b, v != 0 & u%:Q / v %:Q = x].
+Proof.
+move=> ref_x.
+move: (@spec_refines _ _ _ _ _ ref_x).
+rewrite /= /rational_pi /=.
+(* my ssr is still poor... *)
+generalize (refl_equal (\pi_(int)%C a)).
+case: {2 3}(\pi_(int)%C a) => // u eq_u.
+generalize (refl_equal (\pi_(int)%C b)).
+case: {2 3}(\pi_(int)%C b) => // v eq_v.
+case: ifPn=> // nz_v0 eq_x.
+exists u; exists v; split=> //.
+by injection eq_x.
+Qed.
+
 (* Morphism from rat' to B * B for addition *)
 Global Program Instance refines_rat_add  (x y : rat) (a b : ratB) 
     (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
-Next Obligation. Admitted.
-Next Obligation. Admitted.
-Next Obligation. Admitted.
+Next Obligation. 
+case: a xa => a1 a2 xa.
+case: b yb => b1 b2 yb.
+rewrite /add /AddRational /add_rational /=.
+rewrite /rational_pi /=.
+case/refines_rat_inv: (xa) => [u1 [u2 [ref_u1 ref_u2 nz_u2 eq_x]]].
+case/refines_rat_inv: (yb) => [v1 [v2 [ref_v1 ref_v2 nz_v2 eq_y]]].
+rewrite !spec_refines.
+case: ifP => [|_].
+by rewrite mulf_eq0 (negbTE nz_u2) (negbTE nz_v2).
+rewrite -eq_x -eq_y.
+congr Some.
+(* the remaining proof is purely algebraic on ssr objects *)
+admit.
+Qed.
 
 Global Program Instance refines_rat_comp (x y : rat) (a b : ratB) 
     (xa : refines x a) (yb : refines y b) : refines (x == y)%R (a == b)%C.
-Next Obligation. Admitted.
-Next Obligation. Admitted.
-Next Obligation. Admitted.
-
+Next Obligation. admit. Qed.
 
 (* Global Program Instance AddMorphBB (x y : rational) (a b : B * B) (xa : implem_of x a) (yb : implem_of y b) : *)
 (*   implem_of (x + y)%C (a + b)%C. *)
@@ -306,20 +344,56 @@ End refines.
 
 
 Section tests.
+(*
 Require Import ZArith ssrint binint.
 
 Eval compute in (0%C + 0%C + 0%C)%C : Z * Z.
+*)
 
+(*
 Lemma bool_implem P (b : bool) : P (\implem_bool b)%C -> P b.
 Proof. done. Qed.
+*)
 
-Lemma bool_refine (b b' : bool) `{refines b b'} : b = b'.
+Lemma bool_refine (b b' : bool) `{!refines b b'} : b = b'.
 Proof.
-Admitted.
+move: {refines0} (@spec_refines _ _ _ _ _ refines0).
+by case:b ; case: b'.
+Qed.
+
+(* Fake implementation of intr to test inference *)
+Variable intr_impl : forall B, int -> B.
+
+(*
+Instance intr_refines {R : ringType} {R'} x `{H : quotient_of R' R} :
+  refines (intr x) (intr_impl R' x).
+admit.
+Qed.
+*)
+
+(*
+Instance intr_refines B (x : int) `{quotient_of B int} :
+  refines x%:Q (intr_impl B x).
+admit.
+Qed.
+
+Goal (2500%:Q = 2500%:Q).
+Proof.
+apply/eqP.
+Check (refines_rat_comp _ _ _ _ (intr_refines (Posz 2500))
+(intr_refines (Posz 2500))).
+
+
+rewrite [_ == _](@bool_refine _ _ (refines_rat_comp _ _ _ _ (intr_refines (Posz 2500))
+(intr_refines (Posz 2500)))).
+
+(* missing refinement for intr and default refinement for naturals *)
+Qed.
 
 Goal (1000%:Q + 1500%:Q = 2500%:Q).
 Proof.
 apply/eqP.
-rewrite [_ == _]bool_refine.
+rewrite [_ == _](bool_refine refines_rat_comp).
 (* missing refinement for intr and default refinement for naturals *)
 Qed.
+*)
