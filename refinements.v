@@ -10,7 +10,7 @@ Module qT := generic_quotient.
 (** This file implements the basic theory of refinements 
 
 refinement_of A B == B is a refinement of A
-refines a b       == a refines to c
+refines a b       == a refines to b
 *)
 
 Set Implicit Arguments.
@@ -32,48 +32,49 @@ Class refinement_of A B := RefinementClass {
   implem : A -> B;
   dom : pred B;
   spec : B -> option A;
-  _ : pcancel implem spec;
-  _ : forall b, b \in dom = spec b
+  implemK : pcancel implem spec;
+  domP : forall b, b \in dom = spec b
 }.
 Notation "\implem_ B" := (@implem _ B _) : computable_scope.
 Notation "\implem" := (@implem _ _ _) (only parsing) : computable_scope.
 Notation "\spec_ A" := (@spec A _ _) : computable_scope.
 Notation "\spec" := (@spec _ _ _) (only parsing) : computable_scope.
 
-Definition Refinement A B (implem : A -> B) (spec : B -> option A) (p : pcancel implem spec) : 
-  refinement_of A B := @RefinementClass _ _ _ (fun b => spec b) _ p (fun _ => erefl).
-
-Lemma implemK A B (rAB : refinement_of A B) : pcancel implem spec.
-Proof. by case: rAB. Qed.
-
-Lemma domP A B (rAB : refinement_of A B) : forall b, b \in dom = spec b.
-Proof. by case: rAB. Qed.
+Definition Refinement A B (implem : A -> B) (spec : B -> option A) 
+  (p : pcancel implem spec) : refinement_of A B := 
+  @RefinementClass _ _ _ (fun b => spec b) _ p (fun _ => erefl).
 
 Lemma implem_inj A B `{refinement_of A B} : injective implem.
-Proof. exact: (pcan_inj (implemK _)). Qed.
+Proof. exact: (pcan_inj implemK). Qed.
+
+Definition specd A B `{refinement_of A B} (a : A) (b : B) := odflt a (spec b).
 
 Lemma implem_composeK A B C `{refinement_of A B, refinement_of B C} :
   pcancel (\implem_C \o \implem_B)%C (obind \spec_A \o \spec_B)%C.
 Proof. by move=> a /=; rewrite implemK /= implemK. Qed.
 
-Global Program Instance refinement_id A : refinement_of A A := 
+Definition refinement_id A : refinement_of A A := 
   Refinement (fun _ => erefl).
-
-Global Program Instance refinement_trans A B C
-  (rab : refinement_of A B) (rbc : refinement_of B C) : refinement_of A C := 
-  Refinement (@implem_composeK _ _ _ rab rbc).
 
 Class refines {A B : Type} `{refinement_of A B} (a : A) (b : B) := Refines {
   spec_refines : \spec%C b = Some a
 }.
 
-(* Global Program Instance bool_refinement_of_bool : refinement_of bool bool bool := Refinement. *)
+Lemma specd_refines A B `{refinement_of A B} (a : A) (b : B) `{!refines a b}: 
+  specd a b = a.
+Proof. by rewrite /specd spec_refines. Qed.
 
+
+Global Instance refinement_bool : refinement_of bool bool := refinement_id bool.
 Global Program Instance refines_bool (a : bool) : refines a a.
 
-Global Program Instance refines_trans A B C a b c
-  `{refinement_of B C, refinement_of A B, !refines a b, !refines b c} : refines a c.
-Obligation 1. by rewrite spec_refines /= spec_refines. Qed.
+Program Definition refinement_trans A B C
+  (rab : refinement_of A B) (rbc : refinement_of B C) : refinement_of A C := 
+  Refinement (@implem_composeK _ _ _ rab rbc).
+
+(* Definition refines_trans A B C a b c *)
+(*   `{refinement_of B C, refinement_of A B, !refines a b, !refines b c} : refines a c. *)
+(* Proof. constructor. rewrite spec_refines /= spec_refines. Qed. *)
 
 (* Instance implem_default A B `{Implem A B} (a : A) :  a (\implem_B%C a) | 999. *)
 (* Proof. done. Qed. *)

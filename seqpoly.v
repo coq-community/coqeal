@@ -18,6 +18,10 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
+Reserved Notation "\seqpoly_ ( i < n ) E"
+  (at level 36, E at level 36, i, n at level 50,
+   format "\seqpoly_ ( i  <  n )  E").
+
 Import GRing.Theory.
 
 Section seqpoly.
@@ -72,18 +76,23 @@ Qed.
 
 (* addition *)
 (* THIS MIGHT BE WRONG! *)
+
+Definition seqpoly_def n E : seqpoly A := mkseq E n.
+Local Notation "\seqpoly_ ( i < n ) E" := (seqpoly_def n (fun i : nat => E)).
+
 Definition seqpoly_add (p q : seqpoly A) : seqpoly A := 
-  \poly_(i < maxn (size p) (size q)) (p`_i + q`_i).
+  \seqpoly_(i < maxn (size p) (size q)) (p`_i + q`_i).
 
 Global Program Instance add_seqpoly : add (seqpoly A) := seqpoly_add.
 
 Global Program Instance refines_poly_add  (x y : {poly A}) (a b : seq A) 
   (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
 Obligation 1.
-congr Some.
-rewrite polyseqK.
-rewrite [x + y]/GRing.add /= !unlock /=.
-admit.
+congr Some; apply/polyP => i /=.
+rewrite -[x]specd_refines -[y]specd_refines coef_add_poly !coef_Poly.
+have [hlt|hleq] := ltnP i (maxn (size a) (size b)); first by rewrite nth_mkseq.
+have:= hleq; rewrite geq_max => /andP [ha hb].
+by rewrite !nth_default ?addr0 ?size_mkseq.
 Qed.
 
 End seqpoly.
