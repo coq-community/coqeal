@@ -21,6 +21,9 @@ Reserved Notation "\implem_ A" (at level 0, format "\implem_ A").
 Reserved Notation "\implem" (at level 0, format "\implem").
 Reserved Notation "\spec_ B" (at level 0, format "\spec_ B").
 Reserved Notation "\spec" (at level 0, format "\spec").
+Reserved Notation "\refines_ r a b" 
+         (at level 0, format "\refines_ r  a  b",
+          r at level 0, a at next level).
 
 Delimit Scope computable_scope with C.
 
@@ -28,56 +31,108 @@ Local Open Scope ring_scope.
 
 Import GRing.Theory.
 
-Class refinement_of A B := RefinementClass {
+Class refinement A B := Refinement {
   implem : A -> B;
-  dom : pred B;
   spec : B -> option A;
-  implemK : pcancel implem spec;
-  domP : forall b, b \in dom = spec b
+  implemK : pcancel implem spec
 }.
 Notation "\implem_ B" := (@implem _ B _) : computable_scope.
 Notation "\implem" := (@implem _ _ _) (only parsing) : computable_scope.
 Notation "\spec_ A" := (@spec A _ _) : computable_scope.
 Notation "\spec" := (@spec _ _ _) (only parsing) : computable_scope.
 
-Definition Refinement A B (implem : A -> B) (spec : B -> option A) 
-  (p : pcancel implem spec) : refinement_of A B := 
-  @RefinementClass _ _ _ (fun b => spec b) _ p (fun _ => erefl).
-
-Lemma implem_inj A B `{refinement_of A B} : injective implem.
+Lemma implem_inj A B `{refinement A B} : injective implem.
 Proof. exact: (pcan_inj implemK). Qed.
 
-Definition specd A B `{refinement_of A B} (a : A) (b : B) := odflt a (spec b).
+Definition specd A B `{refinement A B} (a : A) (b : B) := odflt a (spec b).
 
-Lemma implem_composeK A B C `{refinement_of A B, refinement_of B C} :
+Lemma implem_composeK A B C `{refinement A B, refinement B C} :
   pcancel (\implem_C \o \implem_B)%C (obind \spec_A \o \spec_B)%C.
 Proof. by move=> a /=; rewrite implemK /= implemK. Qed.
 
-Definition refinement_id A : refinement_of A A := 
+Definition refinement_id A : refinement A A := 
   Refinement (fun _ => erefl).
 
-Class refines {A B : Type} `{refinement_of A B} (a : A) (b : B) := Refines {
-  spec_refines : \spec%C b = Some a
-}.
+Class is_some {A : Type} (a : A) (b : option A) := is_someE : Some a = b.
 
-Lemma specd_refines A B `{refinement_of A B} (a : A) (b : B) `{!refines a b}: 
+Notation refines a b := (is_some a (spec b)).
+Notation "\refines_ r a b" := (is_some a (@spec _ _ r b)) (only parsing).
+
+Lemma spec_refines A B `{refinement A B} (a : A) (b : B) `{refines a b}:
+  spec b = Some a.
+Proof. by rewrite is_someE. Qed.
+
+Lemma specd_refines A B `{refinement A B} (a : A) (b : B) `{refines a b}: 
   specd a b = a.
 Proof. by rewrite /specd spec_refines. Qed.
 
+Global Instance refinement_bool : refinement bool bool := refinement_id bool.
+(* Global Instance refines_bool (a : bool) : refines a a := erefl. *)
 
-Global Instance refinement_bool : refinement_of bool bool := refinement_id bool.
-Global Program Instance refines_bool (a : bool) : refines a a.
-
-Program Definition refinement_trans A B C
-  (rab : refinement_of A B) (rbc : refinement_of B C) : refinement_of A C := 
+Section local_trans.
+Instance refinement_trans A B C
+  (rab : refinement A B) (rbc : refinement B C) : refinement A C := 
   Refinement (@implem_composeK _ _ _ rab rbc).
 
-(* Definition refines_trans A B C a b c *)
-(*   `{refinement_of B C, refinement_of A B, !refines a b, !refines b c} : refines a c. *)
-(* Proof. constructor. rewrite spec_refines /= spec_refines. Qed. *)
+Lemma refines_trans A B C
+  (rab : refinement A B) (rbc : refinement B C)
+  (a : A) (b : B) (c : C) `{!refines a b, !refines b c} :
+  refines a c.
+Proof. by do? rewrite /= spec_refines. Qed.
+(* rac := refinement_trans rab rbc and leaving it implicit in the *)
+(* conclusion leads to a Bad implicit argument number: 11 *)
+End local_trans.
 
-(* Instance implem_default A B `{Implem A B} (a : A) :  a (\implem_B%C a) | 999. *)
-(* Proof. done. Qed. *)
+Class refines_step {A B} `{refinement A B} (a : A) (b : B) :=
+  spec_refines_step : spec b = Some a.
+
+Instance refines_step_refines {A B} `{refinement A B} {a : A} {b : B} :
+  refines_step a b -> refines a b.
+Proof. done. Qed.
+
+(* We should use instead a "container datatype" library *)
+(* where container T -> forall A B, refinement (T A) (T B) *)
+Module parametric_pair.
+Section parametric_pair.
+
+Variables (A A' B B' : Type).
+Context `{refinement A A'} `{refinement B B'}.
+
+Definition ABtoAB' (ab : A * B) : (A' * B') := (implem ab.1, implem ab.2).
+Definition AB'toAB (ab : A' * B') : option (A * B) :=
+  obind (fun x => obind (fun y => Some (x, y)) (spec ab.2)) (spec ab.1).
+Lemma ABtoAB'K : pcancel ABtoAB' AB'toAB.
+Proof. by case=> x y; rewrite /ABtoAB' /AB'toAB !implemK. Qed.
+
+Instance Qrefinement :
+  refinement (A * B) (A' * B') :=  Refinement ABtoAB'K.
+
+Instance refines_pair (a : A) (a' : A') (b : B) (b' : B') 
+  `{refines a a'} `{refines b b'} : refines  (a, b) (a', b').
+Proof. by rewrite /= /AB'toAB /= !spec_refines. Qed.
+
+Instance refines_fst (ab : A * B) (ab' : A' * B'):
+  refines ab ab' -> refines ab.1 ab'.1.
+Proof.
+by rewrite /= /AB'toAB; move: (spec _.1) (spec _.2) => [a|//] [b|//] [->].
+Qed.
+
+Instance refines_snd (ab : A * B) (ab' : A' * B'):
+  refines ab ab' -> refines ab.2 ab'.2.
+Proof.
+by rewrite /= /AB'toAB; move: (spec _.1) (spec _.2) => [a|//] [b|//] [->].
+Qed.
+
+End parametric_pair.
+Existing Instance Qrefinement.
+Existing Instance refines_pair.
+Existing Instance refines_fst.
+Existing Instance refines_snd.
+
+End parametric_pair.
+
+Lemma refines_boolE (b b' : bool) {rb : refines b b'} : b = b'.
+Proof. by move: b b' rb (@spec_refines _ _ _ _ _ rb) => [] []. Qed.
 
 Section Operations.
 
@@ -115,6 +170,7 @@ Class div B := div_op : B -> B -> B.
 Local Notation "x / y" := (div_op x y) : computable_scope.
 
 (* Comparisons *)
+(* This is wrong! eq_op is taken *) 
 Class eq B := eq_op : B -> B -> bool.
 Local Notation "x == y" := (eq_op x y) : computable_scope.
 
@@ -123,12 +179,6 @@ Local Notation "x < y" := (lt_op x y) : computable_scope.
 
 Class leq B := leq_op : B -> B -> bool.
 Local Notation "x <= y" := (leq_op x y) : computable_scope.
-
-Class gt B := gt_op : B -> B -> bool.
-Local Notation "x > y" := (gt_op x y) : computable_scope.
-
-Class geq B := geq_op : B -> B -> bool.
-Local Notation "x >= y" := (geq_op x y) : computable_scope.
 
 End Operations.
 
@@ -147,5 +197,6 @@ Notation "x / y"  := (div_op x y)  : computable_scope.
 Notation "x == y" := (eq_op x y)   : computable_scope.
 Notation "x < y " := (lt_op x y)   : computable_scope.
 Notation "x <= y" := (leq_op x y)  : computable_scope.
-Notation "x > y"  := (gt_op x y)   : computable_scope.
-Notation "x >= y" := (geq_op x y)  : computable_scope.
+Notation "x > y"  := (lt_op y x)  (only parsing) : computable_scope.
+Notation "x >= y" := (leq_op y x) (only parsing) : computable_scope.
+
