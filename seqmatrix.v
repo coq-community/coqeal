@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop matrix mxalgebra.
-Require Import refinements.
+Require Import ssrcomplements refinements.
 
 (******************************************************************************)
 (* Lists of lists is a refinement of SSReflect matrices                       *) 
@@ -86,8 +86,73 @@ rewrite (omap_funoptE (fun ij => M ij.1 ij.2)) /=.
   by congr Some; apply/matrixP=> i j; rewrite mxE.
   by move=> g g' eq_gg' /=; apply/matrixP=> i j; rewrite !mxE.
 move=> [i j] /=.
-admit.
+rewrite (nth_map [::]) /=; last by rewrite size_map -cardT card_ord.
+rewrite (nth_map (M i j)) /=.
+  rewrite (nth_map i); last by rewrite -cardT card_ord.
+  rewrite (nth_map j); last by rewrite -cardT card_ord.
+  by rewrite !nth_ord_enum.
+rewrite (nth_map i); last by rewrite -cardT card_ord.
+by rewrite size_map -cardT card_ord.
 Qed.
+
+Global Program Instance refinement_mx_seqmx m n :
+  refinement_of 'M[A]_(m,n) seqmatrix := Refinement (@seqmx_of_mxK m n).
+
+(* We may want to enforce dimensions of any seqmatrix to be exactly the same *)
+(* as the matrix they refine (for now, they are greater or equal) *)
+Lemma size_seqmx m n (M : 'M[A]_(m,n)) M' : refines M M' -> m < size M'.
+Proof.
+move=> ref_MM'.
+move: (@spec_refines _ _ _ _ _ ref_MM').
+rewrite /spec /= /mx_of_seqmx.
+
+Qed.
+
+Lemma size_nth_seqmx m n (M : 'M[A]_(m,n)) M' i x0 :
+  refines M M' -> i < m -> n < size (nth x0 M' i).
+Proof.
+Qed.
+
+End seqmx.
+
+Section seqmx_op.
+
+Variable (A : Type).
+
+Definition zipwithseqmx (M N : seqmatrix A) (f : A -> A -> A) : seqmatrix A :=
+  zipwith (zipwith f) M N.
+
+Definition addseqmx `{add A} (M N : seqmatrix A) : seqmatrix A :=
+  zipwithseqmx M N +%C.
+
+Global Program Instance add_seqmatrix `{add A} : add (seqmatrix A) := addseqmx.
+
+End seqmx_op.
+
+Section seqmx_op2.
+
+Variable (B : zmodType).
+
+Instance add_B : add B := +%R.
+
+Global Program Instance refines_addseqmx m n (x y : 'M[B]_(m,n)) (a b : seqmatrix B) 
+  (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
+Next Obligation.
+rewrite /seqmx_of_mx /mx_of_seqmx /=.
+rewrite (omap_funoptE (fun ij => (x + y) ij.1 ij.2)) /=.
+  by congr Some; apply/matrixP=> i j; rewrite mxE.
+  by move=> g g' eq_gg' /=; apply/matrixP=> i j; rewrite !mxE.
+move=> [i j] /=.
+rewrite (nth_map [::]) /=; last first.
+rewrite size_zipwith.
+
+by rewrite size_map -cardT card_ord.
+rewrite (nth_map (M i j)) /=.
+  rewrite (nth_map i); last by rewrite -cardT card_ord.
+  rewrite (nth_map j); last by rewrite -cardT card_ord.
+  by rewrite !nth_ord_enum.
+rewrite (nth_map i); last by rewrite -cardT card_ord.
+by rewrite size_map -cardT card_ord.
 
 
 (* Global Program Instance ImplemSeqmx `{Implem A B} m n :  *)
