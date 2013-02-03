@@ -53,21 +53,31 @@ Proof. by move=> a /=; rewrite implemK /= implemK. Qed.
 Definition refinement_id A : refinement A A := 
   Refinement (fun _ => erefl).
 
-Class is_some {A : Type} (a : A) (b : option A) := is_someE : Some a = b.
+Class refines {A B} `{refinement A B} (a : A) (b : B) :=
+  spec_refines_def : Some a = spec b.
 
-Notation refines a b := (is_some a (spec b)).
-Notation "\refines_ r a b" := (is_some a (@spec _ _ r b)) (only parsing).
+Lemma spec_refines A B `{refinement A B} (a : A) (b : B)
+      `{!refines a b} :  spec b = Some a.
+Proof. by rewrite spec_refines_def. Qed.
 
-Lemma spec_refines A B `{refinement A B} (a : A) (b : B) `{refines a b}:
-  spec b = Some a.
-Proof. by rewrite is_someE. Qed.
+(* Class is_some {A : Type} (a : A) (b : option A) := is_someE : Some a = b. *)
 
-Lemma specd_refines A B `{refinement A B} (a : A) (b : B) `{refines a b}: 
-  specd a b = a.
+(* Notation refines a b := (is_some a (spec b)). *)
+(* Notation "\refines_ r a b" := (is_some a (@spec _ _ r b)) (only parsing). *)
+
+(* Lemma spec_refines A B `{refinement A B} (a : A) (b : B) `{refines a b}: *)
+(*   spec b = Some a. *)
+(* Proof. by rewrite is_someE. Qed. *)
+
+Lemma specd_refines A B `{refinement A B} (a a0 : A) (b : B) `{!refines a b}: 
+  specd a0 b = a.
 Proof. by rewrite /specd spec_refines. Qed.
 
 Global Instance refinement_bool : refinement bool bool := refinement_id bool.
 (* Global Instance refines_bool (a : bool) : refines a a := erefl. *)
+
+Lemma refines_boolE (b b' : bool) {rb : refines b b'} : b = b'.
+Proof. by move: b b' rb (@spec_refines _ _ _ _ _ rb) => [] []. Qed.
 
 Section local_trans.
 Instance refinement_trans A B C
@@ -78,22 +88,47 @@ Lemma refines_trans A B C
   (rab : refinement A B) (rbc : refinement B C)
   (a : A) (b : B) (c : C) `{!refines a b, !refines b c} :
   refines a c.
-Proof. by do? rewrite /= spec_refines. Qed.
+Proof. by do? rewrite /refines /= spec_refines. Qed.
 (* rac := refinement_trans rab rbc and leaving it implicit in the *)
 (* conclusion leads to a Bad implicit argument number: 11 *)
+
+Lemma refines_split A B C
+  (rab : refinement A B) (rbc : refinement B C)
+  (a : A) (c : C) : refines a c ->
+  {b : B | (refines a b * refines b c)%type}.
+Proof. by rewrite /refines /=; case: (spec c) => //= b; exists b. Qed.
+
+Definition refines_split_wit A B C
+  (rab : refinement A B) (rbc : refinement B C)
+  (a : A) (c : C) (ra : refines a c) : B := projT1 (refines_split ra).
+
+Lemma refines_split1 A B C
+  (rab : refinement A B) (rbc : refinement B C)
+  (a : A) (c : C) (ra : refines a c) : refines a (refines_split_wit ra).
+Proof. by rewrite /refines_split_wit; case: (refines_split _) => ? []. Qed.
+
+Lemma refines_split2 A B C
+  (rab : refinement A B) (rbc : refinement B C)
+  (a : A) (c : C) (ra : refines a c) : refines (refines_split_wit ra) c.
+Proof. by rewrite /refines_split_wit; case: (refines_split _) => ? []. Qed.
+
 End local_trans.
 
 Class refines_step {A B} `{refinement A B} (a : A) (b : B) :=
-  spec_refines_step : spec b = Some a.
+  spec_refines_step_def : Some a = spec b.
 
-Instance refines_step_refines {A B} `{refinement A B} {a : A} {b : B} :
+Lemma spec_refines_step A B `{refinement A B} (a : A) (b : B)
+      `{!refines_step a b} :  spec b = Some a.
+Proof. by rewrite spec_refines_step_def. Qed.
+
+Definition refines_step_refines {A B} `{refinement A B} {a : A} {b : B} :
   refines_step a b -> refines a b.
 Proof. done. Qed.
 
 (* We should use instead a "container datatype" library *)
 (* where container T -> forall A B, refinement (T A) (T B) *)
-Module parametric_pair.
-Section parametric_pair.
+Module parametricity.
+Section parametricity.
 
 Variables (A A' B B' : Type).
 Context `{refinement A A'} `{refinement B B'}.
@@ -108,31 +143,37 @@ Instance Qrefinement :
   refinement (A * B) (A' * B') :=  Refinement ABtoAB'K.
 
 Instance refines_pair (a : A) (a' : A') (b : B) (b' : B') 
-  `{refines a a'} `{refines b b'} : refines  (a, b) (a', b').
-Proof. by rewrite /= /AB'toAB /= !spec_refines. Qed.
+  `{!refines a a'} `{!refines b b'} : refines  (a, b) (a', b').
+Proof. by rewrite /refines /= /AB'toAB /= !spec_refines. Qed.
 
 Instance refines_fst (ab : A * B) (ab' : A' * B'):
   refines ab ab' -> refines ab.1 ab'.1.
 Proof.
-by rewrite /= /AB'toAB; move: (spec _.1) (spec _.2) => [a|//] [b|//] [->].
+rewrite /refines /= /AB'toAB.
+by move: (spec _.1) (spec _.2) => [a|//] [b|//] [->].
 Qed.
 
 Instance refines_snd (ab : A * B) (ab' : A' * B'):
   refines ab ab' -> refines ab.2 ab'.2.
 Proof.
-by rewrite /= /AB'toAB; move: (spec _.1) (spec _.2) => [a|//] [b|//] [->].
+rewrite /refines /= /AB'toAB.
+by move: (spec _.1) (spec _.2) => [a|//] [b|//] [->].
 Qed.
 
-End parametric_pair.
+Instance refines_if 
+         (c : bool) (c' : bool) (a : A) (a' : A') (b : A) (b' : A') 
+   {rc : refines c c'}  `{!refines a a'} `{!refines b b'} :
+  refines (if c then a else b) (if c' then a' else b').
+Proof. by rewrite [c]refines_boolE; case: c' rc. Qed.
+
+End parametricity.
 Existing Instance Qrefinement.
 Existing Instance refines_pair.
 Existing Instance refines_fst.
 Existing Instance refines_snd.
+Existing Instance refines_if.
 
-End parametric_pair.
-
-Lemma refines_boolE (b b' : bool) {rb : refines b b'} : b = b'.
-Proof. by move: b b' rb (@spec_refines _ _ _ _ _ rb) => [] []. Qed.
+End parametricity.
 
 Section Operations.
 

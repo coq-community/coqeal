@@ -118,7 +118,7 @@ Global Program Instance eq_Z : eq Z := Z.eqb.
 Global Instance refines_int_eq (x y : int) (x' y' : Z)
   (rx : refines x x') (ry : refines y y') : refines (x == y) (x' == y')%C.
 Proof.
-rewrite /is_some /eq_op /eq_Z; congr Some.
+rewrite /refines /eq_op /eq_Z; congr Some.
 apply/idP/idP => [/eqP h|].
   by apply/Z.eqb_eq/specZ_inj; rewrite !spec_refines h.
 case: (Z.eqb_spec _ _) => h // _.

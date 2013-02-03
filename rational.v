@@ -21,6 +21,7 @@ Import GRing.Theory.
 Import Num.Theory.
 
 (* rational - Non normalized rational numbers *)
+Section Q.
 
 Definition Q (B : Type) := (B * B)%type.
 Local Notation Qint := (Q int).
@@ -39,8 +40,7 @@ Lemma Qrat_to_intK : pcancel rat_to_Qint Qint_to_rat.
 Proof. by move=> x; rewrite /Qint_to_rat ?denq_eq0 ?divq_num_den. Qed.
 
 (* We have a quotient type where rat is the quotients of Qint *)
-(* IN FACT, THIS SHOULD BE A SUB-REFINEMENT, NOT A REFINEMENT!!! *)
-Global Instance rat_refinement : refinement rat Qint :=
+Instance rat_refinement : refinement rat Qint :=
   Refinement Qrat_to_intK.
 
 Lemma Qint2_eq0 (a : Qint) : (a.2 == 0) = ~~ spec a :> bool.
@@ -55,50 +55,51 @@ Proof.
 by apply: Some_inj; rewrite -spec_refines /= /Qint_to_rat dom_refines.
 Qed.
 
-Section Q.
+Section Qop.
 Variable B : Type.
 Context `{zero B, one B, add B, opp B, mul B, eq B}.
-Local Notation ratB := (Q B).
+Local Notation QB := (Q B).
 
 (* Zero *)
-Definition zeroQ : ratB := (0, 1)%C.
-Global Instance zero_ratB : zero ratB := zeroQ.
+Definition zeroQ : QB := (0, 1)%C.
+Global Instance zero_QB : zero QB := zeroQ.
 
 (* One *)
-Definition oneQ : ratB := (1, 1)%C.
-Global Instance one_ratB : one ratB := oneQ.
+Definition oneQ : QB := (1, 1)%C.
+Global Instance one_QB : one QB := oneQ.
 
 (* Add *)
-Definition addQ (x y : ratB) : ratB :=
+Definition addQ (x y : QB) : QB :=
    (x.1 * y.2 + y.1 * x.2, x.2 * y.2)%C.
-Global Instance add_ratB : add ratB := addQ.
+Global Instance add_QB : add QB := addQ.
 
 (* Mul *)
-Definition mulQ (x y : ratB) : ratB := (x.1 * y.1, x.2 * y.2)%C.
-Global Instance mul_ratB : mul ratB := mulQ.
+Definition mulQ (x y : QB) : QB := (x.1 * y.1, x.2 * y.2)%C.
+Global Instance mul_QB : mul QB := mulQ.
 
 (* Opp *)
-Definition oppQ (x : ratB) : ratB := (- x.1, x.2)%C.
-Global Instance opp_ratB : opp ratB := oppQ.
+Definition oppQ (x : QB) : QB := (- x.1, x.2)%C.
+Global Instance opp_QB : opp QB := oppQ.
 
 (* Comp *)
-Definition eqQ (x y : ratB) : bool := (x.1 * y.2 == x.2 * y.1)%C.
-Global Instance eq_ratB : eq ratB := eqQ.
+Definition eqQ (x y : QB) : bool := (x.1 * y.2 == x.2 * y.1)%C.
+Global Instance eq_QB : eq QB := eqQ.
 
 (* Inv *)
-Definition invQ (x : ratB) : ratB :=
+Definition invQ (x : QB) : QB :=
   (if (x.1 == 0)%C then 0%C else (x.2, x.1)%C).
-Global Instance inv_ratB : inv ratB := invQ.
+Global Instance inv_QB : inv QB := invQ.
 
 (* Subtraction *)
-Definition subQ (a b : ratB) : ratB := (a + - b)%C.
-Global Instance sub_ratB : sub ratB := subQ.
+Definition subQ (a b : QB) : QB := (a + - b)%C.
+Global Instance sub_QB : sub QB := subQ.
 
 (* Division *)
-Definition divQ (a b : ratB) : ratB := (a * b^-1)%C.
-Global Instance div_ratB : div ratB := divQ.
+Definition divQ (a b : QB) : QB := (a * b^-1)%C.
+Global Instance div_QB : div QB := divQ.
 
-End Q.
+Definition embedQ (a : B) : QB := (a, 1)%C.
+End Qop.
 
 Instance : zero int := 0%R.
 Instance : one int  := 1%R.
@@ -107,9 +108,13 @@ Instance : opp int  := -%R.
 Instance : mul int  := *%R.
 Instance : eq int   := eqtype.eq_op.
 
+Existing Instance refines_step_refines.
 
 Instance refines_zeroq : refines_step 0 0%C. Proof. by []. Qed.
 Instance refines_oneq : refines_step 1 1%C. Proof. by []. Qed.
+
+Instance refines_embedq n : refines_step n%:~R (embedQ n).
+Proof. by rewrite /refines_step /embedQ /= /Qint_to_rat /= mulr1. Qed.
 
 Instance refines_addq (x y : rat) (a b : Qint)
          `{!refines_step x a, !refines_step y b} : refines_step (x + y) (a + b)%C.
@@ -137,7 +142,7 @@ Qed.
 Instance refines_invq (x : rat) (a : Qint) `{!refines_step x a} :
   refines_step (x^-1) (a^-1)%C.
 Proof.
-rewrite /refines_step /= /Qint_to_rat /= /inv_op /inv_ratB /invQ.
+rewrite /refines_step /= /Qint_to_rat /= /inv_op /inv_QB /invQ.
 rewrite [x]refines_ratE /= -[(_ == _)%C]/(_ == _).
 have [-> /=|a1_neq0 /=] := altP (a.1 =P 0); first by rewrite !mul0r ?invr0.
 by rewrite a1_neq0 invfM invrK mulrC.
@@ -151,10 +156,10 @@ Instance refines_divq (x y : rat) (a b : Qint)
  `{!refines_step x a, !refines_step y b} : refines_step (x / y) (a / b)%C.
 Proof. by rewrite /refines_step spec_refines. Qed.
 
-Instance refines_compq (x y : rat) (a b : Qint)
+Lemma refines_compq (x y : rat) (a b : Qint)
  `{!refines_step x a, !refines_step y b} : refines_step (x == y) (a == b)%C.
 Proof.
-congr Some; rewrite /= /eq_op /eq_ratB /eqQ. 
+congr Some; rewrite /= /eq_op /eq_QB /eqQ.
 rewrite [x]refines_ratE [y]refines_ratE /= -[(_ == _)%C]/(_ == _).
 rewrite divq_eq ?intr_eq0 ?dom_refines // -!rmorphM eqr_int.
 by rewrite [X in (_ == X)]mulrC.
@@ -162,60 +167,103 @@ Qed.
 
 Section Qparametric.
 
-Import parametric_pair.
+Import parametricity.
 
 Global Instance Qrefinement_int B `{refinement int B} :
   refinement rat (Q B) :=  @refinement_trans _ Qint _ _ _.
 
-Global Instance rat_refines_trans
+Lemma rat_refines_trans
          B `{refinement int B} (x : rat) (a : Qint) (u : Q B) :
          refines_step x a -> refines a u -> refines x u.
 Proof. move=> /refines_step_refines; exact: @refines_trans. Qed.
 
 (* B is a type that should implement int *)
-Variable (B : Type).
-Local Notation ratB := (Q B).
+(* Variable (B : Type). *)
+Require Import binint ZArith.
 
-(* Build a context with proper sharing and the necessary refinements *)
-(* this should be done by refinesiy *)
-Context `{zero B, one B, add B, opp B, mul B, eq B}.
-Context `{refinement int B}.
+Local Notation B := Z.
+Local Notation QB := (Q B).
 
-Context `{!refines (0%C : int) (0%C : B)}
-        `{!refines (1%C : int) (1%C : B)}
-        `{forall (x y : int) (a b : B) `{!refines x a, !refines y b},
-            refines (x + y)%C (a + b)%C}
-        `{forall (x : int) (a : B) `{!refines x a},
-            refines (- x)%C (- a)%C}
-        `{forall (x y : int) (a b : B) `{!refines x a, !refines y b},
-            refines (x * y)%C (a * b)%C}
-        `{forall (x y : int) (a b : B) `{!refines x a, !refines y b},
-            refines (x == y)%C (a == b)%C}.
+(* Build a context with proper sharing and the necessary refinements. *)
+(* All this should be done by even more automatically *)
+(* Context `{zero B, one B, add B, opp B, mul B, eq B}. *)
+(* Context `{refinement int B}. *)
 
-Global Instance refines_zeroQ : refines (0%C : Q int) (0%C : Q B).
-Proof. by typeclasses eauto. Qed.
+(* Context `{!refines (0%C : int) (0%C : B)} *)
+(*         `{!refines (1%C : int) (1%C : B)} *)
+(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
+(*             refines (x + y)%C (a + b)%C} *)
+(*         `{forall (x : int) (a : B) `{!refines x a}, *)
+(*             refines (- x)%C (- a)%C} *)
+(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
+(*             refines (x * y)%C (a * b)%C} *)
+(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
+(*             refines (x == y)%C (a == b)%C}. *)
 
-Global Instance refines_oneQ : refines (1%C : Q int) (1%C : Q B).
-Proof. by typeclasses eauto. Qed.
+Variables (n : int) (q : B).
+Context `{rn : !refines n q}.
 
-Global Instance refines_addQ (x y : Q int) (a b : Q B)
-         `{!refines x a, !refines y b} : refines (x + y)%C (a + b)%C.
-Proof. by typeclasses eauto. Qed.
+Variables (x y :rat) (a b : Q B).
+Context `{rx : !refines x a, ry : !refines y b}.
 
-Global Instance refines_compQ (x y : Q int) (a b : Q B)
-         `{!refines x a, !refines y b} : refines (x == y)%C (a == b)%C.
-Proof. by typeclasses eauto. Qed.
+Let u := refines_split_wit rx.
+Let v := refines_split_wit ry.
+Instance : refines_step x u := refines_split1 rx.
+Instance : refines u a := refines_split2 rx.
+Instance : refines_step y v := refines_split1 ry.
+Instance : refines v b := refines_split2 ry.
+
+Global Instance refines_zeroQ  : refines (0 : rat) (0%C : Q B).
+Proof. exact: rat_refines_trans. Qed.
+
+Global Instance refines_oneQ  : refines (1 : rat) (1%C : Q B).
+Proof. exact: rat_refines_trans. Qed.
+
+Global Instance refines_embedQ  : refines (n%:~R : rat) (embedQ q: Q B).
+Proof. exact: rat_refines_trans. Qed.
+
+Global Instance refines_addQ : refines (x + y) (a + b)%C.
+Proof. exact: (rat_refines_trans (refines_addq _ _ _ _)). Qed.
+
+Global Instance refines_mulQ : refines (x * y) (a * b)%C.
+Proof. exact: (rat_refines_trans (refines_mulq _ _ _ _)). Qed.
+
+(* Global Instance refines_oppQ : refines (- x) (- a)%C. *)
+(* Proof. exact: (rat_refines_trans (refines_oppq _ _)). Qed. *)
+
+(* Global Instance refines_invQ : refines (x^-1) (a^-1)%C. *)
+(* Proof. exact: (rat_refines_trans (refines_invq _ _)). Qed. *)
+
+(* Global Instance refines_subQ : refines (x - y) (a - b)%C. *)
+(* Proof. exact: (rat_refines_trans (refines_subq _ _ _ _)). Qed. *)
+
+(* Global Instance refines_divQ : refines (x / y) (a / b)%C. *)
+(* Proof. exact: (rat_refines_trans (refines_divq _ _ _ _)). Qed. *)
+
+Global Instance refines_compQ : refines (x == y) (a == b)%C.
+Proof.
+assert (r1 : refines (x == y) (u == v)%C); first exact: refines_compq.
+exact: (@refines_trans _ _ _ _ _ _ _ _ r1).
+Qed.
 
 End Qparametric.
 
-(* Instance foo : refines_step (x + y) (a + b)%C. *)
-(* Proof. typeclasses eauto. Qed. *)
-
+End Q.
 
 Section tests.
 
+
+Require Import binint ZArith.
+
+Lemma foo (P : bool -> Type) :
+  P ((1 + 1) * (1 + 1 + 1) == 0 + 1 + 1 :> rat).
+Proof.
+rewrite [(_ == _)]refines_boolE.
+(* The time increases each time one adds an Instance *)
+Abort.
+
 (* Variable (B : Type). *)
-(* Local Notation ratB := (Q B). *)
+(* Local Notation QB := (Q B). *)
 
 (* (* Build a context with proper sharing and the necessary refinements *) *)
 (* (* this should be done by refinesiy *) *)
@@ -232,6 +280,7 @@ Section tests.
 (*             refines (x * y)%C (a * b)%C} *)
 (*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
 (*             refines (x == y)%C (a == b)%C}. *)
+(* (* WHAT ??? *) *)
 
 (* Lemma foo (P : bool -> Type) : *)
 (*   P (1 + 1 == 0 + 1 + 1 :> rat). *)
