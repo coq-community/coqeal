@@ -21,6 +21,14 @@ Import GRing.Theory.
 Import Num.Theory.
 
 (* rational - Non normalized rational numbers *)
+
+Instance : zero int := 0%R.
+Instance : one int  := 1%R.
+Instance : add int  := +%R.
+Instance : opp int  := -%R.
+Instance : mul int  := *%R.
+Instance : eq int   := eqtype.eq_op.
+
 Section Q.
 
 Definition Q (B : Type) := (B * B)%type.
@@ -100,13 +108,6 @@ Global Instance div_QB : div QB := divQ.
 
 Definition embedQ (a : B) : QB := (a, 1)%C.
 End Qop.
-
-Instance : zero int := 0%R.
-Instance : one int  := 1%R.
-Instance : add int  := +%R.
-Instance : opp int  := -%R.
-Instance : mul int  := *%R.
-Instance : eq int   := eqtype.eq_op.
 
 Existing Instance refines_step_refines.
 
@@ -219,14 +220,14 @@ Proof. exact: rat_refines_trans. Qed.
 Global Instance refines_oneQ  : refines (1 : rat) (1%C : Q B).
 Proof. exact: rat_refines_trans. Qed.
 
-Global Instance refines_embedQ  : refines (n%:~R : rat) (embedQ q: Q B).
-Proof. exact: rat_refines_trans. Qed.
+(* Global Instance refines_embedQ  : refines (n%:~R : rat) (embedQ q: Q B). *)
+(* Proof. exact: rat_refines_trans. Qed. *)
 
 Global Instance refines_addQ : refines (x + y) (a + b)%C.
 Proof. exact: (rat_refines_trans (refines_addq _ _ _ _)). Qed.
 
-Global Instance refines_mulQ : refines (x * y) (a * b)%C.
-Proof. exact: (rat_refines_trans (refines_mulq _ _ _ _)). Qed.
+(* Global Instance refines_mulQ : refines (x * y) (a * b)%C. *)
+(* Proof. exact: (rat_refines_trans (refines_mulq _ _ _ _)). Qed. *)
 
 (* Global Instance refines_oppQ : refines (- x) (- a)%C. *)
 (* Proof. exact: (rat_refines_trans (refines_oppq _ _)). Qed. *)
@@ -256,22 +257,25 @@ Section tests.
 Require Import binint ZArith.
 
 Lemma foo (P : bool -> Type) :
-  P ((1 + 1) * (1 + 1 + 1) == 0 + 1 + 1 :> rat).
+  P (1 + 1 == 1 + 1 :> rat).
 Proof.
-rewrite [(_ == _)]refines_boolE.
-(* The time increases each time one adds an Instance *)
+Time rewrite [(_ == _)]refines_boolE.
+(* The time increases exponentially each time one adds an Instance *)
+(* with refines_zeroQ, refines_oneQ, refines_addQ, refines_compQ : 0.01 sec *)
+(* + refines_mulQ  : 0.4 sec *)
+(* + refines_oppQ  : 51 sec *)
 Abort.
 
-(* Variable (B : Type). *)
-(* Local Notation QB := (Q B). *)
+Variable (B : Type).
+Local Notation QB := (Q B).
 
-(* (* Build a context with proper sharing and the necessary refinements *) *)
-(* (* this should be done by refinesiy *) *)
+(* Build a context with proper sharing and the necessary refinements *)
+(* this should be done by refinesiy *)
 (* Context `{zero B, one B, add B, opp B, mul B, eq B}. *)
 (* Context `{refinement int B}. *)
 
-(* Context `{!refines (0%C : int) (0%C : B)} *)
-(*         `{!refines (1%C : int) (1%C : B)} *)
+(* Context `{!refines (0%C : int) (0%C : B)}. *)
+(* Context `{!refines (1%C : int) (1%C : B)} *)
 (*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
 (*             refines (x + y)%C (a + b)%C} *)
 (*         `{forall (x : int) (a : B) `{!refines x a}, *)
@@ -280,7 +284,6 @@ Abort.
 (*             refines (x * y)%C (a * b)%C} *)
 (*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
 (*             refines (x == y)%C (a == b)%C}. *)
-(* (* WHAT ??? *) *)
 
 (* Lemma foo (P : bool -> Type) : *)
 (*   P (1 + 1 == 0 + 1 + 1 :> rat). *)
