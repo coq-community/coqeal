@@ -39,12 +39,23 @@ Lemma funoptP (A : finType) (B : Type) (f : A -> option B) :
   (forall a, f a) -> forall a, omap (@^~ a) (funopt f) = f a .
 Proof. by rewrite /funopt; case: forallP => //= *; rewrite oextractK. Qed.
 
+(*
 Lemma funoptPn (A : finType) (B : Type) (f : A -> option B) :
   ~~ (funopt f) -> exists a, ~~ f a.
 Proof.
 move=> hf; apply/existsP; rewrite -negb_forall; apply/negP.
 by move: hf; rewrite /funopt; case: forallP.
 Qed.
+*)
+
+Lemma funoptPn (A : finType) (B : Type) (f : A -> option B) a :
+  f a = None -> funopt f = None.
+Proof.
+move=> hfa; rewrite /funopt.
+by case: forallP=> // hf; move: (hf a); rewrite hfa.
+Qed.
+
+Arguments funoptPn {A B f} a _.
 
 Definition funopt_prf (A : finType) (B : Type)
   (f : A -> option B) (P : forall a, f a) : forall a, f a :=
@@ -79,7 +90,7 @@ Definition mx_of_seqmx m n (M : seqmatrix) : option 'M_(m,n) :=
 Definition seqmx_of_mx m n (M : 'M[A]_(m,n)) : seqmatrix :=
   [seq [seq (M i j)%C | j <- enum 'I_n] | i <- enum 'I_m].
 
-Definition seqmx_of_mxK m n : pcancel (@seqmx_of_mx m n) (@mx_of_seqmx m n).
+Lemma seqmx_of_mxK m n : pcancel (@seqmx_of_mx m n) (@mx_of_seqmx m n).
 Proof.
 move=> M; rewrite /seqmx_of_mx /mx_of_seqmx /=.
 rewrite (omap_funoptE (fun ij => M ij.1 ij.2)) /=.
@@ -96,21 +107,60 @@ by rewrite size_map -cardT card_ord.
 Qed.
 
 Global Program Instance refinement_mx_seqmx m n :
-  refinement_of 'M[A]_(m,n) seqmatrix := Refinement (@seqmx_of_mxK m n).
+  refinement 'M[A]_(m,n) seqmatrix := Refinement (@seqmx_of_mxK m n).
+
+(* Is this really wrong? *)
+Lemma wrong m (M : 'M[A]_(m,0)) : refines M [::].
+Proof.
+rewrite /refines.
+rewrite /spec /= /mx_of_seqmx (omap_funoptE (fun ij => M ij.1 ij.2)) /=.
+  by congr Some; apply/matrixP=> i j; rewrite mxE.
+  by move=> g g' eq_gg' /=; apply/matrixP=> i j; rewrite !mxE.
+by case=> ? [].
+Qed.
 
 (* We may want to enforce dimensions of any seqmatrix to be exactly the same *)
 (* as the matrix they refine (for now, they are greater or equal) *)
-Lemma size_seqmx m n (M : 'M[A]_(m,n)) M' : refines M M' -> m < size M'.
+Lemma size_seqmx m n (M : 'M[A]_(m,n)) M' : refines M M' -> 0 < n -> m <= size M'.
 Proof.
-move=> ref_MM'.
+move=> ref_MM' lt0n.
 move: (@spec_refines _ _ _ _ _ ref_MM').
 rewrite /spec /= /mx_of_seqmx.
-
+have [//|lt_sM'm] := leqP m (size M').
+rewrite (funoptPn (Ordinal lt_sM'm, Ordinal lt0n)) //.
+by rewrite nth_default // size_map.
 Qed.
 
+(* Is it really needed to assume i < m ? *)
 Lemma size_nth_seqmx m n (M : 'M[A]_(m,n)) M' i x0 :
-  refines M M' -> i < m -> n < size (nth x0 M' i).
+  refines M M' -> i < m -> n <= size (nth x0 M' i).
 Proof.
+move=> ref_MM' ltim.
+move: (@spec_refines _ _ _ _ _ ref_MM').
+rewrite /spec /= /mx_of_seqmx.
+have [{14}-> //|lt0n] := posnP n.
+have [//|lt_sM'_n] := leqP n (size (nth x0 M' i)).
+rewrite (funoptPn (Ordinal ltim, Ordinal lt_sM'_n)) //.
+rewrite (nth_map x0).
+by rewrite /obind /oapp nth_default // size_map.
+by apply/(leq_trans ltim)/size_seqmx.
+Qed.
+
+Lemma nth_refines m n (M : 'M[A]_(m,n)) M' (i : 'I_m) (j : 'I_n) x0 x1 :
+  refines M M' -> nth x0 (nth x1 M' i) j = M i j.
+Proof.
+case: n j M => [[]//|n j M].
+move=> ref_MM'; move: (ref_MM').
+rewrite /refines /spec /= /mx_of_seqmx.
+rewrite (omap_funoptE (fun ij : 'I_m * 'I_n.+1 => nth x0 (nth x1 M' ij.1) ij.2)) /=.
+move=> H.
+by rewrite (Some_inj H) mxE.
+by move=> g g' eq_gg'; apply/matrixP=> i' j'; rewrite !mxE eq_gg'.
+case=> i' j' /=.
+rewrite (nth_map x1) /=.
+rewrite (nth_map x0) //.
+by apply/(leq_trans (ltn_ord j'))/size_nth_seqmx.
+by apply/(leq_trans (ltn_ord i'))/size_seqmx.
 Qed.
 
 End seqmx.
@@ -145,6 +195,19 @@ rewrite (omap_funoptE (fun ij => (x + y) ij.1 ij.2)) /=.
 move=> [i j] /=.
 rewrite (nth_map [::]) /=; last first.
 rewrite size_zipwith.
+rewrite leq_min.
+by apply/andP; split; apply/(leq_trans (ltn_ord i))/size_seqmx; case: n j x xa y yb; case.
+rewrite (nth_map 0).
+(* rewrite /add_op /add_seqmatrix /addseqmx /zipwithseqmx. *)
+congr Some.
+rewrite (nth_zipwith _ [::] [::]).
+rewrite (nth_zipwith _ 0 0).
+rewrite mxE.
+congr GRing.add.
+by rewrite nth_refines.
+by rewrite nth_refines.
+rewrite leq_min; apply/andP; split.
+fail.
 
 by rewrite size_map -cardT card_ord.
 rewrite (nth_map (M i j)) /=.
