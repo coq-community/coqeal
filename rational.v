@@ -34,11 +34,6 @@ Section Q.
 Definition Q (B : Type) := (B * B)%type.
 Local Notation Qint := (Q int).
 
-(* Canonical Q_subType := Eval hnf in [subType for valr]. *)
-
-(* Lemma val_inj : injective valr. *)
-(* Proof. exact: val_inj. Qed. *)
-
 (* rat_to_Qint = repr *) (* Qint_to_rat = \pi_rat *)
 Definition rat_to_Qint (r : rat) : Qint := (numq r, denq r).
 Definition Qint_to_rat (r : Qint) : option rat :=
@@ -185,22 +180,6 @@ Require Import binint ZArith.
 Local Notation B := Z.
 Local Notation QB := (Q B).
 
-(* Build a context with proper sharing and the necessary refinements. *)
-(* All this should be done by even more automatically *)
-(* Context `{zero B, one B, add B, opp B, mul B, eq B}. *)
-(* Context `{refinement int B}. *)
-
-(* Context `{!refines (0%C : int) (0%C : B)} *)
-(*         `{!refines (1%C : int) (1%C : B)} *)
-(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
-(*             refines (x + y)%C (a + b)%C} *)
-(*         `{forall (x : int) (a : B) `{!refines x a}, *)
-(*             refines (- x)%C (- a)%C} *)
-(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
-(*             refines (x * y)%C (a * b)%C} *)
-(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
-(*             refines (x == y)%C (a == b)%C}. *)
-
 Variables (n : int) (q : B).
 Context `{rn : !refines n q}.
 
@@ -260,6 +239,8 @@ Lemma foo (P : bool -> Type) :
   P (1 + 1 == 1 + 1 :> rat).
 Proof.
 Time rewrite [(_ == _)]refines_boolE.
+vm_compute.
+
 (* The time increases exponentially each time one adds an Instance *)
 (* with refines_zeroQ, refines_oneQ, refines_addQ, refines_compQ : 0.01 sec *)
 (* + refines_mulQ  : 0.4 sec *)
@@ -269,149 +250,4 @@ Abort.
 Variable (B : Type).
 Local Notation QB := (Q B).
 
-(* Build a context with proper sharing and the necessary refinements *)
-(* this should be done by refinesiy *)
-(* Context `{zero B, one B, add B, opp B, mul B, eq B}. *)
-(* Context `{refinement int B}. *)
-
-(* Context `{!refines (0%C : int) (0%C : B)}. *)
-(* Context `{!refines (1%C : int) (1%C : B)} *)
-(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
-(*             refines (x + y)%C (a + b)%C} *)
-(*         `{forall (x : int) (a : B) `{!refines x a}, *)
-(*             refines (- x)%C (- a)%C} *)
-(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
-(*             refines (x * y)%C (a * b)%C} *)
-(*         `{forall (x y : int) (a b : B) `{!refines x a, !refines y b}, *)
-(*             refines (x == y)%C (a == b)%C}. *)
-
-(* Lemma foo (P : bool -> Type) : *)
-(*   P (1 + 1 == 0 + 1 + 1 :> rat). *)
-
-
-(* refine (let x : refines (1 + 1 == 0 + 1 + 1 :> rat) _ := _ in _). *)
-(* assert (t := @bool_refines (1 + 1 == 0 + 1 + 1 :> rat) _ _). *)
-
-(* rewrite [_ == _]bool_refines. *)
-
-
-(* Lemma foo (P : bool -> Type)  (x y : rat) (u v : Qint) (a b : Q B) *)
-(*          `{!refines x a, !refines y b}  *)
-(*          (* `{!refines u a, !refines v b}  *) : P (a + b == b + a)%C.  *)
-(* Proof. typeclasses eauto. *)
-(* assert (t := @bool_refines _ (a + b == b + a)%C _). *)
-
-
-
-(* TODO: 
-     - normq
-     - le_rat
-     - lt_rat
-*)
-
-(*
-Require Import ZArith ssrint binint.
-
-Eval compute in (0%C + 0%C + 0%C)%C : Z * Z.
-*)
-
-(*
-Lemma bool_implem P (b : bool) : P (\implem_bool b)%C -> P b.
-Proof. done. Qed.
-*)
-
-
-(* Goal (2500%:Q = 2500%:Q). *)
-(* Proof. *)
-(* apply/eqP. *)
-(* Check (refines_rat_comp _ _ _ _ (intr_refines (Posz 2500)) *)
-(* (intr_refines (Posz 2500))). *)
-
-
-(* rewrite [_ == _](@bool_refine _ _ (refines_rat_comp _ _ _ _ (intr_refines (Posz 2500)) *)
-(* (intr_refines (Posz 2500)))). *)
-
-(* (* missing refinement for intr and default refinement for naturals *) *)
-(* Qed. *)
-
-(* Goal (1000%:Q + 1500%:Q = 2500%:Q). *)
-(* Proof. *)
-(* apply/eqP. *)
-(* rewrite [_ == _](bool_refine refines_rat_comp). *)
-(* (* missing refinement for intr and default refinement for naturals *) *)
-(* Qed. *)
-(* *)
-
 End tests.
-
-
-(* Section old_parametricity. *)
-(* For backup *)
-
-(* Class relation (T T' : Type) : Type := trel : T -> T' -> Type. *)
-
-(* Instance relation_forall (F : Type -> Type) (F' : Type -> Type) *)
-(*   (RF : forall X X' : Type, relation X X' -> relation (F X) (F' X')) : *)
-(*    relation (forall X, F X) (forall X, F' X) := *)
-(* (fun g g' => forall (X X' : Type) (R : X -> X' -> Type), RF _ _ R (g X) (g' X')). *)
-
-(* Instance relation_fun  (A A' : Type) (B : A -> Type) (B' : A' -> Type) *)
-(*        (RA : relation A A') (RB : forall x x', relation (B x) (B' x')) : *)
-(*   relation (forall x, B x) (forall x', B' x') := *)
-(* (fun f f' => forall x x' (RAxx' : RA x x'), RB _ _ (f x) (f' x')). *)
-
-(* Instance relation_pair  (A A' : Type) (B : Type) (B' : Type) *)
-(*   (RA : relation A A') (RB : relation B B') : relation (A * B) (A' * B') := *)
-(* (fun ab ab' => RA ab.1 ab'.1 * RB ab.2 ab'.2)%type. *)
-
-(* Class parametric {T T' : Type} {R : relation T T'} t1 t2 := *)
-(*   parametricity : R t1 t2. *)
-
-(* Instance apply_parametric *)
-(*         (A A' : Type) (B : A -> Type) (B' : A' -> Type) *)
-(*         (f : forall x : A, B x) (f' : forall x' : A', B' x') *)
-(*         (RA : relation A A') (RB : forall x x', relation (B x) (B' x')) *)
-(*         (x : A) (x' : A') (px : parametric x x') *)
-(*         (pf : parametric f f') : parametric (f x) (f' x'). *)
-(* Proof. by have :=  pf _ _ px. Qed. *)
-
-(* Instance parametric_pair (A A' B B' : Type) *)
-(*         (a : A) (a' : A') (b : B) (b' : B') *)
-(*         (RA : relation A A') (RB : relation B B') : *)
-(*   parametric a a' -> parametric b b' -> *)
-(*   parametric  (a, b) (a', b'). *)
-(* Proof. by constructor. Qed. *)
-
-(* Instance parametric_fst (A A' B B' : Type) *)
-(*         (RA : relation A A') (RB : relation B B') *)
-(*         (ab : A * B) (ab' : A' * B') : *)
-(*   parametric ab ab' -> parametric ab.1 ab'.1. *)
-(* Proof. by case. Qed. *)
-
-(* Instance parametric_snd (A A' B B' : Type) *)
-(*         (RA : relation A A') (RB : relation B B') *)
-(*         (ab : A * B) (ab' : A' * B') : *)
-(*   parametric ab ab' -> parametric ab.2 ab'.2. *)
-(* Proof. by case. Qed. *)
-
-(* Instance relation_refines (A B : Type) `{refinement A B} : *)
-(*   relation A B := fun x a => refines x a. *)
-
-(* Global Instance refines_parametric (A B : Type) *)
-(*          `{refinement A B} (a : A) (b : B) : *)
-(*   refines a b -> parametric a b. *)
-(* Proof. done. Qed. *)
-
-(* Definition rat_parametric_refines (A B : Type) `{refinement A B} *)
-(*   (a : Q A) (b : Q B) : parametric a b -> \refines_Qrefinement a b. *)
-(* Proof. *)
-(* case: a b => [x y] [z t] /=; rewrite /QBtoA /refines /=. *)
-(* by case; rewrite /relation_refines => /= ra1 ra2; rewrite !spec_refines. *)
-(* Qed. *)
-
-(* Global Instance rat_refines_parametric_trans *)
-(*          B `{refinement int B} (x : rat) (a : Qint) (u : Q B) *)
-(*          (rx : refines x a) : parametric a u -> refines x u. *)
-(* Proof. by move=> /rat_parametric_refines; apply: @rat_refines_trans. Qed. *)
-
-(* End old_parametricity. *)

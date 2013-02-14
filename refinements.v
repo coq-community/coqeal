@@ -2,10 +2,6 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop.
-Require Import Morphisms.
-Require generic_quotient.
-
-Module qT := generic_quotient.
 
 (** This file implements the basic theory of refinements 
 
@@ -31,6 +27,7 @@ Local Open Scope ring_scope.
 
 Import GRing.Theory.
 
+(* We have a *)
 Class refinement A B := Refinement {
   implem : A -> B;
   spec : B -> option A;
@@ -60,21 +57,11 @@ Lemma spec_refines A B `{refinement A B} (a : A) (b : B)
       `{!refines a b} :  spec b = Some a.
 Proof. by rewrite spec_refines_def. Qed.
 
-(* Class is_some {A : Type} (a : A) (b : option A) := is_someE : Some a = b. *)
-
-(* Notation refines a b := (is_some a (spec b)). *)
-(* Notation "\refines_ r a b" := (is_some a (@spec _ _ r b)) (only parsing). *)
-
-(* Lemma spec_refines A B `{refinement A B} (a : A) (b : B) `{refines a b}: *)
-(*   spec b = Some a. *)
-(* Proof. by rewrite is_someE. Qed. *)
-
 Lemma specd_refines A B `{refinement A B} (a a0 : A) (b : B) `{!refines a b}: 
   specd a0 b = a.
 Proof. by rewrite /specd spec_refines. Qed.
 
 Global Instance refinement_bool : refinement bool bool := refinement_id bool.
-(* Global Instance refines_bool (a : bool) : refines a a := erefl. *)
 
 Lemma refines_boolE (b b' : bool) {rb : refines b b'} : b = b'.
 Proof. by move: b b' rb (@spec_refines _ _ _ _ _ rb) => [] []. Qed.
