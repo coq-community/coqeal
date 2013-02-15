@@ -34,6 +34,10 @@ Section Q.
 Definition Q (B : Type) := (B * B)%type.
 Local Notation Qint := (Q int).
 
+(********************)
+(* Qint refines rat *)
+(********************)
+
 (* rat_to_Qint = repr *) (* Qint_to_rat = \pi_rat *)
 Definition rat_to_Qint (r : rat) : Qint := (numq r, denq r).
 Definition Qint_to_rat (r : Qint) : option rat :=
@@ -57,6 +61,10 @@ Lemma refines_ratE (x : rat) (a : Qint) `{!refines x a} : x = a.1%:~R / a.2%:~R.
 Proof. 
 by apply: Some_inj; rewrite -spec_refines /= /Qint_to_rat dom_refines.
 Qed.
+
+(**********************************)
+(* Definition of operators on Q B *)
+(**********************************)
 
 Section Qop.
 Variable B : Type.
@@ -105,6 +113,10 @@ Definition embedQ (a : B) : QB := (a, 1)%C.
 End Qop.
 
 Existing Instance refines_step_refines.
+
+(***********************************************************)
+(* We establish the correction of Q int with regard to rat *)
+(***********************************************************)
 
 Instance refines_zeroq : refines_step 0 0%C. Proof. by []. Qed.
 Instance refines_oneq : refines_step 1 1%C. Proof. by []. Qed.
@@ -160,6 +172,11 @@ rewrite [x]refines_ratE [y]refines_ratE /= -[(_ == _)%C]/(_ == _).
 rewrite divq_eq ?intr_eq0 ?dom_refines // -!rmorphM eqr_int.
 by rewrite [X in (_ == X)]mulrC.
 Qed.
+
+(**************************************************************************)
+(* We take advantage of parametricity to extend correcion of operation on *)
+(* Q int to correction of operations on Q B, for any B that refines int   *)
+(**************************************************************************)
 
 Section Qparametric.
 
@@ -232,6 +249,11 @@ End Q.
 
 Section tests.
 
+(***********************************************************************)
+(* Disclaimer: the current implementation has serious implementation   *)
+(* issue. The limitation is only technical and we have leads on how to *)
+(* fix it                                                              *)
+(***********************************************************************)
 
 Require Import binint ZArith.
 

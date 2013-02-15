@@ -16,12 +16,14 @@ binint2 - Alternative approach to binint where SSReflect integers (ssrint) are
           by a sigma type) and naturals numbers. This means that proofs can be
           done using only lemmas from the SSReflect library which leads to
           simpler proofs than in binint, but in order for this to be useful
-          the parametricity part of the library must be used to change the
+          the parametricity part of the library must be depolyed to change the
           representation of positive numbers and nat to more efficient
-          representations (e.g. N) which has not been done yet. 
+          representations (e.g. N). This last part is not operational yet.
 
 rational - The rational numbers of SSReflect (rat) is refined to pairs of
            elements refining integers using parametricity of refinements.
+	   The parametricity part is not operational yet (see comments near
+	   the end of the file).
 
 refinements - Classes for refinements and refines together with operational
               typeclasses for common operations.

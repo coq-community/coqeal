@@ -27,7 +27,7 @@ Local Open Scope ring_scope.
 
 Import GRing.Theory.
 
-(* We have a *)
+(* This class describe what is a type refinement *)
 Class refinement A B := Refinement {
   implem : A -> B;
   spec : B -> option A;
@@ -50,6 +50,7 @@ Proof. by move=> a /=; rewrite implemK /= implemK. Qed.
 Definition refinement_id A : refinement A A := 
   Refinement (fun _ => erefl).
 
+(* This class describes what is a term refinement *)
 Class refines {A B} `{refinement A B} (a : A) (b : B) :=
   spec_refines_def : Some a = spec b.
 
@@ -101,6 +102,9 @@ Proof. by rewrite /refines_split_wit; case: (refines_split _) => ? []. Qed.
 
 End local_trans.
 
+(* refines_step is a copy of refines, in order to ensure the termination *)
+(* of proof search *)
+
 Class refines_step {A B} `{refinement A B} (a : A) (b : B) :=
   spec_refines_step_def : Some a = spec b.
 
@@ -112,6 +116,8 @@ Definition refines_step_refines {A B} `{refinement A B} {a : A} {b : B} :
   refines_step a b -> refines a b.
 Proof. done. Qed.
 
+
+(* We take avantage of parametricity in a very ad-hoc way, for now *)
 (* We should use instead a "container datatype" library *)
 (* where container T -> forall A B, refinement (T A) (T B) *)
 Module parametricity.
@@ -126,7 +132,7 @@ Definition AB'toAB (ab : A' * B') : option (A * B) :=
 Lemma ABtoAB'K : pcancel ABtoAB' AB'toAB.
 Proof. by case=> x y; rewrite /ABtoAB' /AB'toAB !implemK. Qed.
 
-Instance Qrefinement :
+Instance pair_refinement :
   refinement (A * B) (A' * B') :=  Refinement ABtoAB'K.
 
 Instance refines_pair (a : A) (a' : A') (b : B) (b' : B') 
@@ -154,7 +160,7 @@ Instance refines_if
 Proof. by rewrite [c]refines_boolE; case: c' rc. Qed.
 
 End parametricity.
-Existing Instance Qrefinement.
+Existing Instance pair_refinement.
 Existing Instance refines_pair.
 Existing Instance refines_fst.
 Existing Instance refines_snd.
@@ -198,7 +204,6 @@ Class div B := div_op : B -> B -> B.
 Local Notation "x / y" := (div_op x y) : computable_scope.
 
 (* Comparisons *)
-(* This is wrong! eq_op is taken *) 
 Class eq B := eq_op : B -> B -> bool.
 Local Notation "x == y" := (eq_op x y) : computable_scope.
 
