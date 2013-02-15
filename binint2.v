@@ -5,9 +5,12 @@ Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
 Require Import refinements.
 
 (******************************************************************************)
-(* The binary integers of Coq is a refinement of SSReflects integers (ssrint) *) 
-(*                                                                            *)
-(* ??? == some documentation                                                  *)
+(* Attempt to refine SSReflect integers (ssrint) are to a new type            *)
+(* paremetrized by positive numbers (represented by a sigma type) and natural *)
+(* numbers. This gives simpler proofs than in binint, but in order for this   *)
+(* to be useful the parametricity part of the library must be used to change  *)
+(* the representation of positive numbers and naturals to more efficient      *)
+(* representations (e.g. N) which has not been done yet.                      *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -46,6 +49,7 @@ Proof. by case. Qed.
 Class embed_class A B := embed_op : A -> B.
 Local Notation embed := (@embed_op _).
 
+(* Programming part *)
 Section Z'B.
 Variable A B : Type.
 Notation Z := (Z' A B).
@@ -76,6 +80,7 @@ end.
 
 End Z'B.
 
+(* Proof part, should be refactored *)
 Section Z'pos.
 Notation Z := (Z' nat pos).
 
@@ -122,3 +127,4 @@ by rewrite gtr_eqF // (@ltr_le_trans _ 0) // ltr_oppl oppr0 [_ < _]valP.
 Qed.
 
 End Z'pos.
+End binint_from_pos.

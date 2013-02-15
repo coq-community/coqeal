@@ -1,5 +1,7 @@
 -R . CoqEAL
+binnat.v
 binint.v
+binint2.v
 refinements.v
 rational.v
 seqpoly.v

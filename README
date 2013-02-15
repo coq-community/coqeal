@@ -1,16 +1,34 @@
                 The Coq Effective Algebra Library - CoqEAL
 =================================================================================
 
-In order to compile this library, you have to set three environment variables:
-  - COQBIN should be the path to Coq's binaries (coqc, coqdep,...)
-  - SSRSRC should be the path to the ssreflect "src" folder
-    (in which ssreflect.cmxs can be found).
-  - SSRLIB should be the path to ssr theories (where the .vo files are)
+The content of the different files are:
 
-To set environment variables, you may use a command like:
-export SSRSRC=/path/...
+binnat - Proof that the binary naturals of Coq (N) is a refinement of
+         SSReflect unary naturals (nat) together with basic operations.
 
-and then type `make` to compile.
+binint - The binary integers of Coq (Z) is refinement of SSReflects integers
+         (ssrint). In this file proofs are done using a mix of lemmas from the
+         standard library and the SSReflect library which leads to quite long
+         and complicated proofs.
 
-Note: the makefile assumes you are using a dynamically linked version of the
-ssreflect plugin. If this is not the case, you need to adapt the `Make` file.
+binint2 - Alternative approach to binint where SSReflect integers (ssrint) are
+          refined to a new type paremetrized by positive numbers (represented
+          by a sigma type) and naturals numbers. This means that proofs can be
+          done using only lemmas from the SSReflect library which leads to
+          simpler proofs than in binint, but in order for this to be useful
+          the parametricity part of the library must be used to change the
+          representation of positive numbers and nat to more efficient
+          representations (e.g. N) which has not been done yet. 
+
+rational - The rational numbers of SSReflect (rat) is refined to pairs of
+           elements refining integers using parametricity of refinements.
+
+refinements - Classes for refinements and refines together with operational
+              typeclasses for common operations.
+
+seqmatrix - First and incomplete attempt to refine SSReflect matrices
+            ('M[R]_(m,n)) to lists of lists (seq (seq R)).
+
+seqpoly - First and incomplete attempt to refine SSReflect polynomials 
+          ({poly R}) to lists (seq R).
+
