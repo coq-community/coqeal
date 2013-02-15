@@ -125,7 +125,7 @@ rewrite (nth_map (0, 0)) ?size_zip ?refines_col_size ?sa ?sb ?minnn //=.
 by rewrite nth_zip ?refines_col_size ?sa ?sb ?minnn.
 Qed.
 
-End seqmx.
+End seqmx_op2.
 
 (* (* Some tests *) *)
 (* Require Import ZArith ssrint binint seqpoly. *)
