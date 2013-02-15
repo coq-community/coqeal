@@ -84,12 +84,25 @@ Qed.
 
 End seqmx.
 
+Section zipwith.
+Variables (T1 T2 R : Type) (f : T1 -> T2 -> R).
+
+Fixpoint zipwith (s1 : seq T1) (s2 : seq T2) :=
+  if s1 is x1 :: s1' then
+    if s2 is x2 :: s2' then f x1 x2 :: zipwith s1' s2' else [::]
+  else [::].
+
+Lemma zipwithE s1 s2 : zipwith s1 s2 = [seq f x.1 x.2 | x <- zip s1 s2].
+Proof. by elim: s1 s2 => [|x1 s1 ihs1] [|x2 s2] //=; rewrite ihs1. Qed.
+
+End zipwith.
+
 Section seqmx_op.
 
 Variable (A : Type).
 
 Definition zipwithseqmx (M N : seqmatrix A) (f : A -> A -> A) : seqmatrix A :=
-  [seq [seq f x.1 x.2 | x <- zip y.1 y.2] | y <- zip M N].
+  zipwith (zipwith f) M N.
 
 Definition addseqmx `{add A} (M N : seqmatrix A) : seqmatrix A :=
   zipwithseqmx M N +%C.
@@ -107,7 +120,7 @@ Instance add_B : add B := +%R.
 Global Instance refines_addseqmx m n (x y : 'M[B]_(m,n)) (a b : seqmatrix B) 
   (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
 Proof.
-rewrite /add_op /add_seqmatrix /addseqmx /zipwithseqmx /=.
+rewrite /add_op /add_seqmatrix /addseqmx /zipwithseqmx /= !zipwithE.
 rewrite /refines [x]refines_mxE [y]refines_mxE /= /mx_of_seqmx /=.
 have [sa sb sab] : [/\ size a = m, size b = m & size (zip a b) = m].
   by rewrite ?size_zip ?refines_row_size ?minnn.
@@ -116,11 +129,11 @@ have [_|/allP hN] := boolP (all _ _); last first.
   suff: False by []; apply: hN => s /(nthP [::]) [i].
   rewrite size_map sab => hi <-.
   rewrite (nth_map ([::],[::])) ?size_map ?sab //.
-  rewrite size_zip nth_zip ?refines_row_size //=.
+  rewrite zipwithE size_map size_zip nth_zip ?refines_row_size //=.
   by rewrite !refines_col_size ?minnn ?(sa, sb).
 rewrite eqxx; congr Some; apply/matrixP=> i j; rewrite !mxE.
 rewrite (nth_map ([::],[::])) ?sab //=.
-rewrite nth_zip ?(sa, sb) //=.
+rewrite nth_zip ?(sa, sb) //= zipwithE.
 rewrite (nth_map (0, 0)) ?size_zip ?refines_col_size ?sa ?sb ?minnn //=.
 by rewrite nth_zip ?refines_col_size ?sa ?sb ?minnn.
 Qed.
