@@ -13,7 +13,7 @@ binint - The binary integers of Coq (Z) is refinement of SSReflects integers
 
 binint2 - Alternative approach to binint where SSReflect integers (ssrint) are
           refined to a new type paremetrized by positive numbers (represented
-          by a sigma type) and naturals numbers. This means that proofs can be
+          by a sigma type) and natural numbers. This means that proofs can be
           done using only lemmas from the SSReflect library which leads to
           simpler proofs than in binint, but in order for this to be useful
           the parametricity part of the library must be depolyed to change the
