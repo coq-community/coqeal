@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop matrix mxalgebra.
-Require Import ssrcomplements refinements.
+Require Import refinements.
 
 (******************************************************************************)
 (* Lists of lists is a refinement of SSReflect matrices                       *) 
