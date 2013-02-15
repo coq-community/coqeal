@@ -20,147 +20,66 @@ Local Open Scope ring_scope.
 
 Import GRing.Theory.
 
-Lemma oextract_subdef A (o : option A) : o -> {a | o = Some a}.
-Proof. by case: o => [a|]; first by exists a. Qed.
-
-Definition oextract A (o : option A) (po : o) := projT1 (oextract_subdef po).
-
-Lemma oextractK A (o : option A) (po : o) : Some (oextract po) = o.
-Proof. by rewrite /oextract; case: oextract_subdef. Qed.
-
-Lemma oextractE A (o : option A) (a : A) (po : o) : Some a = o -> oextract po = a.
-Proof. by move=> hao; apply: Some_inj; rewrite oextractK. Qed.
-
-Definition funopt (A : finType) (B : Type)
-           (f : A -> option B) : option (A -> B) := 
-  if @forallP _ f is ReflectT P then Some (fun a => oextract (P a)) else None.
-
-Lemma funoptP (A : finType) (B : Type) (f : A -> option B) :
-  (forall a, f a) -> forall a, omap (@^~ a) (funopt f) = f a .
-Proof. by rewrite /funopt; case: forallP => //= *; rewrite oextractK. Qed.
-
-(*
-Lemma funoptPn (A : finType) (B : Type) (f : A -> option B) :
-  ~~ (funopt f) -> exists a, ~~ f a.
-Proof.
-move=> hf; apply/existsP; rewrite -negb_forall; apply/negP.
-by move: hf; rewrite /funopt; case: forallP.
-Qed.
-*)
-
-Lemma funoptPn (A : finType) (B : Type) (f : A -> option B) a :
-  f a = None -> funopt f = None.
-Proof.
-move=> hfa; rewrite /funopt.
-by case: forallP=> // hf; move: (hf a); rewrite hfa.
-Qed.
-
-Arguments funoptPn {A B f} a _.
-
-Definition funopt_prf (A : finType) (B : Type)
-  (f : A -> option B) (P : forall a, f a) : forall a, f a :=
-  if forallP is ReflectT P' then P' else P.
-
-Lemma funoptE (A : finType) (B : Type) (f : A -> option B) 
-  (P : forall a, f a) : funopt f = Some (fun a => oextract (funopt_prf P a)).
-Proof. by rewrite /funopt /funopt_prf; case: forallP. Qed.
-
-Lemma omap_funoptE (A : finType) (B C : Type)
-      (f : A -> option B) (g : A -> B) (h : (A -> B) -> C):
-      (forall g g', g =1 g' -> h g = h g') ->
-      (forall a, f a = Some (g a)) -> 
-      omap h (funopt f) = Some (h g).
-Proof.
-move=> Hh Hfg; rewrite funoptE; first by move=> a; rewrite Hfg.
-by move=> p /=; congr Some; apply: Hh => a; apply: oextractE.
-Qed.
-Arguments omap_funoptE {A B C f} g _ _ _.
+Definition seqmatrix A := seq (seq A).
 
 Section seqmx.
 
-Variable A : Type.
+Variable A : zmodType.
 
-Definition seqmatrix := seq (seq A).
-
-Definition mx_of_seqmx m n (M : seqmatrix) : option 'M_(m,n) :=
-  let aux (i : 'I_m) (j : 'I_n) := 
-      obind (fun l => nth None (map some l) j) (nth None (map some M) i)
-  in omap (fun P => \matrix_(i,j) P (i, j)) (funopt (fun ij => aux ij.1 ij.2)).
+Definition mx_of_seqmx m n (M : seqmatrix A) : option 'M_(m,n) :=
+  if size M == m then
+    if all (fun x => size x == n) M
+    then some (\matrix_(i, j) (nth [::] M i)`_j)
+    else None
+  else None.
   
-Definition seqmx_of_mx m n (M : 'M[A]_(m,n)) : seqmatrix :=
+Definition seqmx_of_mx m n (M : 'M[A]_(m,n)) : seqmatrix A :=
   [seq [seq (M i j)%C | j <- enum 'I_n] | i <- enum 'I_m].
 
 Lemma seqmx_of_mxK m n : pcancel (@seqmx_of_mx m n) (@mx_of_seqmx m n).
 Proof.
 move=> M; rewrite /seqmx_of_mx /mx_of_seqmx /=.
-rewrite (omap_funoptE (fun ij => M ij.1 ij.2)) /=.
-  by congr Some; apply/matrixP=> i j; rewrite mxE.
-  by move=> g g' eq_gg' /=; apply/matrixP=> i j; rewrite !mxE.
-move=> [i j] /=.
-rewrite (nth_map [::]) /=; last by rewrite size_map -cardT card_ord.
-rewrite (nth_map (M i j)) /=.
-  rewrite (nth_map i); last by rewrite -cardT card_ord.
-  rewrite (nth_map j); last by rewrite -cardT card_ord.
-  by rewrite !nth_ord_enum.
-rewrite (nth_map i); last by rewrite -cardT card_ord.
-by rewrite size_map -cardT card_ord.
+rewrite size_map /= size_enum_ord eqxx.
+(* case: posnP => [->|_] in M *; first by rewrite thinmx0. *)
+case: ifP => [_|]; last first.
+  move=> /negbT /allPn => [[x /(nthP [::]) [i hi <-]]] .
+  rewrite size_map size_enum_ord in hi.
+  rewrite (nth_map (Ordinal hi)) ?size_enum_ord //.
+  by rewrite size_map size_enum_ord eqxx.
+congr Some; apply/matrixP => i j; rewrite mxE /=.
+rewrite (nth_map i) 1?(nth_map j) ?size_enum_ord //.
+by congr (M _ _); apply: val_inj; rewrite nth_ord_enum.
 Qed.
 
 Global Program Instance refinement_mx_seqmx m n :
-  refinement 'M[A]_(m,n) seqmatrix := Refinement (@seqmx_of_mxK m n).
+  refinement 'M[A]_(m,n) (seqmatrix A) := Refinement (@seqmx_of_mxK m n).
 
-(* Is this really wrong? *)
-Lemma wrong m (M : 'M[A]_(m,0)) : refines M [::].
+Lemma refines_row_size m n (M : 'M_(m, n)) (N : seqmatrix A) : 
+  refines M N -> size N = m.
 Proof.
-rewrite /refines.
-rewrite /spec /= /mx_of_seqmx (omap_funoptE (fun ij => M ij.1 ij.2)) /=.
-  by congr Some; apply/matrixP=> i j; rewrite mxE.
-  by move=> g g' eq_gg' /=; apply/matrixP=> i j; rewrite !mxE.
-by case=> ? [].
+rewrite /refines /= /mx_of_seqmx //.
+by have [->|] := altP eqP.
 Qed.
 
-(* We may want to enforce dimensions of any seqmatrix to be exactly the same *)
-(* as the matrix they refine (for now, they are greater or equal) *)
-Lemma size_seqmx m n (M : 'M[A]_(m,n)) M' : refines M M' -> 0 < n -> m <= size M'.
+Lemma refines_all_row_size m n (M : 'M_(m, n)) (N : seqmatrix A) : 
+  refines M N -> forall x, x \in N -> size x = n.
 Proof.
-move=> ref_MM' lt0n.
-move: (@spec_refines _ _ _ _ _ ref_MM').
-rewrite /spec /= /mx_of_seqmx.
-have [//|lt_sM'm] := leqP m (size M').
-rewrite (funoptPn (Ordinal lt_sM'm, Ordinal lt0n)) //.
-by rewrite nth_default // size_map.
+rewrite /refines /= /mx_of_seqmx; have [sN|//] := altP eqP.
+by case: ifP => // /allP hN _ x xN; rewrite (eqP (hN _ _)).
 Qed.
 
-(* Is it really needed to assume i < m ? *)
-Lemma size_nth_seqmx m n (M : 'M[A]_(m,n)) M' i x0 :
-  refines M M' -> i < m -> n <= size (nth x0 M' i).
-Proof.
-move=> ref_MM' ltim.
-move: (@spec_refines _ _ _ _ _ ref_MM').
-rewrite /spec /= /mx_of_seqmx.
-have [{14}-> //|lt0n] := posnP n.
-have [//|lt_sM'_n] := leqP n (size (nth x0 M' i)).
-rewrite (funoptPn (Ordinal ltim, Ordinal lt_sM'_n)) //.
-rewrite (nth_map x0).
-by rewrite /obind /oapp nth_default // size_map.
-by apply/(leq_trans ltim)/size_seqmx.
-Qed.
+Lemma refines_col_size m n (M : 'M_(m, n)) (N : seqmatrix A) : 
+  refines M N -> forall i, i < size N -> size (nth [::] N i) = n.
+Proof. by move=> rMN i hi; rewrite refines_all_row_size // mem_nth. Qed.
 
-Lemma nth_refines m n (M : 'M[A]_(m,n)) M' (i : 'I_m) (j : 'I_n) x0 x1 :
-  refines M M' -> nth x0 (nth x1 M' i) j = M i j.
+Lemma refines_mxE m n (M : 'M_(m, n)) (N : seqmatrix A) :
+  refines M N -> M = \matrix_(i, j) (nth [::] N i)`_j.
 Proof.
-case: n j M => [[]//|n j M].
-move=> ref_MM'; move: (ref_MM').
-rewrite /refines /spec /= /mx_of_seqmx.
-rewrite (omap_funoptE (fun ij : 'I_m * 'I_n.+1 => nth x0 (nth x1 M' ij.1) ij.2)) /=.
-move=> H.
-by rewrite (Some_inj H) mxE.
-by move=> g g' eq_gg'; apply/matrixP=> i' j'; rewrite !mxE eq_gg'.
-case=> i' j' /=.
-rewrite (nth_map x1) /=.
-rewrite (nth_map x0) //.
-by apply/(leq_trans (ltn_ord j'))/size_nth_seqmx.
-by apply/(leq_trans (ltn_ord i'))/size_seqmx.
+move=> rMN; have := rMN; rewrite /refines /= /mx_of_seqmx.
+rewrite refines_row_size // eqxx.
+have [_ [] //|/allP hN] := boolP (all _ _).
+suff: False by []; apply: hN => x xN.
+by apply/eqP; rewrite refines_all_row_size.
 Qed.
 
 End seqmx.
@@ -170,7 +89,7 @@ Section seqmx_op.
 Variable (A : Type).
 
 Definition zipwithseqmx (M N : seqmatrix A) (f : A -> A -> A) : seqmatrix A :=
-  zipwith (zipwith f) M N.
+  [seq [seq f x.1 x.2 | x <- zip y.1 y.2] | y <- zip M N].
 
 Definition addseqmx `{add A} (M N : seqmatrix A) : seqmatrix A :=
   zipwithseqmx M N +%C.
@@ -185,84 +104,26 @@ Variable (B : zmodType).
 
 Instance add_B : add B := +%R.
 
-Global Program Instance refines_addseqmx m n (x y : 'M[B]_(m,n)) (a b : seqmatrix B) 
+Global Instance refines_addseqmx m n (x y : 'M[B]_(m,n)) (a b : seqmatrix B) 
   (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
-Next Obligation.
-rewrite /seqmx_of_mx /mx_of_seqmx /=.
-rewrite (omap_funoptE (fun ij => (x + y) ij.1 ij.2)) /=.
-  by congr Some; apply/matrixP=> i j; rewrite mxE.
-  by move=> g g' eq_gg' /=; apply/matrixP=> i j; rewrite !mxE.
-move=> [i j] /=.
-rewrite (nth_map [::]) /=; last first.
-rewrite size_zipwith.
-rewrite leq_min.
-by apply/andP; split; apply/(leq_trans (ltn_ord i))/size_seqmx; case: n j x xa y yb; case.
-rewrite (nth_map 0).
-(* rewrite /add_op /add_seqmatrix /addseqmx /zipwithseqmx. *)
-congr Some.
-rewrite (nth_zipwith _ [::] [::]).
-rewrite (nth_zipwith _ 0 0).
-rewrite mxE.
-congr GRing.add.
-by rewrite nth_refines.
-by rewrite nth_refines.
-rewrite leq_min; apply/andP; split.
-fail.
-
-by rewrite size_map -cardT card_ord.
-rewrite (nth_map (M i j)) /=.
-  rewrite (nth_map i); last by rewrite -cardT card_ord.
-  rewrite (nth_map j); last by rewrite -cardT card_ord.
-  by rewrite !nth_ord_enum.
-rewrite (nth_map i); last by rewrite -cardT card_ord.
-by rewrite size_map -cardT card_ord.
-
-
-(* Global Program Instance ImplemSeqmx `{Implem A B} m n :  *)
-(*   Implem 'M[A]_(m,n) seqmatrix := @seqmx_of_mx _ m n. *)
-(* Global Program Instance RefinesSeqmx `{Refines A B} m n :  *)
-(*   Refines (ImplemSeqmx m n). *)
-(* Obligation 1. admit. Qed. *)
-
-(* Definition const_seqmx m n (x : B) := nseq m (nseq n x). *)
-
-(* Lemma const_seqmxE `{Refines A B} m n x : *)
-(*   const_seqmx m n (| x |)%C = (| @const_mx _ m n x |)%C. *)
-(* Proof. *)
-(* admit. *)
-(* Qed. *)
-
-(* Definition seqmx0 `{Zero B} m n := const_seqmx m n 0%C. *)
-
-(* Lemma seqmx0E `{Implem A B, Zero B} m n : (| 0%R : 'M[A]_(m,n) |)%C = seqmx0 m n. *)
-(* Proof.  *)
-(* rewrite /seqmx0 /=. *)
-(* admit. *)
-(* Qed. *)
-
-(* Global Program Instance ZeroSeqmx `{Zero B} m n : Zero seqmatrix := seqmx0 m n. *)
-(* Global Program Instance ZeroMorphSeqmx `{Implem A B, Zero B} : Morph implem 0 0%C. *)
-(* Obligation 1. *)
-(* rewrite /implem. *)
-(* admit. *)
-(* Qed. *)
-
-(* Definition mkseqmx (f : nat -> nat -> B) m n : seqmatrix := *)
-(*   mkseq (fun i => mkseq (f i) n) m. *)
-
-(* Definition scalar_seqmx `{Zero B} m n x := *)
-(*   mkseqmx (fun i j => if i == j then x else 0%C) m n. *)
-
-(* Definition seqmx1 `{Zero B, One B} m n := scalar_seqmx m n 1%C. *)
-
-(* Global Program Instance OneSeqmx `{Zero B, One B} m : One seqmatrix :=  *)
-(*   seqmx1 m m. *)
-(* Global Program Instance OneMorphSeqmx `{Refines A B, Zero B, One B} : *)
-(*   Morph implem 1 1%C. *)
-(* Obligation 1. *)
-(* rewrite /implem. *)
-(* admit. *)
-(* Qed. *)
+Proof.
+rewrite /add_op /add_seqmatrix /addseqmx /zipwithseqmx /=.
+rewrite /refines [x]refines_mxE [y]refines_mxE /= /mx_of_seqmx /=.
+have [sa sb sab] : [/\ size a = m, size b = m & size (zip a b) = m].
+  by rewrite ?size_zip ?refines_row_size ?minnn.
+rewrite size_map // sab.
+have [_|/allP hN] := boolP (all _ _); last first.
+  suff: False by []; apply: hN => s /(nthP [::]) [i].
+  rewrite size_map sab => hi <-.
+  rewrite (nth_map ([::],[::])) ?size_map ?sab //.
+  rewrite size_zip nth_zip ?refines_row_size //=.
+  by rewrite !refines_col_size ?minnn ?(sa, sb).
+rewrite eqxx; congr Some; apply/matrixP=> i j; rewrite !mxE.
+rewrite (nth_map ([::],[::])) ?sab //=.
+rewrite nth_zip ?(sa, sb) //=.
+rewrite (nth_map (0, 0)) ?size_zip ?refines_col_size ?sa ?sb ?minnn //=.
+by rewrite nth_zip ?refines_col_size ?sa ?sb ?minnn.
+Qed.
 
 End seqmx.
 
