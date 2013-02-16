@@ -67,6 +67,10 @@ Global Instance refinement_bool : refinement bool bool := refinement_id bool.
 Lemma refines_boolE (b b' : bool) {rb : refines b b'} : b = b'.
 Proof. by move: b b' rb (@spec_refines _ _ _ _ _ rb) => [] []. Qed.
 
+Lemma refinesP {A B} `{refinement A B}  (x y : A) (a : B) :
+  refines x a -> (x = y <-> refines y a).
+Proof. by move=> ra; split => [<- //|]; rewrite /refines -ra => [[->]]. Qed.
+
 Section local_trans.
 Instance refinement_trans A B C
   (rab : refinement A B) (rbc : refinement B C) : refinement A C := 
