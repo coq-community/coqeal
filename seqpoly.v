@@ -231,7 +231,6 @@ Qed.
 Global Instance refines_poly_mul (p q : {poly A}) (sp sq : seqpoly A)
   (rp : refines p sp) (rq : refines q sq) : refines (p * q)%R (sp * sq)%C.
 Proof.
-rewrite /mul_op /mul_seqpoly; set f := (X in refines _ (X _)).
 elim: sp => [|a sp ihp] in p rp *; first by rewrite [p]refines_polyE mul0r.
 move: rp => /refines_poly_cons [[sp' a' /= [-> -> rp']]]; apply/refinesP.
 by rewrite mulrDl addrC mul_polyC addr0 -mulrA commr_polyX mulrA.
