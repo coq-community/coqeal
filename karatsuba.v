@@ -47,26 +47,24 @@ Variable R : ringType.
 Instance add_polyR : add {poly R} := +%R.
 Instance mul_polyR : mul {poly R} := *%R.
 Instance sub_polyR : sub {poly R} := fun x y => (x - y)%R.
+Variable f : {poly R} -> nat.
 Definition karatsuba_recR :=
-  (karatsuba_rec (fun n => *%R^~ 'X^n)
-                 size 
+  (karatsuba_rec (fun n => *%R^~ 'X^n) f
                  (fun n p => (rdivp p 'X^n, rmodp p 'X^n))).
 Notation karatsubaR :=
-  (karatsuba (fun n => *%R^~ 'X^n)
-             size 
+  (karatsuba (fun n => *%R^~ 'X^n) f
              (fun n p => (rdivp p 'X^n, rmodp p 'X^n))).
 
 Lemma karatsuba_recE n (p q : {poly R}) : karatsuba_recR n p q = p * q.
 Proof.
 elim: n=> //= n ih in p q *; case: ifP=> // _; set m := minn _ _.
-rewrite !ih !(mulrDl, mulrDr, mulNr) /add_op /add_polyR.
-rewrite -[_ - _]addrA -opprD [X in X + _ - _]addrC addrACA addrK mulnC.
-rewrite exprM expr2 mulrA commr_polyXn [_ * rmodp _ _ * _]commr_polyXn.
-rewrite addrA !mulrA -![_ * rdivp q _ * _]mulrA -addrA -commr_polyXn.
-by rewrite -!(mulrDr, mulrDl) -!rdivp_eq ?monicXn.
+rewrite [p in RHS](rdivp_eq (monicXn _ m)) [q in RHS](rdivp_eq (monicXn _ m)).
+rewrite !ih !(mulrDl, mulrDr, mulNr) mulnC exprM.
+rewrite -addrA -opprD [X in X + _ - _]addrC addrACA addrK.
+by rewrite -![(_ + _)%C]/(_ + _) !(commr_polyXn, mulrA, addrA).
 Qed.
 
 Lemma karatsubaP (p q : {poly R}) : karatsubaR p q = p * q.
-Proof. by rewrite /karatsuba; exact: karatsuba_recE. Qed.
+Proof. exact: karatsuba_recE. Qed.
 
 End karatsuba_poly.
