@@ -217,6 +217,9 @@ Local Notation "x < y" := (lt_op x y) : computable_scope.
 Class leq B := leq_op : B -> B -> bool.
 Local Notation "x <= y" := (leq_op x y) : computable_scope.
 
+Class embed_class A B := embed_op : A -> B.
+Global Instance id_embed A : embed_class A A := id.
+
 End Operations.
 
 Notation "0"      := zero_op       : computable_scope.
@@ -236,4 +239,4 @@ Notation "x < y " := (lt_op x y)   : computable_scope.
 Notation "x <= y" := (leq_op x y)  : computable_scope.
 Notation "x > y"  := (lt_op y x)  (only parsing) : computable_scope.
 Notation "x >= y" := (leq_op y x) (only parsing) : computable_scope.
-
+Notation embed := (@embed_op _).

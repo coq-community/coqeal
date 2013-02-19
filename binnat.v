@@ -15,6 +15,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Notation N := N.
+
 Section binnat.
 
 Lemma N_of_natK : pcancel bin_of_nat (some \o nat_of_bin).
@@ -39,13 +41,13 @@ Global Program Instance refines_nat_add (x y : nat) (x' y' : N)
 Obligation 1. by rewrite [x]refines_natE [y]refines_natE nat_of_add_bin. Qed.
 
 (* TODO: Finish! *)
-(* Global Instance sub_N : sub N := N.sub.  *)
-(* Global Program Instance refines_nat_sub (x y : nat) (x' y' : N) *)
-(*   (rx : refines x x') (ry : refines y y') : refines (x - y)%nat (x' - y')%C. *)
-(* Next Obligation. *)
-(* rewrite [x]refines_natE [y]refines_natE. *)
-(* admit. *)
-(* Qed. *)
+Global Instance sub_N : sub N := N.sub.
+Global Program Instance refines_nat_sub (x y : nat) (x' y' : N)
+  (rx : refines x x') (ry : refines y y') : refines (x - y)%nat (x' - y')%C.
+Next Obligation.
+rewrite [x]refines_natE [y]refines_natE.
+admit.
+Qed.
 
 Global Instance mul_N : mul N := N.mul.
 Global Program Instance refines_nat_mul (x y : nat) (x' y' : N)
@@ -62,31 +64,22 @@ case: (N.eqb_spec _ _) => [->|/eqP hneq]; first by rewrite eqxx.
 by apply/negP => [/eqP /(can_inj nat_of_binK)]; apply/eqP.
 Qed.
 
-(* Global Instance leq_N : leq N := N.leb. *)
-(* Global Instance refines_nat_leq (x y : nat) (x' y' : N) *)
-(*   (rx : refines x x') (ry : refines y y') : refines (x <= y) (x' <= y')%C. *)
-(* Proof. *)
-(* congr Some; rewrite /leq_op /leq_N. *)
-(* case: (N.leb_spec0 _ _) => [/N.sub_0_le|] /= h. *)
-(*   by apply/eqP; rewrite [_ - _]refines_natE  [(_ - _)%C]h. *)
-(* apply/negP => /eqP; rewrite [_ - _]refines_natE [0]refines_natE. *)
-(* by move/(can_inj nat_of_binK)/N.sub_0_le. *)
-(* Qed. *)
+Global Instance leq_N : leq N := N.leb.
+Global Instance refines_nat_leq (x y : nat) (x' y' : N)
+  (rx : refines x x') (ry : refines y y') : refines (x <= y) (x' <= y')%C.
+Proof.
+congr Some; rewrite /leq_op /leq_N.
+case: (N.leb_spec0 _ _) => [/N.sub_0_le|] /= h.
+  by apply/eqP; rewrite [_ - _]refines_natE  [(_ - _)%C]h.
+apply/negP => /eqP; rewrite [_ - _]refines_natE [0]refines_natE.
+by move/(can_inj nat_of_binK)/N.sub_0_le.
+Qed.
 
-(* Global Instance lt_N : lt N := N.ltb. *)
-(* Global Instance refines_nat_lt (x y : nat) (x' y' : N) *)
-(*   (rx : refines x x') (ry : refines y y') : refines (x < y) (x' < y')%C. *)
-(* Proof. by rewrite /lt_op /lt_N N.ltb_antisym ltnNge [_ <= _]refines_boolE. Qed. *)
+Global Instance lt_N : lt N := N.ltb.
+Global Instance refines_nat_lt (x y : nat) (x' y' : N)
+  (rx : refines x x') (ry : refines y y') : refines (x < y) (x' < y')%C.
+Proof. by rewrite /lt_op /lt_N N.ltb_antisym ltnNge [_ <= _]refines_boolE. Qed.
 
-(* Global Program Instance geq_N : geq N := N.ge. *)
-(* Global Program Instance refines_nat_geq (x y : nat) (x' y' : N) *)
-(*   (rx : refines x x') (ry : refines y y') : refines (x >= y) (x' >= y')%C. *)
-(* Next Obligation. Admitted. *)
-
-(* Global Program Instance gt_N : gt N := N.gtb. *)
-(* Global Program Instance refines_nat_gt (x y : nat) (x' y' : N) *)
-(*   (rx : refines x x') (ry : refines y y') : refines (x > y) (x' > y')%C. *)
-(* Next Obligation. Admitted. *)
 
 End binnat.
 

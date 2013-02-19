@@ -68,3 +68,4 @@ Lemma karatsubaP (p q : {poly R}) : karatsubaR p q = p * q.
 Proof. exact: karatsuba_recE. Qed.
 
 End karatsuba_poly.
+

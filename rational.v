@@ -192,7 +192,7 @@ Proof. move=> /refines_step_refines; exact: @refines_trans. Qed.
 
 (* B is a type that should implement int *)
 (* Variable (B : Type). *)
-Require Import binint ZArith.
+Require Import ZArith binint_direct.
 
 Local Notation B := Z.
 Local Notation QB := (Q B).
@@ -255,7 +255,7 @@ Section tests.
 (* fix it                                                              *)
 (***********************************************************************)
 
-Require Import binint ZArith.
+Require Import ZArith binint_direct.
 
 Lemma foo (P : bool -> Type) :
   P (1 + 1 == 1 + 1 :> rat).
@@ -268,8 +268,5 @@ vm_compute.
 (* + refines_mulQ  : 0.4 sec *)
 (* + refines_oppQ  : 51 sec *)
 Abort.
-
-Variable (B : Type).
-Local Notation QB := (Q B).
 
 End tests.

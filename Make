@@ -1,10 +1,11 @@
 -R . CoqEAL
 binnat.v
 binint.v
-binint2.v
+binint_direct.v
 refinements.v
 rational.v
 seqpoly.v
+karatsuba.v
 seqmatrix.v
 OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
 COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"
