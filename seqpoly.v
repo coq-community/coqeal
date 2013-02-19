@@ -220,8 +220,7 @@ Qed.
 Lemma refines_seqpoly_size (p : {poly A}) (s : seqpoly A)
   (ps : refines p s) : size p = size_seqpoly s.
 Proof.
-rewrite /size_seqpoly; set f := (X in _ = X _); symmetry.
-elim: s => [|x s ihs] //= in p ps *.
+symmetry; elim: s => [|x s ihs] //= in p ps *.
   by rewrite [p]refines_polyE size_poly0.
 move: ps => /refines_poly_cons [[p' a /= [-> -> rp']]].
 rewrite ihs size_poly_eq0 size_MXaddC -[(_ == _)%C]/(_ == _).
