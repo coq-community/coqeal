@@ -156,6 +156,9 @@ move=> [i j] /=; rewrite (nth_map [::]) ?hn //= (nth_map 0) //.
 by move: hm => /all_nthP /(_ _ _) /eqP ->; rewrite // hn.
 Qed.
 
+(* Pb: rewriting with this lemma can pick wrong instances since the type *)
+(* is not determined in the equality. More precisely, neither M nor N appears *)
+(* in size x = n. *)
 Lemma refines_col_size m n (M : 'M_(m, n)) (N : seqmatrix A) : 
   refines M N -> forall x, x \in N -> size x = n.
 Proof. by move=> /refines_all_col_size /allP /(_ _ _) /eqP. Qed.
@@ -166,6 +169,10 @@ Proof.
 move=> rMN; have := rMN; rewrite /refines /= zmod_mx_of_seqmxE.
 by rewrite sizeE // eqxx; have [_ []|/all_nthP hN] := boolP (all _ _).
 Qed.
+
+Lemma refines_nth  m n (M : 'M_(m, n)) (N : seqmatrix A) :
+  refines M N -> forall (i : 'I_m) (j : 'I_n), (nth [::] N i)`_j = M i j.
+Proof. by move=> rMN i j; rewrite [M]refines_mxE mxE. Qed.
 
 End seqmx_zmod.
 
@@ -186,12 +193,12 @@ Definition trseqmx (M : seqmatrix A) : seqmatrix A :=
 
 Definition const_seqmx m n (x : A) := nseq m (nseq n x).
 
-Lemma refines_const_seqmx m n x : refines (@const_mx _ m n x) (const_seqmx m n x).
+Instance refines_const_seqmx m n x : refines (@const_mx _ m n x) (const_seqmx m n x).
 Proof.
 rewrite /refines /= /mx_of_seqmx size_nseq eqxx.
 have [_|/(all_nthP [::]) hN] := boolP (all _ _); last first.
-  suff: False by []; apply: hN => i; rewrite size_nseq => lt_i_s.
-  by rewrite nth_nseq lt_i_s size_nseq.
+  suff: False by [].
+  by apply: hN => i; rewrite nth_nseq size_nseq => ->; rewrite size_nseq.
 rewrite /= (omap_funoptE (fun ij => x)) => [|g g' eq_gg'|a].
 + by congr Some; apply/matrixP=> i j; rewrite !mxE.
 + by apply/matrixP; move=> i j; rewrite !mxE eq_gg'.
@@ -270,16 +277,13 @@ congr Some; apply/matrixP=> i j; rewrite !mxE.
 have ->: forall (s2 : seqmatrix B) k l s1, k < size (foldr (zipwith cons) s1 s2) ->
  nth 0 (nth [::] (foldr (zipwith cons) s1 s2) k) l =
   if l < size s2 then nth 0 (nth [::] s2 l) k else nth 0 (nth [::] s1 k) (l - size s2).
-    elim=> [k l s1|t2 s2 IHs k l s1]; first by rewrite subn0.
-    rewrite /= zipwithE size_map=> Hk.
-    rewrite (nth_map (0,[::])) //= nth_zip_cond Hk /=.
-    by case: l=> //= l; rewrite IHs //; move: Hk; rewrite sizeE leq_min; case/andP.
-by rewrite sizeE ltn_ord.
++ elim=> [k l s1|t2 s2 IHs k l s1]; first by rewrite subn0.
+  rewrite /= zipwithE size_map=> Hk.
+  rewrite (nth_map (0,[::])) //= nth_zip_cond Hk /=.
+  by case: l=> //= l; rewrite IHs //; move: Hk; rewrite sizeE leq_min; case/andP.
++ by rewrite sizeE ltn_ord.
 by rewrite size_trseqmx.
 Qed.
-
-Lemma refines_seqmx0 m n : refines (0 : 'M[B]_(m,n)) (seqmx0 m n).
-Proof. exact: refines_const_seqmx. Qed.
 
 End seqmx_op2.
 
@@ -291,47 +295,38 @@ Instance zero_C : zero C := 0%R.
 Instance add_C : add C := +%R.
 Instance mul_C : mul C := *%R.
 
-Lemma refines_mulseqmx p m n (x : 'M_(m,p)) (y : 'M_(p,n)) (a b : seqmatrix C)
-  (xa : refines x a) (xb : refines y b) : refines (x *m y) (mulseqmx p n a b).
-Proof.
 (*
-rewrite /mulseqmx.
-case: ifP => [/eqP hn0 | hn].
-- move: M N; rewrite hn0 => M N.
-  by rewrite flatmx0 thinmx0 mul0mx size_seqmx seqmx0E.
-case: p hn M N => [ | p] //= => _ M N.
-apply/seqmxP; split => [|i Hi|i j]; first by rewrite size_map size_seqmx.
-  rewrite /rowseqmx (nth_map [::]) size_map.
-    by rewrite size_trseqmx.
-  by rewrite size_enum_ord.
-rewrite /mulseqmx mxE /fun_of_seqmx /rowseqmx (nth_map [::]).
-  rewrite (nth_map [::]); last by rewrite size_trseqmx.
-  set F := (fun z x y => _); rewrite trseqmxE /seqmx_of_mx.
-  case: m i M => [|m' i M]; first by case.
-  case: n j N => [|n' j N]; first by case.
-  rewrite (nth_map 0) ?size_enum_ord //.
-  rewrite (nth_map (0 : 'I_n'.+1)) ?size_enum_ord //.
-  have->: forall z, foldl2 F z
-     [seq trans (M (enum 'I_m'.+1)`_i j0) |  j0 <- enum 'I_(p.+1)]
-     [seq trans (N^T (enum 'I_n'.+1)`_j j0) |  j0 <- enum 'I_(p.+1)] =
-  foldl2 (fun z x y => add (mul (trans x) (trans y)) z) z
-  [seq M i j0 | j0 <- enum 'I_(p.+1)]  [seq N^T j i0 | i0 <- enum 'I_(p.+1)].
-   by elim:(enum 'I_(p.+1))=> // a s IHs /= z; rewrite IHs /= !nth_ord_enum.
-  rewrite -zeroE.
-  have ->: forall s1 s2 (x : R),
-    (foldl2 (fun z x y => add (mul (trans x) (trans y)) z) (trans x) s1 s2) =
-    trans (x + \sum_(0 <= k < minn (size s1) (size s2)) s1`_k * s2`_k).
-    move=>t; elim=>[s2 x|t1 s1 IHs s2 x].
-      by rewrite min0n big_mkord big_ord0 GRing.addr0.
-    case:s2=>[|t2 s2]; first by rewrite minn0 big_mkord big_ord0 GRing.addr0.
-    by rewrite /= -mulE -addE IHs minSS big_nat_recl [_ + x]GRing.addrC GRing.addrA.
-  rewrite GRing.add0r size_map size_enum_ord size_map size_enum_ord minnn big_mkord.
-  congr trans; apply:eq_bigr=>k _; rewrite (nth_map 0) ?size_enum_ord //.
-  rewrite [X in _ * X](nth_map (0 : 'I_p.+1)) ?size_enum_ord // mxE.
-  by rewrite nth_ord_enum.
-by rewrite size_seqmx.
+Instance refines_seqmx0 m n : refines (0 : 'M[C]_(m,n)) (seqmx0 m n).
+Proof. exact: refines_const_seqmx. Qed.
 *)
-admit.
+
+Lemma minSS (p q : nat) : minn p.+1 q.+1 = (minn p q).+1.
+Proof. by rewrite /minn ltnS; case:ifP. Qed.
+
+Global Instance refines_mulseqmx p m n (x : 'M_(m,p)) (y : 'M_(p,n)) (a b : seqmatrix C)
+  (xa : refines x a) (yb : refines y b) : refines (x *m y) (mulseqmx p n a b).
+Proof.
+case: p x y xa yb=> [|p] x y xa yb.
+  rewrite thinmx0 mul0mx /mulseqmx refines_row_size.
+  exact: refines_const_seqmx.
+rewrite /refines [x]refines_mxE [y]refines_mxE /= zmod_mx_of_seqmxE.
+rewrite size_map refines_row_size eqxx.
+have [_|/(all_nthP [::]) hN] := boolP (all _ _); last first.
+  suff: False by []; apply: hN => i.
+by rewrite size_map => lt_i_sa; rewrite (nth_map [::]) // size_map size_trseqmx.
+congr Some.
+apply/matrixP=> i j; rewrite !mxE.
+rewrite ?(nth_map [::]) ?refines_row_size //.
+set F := (fun z x y => _).
+have ->: forall s1 s2 (t : C), (foldl2 F t s1 s2) =
+    (t + \sum_(0 <= k < minn (size s1) (size s2)) s1`_k * s2`_k).
+  elim=>[s2 t|t1 s1 IHs s2 t].
+    by rewrite min0n big_mkord big_ord0 GRing.addr0.
+  case:s2=>[|t2 s2]; first by rewrite minn0 big_mkord big_ord0 GRing.addr0.
+  by rewrite /= IHs minSS big_nat_recl /F [(_ + t)%C]addrC addrA.
+rewrite add0r (refines_col_size xa) ?mem_nth // ?refines_row_size //.
+rewrite (refines_col_size (refines_trseqmx yb)) ?mem_nth // ?refines_row_size //.
+by rewrite minnn big_mkord; apply: eq_bigr=> k _; rewrite !mxE !refines_nth mxE.
 Qed.
 
 End seqmx_op3.
