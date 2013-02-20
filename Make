@@ -7,5 +7,5 @@ rational.v
 seqpoly.v
 karatsuba.v
 seqmatrix.v
-OTHERFLAGS = "-I $(SSRSRC) -I $(SSRLIB)"
+OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
 COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"
