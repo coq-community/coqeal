@@ -7,7 +7,7 @@ Require Import refinements polydiv.
 (******************************************************************************)
 (* Lists (seq) is a refinement of SSReflect polynomials (poly)                *) 
 (*                                                                            *)
-(* Supported operations: 0, 1, +, -, scale, shift, *, ==, size, split         *)
+(* Supported operations: 0, 1, +, -, scale, shift, *, ==, size, split + more...  *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -17,24 +17,30 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
+Reserved Notation "a %:SP" (at level 2, format "a %:SP").
+
 Import GRing.Theory Pdiv.Ring  Pdiv.CommonRing Pdiv.RingMonic. 
 
 Section seqpoly_op.
+
 Variable T : Type.
+
 Context `{zero T, one T, add T, sub T, opp T, mul T, eq T}.
+
+Local Open Scope computable_scope.
 
 Definition seqpoly := seq T.
 
 Definition zippolywith R (f : T -> T -> R) :=
   let fix aux p q :=
       match p, q with
-        | [::], q' => map (f 0%C) q
-        | p', [::] => map (f^~ 0%C) p
+        | [::], q' => map (f 0) q
+        | p', [::] => map (f^~ 0) p
         | a :: p', b :: q' => f a b :: (aux p' q')
       end in aux.
 
 Lemma zippolywithE R (f : T -> T -> R) (p q : seqpoly) :
-  zippolywith f p q = mkseq (fun i => f (nth 0%C p i) (nth 0%C q i))
+  zippolywith f p q = mkseq (fun i => f (nth 0 p i) (nth 0 q i))
                             (maxn (size p) (size q)).
 Proof.
 have sz : size (zippolywith f p q) = (maxn (size p) (size q)).
@@ -46,27 +52,27 @@ apply: (@eq_from_nth _ z); first by rewrite size_mkseq sz.
 move=> i; rewrite sz => hi; rewrite nth_mkseq // => {sz}.
 elim: p q i hi => [|a p ihp] [|b q] [|i] //=;
 rewrite ?nth_nil (maxn0, max0n, maxnSS) /= ltnS => hi.
-+ by rewrite (nth_map 0%C).
-+ by rewrite (nth_map 0%C).
++ by rewrite (nth_map 0).
++ by rewrite (nth_map 0).
 by rewrite ihp.
 Qed.
 
 Global Instance zero_seqpoly : zero seqpoly := [::].
-Global Instance one_seqpoly : one seqpoly := [:: 1%C].
-Global Instance add_seqpoly : add seqpoly := zippolywith +%C.
-Global Instance opp_seqpoly : opp seqpoly := map -%C.
-Global Instance sub_seqpoly : sub seqpoly := zippolywith sub_op.
+Global Instance one_seqpoly  : one seqpoly  := [:: 1].
+Global Instance add_seqpoly  : add seqpoly  := zippolywith +%C.
+Global Instance opp_seqpoly  : opp seqpoly  := map -%C.
+Global Instance sub_seqpoly  : sub seqpoly  := zippolywith sub_op.
 
 (* is it a reasonnable comparison operator, particlarily when not equal? *)
 Global Instance eq_seqpoly : eq seqpoly := fun p q => 
   all (eqtype.eq_op true) (zippolywith eq_op p q).
 
-Definition scale_seqpoly a : seqpoly -> seqpoly := map ( *%C a ).  
+Definition scale_seqpoly a : seqpoly -> seqpoly := map ( *%C a).  
 Local Notation "*:%C" := (@scale_seqpoly _ _).
 Local Notation "a *: p" := (scale_seqpoly a p) : computable_scope.
 
 (* shifting = * 'X^n, maybe we should parametrize by an implem of nat? *)
-Definition shift (n : nat) : seqpoly -> seqpoly := ncons n 0%C.
+Definition shift (n : nat) : seqpoly -> seqpoly := ncons n 0.
 Arguments shift n p : simpl nomatch.
 
 (* size of the polynomial, parametrize by implem of nat? *)
@@ -77,22 +83,61 @@ Definition size_seqpoly : seqpoly -> nat :=
         if sp == 0%N then ~~ (a == 0)%C else sp.+1
       else 0%N in aux.
 
+(* leading coefficient of the polynomial *)
+Definition lead_coef_seqpoly (sp : seqpoly) : T := 
+  nth 0%C sp (size_seqpoly sp).-1.
+
+(* More efficient version that only require one go through the list *)
+(* Definition lead_coef_seqpoly : seqpoly -> T := *)
+(*   let fix aux x p := *)
+(*       if p is a :: p then  *)
+(*          if (a == 0)%C then aux x p else aux a p *)
+(*       else x in aux 0. *)
+
+(* polyC *)
+Definition seqpolyC (a : T) : seqpoly := nseq (~~ (a == 0)%C) a.
+Local Notation "a %:SP" := (seqpolyC a).
+
 (* Spliting a polynomial, useful for karatsuba *)
 Definition split_seqpoly n (p : seqpoly) := (drop n p, take n p).
 
 (* multiplication, when everything works, repace by karatsuba? *)
 Global Instance mul_seqpoly : mul seqpoly := fun p q =>
   let fix aux p := 
-      if p is a :: p then (a *: q + shift 1%N (aux p))%C else 0%C
+      if p is a :: p then a *: q + shift 1%N (aux p) else 0
   in aux p.
+
+(* Horner evaluation *)
+Fixpoint horner_seq (s : seqpoly) x := if s is a :: s' then horner_seq s' x * x + a else 0.
+
+(* pseudo-division *)
+Definition edivp_rec_seqpoly (q : seqpoly) :=
+  let sq := size_seqpoly q in
+  let cq := (lead_coef_seqpoly q)%:SP in
+  fix loop (k : nat) (qq r : seqpoly) (n : nat) {struct n} :=
+    if (size_seqpoly r < sq)%N then (k, qq, r) else
+    let m := shift (size_seqpoly r - sq) (lead_coef_seqpoly r)%:SP in
+    let qq1 := (qq * cq + m) in
+    let r1 := (r * cq - m * q) in
+    if n is n1.+1 then loop k.+1 qq1 r1 n1 else (k.+1, qq1, r1).
+
+Definition edivp_seqpoly (p q : seqpoly) : nat * seqpoly * seqpoly :=
+  if (q == 0)%C then (0%N, 0, p) else edivp_rec_seqpoly q 0 0 p (size_seqpoly p).
+
+Definition divp_seqpoly p q  := (edivp_seqpoly p q).1.2.
+Definition modp_seqpoly p q  := (edivp_seqpoly p q).2.
+Definition scalp_seqpoly p q := (edivp_seqpoly p q).1.1.
 
 End seqpoly_op.
 Local Notation "*:%C" := (@scale_seqpoly _ _).
 Local Notation "a *: p" := (@scale_seqpoly _ _ a p) : computable_scope.
+Local Notation "a %:SP" := (seqpolyC a) : computable_scope.
 
 Section seqpoly.
 Variable A : ringType.
 
+(* Local Program Instance refinesA : refinement A A := @Refinement _ _ id some _. *)
+(* Next Obligation. done. Qed. *)
 Local Instance zeroA : zero A := 0%R.
 Local Instance oneA : one A := 1%R.
 Local Instance addA : add A := +%R.
@@ -115,6 +160,7 @@ Global Program Instance refines_seqpoly0 : refines 0%R (0 : seqpoly A)%C.
 Global Instance refines_seqpoly1 : refines 1%R (1 : seqpoly A)%C.
 Proof. by rewrite /refines /= cons_poly_def mul0r add0r. Qed.
 
+(* splitting *)
 Lemma refines_seqpoly_split n (p : {poly A}) (q : seqpoly A) :
   refines p q -> refines (rdivp p 'X^n, rmodp p 'X^n) (split_seqpoly n q).
 Proof.
@@ -138,7 +184,7 @@ Global Instance refines_seqpoly_split2 n p q :
 Proof. by move=> /refines_seqpoly_split -/(_ n)=> [] [? ->]. Qed.
 
 (* addition *)
-Global Instance refines_poly_add (x y : {poly A}) (a b : seqpoly A)
+Global Instance refines_seqpoly_add (x y : {poly A}) (a b : seqpoly A)
   (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
 Proof.
 congr Some; apply/polyP => i; rewrite /add_op /add_seqpoly /= zippolywithE.
@@ -151,13 +197,26 @@ by rewrite geq_max !leq_max !size_Poly orbT.
 Qed.
 
 (* negation *)
-Global Instance refines_poly_opp (x : {poly A}) (a : seqpoly A) 
+Global Instance refines_seqpoly_opp (x : {poly A}) (a : seqpoly A) 
   (xa : refines x a) : refines (- x)%R (- a)%C.
 Proof.
 congr Some; apply/polyP => i /=; rewrite /opp_op /opp_seqpoly /=.
 rewrite [x]refines_polyE coef_opp_poly !coef_Poly.
 have [hlt|hleq] := ltnP i (size a); first by rewrite (nth_map 0%C).
 by rewrite !nth_default ?oppr0 ?size_mkseq ?size_map.
+Qed.
+
+(* subtraction *)
+Global Instance refines_seqpoly_sub (x y : {poly A}) (a b : seqpoly A)
+  (xa : refines x a) (yb : refines y b) : refines (x - y)%R (a - b)%C.
+Proof.
+congr Some; apply/polyP => i; rewrite /sub_op /sub_seqpoly /= zippolywithE.
+rewrite [x]refines_polyE [y]refines_polyE /= coef_Poly.
+have [i_small|i_large] := ltnP i (maxn (size a) (size b)).
+  by rewrite nth_mkseq // coef_add_poly //= coef_opp_poly !coef_Poly. 
+rewrite !nth_default // ?size_mkseq //.
+rewrite (leq_trans (leq_trans (size_add _ _) _) i_large) //.
+by rewrite size_opp geq_max !leq_max !size_Poly orbT.
 Qed.
 
 (* scaling *)
@@ -184,6 +243,7 @@ Proof.
 by congr Some; apply/polyP => i /=; rewrite [p]refines_polyE cons_poly_def.
 Qed.
 
+(* maybe this should be "all (fun x => x == 0) s" ? *)
 Lemma refines_poly0 (s : seqpoly A) : refines 0 s ->
   forall x, x \in s -> x = 0.
 Proof. by move=> [hs] x /(nthP 0) [i hi <-]; rewrite -coef_Poly -hs coef0. Qed.
@@ -217,16 +277,36 @@ elim/poly_ind: p => [|p a ihp] in s *.
 by move=> /refines_poly_MXaddC /= [rps ->]; exists (p, x).
 Qed.
 
-Lemma refines_seqpoly_size (p : {poly A}) (s : seqpoly A)
-  (ps : refines p s) : size p = size_seqpoly s.
+(* size *)
+Lemma refines_seqpoly_size (p : {poly A}) (sp : seqpoly A)
+  (ps : refines p sp) : size p = size_seqpoly sp.
 Proof.
-symmetry; elim: s => [|x s ihs] //= in p ps *.
+symmetry; elim: sp => [|x sp ihs] //= in p ps *.
   by rewrite [p]refines_polyE size_poly0.
 move: ps => /refines_poly_cons [[p' a /= [-> -> rp']]].
-rewrite ihs size_poly_eq0 size_MXaddC -[(_ == _)%C]/(_ == _).
-by have [->|] //= := (altP eqP); case: ifP; rewrite //= size_poly0.
+rewrite ihs size_poly_eq0 size_MXaddC; simpC.
+by have [->|] //= := (altP eqP); case: ifP => //=; rewrite size_poly0.
 Qed.
 
+(* lead_coef *)
+(* For some strange reason this does not work... *)
+(* Global Instance refines_seqpoly_lead_coef (p : {poly A}) (sp : seqpoly A) *)
+(*   (ps : refines p sp) : refines (lead_coef p) (lead_coef_seqpoly sp). *)
+Lemma refines_seqpoly_lead_coef (p : {poly A}) (sp : seqpoly A)
+  (ps : refines p sp) : lead_coef p = lead_coef_seqpoly sp.
+Proof.
+rewrite /lead_coef_seqpoly /lead_coef refines_seqpoly_size [p]refines_polyE.
+by rewrite coef_Poly. 
+Qed.
+
+(* polyC *)
+Global Instance refines_seqpoly_polyC a : refines a%:P (a%:SP)%C.
+Proof.
+congr Some; rewrite /seqpolyC; simpC.
+by have [->|_] //= := (altP eqP); rewrite cons_poly_def mul0r add0r.
+Qed.
+
+(* multiplication *)
 Global Instance refines_poly_mul (p q : {poly A}) (sp sq : seqpoly A)
   (rp : refines p sp) (rq : refines q sq) : refines (p * q)%R (sp * sq)%C.
 Proof.
@@ -235,6 +315,7 @@ move: rp => /refines_poly_cons [[sp' a' /= [-> -> rp']]]; apply/refinesP.
 by rewrite mulrDl addrC mul_polyC addr0 -mulrA commr_polyX mulrA.
 Qed.
 
+(* equality *)
 Lemma refines_poly_eq (p q : {poly A}) (sp sq : seqpoly A)
   (rp : refines p sp) (rq : refines q sq) : (p == q)%R = (sp == sq)%C.
 Proof.
@@ -247,6 +328,63 @@ set m := maxn _ _ in hpq; have [ge_im|lt_im] := leqP m i.
   by rewrite !nth_default // (leq_trans _ ge_im) // leq_max leqnn ?orbT.
 rewrite -[_ == _](eqP (hpq _ _)) //; apply/(nthP true); rewrite size_mkseq.
 by exists i => //; rewrite nth_mkseq.
+Qed.
+
+(* horner evaluation *)
+Lemma refines_seqpoly_horner (p : {poly A}) (x : A) (sp : seqpoly A) (rp : refines p sp) :
+  p.[x] = horner_seq sp x.
+Proof.
+elim: sp => [|a sp ih] //= in p rp *; first by rewrite [p]refines_polyE /= horner0.
+move: rp => /refines_poly_cons [[p' b /= [-> -> rp']]].
+by rewrite -cons_poly_def horner_cons ih; simpC.
+Qed.
+
+(* Instance refinement_nat : refinement nat nat := @Refinement _ _ id some _. *)
+(* Proof. by []. Qed. *)
+
+(* pseudo-division *)
+Lemma refines_edivp_rec_seqpoly : forall n k (q qq r : {poly A}) (sq sqq sr : seqpoly A)
+  (rq : refines q sq) (rqq : refines qq sqq) (rr : refines r sr),
+  let: (l,a,b)    := redivp_rec q k qq r n in 
+  let: (l',sa,sb) := edivp_rec_seqpoly sq k sqq sr n in 
+  l = l' /\ refines (a, b) (sa, sb).
+Proof.
+by elim=> [|n ih] k q qq r sq sqq sr rq rqq rr /=; 
+rewrite -!refines_seqpoly_size -!refines_seqpoly_lead_coef -!mul_polyC;
+case: ifP => _; do ?split; do ?eapply ih=> //; apply/refinesP. 
+Qed.
+
+Lemma refines_edivp_seqpoly p q (sp sq : seqpoly A)
+  (rp : refines p sp) (rq : refines q sq) :
+  let: (l,a,b)    := redivp p q in 
+  let: (l',sa,sb) := edivp_seqpoly sp sq in 
+  l = l' /\ refines (a, b) (sa, sb).
+Proof.
+rewrite /redivp unlock /redivp_expanded_def /edivp_seqpoly.
+rewrite -refines_poly_eq -refines_seqpoly_size.
+case: ifP => _; first by split=> //; apply/refinesP.
+exact: refines_edivp_rec_seqpoly.
+Qed.
+
+Global Instance refines_seqpoly_divp (p q : {poly A}) (sp sq : seqpoly A)
+  (rp : refines p sp) (rq : refines q sq) : refines (rdivp p q) (divp_seqpoly sp sq).
+Proof.
+rewrite /rdivp /divp_seqpoly; move: (refines_edivp_seqpoly rp rq).
+by case: redivp => [[a b c]]; case: edivp_seqpoly => [[sa sb sc]] [/= _ [->]].
+Qed.
+
+Global Instance refines_seqpoly_modp (p q : {poly A}) (sp sq : seqpoly A)
+  (rp : refines p sp) (rq : refines q sq) : refines (rmodp p q) (modp_seqpoly sp sq).
+Proof.
+rewrite /rmodp /modp_seqpoly; move: (refines_edivp_seqpoly rp rq).
+by case: redivp => [[a b c]]; case: edivp_seqpoly => [[sa sb sc]] [/= _ [_ ->]].
+Qed.
+
+Lemma refines_seqpoly_scalp (p q : {poly A}) (sp sq : seqpoly A)
+  (rp : refines p sp) (rq : refines q sq) : rscalp p q = scalp_seqpoly sp sq.
+Proof.
+rewrite /rscalp /scalp_seqpoly; move: (refines_edivp_seqpoly rp rq).
+by case: redivp => [[a b c]]; case: edivp_seqpoly => [[sa sb sc]] [].
 Qed.
 
 End seqpoly.
