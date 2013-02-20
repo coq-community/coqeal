@@ -131,15 +131,13 @@ rewrite /refines /= /mx_of_seqmx //.
 by have [->|] := altP eqP.
 Qed.
 
+Lemma refines_all_col_size m n (M : 'M_(m, n)) (N : seqmatrix) : 
+  refines M N -> all (fun x => size x == n) N.
+Proof. by rewrite /refines /= /mx_of_seqmx; have [] := eqP; case: all. Qed.
 
-Lemma refines_col_size m n (M : 'M_(m, n)) (N : seqmatrix) : 
+Lemma refines_nth_col_size m n (M : 'M_(m, n)) (N : seqmatrix) : 
   refines M N -> forall i, i < size N -> size (nth [::] N i) = n.
-Proof. 
-rewrite /refines /= /mx_of_seqmx //; have [sN|//] := altP eqP.
-have [hN _|//] := boolP (all _ _) => {M}.
-elim: N m sN hN => //= s N ihN [//|m] [sN] /andP [/eqP hs hN].
-by move=> [|u]; rewrite ltnS => hu //=; rewrite (ihN m).
-Qed.
+Proof. by move=> /refines_all_col_size /(all_nthP [::]) /(_ _ _) /eqP. Qed.
 
 End seqmx_def.
 
@@ -147,38 +145,30 @@ Section seqmx_zmod.
 
 Variable A : zmodType.
 
-Definition zmod_mx_of_seqmx m n (M : seqmatrix A) : option 'M_(m,n) :=
-  if size M == m then
-    if all (fun x => size x == n) M
-    then some (\matrix_(i, j) (nth [::] M i)`_j)
-    else None
-  else None.
-
-Lemma mx_of_seqmxE m n (M : seqmatrix A) :
-  mx_of_seqmx m n M = zmod_mx_of_seqmx m n M.
+Lemma zmod_mx_of_seqmxE m n (M : seqmatrix A) :
+  mx_of_seqmx m n M =  if size M == m then
+                         if all (fun x => size x == n) M
+                         then some (\matrix_(i, j) (nth [::] M i)`_j)
+                         else None
+                       else None.
 Proof.
-rewrite /mx_of_seqmx /zmod_mx_of_seqmx; do ![case: ifP=> //=] => hm /eqP hn.
+rewrite /mx_of_seqmx; do ![case: ifP=> //=] => hm /eqP hn.
 rewrite (omap_funoptE (fun ij : 'I_m * 'I_n => (nth [::] M ij.1)`_ij.2)) //=.
   by move=> g g' eq_g; apply/matrixP => i j; rewrite !mxE.
 move=> [i j] /=; rewrite (nth_map [::]) ?hn //= (nth_map 0) //.
-by move/allP in hm; rewrite (eqP (hm _ _)) // mem_nth ?hn.
+by move: hm => /all_nthP /(_ _ _) /eqP ->; rewrite // hn.
 Qed.
 
-Lemma refines_all_row_size m n (M : 'M_(m, n)) (N : seqmatrix A) : 
+Lemma refines_col_size m n (M : 'M_(m, n)) (N : seqmatrix A) : 
   refines M N -> forall x, x \in N -> size x = n.
-Proof.
-rewrite /refines /= /mx_of_seqmx; have [sN|//] := altP eqP.
-by case: ifP => // /allP hN _ x xN; rewrite (eqP (hN _ _)).
-Qed.
+Proof. by move=> /refines_all_col_size /allP /(_ _ _) /eqP. Qed.
 
 Lemma refines_mxE m n (M : 'M_(m, n)) (N : seqmatrix A) :
   refines M N -> M = \matrix_(i, j) (nth [::] N i)`_j.
 Proof.
-move=> rMN; have := rMN; rewrite /refines /= mx_of_seqmxE /zmod_mx_of_seqmx.
+move=> rMN; have := rMN; rewrite /refines /= zmod_mx_of_seqmxE.
 rewrite refines_row_size // eqxx.
-have [_ [] //|/allP hN] := boolP (all _ _).
-suff: False by []; apply: hN => x xN.
-by apply/eqP; rewrite refines_all_row_size.
+by have [_ []|/all_nthP hN] := boolP (all _ _).
 Qed.
 
 End seqmx_zmod.
@@ -210,22 +200,20 @@ Global Instance refines_addseqmx m n (x y : 'M[B]_(m,n)) (a b : seqmatrix B)
   (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
 Proof.
 rewrite /add_op /add_seqmatrix /addseqmx /zipwithseqmx /= !zipwithE.
-rewrite /refines [x]refines_mxE [y]refines_mxE /=.
-rewrite mx_of_seqmxE /zmod_mx_of_seqmx /=.
+rewrite /refines [x]refines_mxE [y]refines_mxE /= zmod_mx_of_seqmxE.
 have [sa sb sab] : [/\ size a = m, size b = m & size (zip a b) = m].
   by rewrite ?size_zip ?refines_row_size ?minnn.
-rewrite size_map // sab.
-have [_|/allP hN] := boolP (all _ _); last first.
-  suff: False by []; apply: hN => s /(nthP [::]) [i].
-  rewrite size_map sab => hi <-.
+rewrite size_map // sab eqxx.
+have [_|/(all_nthP [::]) hN] := boolP (all _ _); last first.
+  suff: False by []; apply: hN => i; rewrite size_map sab => hi.
   rewrite (nth_map ([::],[::])) ?size_map ?sab //.
   rewrite zipwithE size_map size_zip nth_zip ?refines_row_size //=.
-  by rewrite !refines_col_size ?minnn ?(sa, sb).
-rewrite eqxx; congr Some; apply/matrixP=> i j; rewrite !mxE.
+  by rewrite !refines_nth_col_size ?minnn ?(sa, sb).
+congr Some; apply/matrixP=> i j; rewrite !mxE.
 rewrite (nth_map ([::],[::])) ?sab //=.
 rewrite nth_zip ?(sa, sb) //= zipwithE.
-rewrite (nth_map (0, 0)) ?size_zip ?refines_col_size ?sa ?sb ?minnn //=.
-by rewrite nth_zip ?refines_col_size ?sa ?sb ?minnn.
+rewrite (nth_map (0, 0)) ?size_zip ?refines_nth_col_size ?sa ?sb ?minnn //=.
+by rewrite nth_zip ?refines_nth_col_size ?sa ?sb ?minnn.
 Qed.
 
 Lemma size_trseqmx m n (x : 'M[B]_(m.+1, n)) (a : seqmatrix B)
@@ -237,8 +225,8 @@ have H: forall s1 s2, P s2 (size s1) -> size (foldr (zipwith cons) s1 s2) = size
   move=> s1; elim=> // t s2 IHs H.
   rewrite /= zipwithE size_map size_zip IHs ?(H 0%N) ?minnn //.
   by move=> i Hi; rewrite -(H i.+1).
-rewrite H size_nseq refines_col_size // ?refines_row_size //.
-by move=> i Hi; rewrite refines_col_size.
+rewrite H size_nseq refines_nth_col_size // ?refines_row_size //.
+by move=> i Hi; rewrite refines_nth_col_size.
 Qed.
 
 Lemma size_nth_trseqmx m n (x : 'M[B]_(m.+1, n)) (a : seqmatrix B)
@@ -252,19 +240,19 @@ size (nth [::] (foldr (zipwith cons) s1 s2) k) = (size s2 + size (nth [::] s1 k)
   rewrite (nth_map (0,[::])) //= nth_zip_cond lt_k_szip /= IHs //.
   by move: lt_k_szip; rewrite size_zip leq_min; case/andP.
 move=> Hi; rewrite H.
-+ by rewrite refines_col_size refines_row_size // nth_nseq Hi.
++ by rewrite refines_nth_col_size refines_row_size // nth_nseq Hi.
 + by rewrite size_trseqmx.
-by rewrite size_nseq refines_col_size // refines_row_size.
+by rewrite size_nseq refines_nth_col_size // refines_row_size.
 Qed.
 
 Global Instance refines_trseqmx m n (x : 'M[B]_(m.+1,n)) (a : seqmatrix B) 
   (xa : refines x a) : refines (trmx x) (trseqmx a).
 Proof.
-rewrite /refines [x]refines_mxE /= mx_of_seqmxE /zmod_mx_of_seqmx /=.
+rewrite /refines [x]refines_mxE /= zmod_mx_of_seqmxE /=.
 rewrite size_trseqmx eqxx.
-have [_|/allP hN] := boolP (all _ _); last first.
-  suff: False by []; apply: hN => s /(nthP [::]) [i].
-  by rewrite size_trseqmx=> Hi <-; rewrite size_nth_trseqmx.
+have [_|/(all_nthP [::]) hN] := boolP (all _ _); last first.
+  suff: False by []; apply: hN => s.
+  by rewrite size_trseqmx => /size_nth_trseqmx ->.
 congr Some; apply/matrixP=> i j; rewrite !mxE.
 have ->: forall (s2 : seqmatrix B) k l s1, k < size (foldr (zipwith cons) s1 s2) ->
  nth 0 (nth [::] (foldr (zipwith cons) s1 s2) k) l =
