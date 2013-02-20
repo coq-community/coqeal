@@ -61,7 +61,7 @@ elim: n=> //= n ih in p q *; case: ifP=> // _; set m := minn _ _.
 rewrite [p in RHS](rdivp_eq (monicXn _ m)) [q in RHS](rdivp_eq (monicXn _ m)).
 rewrite !ih !(mulrDl, mulrDr, mulNr) mulnC exprM.
 rewrite -addrA -opprD [X in X + _ - _]addrC addrACA addrK.
-by rewrite -![(_ + _)%C]/(_ + _) !(commr_polyXn, mulrA, addrA).
+by simpC; rewrite !(commr_polyXn, mulrA, addrA).
 Qed.
 
 Lemma karatsubaP (p q : {poly R}) : karatsubaR p q = p * q.

@@ -1,7 +1,7 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-Require Import path choice fintype tuple finset ssralg bigop.
+Require Import path choice fintype tuple finset ssralg bigop ssrnum ssrint.
 
 (** This file implements the basic theory of refinements 
 
@@ -240,3 +240,21 @@ Notation "x <= y" := (leq_op x y)  : computable_scope.
 Notation "x > y"  := (lt_op y x)  (only parsing) : computable_scope.
 Notation "x >= y" := (leq_op y x) (only parsing) : computable_scope.
 Notation embed := (@embed_op _).
+
+Ltac simpC :=
+  do ?[ rewrite -[0%C]/0%R | rewrite -[1%C]/1%R
+      | rewrite -[(_ + _)%C]/(_ + _)%R
+      | rewrite -[(_ + _)%C]/(_ + _)%N
+      | rewrite -[(- _)%C]/(- _)%R
+      | rewrite -[(_ - _)%C]/(_ - _)%R
+      | rewrite -[(_ * _)%C]/(_ * _)%R
+      | rewrite -[(_ - _)%C]/(_ - _)%N
+      | rewrite -[(_ * _)%C]/(_ * _)%N
+      | rewrite -[(_ / _)%C]/(_ / _)%R
+      | rewrite -[(_ == _)%C]/(_ == _)%bool
+      | rewrite -[(_ <= _)%C]/(_ <= _)%R
+      | rewrite -[(_ < _)%C]/(_ < _)%R
+      | rewrite -[(_ <= _)%C]/(_ <= _)%N
+      | rewrite -[(_ < _)%C]/(_ < _)%N
+      | rewrite -[embed _]/(_%:R)
+      | rewrite -[embed _]/(_%:~R)].
