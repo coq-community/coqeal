@@ -71,6 +71,7 @@ Lemma funoptE (A : finType) (B : Type) (f : A -> option B)
   (P : forall a, f a) : funopt f = Some (fun a => oextract (funopt_prf P a)).
 Proof. by rewrite /funopt /funopt_prf; case: forallP. Qed.
 
+(* Could be made more precise to avoid proving matrix_of_fun g = matrix_of_fun g' each time *)
 Lemma omap_funoptE (A : finType) (B C : Type)
       (f : A -> option B) (g : A -> B) (h : (A -> B) -> C):
       (forall g g', g =1 g' -> h g = h g') ->
@@ -172,10 +173,12 @@ Qed.
 (* Pb: rewriting with this lemma can pick wrong instances since the type *)
 (* is not determined in the equality. More precisely, neither M nor N appears *)
 (* in size x = n. *)
-Lemma refines_col_size m n (M : 'M_(m, n)) (N : seqmatrix A) : 
+Lemma refines_col_size m n (M : 'M_(m, n)) (N : seqmatrix A) :
   refines M N -> forall x, x \in N -> size x = n.
 Proof. by move=> /refines_all_col_size /allP /(_ _ _) /eqP. Qed.
 
+(* It is not clear that this lemma is better than refines_nth, which applies to *)
+(* arbitrary types *)
 Lemma refines_mxE m n (M : 'M_(m, n)) (N : seqmatrix A) :
   refines M N -> M = \matrix_(i, j) (nth [::] N i)`_j.
 Proof.
@@ -208,18 +211,36 @@ rewrite (nth_map [::]) ?sizeE //= (nth_map (x i j)) (nth_map [::]) ?sizeE //.
 by rewrite (nth_map (x i j)) ?sizeE // refines_nth.
 Qed.
 
-Definition oppseqmx `{opp A} (M : seqmatrix A) : seqmatrix A :=
-  map_seqmx -%C M.
+Definition oppseqmx `{opp A} := map_seqmx -%C.
 
 Global Instance opp_seqmatrix `{opp A} : opp (seqmatrix A) := oppseqmx.
 
-Definition zipwithseqmx (M N : seqmatrix A) (f : A -> A -> A) : seqmatrix A :=
+Definition zipwithseqmx (f : A -> A -> A) (M N : seqmatrix A) : seqmatrix A :=
   zipwith (zipwith f) M N.
 
-Definition addseqmx `{add A} (M N : seqmatrix A) : seqmatrix A :=
-  zipwithseqmx M N +%C.
+Global Instance refines_zipwithseqmx m n (x y : 'M[A]_(m,n)) (a b : seqmatrix A)
+  (f : A -> A -> A) (xa : refines x a) (yb : refines y b) :
+  refines (\matrix_(i,j) f (x i j) (y i j)) (zipwithseqmx f a b).
+Proof.
+rewrite /zipwithseqmx zipwithE /refines /= /mx_of_seqmx ?sizeE // eqxx.
+have [_|/(all_nthP [::]) hN] := boolP (all _ _); last first.
+  suff: False by []; apply: hN => i; rewrite ?sizeE => hi.
+  by rewrite (nth_map ([::],[::])) ?(sizeE, nth_zip, zipwithE).
+rewrite (omap_funoptE (fun ij => f (x ij.1 ij.2) (y ij.1 ij.2))) => [|g g' eq_gg'|[i j]].
++ by congr Some; apply/matrixP=> i j; rewrite !mxE.
++ by apply/matrixP=> i j; rewrite !mxE.
++ rewrite /= (nth_map [::]) ?sizeE //=.
+rewrite ?(nth_map (x i j)) ?(nth_map ([::],[::])) ?zipwithE ?nth_zip ?sizeE //.
+by rewrite (nth_map (x i j, x i j)) ?nth_zip ?sizeE // !refines_nth.
+Qed.
+
+Definition addseqmx `{add A} := zipwithseqmx +%C.
 
 Global Program Instance add_seqmatrix `{add A} : add (seqmatrix A) := addseqmx.
+
+Definition subseqmx `{sub A} := zipwithseqmx sub_op.
+
+Global Program Instance sub_seqmatrix `{sub A} : sub (seqmatrix A) := subseqmx.
 
 Definition trseqmx (M : seqmatrix A) : seqmatrix A :=
   foldr (zipwith cons) (nseq (size (nth [::] M 0)) [::]) M.
@@ -308,6 +329,7 @@ Variable (B : zmodType).
 Instance zero_B : zero B := 0%R.
 Instance opp_B : opp B := -%R.
 Instance add_B : add B := +%R.
+Instance sub_B : sub B := (fun x y => x - y)%R.
 
 Global Instance refines_oppseqmx m n (x : 'M[B]_(m,n)) (a : seqmatrix B) 
   (xa : refines x a) : refines (- x)%R (- a)%C.
@@ -319,15 +341,15 @@ Qed.
 Global Instance refines_addseqmx m n (x y : 'M[B]_(m,n)) (a b : seqmatrix B) 
   (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
 Proof.
-rewrite /add_op /add_seqmatrix /addseqmx /zipwithseqmx /= !zipwithE.
-rewrite /refines [x]refines_mxE [y]refines_mxE /= zmod_mx_of_seqmxE.
-rewrite ?sizeE // eqxx.
-have [_|/(all_nthP [::]) hN] := boolP (all _ _); last first.
-  suff: False by []; apply: hN => i; rewrite ?sizeE => hi.
-  by rewrite (nth_map ([::],[::])) ?(sizeE, nth_zip, zipwithE).
-congr Some; apply/matrixP=> i j; rewrite !mxE.
-rewrite (nth_map ([::],[::])) ?(sizeE, nth_zip) //=.
-by rewrite zipwithE (nth_map (0, 0)) ?(sizeE, nth_zip).
+rewrite /add_op /add_seqmatrix /addseqmx.
+by apply/refinesP/matrixP=> i j; rewrite !mxE.
+Qed.
+
+Global Instance refines_subseqmx m n (x y : 'M[B]_(m,n)) (a b : seqmatrix B) 
+  (xa : refines x a) (yb : refines y b) : refines (x - y)%R (sub_op a b)%C.
+Proof.
+rewrite /sub_op /sub_seqmatrix /subseqmx.
+by apply/refinesP/matrixP=> i j; rewrite !mxE.
 Qed.
 
 End seqmx_op2.
