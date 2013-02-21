@@ -83,7 +83,7 @@ End lifting.
 
 Section submatrix_theory.
 
-Variable R : comRingType.
+Variable R : ringType.
 
 Lemma submatrix_eq m n p q (f1 g1 : 'I_p -> 'I_m) (f2 g2 : 'I_q -> 'I_n) 
   (M : 'M[R]_(m,n)) (h1 : f1 =1 g1) (h2 : f2 =1 g2) : 
@@ -150,7 +150,7 @@ End submatrix_theory.
 (* This must be put in a new section as it uses the theory on submatrix *)
 Section submatrix_char_poly_mx.
 
-Variable R : comRingType.
+Variable R : ringType.
 
 Lemma submatrix_char_poly_mx m p (M : 'M[R]_m) 
   (f : 'I_p -> 'I_m) (hf : injective f) :
@@ -261,4 +261,20 @@ Proof.
 by rewrite /minor submatrix_lift_block submatrix0 (@det_ublock _ 1) det_scalar1.
 Qed.
 
-End minor_theory.
+End minor_theory. 
+
+Section minor_char_poly_mx.
+
+Variable R : comRingType.
+
+(* all principal minor of the characteristic matrix are monic *)
+Lemma pminor_char_poly_mx_monic m p (M : 'M[R]_m) (h h': p.+1 <= m) :
+  pminor h h' (char_poly_mx M) \is monic.
+Proof.
+rewrite /pminor (@minor_eq _ _ _ _ _ (widen_ord h) _ (widen_ord h)) // /minor;
+  last by apply/widen_ord_eq.
+rewrite submatrix_char_poly_mx ?char_poly_monic //. 
+exact: inj_widen_ord.
+Qed.
+
+End minor_char_poly_mx.
