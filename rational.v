@@ -222,20 +222,20 @@ Proof. exact: rat_refines_trans. Qed.
 Global Instance refines_addQ : refines (x + y) (a + b)%C.
 Proof. exact: (rat_refines_trans (refines_addq _ _ _ _)). Qed.
 
-(* Global Instance refines_mulQ : refines (x * y) (a * b)%C. *)
-(* Proof. exact: (rat_refines_trans (refines_mulq _ _ _ _)). Qed. *)
+Global Instance refines_mulQ : refines (x * y) (a * b)%C.
+Proof. exact: (rat_refines_trans (refines_mulq _ _ _ _)). Qed.
 
-(* Global Instance refines_oppQ : refines (- x) (- a)%C. *)
-(* Proof. exact: (rat_refines_trans (refines_oppq _ _)). Qed. *)
+Global Instance refines_oppQ : refines (- x) (- a)%C.
+Proof. exact: (rat_refines_trans (refines_oppq _ _)). Qed.
 
-(* Global Instance refines_invQ : refines (x^-1) (a^-1)%C. *)
-(* Proof. exact: (rat_refines_trans (refines_invq _ _)). Qed. *)
+Global Instance refines_invQ : refines (x^-1) (a^-1)%C.
+Proof. exact: (rat_refines_trans (refines_invq _ _)). Qed.
 
-(* Global Instance refines_subQ : refines (x - y) (a - b)%C. *)
-(* Proof. exact: (rat_refines_trans (refines_subq _ _ _ _)). Qed. *)
+Global Instance refines_subQ : refines (x - y) (a - b)%C.
+Proof. exact: (rat_refines_trans (refines_subq _ _ _ _)). Qed.
 
-(* Global Instance refines_divQ : refines (x / y) (a / b)%C. *)
-(* Proof. exact: (rat_refines_trans (refines_divq _ _ _ _)). Qed. *)
+Global Instance refines_divQ : refines (x / y) (a / b)%C.
+Proof. exact: (rat_refines_trans (refines_divq _ _ _ _)). Qed.
 
 Global Instance refines_compQ : refines (x == y) (a == b)%C.
 Proof.
@@ -260,13 +260,9 @@ Require Import ZArith binint_direct.
 Lemma foo (P : bool -> Type) :
   P (1 + 1 == 1 + 1 :> rat).
 Proof.
-Time rewrite [(_ == _)]refines_boolE.
+rewrite [X in P X]refines_boolE.
 vm_compute.
 
-(* The time increases exponentially each time one adds an Instance *)
-(* with refines_zeroQ, refines_oneQ, refines_addQ, refines_compQ : 0.01 sec *)
-(* + refines_mulQ  : 0.4 sec *)
-(* + refines_oppQ  : 51 sec *)
 Abort.
 
 End tests.

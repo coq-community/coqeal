@@ -113,9 +113,8 @@ rewrite (omap_funoptE (fun ij => M ij.1 ij.2)) /=.
   by congr Some; apply/matrixP=> i j; rewrite mxE.
   by move=> g g' eq_gg' /=; apply/matrixP=> i j; rewrite !mxE.
 move=> [i j] /=; rewrite (nth_map [::]) ?(size_enum_ord, size_map) //=.
-rewrite (nth_map (M i j)) (nth_map i) 1?(nth_map j);
-  do ?by rewrite ?(size_enum_ord, size_map).
-by rewrite !nth_ord_enum.
+rewrite (nth_map (M i j)) (nth_map i) 1?(nth_map j) ?nth_ord_enum //;
+by rewrite ?(size_enum_ord, size_map).
 Qed.
 
 Global Program Instance refinement_mx_seqmx m n :

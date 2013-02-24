@@ -258,3 +258,15 @@ Ltac simpC :=
       | rewrite -[(_ < _)%C]/(_ < _)%N
       | rewrite -[embed _]/(_%:R)
       | rewrite -[embed _]/(_%:~R)].
+
+(* Opacity of ssr symbols *)
+Typeclasses Opaque eqtype.eq_op.
+Typeclasses Opaque GRing.zero.
+Typeclasses Opaque GRing.add.
+Typeclasses Opaque GRing.opp.
+Typeclasses Opaque GRing.one.
+Typeclasses Opaque GRing.mul.
+Typeclasses Opaque GRing.inv.
+Typeclasses Opaque Num.le.
+Typeclasses Opaque Num.lt.
+Typeclasses Opaque Num.norm.

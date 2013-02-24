@@ -312,7 +312,7 @@ Global Instance refines_poly_mul (p q : {poly A}) (sp sq : seqpoly A)
 Proof.
 elim: sp => [|a sp ihp] in p rp *; first by rewrite [p]refines_polyE mul0r.
 move: rp => /refines_poly_cons [[sp' a' /= [-> -> rp']]]; apply/refinesP.
-by rewrite mulrDl addrC mul_polyC addr0 -mulrA commr_polyX mulrA.
+by rewrite mulrDl addrC mul_polyC addr0 -mulrA !(commr_polyX, mulrA).
 Qed.
 
 (* equality *)
