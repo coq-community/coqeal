@@ -31,6 +31,13 @@ Local Open Scope computable_scope.
 
 Definition seqpoly := seq T.
 
+Fixpoint zero_drop p : seqpoly := match p with
+  | [::]    => [::]
+  | x :: xs => if (x == 0)%C then zero_drop xs else x :: xs
+  end.
+
+Definition drop_zero p : seqpoly := rev (zero_drop (rev p)).
+
 Definition zippolywith R (f : T -> T -> R) :=
   let fix aux p q :=
       match p, q with
@@ -159,6 +166,19 @@ Proof. by case. Qed.
 Global Program Instance refines_seqpoly0 : refines 0%R (0 : seqpoly A)%C.
 Global Instance refines_seqpoly1 : refines 1%R (1 : seqpoly A)%C.
 Proof. by rewrite /refines /= cons_poly_def mul0r add0r. Qed.
+
+(* drop_zero *)
+Lemma Poly_rcons : forall (s : seq A), Poly (rcons s 0) = Poly s.
+Proof. by elim=> /= [|a s ->] //; rewrite cons_poly_def mul0r add0r. Qed.
+
+Lemma refines_drop_zero (p : {poly A}) (sp : seqpoly A) (rp : refines p sp) :
+  refines (id p) (drop_zero sp).
+Proof.
+rewrite [p]refines_polyE {rp}; elim/last_ind: sp => //= s a.
+rewrite /drop_zero rev_rcons /=; simpC => ih.
+have [->|_] := (altP eqP); last by rewrite rev_cons revK.
+by congr Some; rewrite -refines_polyE Poly_rcons.
+Qed.
 
 (* splitting *)
 Lemma refines_seqpoly_split n (p : {poly A}) (q : seqpoly A) :
