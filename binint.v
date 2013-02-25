@@ -46,10 +46,16 @@ match x, y with
                       else Zneg (embed (embed x - y))
 end.
 
+Global Instance opp_Z : opp Z := fun x : Z =>
+match x with
+| Zpos x => if (x == 0)%C then 0%C else Zneg (embed x)
+| Zneg x => Zpos (embed x)
+end.
+
 Global Instance sub_Z : sub Z := fun x y : Z =>
 match x, y with
 | Zpos x, Zneg y => Zpos (x + embed y)
-| Zneg x, Zpos y => Zneg (x + embed y)
+| Zneg x, Zpos y => if (y == 0)%C then Zneg x else Zneg (x + embed y)
 | Zpos x, Zpos y => if (y <= x) then Zpos (x - y)
                       else Zneg (embed (y - x))
 | Zneg x, Zneg y => if (embed x <= embed y) then Zpos (embed y - embed x)
@@ -59,15 +65,15 @@ end.
 Global Instance eq_Z : eq Z := fun x y : Z =>
 match x, y with
 | Zpos x, Zpos y => (x == y)
-| Zneg x, Zneg y =>  (x == y)
+| Zneg x, Zneg y => (x == y)
 | _, _ => false
 end.
 
 Global Instance mul_Z : mul Z := fun x y : Z =>
 match x, y with
 | Zpos x, Zpos y => Zpos (x * y)
-| Zneg x, Zpos y => Zneg (x * embed y)
-| Zpos x, Zneg y => Zneg (embed x * y)
+| Zneg x, Zpos y => if (y == 0)%C then 0%C else Zneg (x * embed y)
+| Zpos x, Zneg y => if (x == 0)%C then 0%C else Zneg (embed x * y)
 | Zneg x, Zneg y => Zpos (embed x * embed y)
 end.
 
@@ -109,6 +115,7 @@ Local Instance zero_nat : zero nat := 0%N.
 Local Instance one_nat : one nat := 1%N.
 Local Instance add_nat : add nat := addn.
 Local Instance sub_nat : sub nat := subn.
+Local Instance mul_nat : mul nat := muln.
 Local Instance leq_nat : leq nat := ssrnat.leq.
 Local Instance eq_nat : eq nat := eqtype.eq_op.
 
@@ -117,6 +124,8 @@ Local Instance add_pos : add pos :=
   fun m n => insubd (posS 0) (val m + val n)%N.
 Local Instance sub_pos : sub pos :=
   fun m n => insubd (posS 0) (val m - val n)%N.
+Local Instance mul_pos : mul pos :=
+  fun m n => insubd (posS 0) (val m * val n)%N.
 Local Instance eq_pos : eq pos := eqtype.eq_op.
 
 Local Instance embed_pos_nat : embed_class pos nat := val.
@@ -128,16 +137,34 @@ Global Program Instance refines_int_1 : refines (1%R : int) (1%C : Z).
 Global Instance refines_int_add (x y : int) (x' y' : Z)
   (rx : refines x x') (ry : refines y y') : refines (x + y) (x' + y')%C.
 Proof.
-rewrite /refines [x]refines_intE [y]refines_intE /= /add_op.
-case: x' y' {rx ry} => [x'|x'] [y'|y'] //=; rewrite ?(add0r, addr0) //;
-rewrite /add_op /sub_op /add_pos /sub_pos /embed /embed_pos_nat /embed_nat_pos //;
-rewrite /leq_op /leq_nat /sub_nat /add_nat;
-do ?by rewrite ?insubdK -?opprD // -?topredE /= ?addn_gt0 ?valP //.
-  have [yx|xy] /= := leqP; first by rewrite subzn.
-  by rewrite insubdK // -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprB.
+rewrite /refines [x]refines_intE [y]refines_intE /add_op /=.
+case: x' y' {rx ry} => [x'|x'] [y'|y'] //=; rewrite ?(add0r, addr0) //; simpC.
+    have [yx|xy] /= := leqP; first by rewrite subzn.
+    by rewrite insubdK -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprB.
+  have [yx|xy] /= := leqP; first by rewrite addrC subzn.
+  by rewrite insubdK -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprD opprK.
+by rewrite !insubdK -?topredE /= ?addn_gt0 ?valP // -opprB opprK addrC.
+Qed. 
+
+Global Instance refines_int_opp (x : int) (x' : Z)
+  (rx : refines x x') : refines (- x) (- x')%C.
+Proof.
+rewrite [x]refines_intE; congr some.
+by case: x' {rx} => [[]|] //= n; rewrite ?insubdK ?opprK.
+Qed.
+
+Global Instance refines_int_sub (x y : int) (x' y' : Z)
+  (rx : refines x x') (ry : refines y y') : refines (x - y) (x' - y')%C.
+Proof.
+rewrite [x]refines_intE [y]refines_intE /sub_op; congr some.
+case: x' y' {rx ry} => [x'|x'] [y'|y']; rewrite ?opprK //=; simpC.
+    have [yx|xy] /= := leqP; first by rewrite subzn.
+    by rewrite insubdK -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprB.
+  have [->|y'_neq0 /=] := (altP eqP); first by rewrite subr0.
+  by rewrite !insubdK -?opprD -?topredE //= ?addn_gt0 ?valP ?lt0n.
 have [yx|xy] /= := leqP; first by rewrite addrC subzn.
 by rewrite insubdK // -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprD opprK.
-Qed. 
+Qed.
 
 Global Instance refines_int_eq (x y : int) (x' y' : Z)
   (rx : refines x x') (ry : refines y y') : refines (x == y) (x' == y')%C.
@@ -146,5 +173,16 @@ rewrite /refines [x]refines_intE [y]refines_intE /= /eq_op => {rx ry}.
 case: x' y' => [x'|x'] [y'|y'] //=; rewrite ?eqr_opp // ?[- _ == _]eq_sym;
 by rewrite gtr_eqF // (@ltr_le_trans _ 0) // ltr_oppl oppr0 [_ < _]valP.
 Qed.
+
+Global Instance refines_int_mul (x y : int) (x' y' : Z)
+  (rx : refines x x') (ry : refines y y') : refines (x * y) (x' * y')%C.
+Proof.
+rewrite /refines [x]refines_intE [y]refines_intE /mul_op /=; congr some.
+case: x' y' {rx ry} => [x'|x'] [y'|y'] //=; simpC; last by rewrite mulrNN.
+  have [->|y'_neq0 /=] := (altP eqP); first by rewrite mul0r.
+  by rewrite mulrN !insubdK -?topredE /= ?muln_gt0 ?valP ?andbT ?lt0n.
+have [->|y'_neq0 /=] := (altP eqP); first by rewrite mulr0.
+by rewrite mulNr !insubdK -?topredE /= ?muln_gt0 ?valP ?andbT ?lt0n.
+Qed. 
 
 End Z_nat_pos.
