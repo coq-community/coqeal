@@ -113,6 +113,12 @@ Variable A : Type.
 
 Definition seqmatrix := seq (seq A).
 
+Definition ord_enum_eq n : seq 'I_n := pmap (insub_eq _) (iota 0 n).
+
+Definition mkseqmx_ord m n (f : 'I_m -> 'I_n -> A) : seqmatrix :=
+  let enum_n := ord_enum_eq n in
+  map (fun i => map (f i) enum_n) (ord_enum_eq m).
+
 Definition map_seqmx (f : A -> A) (M : seqmatrix) : seqmatrix :=
   map (map f) M.
 
@@ -127,11 +133,14 @@ Definition const_seqmx m n (x : A) := nseq m (nseq n x).
 (* Definition of operations, using an abstract base type and operations *)
 
 Section seqmx_ops.
-Context `{zero A, opp A, add A, sub A, mul A}.
+Context `{zero A, opp A, add A, sub A, mul A, eq A}.
 
 Global Instance opp_seqmatrix : opp seqmatrix := map_seqmx -%C.
 Global Instance add_seqmatrix : add seqmatrix := zipwithseqmx +%C.
 Global Instance sub_seqmatrix : sub seqmatrix := zipwithseqmx sub_op.
+
+Global Instance eq_seqmatrix : eq seqmatrix := fun M N =>
+  foldl2 (fun acc x y => acc && (foldl2 (fun acc x y => acc && eq_op x y) true x y)) true M N.
 
 Definition seqmx0 m n := const_seqmx m n 0%C.
 
@@ -207,6 +216,12 @@ rewrite (omap_funoptE (fun ij : 'I_m * 'I_n => nth x0 (nth [::] N ij.1) ij.2)) /
 + by move=> H; rewrite (Some_inj H) mxE.
 + by move=> g g' eq_gg'; apply/matrixP=> k l; rewrite !mxE eq_gg'.
 by case=> k l; rewrite (nth_map [::]) /= ?(nth_map x0) ?sizeE.
+Qed.
+
+Global Instance refines_mkseqmx_ord m n tt (f : 'I_m -> 'I_n -> A) :
+  refines (matrix_of_fun tt f) (mkseqmx_ord f) | 99.
+Proof.
+admit.
 Qed.
 
 Global Instance refines_map_seqmx m n (x : 'M[A]_(m,n)) (a : seqmatrix) (f : A -> A) :
@@ -307,6 +322,19 @@ Qed.
 End seqmx_raw_refinement.
 End seqmx.
 
+Section seqmx_eqtype_refinement.
+
+Variable A : eqType.
+
+Local Instance eq_A : eq A := eqtype.eq_op.
+
+Lemma refines_eqseqmx m n (x y : 'M[A]_(m,n)) (a b : seqmatrix A)
+  (rp : refines x a) (rq : refines y b) : (x == y)%R = (a == b)%C.
+Proof.
+admit.
+Qed.
+
+End seqmx_eqtype_refinement.
 
 (* Commutative group related refinement properties *)
 Section seqmx_zmod_refinement.
@@ -414,9 +442,19 @@ End seqmx_ring_refinement.
 
 
 (* (* Some tests *) *)
-(* Require Import ZArith ssrint binint seqpoly. *)
+Require Import ZArith ssrint binint seqpoly.
 
 (* Eval compute in seqmx0 2 2 : seqmatrix Z. *)
 (* Eval compute in seqmx0 2 2 : seqmatrix (seqpoly (seqpoly Z)). *)
 (* Eval compute in 1%C : seqmatrix (seqpoly (seqpoly Z)).  *)
 
+Definition M := \matrix_(i,j < 2) 1%:Z.
+Definition N := \matrix_(i,j < 2) 2%:Z.
+Definition P := \matrix_(i,j < 2) 14%:Z.
+
+Goal M + N + M + N + M + N + N + M + N = P.
+apply/eqP.
+rewrite /M /N /P.
+rewrite refines_eqseqmx.
+reflexivity.
+Qed.
