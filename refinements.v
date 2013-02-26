@@ -261,12 +261,8 @@ Ltac simpC :=
 
 (* Opacity of ssr symbols *)
 Typeclasses Opaque eqtype.eq_op.
-Typeclasses Opaque GRing.zero.
-Typeclasses Opaque GRing.add.
-Typeclasses Opaque GRing.opp.
-Typeclasses Opaque GRing.one.
-Typeclasses Opaque GRing.mul.
-Typeclasses Opaque GRing.inv.
-Typeclasses Opaque Num.le.
-Typeclasses Opaque Num.lt.
-Typeclasses Opaque Num.norm.
+Typeclasses Opaque addn subn muln expn.
+Typeclasses Opaque GRing.zero GRing.add GRing.opp GRing.natmul.
+Typeclasses Opaque GRing.one GRing.mul GRing.inv GRing.exp.
+Typeclasses Opaque Num.le Num.lt Num.norm.
+Typeclasses Opaque intmul exprz absz.

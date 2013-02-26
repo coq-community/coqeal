@@ -219,7 +219,7 @@ by case=> k l; rewrite (nth_map [::]) /= ?(nth_map x0) ?sizeE.
 Qed.
 
 Global Instance refines_mkseqmx_ord m n tt (f : 'I_m -> 'I_n -> A) :
-  refines (matrix_of_fun tt f) (mkseqmx_ord f) | 99.
+  refines (matrix_of_fun tt f) (mkseqmx_ord f).
 Proof.
 admit.
 Qed.
@@ -436,6 +436,8 @@ Qed.
 
 End seqmx_ring_refinement.
 
+Typeclasses Opaque matrix_of_fun const_mx map_mx mulmx.
+
 (*****************************************)
 (* PART III: Parametricity (coming soon) *)
 (*****************************************)
@@ -452,9 +454,11 @@ Definition M := \matrix_(i,j < 2) 1%:Z.
 Definition N := \matrix_(i,j < 2) 2%:Z.
 Definition P := \matrix_(i,j < 2) 14%:Z.
 
-Goal M + N + M + N + M + N + N + M + N = P.
-apply/eqP.
-rewrite /M /N /P.
-rewrite refines_eqseqmx.
+Goal (M + N + M + N + M + N + N + M + N) *m
+   (M + N + M + N + M + N + N + M + N) = 
+(P *m M + P *m N + P *m M + P *m N + 
+ P *m M + P *m N + P *m N + P *m M + P *m N).
+Proof.
+apply/eqP; rewrite refines_eqseqmx.
 reflexivity.
 Qed.
