@@ -17,8 +17,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory.
-Import Num.Theory.
+Import GRing.Theory Num.Theory Refinements.Op.
 
 (* rational - Non normalized rational numbers *)
 

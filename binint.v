@@ -20,7 +20,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory Num.Theory.  
+Import GRing.Theory Num.Theory Refinements.Op.
 
 (* Programming part *)
 Section Zdef.

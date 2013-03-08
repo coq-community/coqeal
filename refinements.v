@@ -172,7 +172,9 @@ Existing Instance refines_if.
 
 End parametricity.
 
-Section Operations.
+Module Refinements.
+
+Module Op.
 
 (* zero_op arity operations, i.e. constants *)
 Class zero B := zero_op : B.
@@ -220,7 +222,11 @@ Local Notation "x <= y" := (leq_op x y) : computable_scope.
 Class embed_class A B := embed_op : A -> B.
 Global Instance id_embed A : embed_class A A := id.
 
-End Operations.
+End Op.
+
+End Refinements.
+
+Import Refinements.Op.
 
 Notation "0"      := zero_op       : computable_scope.
 Notation "1"      := one_op        : computable_scope.

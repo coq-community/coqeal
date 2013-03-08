@@ -18,7 +18,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory.  
+Import GRing.Theory Refinements.Op.
 
 Section binint.
 

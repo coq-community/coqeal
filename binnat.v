@@ -15,6 +15,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Import Refinements.Op.
+
 Notation N := N.
 
 Section binnat.

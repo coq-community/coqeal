@@ -19,7 +19,7 @@ Local Open Scope ring_scope.
 
 Reserved Notation "a %:SP" (at level 2, format "a %:SP").
 
-Import GRing.Theory Pdiv.Ring  Pdiv.CommonRing Pdiv.RingMonic. 
+Import GRing.Theory Pdiv.Ring  Pdiv.CommonRing Pdiv.RingMonic Refinements.Op. 
 
 Section seqpoly_op.
 

@@ -8,7 +8,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic. 
+Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic Refinements.Op.
 
 Section generic_karatsuba.
 
