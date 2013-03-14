@@ -48,6 +48,7 @@ Instance add_polyR : add {poly R} := +%R.
 Instance mul_polyR : mul {poly R} := *%R.
 Instance sub_polyR : sub {poly R} := fun x y => (x - y)%R.
 Variable f : {poly R} -> nat.
+
 Definition karatsuba_recR :=
   (karatsuba_rec (fun n => *%R^~ 'X^n) f
                  (fun n p => (rdivp p 'X^n, rmodp p 'X^n))).

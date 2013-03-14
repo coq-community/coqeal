@@ -45,10 +45,10 @@ Lemma size_tool n k : k <= n -> k < n.+1.
 Proof. by rewrite ltnS. Qed.
 
 (* lift step [ 0.. n-1] = [0 .. n ] *)
-Lemma lift_pred_widen_ord m n (h : n <= m) (x : 'I_n.+1) :
-  lift_pred (widen_ord h) x = widen_ord (size_tool h) x.
+Lemma lift_pred_widen_ord m n (h : n <= m) :
+  lift_pred (widen_ord h) =1 widen_ord (size_tool h).
 Proof.
-rewrite /lift_pred; have [y hx|y hx] := splitP; apply/ord_inj => //=.
+rewrite /lift_pred => x; have [y hx|y hx] := splitP; apply/ord_inj => //=.
 by rewrite hx [y]ord1.
 Qed.
 
@@ -250,7 +250,7 @@ by exists x; exists y; rewrite hg.
 Qed.
 
 Lemma minor_eq m n p (f1 g1 : 'I_p -> 'I_m) (f2 g2 : 'I_p -> 'I_n) 
-  (M : 'M[R]_(m,n)) (h1 : f1 =1 g1) (h2 : f2 =1 g2) :
+  (h1 : f1 =1 g1) (h2 : f2 =1 g2) (M : 'M[R]_(m,n)) :
   minor f1 f2 M = minor g1 g2 M.
 Proof. by rewrite /minor (submatrix_eq M h1 h2). Qed.
 
@@ -271,9 +271,9 @@ Variable R : comRingType.
 Lemma pminor_char_poly_mx_monic m p (M : 'M[R]_m) (h h': p.+1 <= m) :
   pminor h h' (char_poly_mx M) \is monic.
 Proof.
-rewrite /pminor (@minor_eq _ _ _ _ _ (widen_ord h) _ (widen_ord h)) // /minor;
-  last by apply/widen_ord_eq.
-rewrite submatrix_char_poly_mx ?char_poly_monic //. 
+have h'h : widen_ord h' =1 widen_ord h by apply/widen_ord_eq.
+rewrite /pminor (minor_eq (frefl _) h'h) /minor submatrix_char_poly_mx.
+  by rewrite char_poly_monic.
 exact: inj_widen_ord.
 Qed.
 

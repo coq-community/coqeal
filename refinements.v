@@ -206,6 +206,9 @@ Class mul B := mul_op : B -> B -> B.
 Local Notation "*%C" := mul_op.
 Local Notation "x * y" := (mul_op x y) : computable_scope.
 
+Class scale A B := scale_op : A -> B -> B.
+Local Notation "x *: y" := (scale_op x y) : computable_scope.
+
 Class div B := div_op : B -> B -> B.
 Local Notation "x / y" := (div_op x y) : computable_scope.
 
@@ -228,21 +231,22 @@ End Refinements.
 
 Import Refinements.Op.
 
-Notation "0"      := zero_op       : computable_scope.
-Notation "1"      := one_op        : computable_scope.
+Notation "0"      := zero_op        : computable_scope.
+Notation "1"      := one_op         : computable_scope.
 Notation "-%C"    := opp_op.
-Notation "- x"    := (opp_op x)    : computable_scope.
-Notation "x ^-1"  := (inv_op x)    : computable_scope.
+Notation "- x"    := (opp_op x)     : computable_scope.
+Notation "x ^-1"  := (inv_op x)     : computable_scope.
 Notation "+%C"    := add_op.
-Notation "x + y"  := (add_op x y)     : computable_scope.
-Notation "x - y"  := (sub_op x y)     : computable_scope.
-Notation "x ^ y"  := (exp_op x y)  : computable_scope.
+Notation "x + y"  := (add_op x y)   : computable_scope.
+Notation "x - y"  := (sub_op x y)   : computable_scope.
+Notation "x ^ y"  := (exp_op x y)   : computable_scope.
 Notation "*%C"    := mul_op.
-Notation "x * y"  := (mul_op x y)  : computable_scope.
-Notation "x / y"  := (div_op x y)  : computable_scope.
-Notation "x == y" := (eq_op x y)   : computable_scope.
-Notation "x < y " := (lt_op x y)   : computable_scope.
-Notation "x <= y" := (leq_op x y)  : computable_scope.
+Notation "x * y"  := (mul_op x y)   : computable_scope.
+Notation "x *: y" := (scale_op x y) : computable_scope.
+Notation "x / y"  := (div_op x y)   : computable_scope.
+Notation "x == y" := (eq_op x y)    : computable_scope.
+Notation "x < y " := (lt_op x y)    : computable_scope.
+Notation "x <= y" := (leq_op x y)   : computable_scope.
 Notation "x > y"  := (lt_op y x)  (only parsing) : computable_scope.
 Notation "x >= y" := (leq_op y x) (only parsing) : computable_scope.
 Notation embed := (@embed_op _).
@@ -253,9 +257,10 @@ Ltac simpC :=
       | rewrite -[(_ + _)%C]/(_ + _)%N
       | rewrite -[(- _)%C]/(- _)%R
       | rewrite -[(_ - _)%C]/(_ - _)%R
-      | rewrite -[(_ * _)%C]/(_ * _)%R
       | rewrite -[(_ - _)%C]/(_ - _)%N
+      | rewrite -[(_ * _)%C]/(_ * _)%R
       | rewrite -[(_ * _)%C]/(_ * _)%N
+      | rewrite -[(_ *: _)%C]/(_ *: _)%R
       | rewrite -[(_ / _)%C]/(_ / _)%R
       | rewrite -[(_ == _)%C]/(_ == _)%bool
       | rewrite -[(_ <= _)%C]/(_ <= _)%R
@@ -269,6 +274,6 @@ Ltac simpC :=
 Typeclasses Opaque eqtype.eq_op.
 Typeclasses Opaque addn subn muln expn.
 Typeclasses Opaque GRing.zero GRing.add GRing.opp GRing.natmul.
-Typeclasses Opaque GRing.one GRing.mul GRing.inv GRing.exp.
+Typeclasses Opaque GRing.one GRing.mul GRing.inv GRing.exp GRing.scale.
 Typeclasses Opaque Num.le Num.lt Num.norm.
 Typeclasses Opaque intmul exprz absz.
