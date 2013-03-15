@@ -3,6 +3,7 @@ bareiss.v
 binnat.v
 binint.v
 binint_direct.v
+invmx.v
 karatsuba.v
 minor.v
 refinements.v

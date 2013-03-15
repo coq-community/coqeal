@@ -45,8 +45,6 @@ Open Scope ring_scope.
 
 (* End generic_bareiss. *)
 
-Section bareiss_correctness.
-
 Section bareiss_def.
 
 Variable R : comRingType.
