@@ -288,8 +288,8 @@ rewrite (omap_funoptE (fun ij => x ij.1 ij.2)) => [|g g' eq_gg'|[i j]].
 by rewrite (nth_map [::]) ?eq_sz //= (nth_map (x i j)) ?eq_row_sz ?eq_nth.
 Qed.
 
-Global Instance refines_mkseqmx_ord m n (f : 'I_m -> 'I_n -> A) :
-  refines (matrix_of_fun matrix_key f) (mkseqmx_ord f).
+Global Instance refines_mkseqmx_ord m n tt (f : 'I_m -> 'I_n -> A) :
+  refines (matrix_of_fun tt f) (mkseqmx_ord f).
 Proof.
 apply/refines_seqmxP=> [|i lt_im|i j].
 + by rewrite size_map ord_enum_eqE size_enum_ord.
@@ -385,7 +385,7 @@ Section seqmx_block.
 
 Variables m m1 m2 n n1 n2 : nat.
 
-Instance refines_usubseqmx (x : 'M[A]_(m1 + m2, n)) a :
+Global Instance refines_usubseqmx (x : 'M[A]_(m1 + m2, n)) a :
   refines x a -> refines (usubmx x) (usubseqmx m1 a).
 Proof.
 rewrite /usubseqmx => ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
@@ -395,7 +395,7 @@ rewrite /usubseqmx => ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 by rewrite nth_take // mxE -{2}refines_nth.
 Qed.
 
-Instance refines_dsubseqmx (x : 'M[A]_(m1 + m2, n)) a :
+Global Instance refines_dsubseqmx (x : 'M[A]_(m1 + m2, n)) a :
   refines x a -> refines (dsubmx x) (dsubseqmx m1 a).
 Proof.
 rewrite /dsubseqmx; move=> ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
@@ -404,7 +404,7 @@ rewrite /dsubseqmx; move=> ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 by rewrite nth_drop // mxE -{2}refines_nth.
 Qed.
 
-Instance refines_lsubseqmx (x : 'M[A]_(m, n1 + n2)) a :
+Global Instance refines_lsubseqmx (x : 'M[A]_(m, n1 + n2)) a :
   refines x a -> refines (lsubmx x) (lsubseqmx n1 a).
 Proof.
 rewrite /lsubseqmx; move=> ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
@@ -416,7 +416,7 @@ rewrite /lsubseqmx; move=> ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 by rewrite nth_take // mxE -{2}refines_nth.
 Qed.
 
-Instance refines_rsubseqmx (x : 'M[A]_(m, n1 + n2)) a :
+Global Instance refines_rsubseqmx (x : 'M[A]_(m, n1 + n2)) a :
   refines x a -> refines (rsubmx x) (rsubseqmx n1 a).
 Proof.
 rewrite /rsubseqmx; move=> ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
@@ -433,31 +433,31 @@ Section seqmx_block2.
 
 Variables m m1 m2 n n1 n2 : nat.
 
-Instance refines_ulsubseqmx (x : 'M[A]_(m1 + m2, n1 + n2)) a :
+Global Instance refines_ulsubseqmx (x : 'M[A]_(m1 + m2, n1 + n2)) a :
   refines x a -> refines (ulsubmx x) (ulsubseqmx m1 n1 a).
 Proof.
 by move=> ref_xa; apply: (refines_lsubseqmx (refines_usubseqmx ref_xa)).
 Qed.
 
-Instance refines_ursubseqmx (x : 'M[A]_(m1 + m2, n1 + n2)) a :
+Global Instance refines_ursubseqmx (x : 'M[A]_(m1 + m2, n1 + n2)) a :
   refines x a -> refines (ursubmx x) (ursubseqmx m1 n1 a).
 Proof.
 by move=> ref_xa; apply: (refines_rsubseqmx (refines_usubseqmx ref_xa)).
 Qed.
 
-Instance refines_dlsubseqmx (x : 'M[A]_(m1 + m2, n1 + n2)) a :
+Global Instance refines_dlsubseqmx (x : 'M[A]_(m1 + m2, n1 + n2)) a :
   refines x a -> refines (dlsubmx x) (dlsubseqmx m1 n1 a).
 Proof.
 by move=> ref_xa; apply: (refines_lsubseqmx (refines_dsubseqmx ref_xa)).
 Qed.
 
-Instance refines_drsubseqmx (x : 'M[A]_(m1 + m2, n1 + n2)) a :
+Global Instance refines_drsubseqmx (x : 'M[A]_(m1 + m2, n1 + n2)) a :
   refines x a -> refines (drsubmx x) (drsubseqmx m1 n1 a).
 Proof.
 by move=> ref_xa; apply: (refines_rsubseqmx (refines_dsubseqmx ref_xa)).
 Qed.
 
-Instance refines_row_seqmx (x : 'M[A]_(m,n1)) (y : 'M[A]_(m,n2)) a b :
+Global Instance refines_row_seqmx (x : 'M[A]_(m,n1)) (y : 'M[A]_(m,n2)) a b :
   refines x a -> refines y b -> refines (row_mx x y) (row_seqmx a b).
 Proof.
 move=> ref_xa ref_yb.
@@ -468,7 +468,7 @@ rewrite /row_seqmx zipwithE (nth_map ([::],[::])) ?nth_zip ?sizeE //= nth_cat.
 by rewrite !sizeE // mxE; case: splitP => j' ->; rewrite ?addKn refines_nth.
 Qed.
 
-Instance refines_col_seqmx (x : 'M[A]_(m1,n)) (y : 'M[A]_(m2,n)) a b :
+Global Instance refines_col_seqmx (x : 'M[A]_(m1,n)) (y : 'M[A]_(m2,n)) a b :
   refines x a -> refines y b -> refines (col_mx x y) (col_seqmx a b).
 Proof.
 move=> ref_xa ref_yb.
@@ -489,7 +489,7 @@ Section seqmx_block3.
 
 Variables m1 m2 n1 n2 : nat.
 
-Instance refines_block_seqmx (Aul : 'M_(m1,n1)) (Aur : 'M_(m1,n2)) (Adl : 'M_(m2,n1))
+Global Instance refines_block_seqmx (Aul : 'M_(m1,n1)) (Aur : 'M_(m1,n2)) (Adl : 'M_(m2,n1))
   (Adr : 'M[A]_(m2,n2)) ul ur dl dr : refines Aul ul -> refines Aur ur ->
   refines Adl dl -> refines Adr dr ->
   refines (block_mx Aul Aur Adl Adr) (block_seqmx ul ur dl dr).
@@ -498,10 +498,19 @@ move=> ref_ul ref_ur ref_dl ref_dr.
 exact: (refines_col_seqmx (refines_row_seqmx ref_ul ref_ur) (refines_row_seqmx ref_dl ref_dr)).
 Qed.
 
+Global Instance refines_cast_seqmx (x : 'M[A]_(m1,n1)) (e1 : m1 = m2) (e2 : n1 = n2) a :
+  refines x a -> refines (castmx (e1,e2) x) a | 100.
+Proof. by case: _ / e1; case: _ / e2. Qed.
+
 End seqmx_block3.
 
 End seqmx_raw_refinement.
 End seqmx.
+
+Typeclasses Opaque usubmx dsubmx lsubmx rsubmx.
+Typeclasses Opaque ulsubmx ursubmx dlsubmx drsubmx.
+Typeclasses Opaque row_mx col_mx block_mx castmx.
+
 
 Section seqmx_eqtype_refinement.
 
@@ -541,6 +550,8 @@ by move/(_ (Ordinal lt_im) (Ordinal lt_jn)); rewrite -2!(refines_nth_def _ _ x0)
 Qed.
 
 End seqmx_eqtype_refinement.
+
+Typeclasses Opaque matrix_of_fun const_mx map_mx.
 
 (* Commutative group related refinement properties *)
 Section seqmx_zmod_refinement.
@@ -622,7 +633,7 @@ case: p x y xa yb=> [|p] x y xa yb.
   rewrite thinmx0 mul0mx /mulseqmx sizeE.
   exact: refines_const_seqmx.
 rewrite /refines [x]refines_mxE [y]refines_mxE /= zmod_mx_of_seqmxE.
-rewrite !sizeE eqxx.
+rewrite size_map sizeE eqxx.
 have [_|/(all_nthP [::]) hN] := boolP (all _ _); last first.
   suff: False by []; apply: hN => i.
 by rewrite size_map => lt_i_sa; rewrite (nth_map [::]) // size_map size_trseqmx.
