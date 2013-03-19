@@ -143,6 +143,8 @@ rewrite /=; case:ifP=> // _.
 by rewrite Strassen_stepP // -mulmx_cast castmxK.
 Qed.
 
+Section Strassen_seqmx.
+
 Variable A : Type.
 
 Import Refinements.Op.
@@ -182,6 +184,7 @@ Definition Strassen_step_seqmx (p : positive) (a b : seqmatrix A) f : seqmatrix 
   let C11 := addseqmx X C11 in
   block_seqmx C11 C12 C21 C22.
 
+(*
 Lemma Strassen_step_seqmxP (p : positive) f fI :
   {morph (@seqmx_of_mx _ CR p p) : M N / f M N >-> fI p M N} ->
   {morph (@seqmx_of_mx _ CR (p + p) (p + p)) :
@@ -191,9 +194,10 @@ move=> Hf M N; rewrite /Strassen_step_seqmx !ulsubseqmxE !ursubseqmxE !dlsubseqm
 rewrite !drsubseqmxE -!subseqmxE -!addseqmxE -!subseqmxE -!Hf -!addseqmxE.
 by rewrite -!subseqmxE block_seqmxE.
 Qed.
+*)
 
 Fixpoint Strassen_seqmx (n : positive) :=
-  match n return let M := seqmatrix CR in M -> M -> M with
+  match n return let M := seqmatrix A in M -> M -> M with
   | xH => fun A B => mulseqmx n n A B
   | xO p => fun A B =>
     if p <= K then mulseqmx n n A B else
@@ -216,28 +220,56 @@ Fixpoint Strassen_seqmx (n : positive) :=
     block_seqmx C R12 R21 R22
   end.
 
-Lemma Strassen_seqmxP : forall (p : positive),
-  {morph (@seqmx_of_mx _ CR p p) : M N / Strassen M N >-> Strassen_seqmx p M N}.
+
+End Strassen_seqmx.
+
+Import Refinements.Op.
+
+Local Instance zero_R : zero R := 0%R.
+Local Instance opp_R : opp R := -%R.
+Local Instance add_R : add R := +%R.
+Local Instance sub_R : sub R := (fun x y => x - y)%R.
+Local Instance mul_R : mul R := *%R.
+
+Instance refines_Strassen_step_seqmx (p : positive) f fI :
+  (forall (x y : 'M_p) a b, refines x a -> refines y b -> refines (f x y) (fI p a b)) ->
+  forall (x y : 'M_(p+p)) a b, refines x a -> refines y b ->
+  refines (Strassen_step x y f) (Strassen_step_seqmx _ p a b fI).
 Proof.
-elim=> [p IHp /= M N|p IHp /= M N|M N /=].
-* case:ifP=> _; first by rewrite mulseqmxE.
-  rewrite cast_seqmx -block_seqmxE; congr block_seqmx.
-  + rewrite addseqmxE (Strassen_step_seqmxP _ _ (Strassen_seqmx)) // -mulseqmxE.
-    rewrite -!ulsubseqmxE -!ursubseqmxE -!dlsubseqmxE !cast_seqmx.
-    by rewrite addnn -NatTrec.doubleE.
-  + rewrite addseqmxE -!mulseqmxE.
-    rewrite -ulsubseqmxE -!ursubseqmxE -drsubseqmxE !cast_seqmx addnn.
-    by rewrite -NatTrec.doubleE.
-  + rewrite addseqmxE -!mulseqmxE.
-    rewrite -ulsubseqmxE -!dlsubseqmxE -drsubseqmxE !cast_seqmx.
-    by rewrite addnn -NatTrec.doubleE.
-  + rewrite addseqmxE -!mulseqmxE.
-    rewrite -dlsubseqmxE -!drsubseqmxE -ursubseqmxE !cast_seqmx.
-    by rewrite addnn -NatTrec.doubleE.
-* case:ifP=> _.
-    by rewrite mulseqmxE // NatTrec.doubleE -addnn.
-  by rewrite cast_seqmx (Strassen_step_seqmxP _ _ (Strassen_seqmx)) // !cast_seqmx.
-by rewrite mulseqmxE.
+move=> H x y a b ref_xa ref_yb.
+rewrite /Strassen_step /Strassen_step_seqmx.
+exact/refinesP.
+Qed.
+
+Instance refines_Strassen_seqmx (p : positive) (x y : 'M[R]_p) a b :
+  refines x a -> refines y b -> refines (Strassen x y) (Strassen_seqmx R p a b).
+Proof.
+elim: p x y a b => [p IHp|p IHp|] x y a b ref_xa ref_yb.
+* rewrite /Strassen /Strassen_seqmx.
+case: ifP=> _; first exact/refinesP.
+rewrite [nat_of_pos (p~0)]/= NatTrec.doubleE -addnn.
+apply refines_cast_seqmx.
+apply refines_block_seqmx.
+rewrite -/Strassen -/(Strassen_seqmx _).
+apply refines_addseqmx.
+apply refines_Strassen_step_seqmx.
+exact: IHp.
+by apply/refinesP.
+by apply/refinesP.
+by apply/refinesP.
+by apply/refinesP.
+by apply/refinesP.
+by apply/refinesP.
+* rewrite /Strassen /Strassen_seqmx.
+case: ifP=> _; first exact/refinesP.
+rewrite -/Strassen -/(Strassen_seqmx _).
+apply refines_cast_seqmx.
+apply refines_Strassen_step_seqmx.
+exact: IHp.
+exact/refinesP.
+exact/refinesP.
+*rewrite /Strassen /Strassen_seqmx.
+exact/refinesP.
 Qed.
 
 End Strassen.
