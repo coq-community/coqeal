@@ -200,6 +200,10 @@ Definition mulseqmx (n p : nat) (M N : seqmatrix) : seqmatrix :=
   if n is O then seqmx0 (size M) p else
   map (fun r => map (foldl2 (fun z x y => (x * y) + z) 0 r)%C N) M.
 
+
+Definition scaleseqmx (x : A) (M : seqmatrix) :=
+  map_seqmx (mul_op x) M.
+
 End seqmx_ops.
 
 (***********************************************************)
@@ -649,6 +653,16 @@ have ->: forall s1 s2 (t : A), (foldl2 F t s1 s2) =
   by rewrite /= IHs minSS big_nat_recl /F [(_ + t)%C]addrC addrA.
 rewrite add0r ?sizeE // big_mkord; apply: eq_bigr=> k _.
 by rewrite !mxE !refines_nth_def mxE.
+Qed.
+
+Global Instance refines_scaleseqmx m n (c : A) (x : 'M[A]_(m,n))
+  (a : seqmatrix A) : refines x a -> refines (c *: x) (scaleseqmx c a).
+Proof.
+move=> ref_xa.
+apply/refines_seqmxP=> [|i Hi|i j].
++ by rewrite sizeE.
++ by rewrite !sizeE.
+by rewrite mxE (nth_map [::]) ?(nth_map c) ?sizeE // refines_nth_def.
 Qed.
 
 End seqmx_ring_refinement.
