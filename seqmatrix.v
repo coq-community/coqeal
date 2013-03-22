@@ -1,7 +1,7 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-Require Import path choice fintype tuple finset ssralg bigop matrix mxalgebra.
+Require Import path choice fintype tuple finset fingroup perm ssralg bigop matrix mxalgebra.
 Require Import refinements.
 
 (******************************************************************************)
@@ -204,6 +204,19 @@ Definition mulseqmx (n p : nat) (M N : seqmatrix) : seqmatrix :=
 Definition scaleseqmx (x : A) (M : seqmatrix) :=
   map_seqmx (mul_op x) M.
 
+Definition scalar_seqmx (n : nat) x :=
+  @mkseqmx_ord n n (fun i j => if i == j then x else 0%C).
+
+Definition swap (T : Type) m1 m2 (x : T) (s : seq T) :=
+  let r := set_nth x s m1 (nth x s m2) in
+  set_nth x r m2 (nth x s m1).
+
+Definition xrowseqmx i j (M : seqmatrix) : seqmatrix :=
+  swap i j [::] M.
+
+Definition xcolseqmx i j (M : seqmatrix) : seqmatrix :=
+  [seq swap i j 0%C s | s <- M].
+
 End seqmx_ops.
 
 (***********************************************************)
@@ -292,8 +305,18 @@ rewrite (omap_funoptE (fun ij => x ij.1 ij.2)) => [|g g' eq_gg'|[i j]].
 by rewrite (nth_map [::]) ?eq_sz //= (nth_map (x i j)) ?eq_row_sz ?eq_nth.
 Qed.
 
-Global Instance refines_mkseqmx_ord m n tt (f : 'I_m -> 'I_n -> A) :
+Global Instance refines_mkseqmx_ord_tt m n (f : 'I_m -> 'I_n -> A) :
   refines (matrix_of_fun tt f) (mkseqmx_ord f).
+Proof.
+apply/refines_seqmxP=> [|i lt_im|i j].
++ by rewrite size_map ord_enum_eqE size_enum_ord.
++ rewrite (nth_map (Ordinal lt_im)) ?ord_enum_eqE ?size_enum_ord // size_map.
+  by rewrite size_enum_ord.
+by rewrite !mxE (nth_map i) ?sizeE // (nth_map j) ?sizeE // !nth_ord_enum.
+Qed.
+
+Global Instance refines_mkseqmx_ord_mx_key m n (f : 'I_m -> 'I_n -> A) :
+  refines (matrix_of_fun matrix_key f) (mkseqmx_ord f).
 Proof.
 apply/refines_seqmxP=> [|i lt_im|i j].
 + by rewrite size_map ord_enum_eqE size_enum_ord.
@@ -383,6 +406,26 @@ rewrite /= (omap_funoptE (fun ij => x)) => [|g g' eq_gg'|a].
 + by congr Some; apply/matrixP=> i j; rewrite !mxE.
 + by apply/matrixP; move=> i j; rewrite !mxE eq_gg'.
 by rewrite (nth_map [::]) /= ?(nth_map x) ?(nth_nseq,ltn_ord,size_nseq).
+Qed.
+
+Global Instance refines_xrowseqmx m n (x : 'M[A]_(m,n)) (a : seqmatrix) i j :
+  refines x a -> refines (xrow i j x) (xrowseqmx i j a).
+Proof.
+move=> ref_xa; apply/refines_seqmxP=> [|k Hk|k l].
++ by rewrite !size_set_nth !(elimT maxn_idPr) ?sizeE.
++ rewrite nth_set_nth /= nth_set_nth /=.
+  case: ifP=> _; first by rewrite !sizeE.
+  by case: ifP=> _; rewrite !sizeE.
+rewrite !mxE nth_set_nth /= nth_set_nth /=.
+have [eq_kj | neq_kj] := altP (k =P j);
+have [eq_ki | neq_ki] := altP (k =P i).
++ by rewrite -eq_kj eq_ki eqxx tperm1 perm1 refines_nth.
++ by rewrite eq_kj eqxx tpermR refines_nth.
++ rewrite /eqtype.eq_op /= in neq_kj.
++ by rewrite (negbTE neq_kj) eq_ki eqxx tpermL refines_nth.
+rewrite /eqtype.eq_op /= in neq_kj neq_ki.
+rewrite (negbTE neq_kj) (negbTE neq_ki).
+by rewrite tpermD 1?eq_sym // refines_nth.
 Qed.
 
 Section seqmx_block.
@@ -614,6 +657,27 @@ Proof.
 by rewrite /sub_op /subseqmx; apply/refinesP/matrixP=> i j; rewrite !mxE.
 Qed.
 
+(* We use zero as a default element here, but we could relax the zmodType constraint *)
+Global Instance refines_xcolseqmx m n (x : 'M[A]_(m,n)) (a : seqmatrix A) i j :
+  refines x a -> refines (xcol i j x) (xcolseqmx i j a).
+Proof.
+move=> ref_xa; apply/refines_seqmxP=> [|k Hk|k l].
++ by rewrite size_map sizeE.
++ by rewrite (nth_map [::]) ?sizeE // !size_set_nth !(elimT maxn_idPr) ?sizeE.
+rewrite (nth_map [::]) ?sizeE //.
+rewrite /swap (set_nth_default 0%C) ?size_set_nth ?(elimT maxn_idPr) ?sizeE //.
+rewrite nth_set_nth /= nth_set_nth /= !mxE.
+have [eq_lj | neq_lj] := altP (l =P j);
+have [eq_li | neq_li] := altP (l =P i).
++ by rewrite -eq_lj eq_li eqxx tperm1 perm1 refines_nth_def.
++ by rewrite eq_lj eqxx tpermR refines_nth_def.
++ rewrite /eqtype.eq_op /= in neq_lj.
++ by rewrite (negbTE neq_lj) eq_li eqxx tpermL refines_nth_def.
+rewrite /eqtype.eq_op /= in neq_lj neq_li.
+rewrite (negbTE neq_lj) (negbTE neq_li).
+by rewrite tpermD 1?eq_sym // refines_nth_def.
+Qed.
+
 End seqmx_zmod_refinement.
 
 (* Ring related refinement properties *)
@@ -663,6 +727,13 @@ apply/refines_seqmxP=> [|i Hi|i j].
 + by rewrite sizeE.
 + by rewrite !sizeE.
 by rewrite mxE (nth_map [::]) ?(nth_map c) ?sizeE // refines_nth_def.
+Qed.
+
+Global Instance refines_scalar_seqmx n (x : A) :
+  refines (@scalar_mx _ n x) (scalar_seqmx n x).
+Proof.
+apply/refinesP/matrixP=> i j; rewrite !mxE.
+by have [] := altP (i =P j).
 Qed.
 
 End seqmx_ring_refinement.
