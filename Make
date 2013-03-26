@@ -9,6 +9,7 @@ binint_direct.v
 invmx.v
 karatsuba.v
 minor.v
+binetcauchy.v
 refinements.v
 rational.v
 seqpoly.v
