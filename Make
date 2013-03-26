@@ -1,4 +1,7 @@
 -R . CoqEAL
+ssrcomplements.v
+mxstructure.v
+dvdring.v
 bareiss.v
 binnat.v
 binint.v
