@@ -217,6 +217,9 @@ Definition xrowseqmx i j (M : seqmatrix) : seqmatrix :=
 Definition xcolseqmx i j (M : seqmatrix) : seqmatrix :=
   [seq swap i j 0%C s | s <- M].
 
+Definition row_perm_seqmx m (s : nat -> nat) (M : seqmatrix) : seqmatrix :=
+  mkseq (fun i => nth [::] M (s i)) m.
+
 End seqmx_ops.
 
 (***********************************************************)
