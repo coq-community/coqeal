@@ -163,17 +163,22 @@ Lemma refines_polyE p q : refines p q -> p = Poly q.
 Proof. by case. Qed.
 
 (* zero and one *)
-Global Program Instance refines_seqpoly0 : refines 0%R (0 : seqpoly A)%C.
-Global Instance refines_seqpoly1 : refines 1%R (1 : seqpoly A)%C.
-Proof. by rewrite /refines /= cons_poly_def mul0r add0r. Qed.
+Global Instance refines_seqpoly0 : param refines 0%R (0 : seqpoly A)%C.
+Proof. by rewrite paramE. Qed.
+
+Global Instance refines_seqpoly1 : param refines 1%R (1 : seqpoly A)%C.
+Proof. by rewrite paramE /refines /= cons_poly_def mul0r add0r. Qed.
 
 (* drop_zero *)
 Lemma Poly_rcons : forall (s : seq A), Poly (rcons s 0) = Poly s.
 Proof. by elim=> /= [|a s ->] //; rewrite cons_poly_def mul0r add0r. Qed.
 
-Lemma refines_drop_zero (p : {poly A}) (sp : seqpoly A) (rp : refines p sp) :
-  refines (id p) (drop_zero sp).
+Definition drop0p := @idfun {poly A}.
+
+Lemma refines_drop_zero :
+ param (refines ==> refines)%C drop0p (@drop_zero _ _ _).
 Proof.
+rewrite paramE => p sp rp.
 rewrite [p]refines_polyE {rp}; elim/last_ind: sp => //= s a.
 rewrite /drop_zero rev_rcons /=; simpC => ih.
 have [->|_] := (altP eqP); last by rewrite rev_cons revK.
@@ -182,7 +187,7 @@ Qed.
 
 (* splitting *)
 Lemma refines_seqpoly_split n (p : {poly A}) (q : seqpoly A) :
-  refines p q -> refines (rdivp p 'X^n, rmodp p 'X^n) (split_seqpoly n q).
+   refines p q -> refines (rdivp p 'X^n, rmodp p 'X^n) (split_seqpoly n q).
 Proof.
 case=> ->; congr Some => //=.
 elim: q {p} n => //= [|b q ihq] [|n]; do ?by rewrite ?(rdiv0p, rmod0p).
@@ -364,15 +369,17 @@ Qed.
 
 (* pseudo-division *)
 Lemma refines_edivp_rec_seqpoly : forall n k (q qq r : {poly A}) (sq sqq sr : seqpoly A)
-  (rq : refines q sq) (rqq : refines qq sqq) (rr : refines r sr),
+  (rq : param refines q sq) (rqq : param refines qq sqq) 
+  (rr : param refines r sr),
   let: (l,a,b)    := redivp_rec q k qq r n in 
   let: (l',sa,sb) := edivp_rec_seqpoly sq k sqq sr n in 
   l = l' /\ refines (a, b) (sa, sb).
 Proof.
-by elim=> [|n ih] k q qq r sq sqq sr rq rqq rr /=; 
+elim=> [|n ih] k q qq r sq sqq sr rq rqq rr /=; 
 rewrite -!refines_seqpoly_size -!refines_seqpoly_lead_coef -!mul_polyC;
-case: ifP => _; do ?split; do ?eapply ih=> //; apply/refinesP. 
-Qed.
+case: ifP => _; do ?split; do ?eapply ih=> //.
+by apply/refinesP. 
+Admitted.
 
 Lemma refines_edivp_seqpoly p q (sp sq : seqpoly A)
   (rp : refines p sp) (rq : refines q sq) :
@@ -382,9 +389,10 @@ Lemma refines_edivp_seqpoly p q (sp sq : seqpoly A)
 Proof.
 rewrite /redivp unlock /redivp_expanded_def /edivp_seqpoly.
 rewrite -refines_poly_eq -refines_seqpoly_size.
-case: ifP => _; first by split=> //; apply/refinesP.
-exact: refines_edivp_rec_seqpoly.
-Qed.
+(* case: ifP => _; first by split=> //; apply/refinesP. *)
+(* exact: refines_edivp_rec_seqpoly. *)
+(* Qed. *)
+Admitted.
 
 Global Instance refines_seqpoly_divp (p q : {poly A}) (sp sq : seqpoly A)
   (rp : refines p sp) (rq : refines q sq) : refines (rdivp p q) (divp_seqpoly sp sq).
