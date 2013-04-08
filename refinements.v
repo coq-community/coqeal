@@ -375,6 +375,9 @@ Global Instance id_cast A : cast_class A A := id.
 Definition subr {R : zmodType} (x y : R) := x - y.
 Definition divr {R : unitRingType} (x y : R) := x / y.
 
+Class dvd B := dvd_op : B -> B -> bool.
+Local Notation "x %| y" := (dvd_op x y) : computable_scope.
+
 End Op.
 
 End Refinements.
@@ -400,6 +403,7 @@ Notation "x <= y" := (leq_op x y)   : computable_scope.
 Notation "x > y"  := (lt_op y x)  (only parsing) : computable_scope.
 Notation "x >= y" := (leq_op y x) (only parsing) : computable_scope.
 Notation cast := (@cast_op _).
+Notation "x %| y" := (dvd_op x y)   : computable_scope.
 
 Ltac simpC :=
   do ?[ rewrite -[0%C]/0%R | rewrite -[1%C]/1%R
