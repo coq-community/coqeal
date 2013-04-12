@@ -14,6 +14,8 @@ refinements.v
 rational.v
 seqpoly.v
 seqmatrix.v
+boolF2.v
+cperm.v
 strassen.v
 OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
 COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"
