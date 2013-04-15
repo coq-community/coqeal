@@ -171,6 +171,160 @@ Qed.
 End bareiss_poly.
 End bareiss_correctness.
 
+Section poly_op.
+
+Variable R : comRingType.
+
+Implicit Types p q : {poly R}.
+
+Definition prptnl n p := \poly_(j < size p - n) p`_(j + n).
+
+Lemma prptnl0p p : prptnl 0 p = p.
+Proof. 
+rewrite /prptnl subn0 -[RHS]coefK.
+apply/polyP=> i.
+by rewrite !coef_poly addn0.
+Qed.
+
+Lemma prptnlp0 n : prptnl n 0 = 0.
+Proof. 
+rewrite /prptnl size_poly0 sub0n.
+apply/polyP=> i.
+by rewrite coef_poly /= coef0.
+Qed.
+
+Lemma prptnl_oversize n p : size p <= n -> prptnl n p = 0.
+Proof.
+move=> h; apply/polyP=> i.
+by rewrite coef_poly coef0 ltn_subRL leqNgt ltnS -[size p]addn0 
+           (leq_add h (leq0n _)).
+Qed.
+
+Lemma prptnl_add n p q : prptnl n (p + q) = prptnl n p + prptnl n q.
+Proof.
+apply/polyP => i; symmetry.
+rewrite /prptnl coefD !coef_poly coefD !ltn_subRL addnC.
+have [H1|H1] := ltnP.
+  have [_|H2] := ltnP; first by rewrite -coefD; have [|/leq_sizeP ->] := ltnP.
+  move/leq_sizeP: (H2) => -> //.
+  by rewrite (size_addl (leq_ltn_trans H2 H1)) H1.
+move/leq_sizeP: (H1) => -> //.
+have [H2|/leq_sizeP -> //] := ltnP; last by rewrite addr0 if_same.
+by rewrite [p + q]addrC (size_addl (leq_ltn_trans H1 H2)) H2.
+Qed.
+
+Lemma prptnlX n p : prptnl n p = prptnl n.+1 (p * 'X).
+Proof.
+have [/eqP ->|Hpn0] := (boolP (p == 0)); first by rewrite mul0r !prptnlp0.
+apply/polyP => i.
+by rewrite !coef_poly size_mulX ?coefMX // subnS subSKn addnS.
+Qed.
+
+Lemma prptnlXn n k p : prptnl n p = prptnl (n + k) (p * 'X^k).
+Proof.
+elim: k => [|k ih]; first by rewrite addn0 expr0 mulr1.
+by rewrite addnS exprS mulrCA mulrC -prptnlX.
+Qed.
+
+Lemma size_prptnl n p : size (prptnl n p) = (size p - n)%N.
+Proof.
+have [/eqP ->|Hpn0] := (boolP (p == 0)); first by rewrite prptnlp0 size_poly0 sub0n.
+have [H|] := (ltnP n (size p)).
+  rewrite size_poly_eq //.
+  suff -> : ((size p - n).-1 + n)%N = (size p).-1 by rewrite lead_coef_eq0.
+  case: (size p) H => // m; rewrite ltnS => H.
+  by rewrite subSKn subnK.
+rewrite /prptnl -subn_eq0 => /eqP ->.
+rewrite -[0%N](@size_poly0 R).
+congr size; congr polyseq.
+apply/polyP => i.
+by rewrite coef_poly size_poly0 coef0.
+Qed.
+
+Lemma prptnlS n p : prptnl n.+1 p = prptnl 1 (prptnl n p).
+Proof.
+apply/polyP=> i.
+rewrite !coef_poly [(i + 1)%N]addnC -ltn_subRL subnS !subn1 size_prptnl add1n.
+by rewrite addSnnS; case: ltnP.
+Qed.
+
+Lemma mulXn_prptnl : forall n p q, p * 'X^n = q -> p = prptnl n q.
+Proof.
+elim=> [p q|n ih p q h]; first by rewrite expr0 mulr1 prptnl0p => ->.
+rewrite prptnlS -(ih (p * 'X)); first by rewrite -prptnlX prptnl0p.
+by rewrite -mulrA -exprS.
+Qed.
+
+(* Key property - maybe it should be expressed with rdivp... *)
+Lemma test n p q r : p * 'X^n = q + r -> size r <= n -> p = prptnl n q.
+Proof.
+move=> h_eq sr.
+by rewrite (mulXn_prptnl h_eq) prptnl_add (prptnl_oversize sr) addr0.
+Qed.
+
+Lemma prptnlK m n p : prptnl m (prptnl n p) = prptnl (m + n) p.
+Proof.
+apply/polyP => i.
+rewrite !coef_poly {1}addnC -ltn_subRL {1}[(m + n)%N]addnC subnDA size_prptnl.
+by rewrite addnA; case: ltnP.
+Qed.
+
+Lemma prptnl_mulC n d p : prptnl n (d%:P * p) = d%:P * prptnl n p.
+Proof.
+elim/poly_ind: p n => [n|p c ih [|n]]; first by rewrite mulr0 !prptnlp0 mulr0.
+  by rewrite !prptnl0p.
+rewrite mulrDr !prptnl_add mulrDr mulrA -!prptnlX ih -polyC_mul.
+rewrite ![prptnl n.+1 _%:P]prptnl_oversize ?mulr0 ?addr0 // size_polyC.
+  by case: (c == 0).
+by case: (d * c == 0).
+Qed.
+
+Lemma prptnl_mul n p q : prptnl (size p + n) (p * q) = 
+                         prptnl (size p) (p * prptnl n q).
+Proof.
+elim/poly_ind: p q n=> [|p c ih] q n. 
+  by rewrite size_poly0 add0n !mul0r !prptnlp0.
+have [/eqP ->|Hpn0] := (boolP (p == 0)). 
+  by rewrite mul0r add0r !prptnl_mulC prptnlK.
+rewrite !mulrDl !prptnl_add size_addl size_mulX //; last first.
+  rewrite size_polyC ltnS.
+  by case: (c == 0) => //=; rewrite lt0n size_eq0 -polyseq0.
+rewrite addSn mulrC mulrA -prptnlX mulrC ih // -mulrA ['X * _]mulrC mulrA.
+by rewrite -prptnlX -prptnl_mulC prptnlK addSn.
+Qed.
+
+
+Definition prptnl_mul_op (n : nat) p q := prptnl n (p * q).
+
+Lemma prptnl_mul_opP : forall n p q, prptnl n (p * q) = prptnl_mul_op n p q.
+Proof.
+admit.
+Qed.
+
+Definition prptnl_scalemx m n k x (A : 'M[{poly R}]_(m,n)) := 
+  \matrix_(i, j) (prptnl_mul_op k x (A i j)).
+
+Lemma prptnl_scalemxP m n k x (A : 'M[{poly R}]_(m,n)) : 
+  map_mx (prptnl k) (x *: A) = prptnl_scalemx k x A.
+Proof.
+apply/matrixP => i j.
+by rewrite !mxE prptnl_mul_opP.
+Qed.
+
+Definition prptnl_row_col_mulmx 
+  {m} k (A : 'rV_m) (B : 'cV_m) :=
+  \matrix_(i,j) (prptnl_mul_op k (B i 0) (A 0 j)).
+
+Lemma prptnl_row_col_mulmxP m k (A : 'rV_m) (B : 'cV_m) : 
+  map_mx (prptnl k) (B *m A) = prptnl_row_col_mulmx k A B. 
+Proof.
+apply/matrixP => i j.
+rewrite !mxE.
+by rewrite -prptnl_mul_opP big_ord1.
+Qed.
+
+
+
 (* (* Test computations *) *)
 
 (* (* *)
