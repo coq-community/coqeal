@@ -372,15 +372,15 @@ Local Notation "x <= y" := (leq_op x y) : computable_scope.
 Class cast_class A B := cast_op : A -> B.
 Global Instance id_cast A : cast_class A A := id.
 
-Definition subr {R : zmodType} (x y : R) := x - y.
-Definition divr {R : unitRingType} (x y : R) := x / y.
-
 Class dvd B := dvd_op : B -> B -> bool.
 Local Notation "x %| y" := (dvd_op x y) : computable_scope.
 
 End Op.
 
 End Refinements.
+
+Definition subr {R : zmodType} (x y : R) := x - y.
+Definition divr {R : unitRingType} (x y : R) := x / y.
 
 Import Refinements.Op.
 

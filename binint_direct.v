@@ -135,6 +135,9 @@ Global Program Instance refines_int_lt (x y : int) (x' y' : Z)
   (rx : refines x x') (ry : refines y y') : refines (x < y) (x' < y')%C.
 Next Obligation. Admitted.
 
+Global Instance refines_int_val (x : int) : refines x (Z_of_int x) | 100.
+Proof. by rewrite /refines /spec /= -Z_of_intK. Qed.
+
 End binint.
 
 (* (* Some tests *) *)

@@ -298,7 +298,7 @@ Global Instance refines_oppZ :
 Proof. exact: param_trans. Qed.
 
 Global Instance refines_subZ :
-  param (refines ==> refines ==> refines)%C Op.subr Op.sub_op.
+  param (refines ==> refines ==> refines)%C subr Op.sub_op.
 Proof. exact: param_trans. Qed.
 
 Global Instance refines_compZ :
