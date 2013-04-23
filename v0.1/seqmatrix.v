@@ -295,6 +295,7 @@ Qed.
 
 End SeqmxOp.
 
+
 Section SeqmxOp2.
 
 Definition const_seqmx m n (x : CR) := nseq m (nseq n x).

@@ -16,7 +16,6 @@ seqpoly.v
 seqmatrix.v
 boolF2.v
 cperm.v
-bigQrat.v
 strassen.v
-OTHERFLAGS = "-I $(SSRSRC) -I $(SSRLIB)"
+OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
 COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"

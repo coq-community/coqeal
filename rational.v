@@ -124,6 +124,7 @@ rewrite paramE => n ? [<-].
 by rewrite /refines /cast /embedQ /= /Qint_to_rat /= mulr1.
 Qed.
 
+
 Instance refines_addq :
   param (refines ==> refines ==> refines) +%R +%C.
 Proof.
@@ -249,23 +250,13 @@ Require Import binnat binint.
 Lemma red100 : 100 = (10 * 10)%nat.
 Proof. done. Qed.
 
-(*
 Lemma foo (P : bool -> Type) :
-  P true -> P (400%:~R / 400%:~R == 1 :> rat).
-Time rewrite [X in _ -> P X]refines_boolE.
-fail.
-*)
-
-Lemma foo (P : bool -> Type) :
-  P false -> P (3%:~R / (1%:~R / 6%:~R + 4%:~R / 8%:~R)
-             + 2%:~R / (3%:~R / 4%:~R + 4%:~R / 6%:~R) == 1 :> rat).
+  P false -> P (34%:~R / (19%:~R / 67%:~R + 45%:~R / 8%:~R)
+             + 23%:~R / (34%:~R / 46%:~R + 46%:~R / 6%:~R) == 1 :> rat).
 Proof.
-Set Typeclasses Debug.
 rewrite [X in _ -> P X]refines_boolE.
 (* TODO : deal with tons of successors :D *)
 by vm_compute.
 Qed.
-
-Print Assumptions foo.
 
 End tests.
