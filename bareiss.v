@@ -323,7 +323,7 @@ rewrite !mxE.
 by rewrite -prptnl_mul_opP big_ord1.
 Qed.
 
-
+End poly_op.
 
 (* (* Test computations *) *)
 

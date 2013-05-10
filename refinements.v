@@ -114,7 +114,7 @@ Global Instance param_apply A B C D
  (R : A -> B -> Prop) (R' : C -> D -> Prop)
  (a :  A) (b : B) (c : A -> C) (d : B -> D):
   param (R ==> R') c d ->
-  getparam R a b -> param R' (c a) (d b) | 1.
+  param R a b -> param R' (c a) (d b) | 1.
 Proof. by rewrite !paramE => rcd rab; apply rcd. Qed.
 
 Global Instance param_id (T T' : Type) (R : T -> T' -> Prop) :
@@ -162,7 +162,12 @@ Lemma param_trans A B C
   (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop)
   (a : A) (b : B) (c : C) :
   composable rAB rBC rAC ->
-  getparam rAB a b -> getparam rBC b c -> param rAC a c.
+ (* This is wrong: it may cause an exponential behavior.
+    Ideally, the next argument should come first, but it triggets
+    a loop in the proof search and I can't figure out why 
+    -- Cyril *)
+  param rAB a b ->
+  getparam rBC b c -> param rAC a c.
 Proof.
 by rewrite !paramE => cABC rab rbc; apply: composable_trans rab rbc.
 Qed.
@@ -278,16 +283,16 @@ Proof. Admitted.
 
 End Parametricity.
 
-Lemma param_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
+Lemma getparam_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
       (c : A -> C) (d : B -> D):
         (forall (a :  A) (b : B), param R a b -> getparam R' (c a) (d b)) ->
         getparam (R ==> R') c d.
 Proof. by rewrite !paramE; apply. Qed.
 
 Global Hint Extern 2 (getparam (_ ==> _) _ _)
- => eapply @param_abstr=>??? : typeclass_instances.
+ => eapply @getparam_abstr=>??? : typeclass_instances.
 
-Lemma param_abstr2 A B A' B' A'' B'' 
+Lemma getparam_abstr2 A B A' B' A'' B'' 
       (R : A -> B -> Prop) (R' : A' -> B' -> Prop) (R'' : A'' -> B'' -> Prop)
       (f : A -> A' -> A'' ) (g : B -> B' -> B''):
         (forall (a : A) (b : B) (a' : A') (b' : B'),
@@ -296,7 +301,7 @@ Lemma param_abstr2 A B A' B' A'' B''
 Proof. by tc. Qed.
 
 Global Hint Extern 1 (getparam (_ ==> _ ==> _) _ _)
- => eapply @param_abstr2=> ??? ??? : typeclass_instances.
+ => eapply @getparam_abstr2=> ??? ??? : typeclass_instances.
 
 Hint Extern 1 (@refinement _ (_ * _)) =>
   eapply pair_refinement : typeclass_instances.
@@ -310,6 +315,21 @@ Existing Instance param_fst.
 Existing Instance param_snd.
 
 End Parametricity.
+
+Lemma param_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
+      (c : A -> C) (d : B -> D):
+        (forall (a :  A) (b : B), param R a b -> param R' (c a) (d b)) ->
+        param (R ==> R') c d.
+Proof. by rewrite !paramE; apply. Qed.
+
+Lemma param_abstr2 A B A' B' A'' B'' 
+      (R : A -> B -> Prop) (R' : A' -> B' -> Prop) (R'' : A'' -> B'' -> Prop)
+      (f : A -> A' -> A'' ) (g : B -> B' -> B''):
+        (forall (a : A)   (b : B), param R a b ->
+         forall (a' : A') (b' : B'), param R' a' b' ->
+        param R'' (f a a') (g b b')) ->
+        param (R ==> R' ==> R'') f g.
+Proof. by move=> H; do ?[eapply param_abstr => *]; apply: H. Qed.
 
 Definition unfold A := @id A.
 Typeclasses Opaque unfold.

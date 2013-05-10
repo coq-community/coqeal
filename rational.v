@@ -247,16 +247,16 @@ Section tests.
 
 Require Import binnat binint.
 
-Lemma red100 : 100 = (10 * 10)%nat.
-Proof. done. Qed.
-
 Lemma foo (P : bool -> Type) :
-  P false -> P (34%:~R / (19%:~R / 67%:~R + 45%:~R / 8%:~R)
-             + 23%:~R / (34%:~R / 46%:~R + 46%:~R / 6%:~R) == 1 :> rat).
+  P true ->
+  P ((11*100+1)%N%:~R / (44*100)%N%:~R + (22*100-1)%N%:~R/(44*100)%N%:~R
+     == 3%:~R / 4%:~R :> rat).
 Proof.
-rewrite [X in _ -> P X]refines_boolE.
-(* TODO : deal with tons of successors :D *)
-by vm_compute.
+Time by vm_compute. (* 20s *)
+Restart.
+Time by rewrite [X in _ -> P X]refines_boolE. (* 1s *)
+(* TODO : deal with tons of successors =>
+   only possible through a plugin imo -- Cyril*)
 Qed.
 
 End tests.

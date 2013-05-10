@@ -17,11 +17,6 @@ Unset Printing Implicit Defensive.
 
 Import Refinements.Op.
 
-Local Instance param_refines_refines A B C D (rAB : refinement A B) (R : C -> D -> Prop)
-         (c : A -> C) (d : B -> D) :
-  forall a b, refines a b -> param (refines ==> R)%C c d -> param R (c a) (d b) | 2.
-Proof. by move=> a b rab; rewrite !paramE; apply. Qed.
-
 (* Notation for when we export this file *)
 Notation N := N.
 Notation positive := positive.
@@ -133,8 +128,7 @@ Qed.
 Definition succN (n : N) : N := unfold (1 + n)%C.
 Global Instance refines_natS : param (refines ==> refines) S succN.
 Proof.
-apply get_param; apply Parametricity.param_abstr => m n rmn.
-by rewrite -add1n paramE; exact/refinesP.
+by apply param_abstr => m n rmn; rewrite -add1n paramE; exact/refinesP.
 Qed.
 
 (* TODO: Finish! *)
@@ -170,7 +164,8 @@ Global Instance leq_N : leq N := N.leb.
 Global Instance refines_nat_leq :
   param (refines ==> refines ==> refines)%C ssrnat.leq leq_op.
 Proof.
-rewrite paramE => x x' rx y y' ry; congr Some; rewrite /leq_op /leq_N.
+apply param_abstr2 => x x' rx y y' ry.
+rewrite paramE; congr Some; rewrite /leq_op /leq_N.
 case: (N.leb_spec0 _ _) => [/N.sub_0_le|] /= h.
   by apply/eqP; rewrite [_ - _]refines_natE  [(_ - _)%C]h.
 apply/negP => /eqP; rewrite [_ - _]refines_natE [0]refines_natE.
@@ -181,7 +176,7 @@ Global Instance lt_N : lt N := N.ltb.
 Global Instance refines_nat_lt :
   param (refines ==> refines ==> refines)%C ltn lt_op.
 Proof.
-rewrite paramE => x x' rx y y' ry; rewrite /refines.
+apply param_abstr2 => x x' rx y y' ry; rewrite paramE /refines.
 by rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge [y <= x]refines_boolE.
 Qed.
 
@@ -189,7 +184,7 @@ Global Instance cast_positive_N : cast_class positive N := Npos.
 Global Instance refines_cast_positive_N :
   param (refines ==> refines)%C val (cast : positive -> N).
 Proof.
-rewrite paramE => x x' rx /=.
+apply param_abstr => x x' rx /=; rewrite paramE.
 congr Some; rewrite /cast //=.
 Admitted.
 
@@ -198,6 +193,12 @@ Global Instance cast_N_positive : cast_class N positive :=
 Global Instance refines_cast_N_positive :
   param (refines ==> refines)%C (insubd pos1) (cast : N -> positive).
 Proof. Admitted.
+
+(* Fixpoint is_closed n := (if n is n.+1 then is_closed n else 0 = 0)%N. *)
+
+(* Lemma refines_closed_nat n : *)
+(*   is_closed n -> param refines n (implem n). *)
+(* Proof. by move=> _; rewrite paramE /refines implemK. Qed. *)
 
 End binnat.
 
