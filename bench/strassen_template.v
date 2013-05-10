@@ -11,8 +11,9 @@ Unset Printing Implicit Defensive.
 
 Open Scope int31_scope.
 
-Definition n := #SAMPLE%N.
-Definition p := #SAMPLE%positive.
+Definition n := #MXSIZE%N.
+Definition p := #MXSIZE%positive.
+Definition K := #CROSSOVER%positive.
 
 Definition S1 := random_mx n n.
 Definition S2 := random_mx_rec S1.2 [::] n n.
@@ -22,5 +23,5 @@ Definition N := S2.1.
 Eval native_compute in ignore M.
 Eval native_compute in ignore N.
 
-Definition P := Strassen_seqmx int p M N.
+Definition P := Strassen_seqmx K int p M N.
 Time Eval native_compute in ignore P.
