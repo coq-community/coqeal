@@ -11,7 +11,7 @@ Unset Printing Implicit Defensive.
 
 Open Scope int31_scope.
 
-Definition n := #SAMPLE%N.
+Definition n := #MXSIZE%N.
 
 Definition S1 := random_mx n n.
 Definition S2 := random_mx_rec S1.2 [::] n n.
