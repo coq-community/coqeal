@@ -89,7 +89,7 @@ by rewrite scalerN subrr det_ublock det_scalar1 addrC mulNmx.
 Qed.
 
 (* The key lemma of our proof: after simplification, all the k-minors (involving *)
-(* 1st line/column) can be divided by (M 0 0)^k-1 *)
+(* 1st line/column) can be divided by (M 0 0)^k *)
 Lemma key_lemma_sub m n k (M : 'M[R]_(1 + m,1 + n))
   (f : 'I_k -> 'I_m) (g : 'I_k -> 'I_n) :
   M 0 0 * (minor f g (M 0 0 *: drsubmx M - dlsubmx M *m ursubmx M)) =
@@ -111,6 +111,59 @@ Variable R : comRingType.
 Lemma monic_lreg (p : {poly R}) : p \is monic -> GRing.lreg p.
 Proof. by rewrite monicE=> /eqP h; apply/lreg_lead; rewrite h; apply/lreg1. Qed.
 
+Lemma bareiss_invariants : forall m a (M : 'M[{poly R}]_(1 + m)),
+  a \is monic ->
+ (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
+ (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
+  let d   := M 0 0     in let l   := ursubmx M in 
+  let c   := dlsubmx M in let N   := drsubmx M in
+  let M'  := d *: N - c *m l in let M'' := map_mx (fun x => rdivp x a) M' in
+  [/\ M 0 0 \is monic,
+      M' = a *: M'', (* This is not really an invariant *)
+      forall p (h h' : p < m), pminor h h' M'' \is monic &
+      forall k (f g : 'I_k.+1 -> 'I_m), rdvdp (d ^+ k) (minor f g M'') ].
+Proof.
+move=> m a M am hpm hdvd /=.
+set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M'.
+have hM' : M' = a *: M''.
+  pose f := fun m (i : 'I_m) (x : 'I_2) => if x == 0 then 0 else (lift 0 i).
+  apply/matrixP => i j.
+  rewrite !mxE big_ord1 !rshift1 [a * _]mulrC rdivpK ?(eqP am,expr1n,mulr1) //.
+  move: (hdvd 1%nat (f _ i) (f _ j)).
+  by rewrite !minor2 /f /= expr1 !mxE !lshift0 !rshift1.
+have d_monic : d \is monic.
+  have -> // : d = pminor (ltn0Sn m) (ltn0Sn m) M.
+  have h : widen_ord (ltn0Sn m) =1 (fun _ => 0)
+    by move=> x; apply/ord_inj; rewrite [x]ord1.
+  by rewrite /pminor (minor_eq h h) minor1.
+split=> // [p h h'|k f g].
+  rewrite -(@monicMl _ (a ^+ p.+1)) ?monic_exp // -detZ -submatrix_scale -hM'.
+  rewrite -(monicMl _ d_monic) key_lemma_sub monicMr ?monic_exp //.
+  by rewrite (minor_eq (lift_pred_widen_ord h) (lift_pred_widen_ord h')) hpm.
+case/rdvdpP: (hdvd _ (lift_pred f) (lift_pred g)); rewrite ?monic_exp // => x hx.
+apply/rdvdpP; rewrite ?monic_exp //; exists x.
+apply/(@lregX _ _ k.+1 (monic_lreg am))/(monic_lreg d_monic).
+rewrite -detZ -submatrix_scale -hM' key_lemma_sub mulrA [x * _]mulrC mulrACA.
+by rewrite -exprS [_ * x]mulrC -hx.
+Qed.
+
+Lemma bareiss_recE2 : forall m a (M : 'M[{poly R}]_(1 + m)),
+  a \is monic ->
+ (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
+ (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
+  a ^+ m * (bareiss_rec a M) = \det M.
+Proof.
+elim=> [a M _ _ _|m ih a M am hpm hdvd] /=.
+  by rewrite expr0 mul1r {2}[M]mx11_scalar det_scalar1.
+case: (bareiss_invariants am hpm hdvd).
+set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M'.
+move=> d_monic hM' h1 h2.
+rewrite -[M]submxK; apply/(@lregX _ d m.+1 (monic_lreg d_monic)).
+have -> : ulsubmx M = d%:M by apply/rowP=> i; rewrite !mxE ord1 lshift0.
+rewrite key_lemma -/M' hM' detZ mulrCA [_ * (a ^+ _ * _)]mulrCA !exprS -!mulrA.
+by rewrite ih.
+Qed.
+
 Lemma bareiss_recE : forall m a (M : 'M[{poly R}]_(1 + m)),
   a \is monic ->
  (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
@@ -119,14 +172,14 @@ Lemma bareiss_recE : forall m a (M : 'M[{poly R}]_(1 + m)),
 Proof.
 elim=> [a M _ _ _|m ih a M am hpm hdvd] /=.
   by rewrite expr0 mul1r {2}[M]mx11_scalar det_scalar1.
-have ak_monic k : a ^+ k \in monic by apply/monic_exp.
+have ak_monic k : a ^+ k \is monic by apply/monic_exp.
 set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M'.
-have d_monic : d \in monic.
+have d_monic : d \is monic.
   have -> // : d = pminor (ltn0Sn _) (ltn0Sn _) M.
-  have h : widen_ord (ltn0Sn m.+1) =1 (fun _ => 0) 
+  have h : widen_ord (ltn0Sn m.+1) =1 (fun _ => 0)
     by move=> x; apply/ord_inj; rewrite [x]ord1.
   by rewrite /pminor (minor_eq h h) minor1.
-have dk_monic : forall k, d ^+ k \in monic by move=> k; apply/monic_exp.
+have dk_monic : forall k, d ^+ k \is monic by move=> k; apply/monic_exp.
 have hM' : M' = a *: M''.
   pose f := fun m (i : 'I_m) (x : 'I_2) => if x == 0 then 0 else (lift 0 i).
   apply/matrixP => i j.
@@ -213,6 +266,16 @@ have [H2|/leq_sizeP -> //] := ltnP; last by rewrite addr0 if_same.
 by rewrite [p + q]addrC (size_addl (leq_ltn_trans H1 H2)) H2.
 Qed.
 
+Lemma prptnl_opp n p : prptnl n (- p) = - prptnl n p.
+Proof.
+apply/polyP => i.
+rewrite /prptnl coefN !coef_poly coefN size_opp -{2}oppr0.
+by case: ltnP.
+Qed.
+
+Lemma prptnl_sub n p q : prptnl n (p - q) = prptnl n p - prptnl n q.
+Proof. by rewrite prptnl_add prptnl_opp. Qed.
+
 Lemma prptnlX n p : prptnl n p = prptnl n.+1 (p * 'X).
 Proof.
 have [/eqP ->|Hpn0] := (boolP (p == 0)); first by rewrite mul0r !prptnlp0.
@@ -279,49 +342,452 @@ rewrite ![prptnl n.+1 _%:P]prptnl_oversize ?mulr0 ?addr0 // size_polyC.
 by case: (d * c == 0).
 Qed.
 
+(* Lemma prptnlC : forall n c, prptnl n c%:P =  *)
+
+
 Lemma prptnl_mul n p q : prptnl (size p + n) (p * q) = 
                          prptnl (size p) (p * prptnl n q).
 Proof.
-elim/poly_ind: p q n=> [|p c ih] q n. 
-  by rewrite size_poly0 add0n !mul0r !prptnlp0.
+elim/poly_ind: p q n=> [|p c ih] q n; first by rewrite !mul0r !prptnlp0.
 have [/eqP ->|Hpn0] := (boolP (p == 0)). 
   by rewrite mul0r add0r !prptnl_mulC prptnlK.
 rewrite !mulrDl !prptnl_add size_addl size_mulX //; last first.
   rewrite size_polyC ltnS.
   by case: (c == 0) => //=; rewrite lt0n size_eq0 -polyseq0.
-rewrite addSn mulrC mulrA -prptnlX mulrC ih // -mulrA ['X * _]mulrC mulrA.
+rewrite mulrC mulrA -prptnlX mulrC ih // -mulrA ['X * _]mulrC mulrA.
 by rewrite -prptnlX -prptnl_mulC prptnlK addSn.
 Qed.
 
+(* Lemma prptnl_monic : forall n p, prptnl n p \is monic = (p \is monic). *)
+(* Proof. *)
+(* move => n. *)
+(* elim/poly_ind. *)
+(*   by rewrite prptnlp0. *)
+(* move=> p c ih. *)
+(* rewrite prptnl_add !monicE. *)
+(* admit. *)
+(* Qed. *)
 
-Definition prptnl_mul_op (n : nat) p q := prptnl n (p * q).
+Definition pmul (n : nat) p q := prptnl n (p * q).
 
-Lemma prptnl_mul_opP : forall n p q, prptnl n (p * q) = prptnl_mul_op n p q.
+Lemma pmulP : forall n p q, pmul n p q = prptnl n (p * q).
 Proof.
 admit.
 Qed.
 
-Definition prptnl_scalemx m n k x (A : 'M[{poly R}]_(m,n)) := 
-  \matrix_(i, j) (prptnl_mul_op k x (A i j)).
+Fixpoint sasaki_rec m (a : {poly R}) : 'M[{poly R}]_(1 + m) -> {poly R} :=
+  match m return 'M[_]_(1 + m) -> {poly R} with
+    | S p => fun (M: 'M[_]_(1 + _)) =>
+      let d   := M 0 0 in
+      let l   := ursubmx M in
+      let c   := dlsubmx M in
+      let N   := drsubmx M in
+      let M'  := \matrix_(i,j) (pmul (size a).-2 d (N i j) - 
+                                pmul (size a).-2 (c i 0) (l 0 j)) in
+      let q   := rdivp 'X^(size a).*2.+1 a in
+      let M'' := map_mx (fun x => pmul ((size a).+3 - (size a == 1))%N q x) M' in 
+        sasaki_rec d M''
+    | _ => fun M => M 0 0
+  end.
 
-Lemma prptnl_scalemxP m n k x (A : 'M[{poly R}]_(m,n)) : 
-  map_mx (prptnl k) (x *: A) = prptnl_scalemx k x A.
+Definition sasaki_char_poly n (M : 'M[R]_(1 + n)) := sasaki_rec 1 (char_poly_mx M).
+
+Lemma size_rdivp : forall p q, p \is monic -> rdvdp p q -> size (rdivp q p) = (size q - (size p).-1)%N.
 Proof.
-apply/matrixP => i j.
-by rewrite !mxE prptnl_mul_opP.
+move=> p q pm hdvd.
+
+admit.
 Qed.
 
-Definition prptnl_row_col_mulmx 
-  {m} k (A : 'rV_m) (B : 'cV_m) :=
-  \matrix_(i,j) (prptnl_mul_op k (B i 0) (A 0 j)).
-
-Lemma prptnl_row_col_mulmxP m k (A : 'rV_m) (B : 'cV_m) : 
-  map_mx (prptnl k) (B *m A) = prptnl_row_col_mulmx k A B. 
+Lemma test_size : forall m (a : {poly R}) (M : 'M[{poly R}]_(1 + m)),
+  a \is monic -> 
+  M 0 0 \is monic ->
+  (forall i j, rdvdp (R:=R) a
+   (M 0 0 * M (lift 0 i) (lift 0 j) - M (lift 0 i) 0 * M 0 (lift 0 j))) ->
+ (* (forall i, size (M i i) = (size a).+2)%N ->   *)
+ (* (forall i j, size (M j i * M i j) * (i != j) < size (M i i * M j j)) -> *)
+ (forall i j, if i == j then size (M i i) = (size a).+2 
+                        else (M i j == 0) || (size (M i j) == (size a).-1)) ->
+  forall i j, size (rdivp (M 0 0 * M (lift 0 i) (lift 0 j) - 
+                           M (lift 0 i) 0 * M 0 (lift 0 j)) a) <= (size a).+2.
 Proof.
-apply/matrixP => i j.
-rewrite !mxE.
-by rewrite -prptnl_mul_opP big_ord1.
+move=> m a /= M am m00 hdvd h1 /= i j.
+rewrite size_rdivp //.
+rewrite size_addl.
+case hij: (i == j).
+  rewrite (eqP hij).
+  rewrite size_monicM //.
+  move: (h1 0 0).
+  rewrite eqxx => -> /=.
+  move: (h1 (lift 0 j) (lift 0 j)).
+  rewrite eqxx => ->.
+  admit.
+admit.
+admit.
+rewrite size_opp.
+case h000: (M (lift 0 i) (lift 0 j) == 0).
+  (* by rewrite (eqP h000) mulr0 size_poly0 sub0n. *)
+  admit.
+rewrite [size (M 0 0 * _)]size_monicM //.
+admit.
+admit.
+
 Qed.
+
+Lemma sasaki_recE : forall m (a : {poly R}) (M : 'M[{poly R}]_(1 + m)),
+  a \is monic -> 
+ (forall (p : nat) (h h' : p < 1 + m), pminor h h' M \is monic) ->
+ (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
+ (forall i, size (M i i) = (size a).+2)%N ->
+ (forall i j, size (M j i * M i j) * (i != j) < size (M i i * M j j)) ->
+ (* (forall (f g : 'I_2 -> 'I_m.+1), size (minor f g M) <= (size a).+2) -> *)
+  sasaki_rec a M = bareiss_rec a M.
+Proof.
+elim=> //= m ih a M am hpm hdvdk hsize1 hsize2.
+case: (bareiss_invariants am hpm hdvdk).
+set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M' => h1 h2 h3 h4.
+suff -> : map_mx
+     [eta pmul ((size a).+3 - (size a == 1)%N)
+            (rdivp (R:=R) 'X^(size a).*2.+1 a)]
+     (\matrix_(i, j) (pmul (size a).-2 (M 0 0) ((drsubmx M) i j) -
+                      pmul (size a).-2 ((dlsubmx M) i 0) ((ursubmx M) 0 j))) =
+   map_mx ((rdivp (R:=R))^~ a) (M 0 0 *: drsubmx M - dlsubmx M *m ursubmx M).
+  rewrite ih //.
+
+move=> i.
+rewrite -/M'.
+rewrite !mxE !big_ord1 !mxE !lshift0 !rshift1 /d size_rdivp //; last first.
+  pose f := fun (x : 'I_2) => if x == 0 then 0 else (lift 0 i).
+  have := (@hdvdk _ f f).
+  by rewrite minor2 /f /= expr1.
+rewrite (hsize1 0).
+rewrite size_addl; last first.
+  rewrite size_opp.
+  move: (hsize2 0 (lift 0 i)).
+  by rewrite /= muln1.
+case H0 : (M (lift 0 i) (lift 0 i) == 0).
+move: (hsize1 (lift 0 i)).
+by rewrite (eqP H0) size_poly0.
+rewrite size_monicM //; last by rewrite H0.
+rewrite (hsize1 0) (hsize1 (lift 0 i)).
+simpl.
+case a0 : (size a == 0)%N.
+  move: am.
+  move: a0.
+  rewrite size_poly_eq0 => /eqP ->.
+  rewrite monicE.
+  rewrite lead_coef0.
+  rewrite eq_sym =>HH.
+  move: (oner_neq0 R).
+  by rewrite HH.
+rewrite -subn1 subnBA; last by rewrite lt0n a0.
+rewrite addn1 -!addnS.
+rewrite addnC.
+rewrite -addnBA.
+by rewrite subnn addn0.
+done.
+
+admit.
+
+apply/matrixP=> i j; rewrite !mxE big_ord1 !pmulP !mxE lshift0 -prptnl_sub !rshift1.
+have [sa0|an0] := boolP (size a == 0)%N.
+  rewrite (eqP sa0); move: sa0; rewrite size_poly_eq0 => /eqP -> /=.
+  by rewrite !rdivp0 mul0r prptnlp0.
+have a0 : a != 0 by rewrite -size_poly_eq0.
+set e := M _ _; set N := M _ _; set c := M _ _; set l := M _ _.
+
+have hdvd : rdvdp a (d * N - c * l).
+  move: (hdvdk 1%N) => HHH.
+  pose f := fun (x : 'I_2) => if x == 0 then 0 else (lift 0 i).
+  pose g := fun (x : 'I_2) => if x == 0 then 0 else (lift 0 j).
+  move: (HHH f g).
+  by rewrite minor2 /f /g /= expr1. 
+
+have := (rdivp_eq am ('X^(size a).*2.+1)).
+set q := rdivp _ _; set r := rmodp _ _; set M''' := rdivp _ _.
+move=> Hqr.
+
+have H1 : M''' * 'X^(size a).*2.+1 = (d * N - c * l) * q + M''' * r.
+  rewrite Hqr mulrDr.
+  congr (_ + _).
+  rewrite mulrC -mulrA mulrC.
+  congr (_ * _).
+  rewrite /M' mulrC rdivpK //.
+  move: am.
+  by rewrite monicE => /eqP ->; rewrite expr1n mulr1.
+
+have := (ltn_rmodpN0 'X^(size a).*2.+1 a0); rewrite -/r => Hr.
+
+have q0 : q != 0.
+  apply/eqP => q0; move: Hqr Hr.
+  rewrite q0 !mul0r add0r => <-.
+  by rewrite size_polyXn -addnn -!addnS -{3}[size a]addn0 leq_add2l.
+
+have laq0 : lead_coef q * lead_coef a != 0.
+  have H : GRing.lreg (lead_coef a).
+    move: am.
+    rewrite monicE => /eqP ->.
+    exact: lreg1.
+  by rewrite mulrC (mulrI_eq0 _ H) lead_coef_eq0.
+
+have Hsize : size q = (size a).+3.
+  have := (size_polyXn R (size a).*2.+1).
+  rewrite Hqr size_addl size_proper_mul //.
+    rewrite -addnn -addSn => /eqP.
+    rewrite -eqSS -!addSn prednK /=.
+      by rewrite eqn_add2r => /eqP.
+    by rewrite addn_gt0 !lt0n an0 orbT.
+  move: q0.
+  rewrite -size_poly_eq0.
+  case: (size q) => // n _.
+  exact: (ltn_addl n Hr).
+
+have Hm' : size M''' <= (size a).+2.
+rewrite /M'''.
+  (* apply/(leq_trans (leq_rdivp (d * N - c * l) a)). *)
+  rewrite /e /N /c /l.
+  rewrite test_size //.
+  move=> /= x y.
+  move: (hdvdk 1%N) => HHH.
+  pose f := fun (apa : 'I_2) => if apa == 0 then 0 else (lift 0 x).
+  pose g := fun (apa : 'I_2) => if apa == 0 then 0 else (lift 0 y).
+  move: (HHH f g).
+  by rewrite minor2 /f /g /= expr1. 
+
+have H2 : size (M''' * r) <= (size a).*2.+1.
+  rewrite (leq_trans (size_mul_leq M''' r)) // -addnn.
+  have := (leq_add Hm' Hr).
+  rewrite !addSn addnS ltnS => HH.
+  have H : (size M''' + size r).-1 <= (size M''' + size r).
+    by case: (size M''' + size r)%N.
+  exact: (leq_trans H HH).
+
+rewrite (test H1 H2).
+case sa: (size a == 1)%N.
+  by rewrite (eqP sa) prptnl0p -addnn mulrC.
+rewrite subn0 -Hsize -prptnl_mul Hsize mulrC.
+f_equal.
+rewrite -addnn !addSn -!addnS prednK.
+  rewrite prednK //.
+  by case: (size a) an0.
+by case: (size a) an0 sa => //= [[]].
+Qed. 
+
+
+(* OLD STUFF BELOW *)
+
+
+Definition sasaki_char_poly n (M : 'M[R]_(1 + n)) := sasaki_rec 1 (char_poly_mx M).
+
+
+(* Lemma sasakiE : forall m (M : 'M[R]_(1 + m)), sasaki_char_poly M = bareiss_char_poly M. *)
+(* Proof. *)
+(* rewrite /sasaki_char_poly /bareiss_char_poly /bareiss. *)
+(* elim. *)
+(* move=> M. *)
+(* simpl. *)
+(* done. *)
+(* move=> n ih M. *)
+(* simpl. *)
+(* rewrite /bareiss. *)
+
+
+Lemma size_rmodpXn p (p0 : p != 0) : size (rmodp 'X^(size p).*2.+1 p) < (size p).
+Proof. exact: (ltn_rmodpN0 'X^(size p).*2.+1 p0). Qed.
+
+Lemma size_rdivpXn p (pm : p \is monic) : size (rdivp 'X^(size p).*2.+1 p) = (size p).+3.
+Proof.
+move: (rdivp_eq pm ('X^(size p).*2.+1)) (ltn_rmodpN0 'X^(size p).*2.+1 (monic_neq0 pm))
+      (size_polyXn R (size p).*2.+1).
+set q := rdivp _ _; set r := rmodp _ _ => -> Hr.
+rewrite size_addl size_proper_mul //.
+    rewrite -addnn -addSn => /eqP.
+    rewrite -eqSS -!addSn prednK /=.
+      by rewrite eqn_add2r => /eqP.
+    by rewrite addn_gt0 !lt0n !size_poly_eq0 (monic_neq0 pm) orbT.
+  admit.
+
+  move: (monic_neq0 pm).
+  rewrite -size_poly_eq0.
+  case: (size p) => // n _ /=.
+  rewrite addnS /=.
+  move: (ltn_addl n Hr).
+  admit.
+admit.
+Qed.
+
+Lemma sasaki_recE : forall m (a : {poly R}) (M : 'M[{poly R}]_(1 + m)),
+  (* (forall (f g : 'I_2 -> 'I_(1 + m)%N), size (minor f g M) <= (size a).+2) -> *)
+  (* (forall i j, if i == j then size (M i i) == (size a).+1 *)
+  (*                        else size (M i j) <= size a) -> *) (* THIS DOES NOT WORK!!! *)
+  a \is monic ->
+  (forall i, M i i \is monic) ->
+  (* (forall i j, size (M i i * M j j) == (size a).+2) -> *)
+  (* (forall i j, size (M 0 i * M j 0) <= size a) -> *)
+  (* (forall i j, size (M 0 0 * M (lift 0 i) (lift 0 j) - M (lift 0 i) 0 * M 0 (lift 0 j)) <= (size a).+2) -> *)
+ (* (forall (f g : 'I_2 -> 'I_m.+1), rdvdp a (minor f g M)) -> *)
+  sasaki_rec a M = bareiss_rec a M.
+Proof.
+(* elim=> //= m ih a M hs am hm. *)
+(* elim=> //= m ih a M am hm hs_diag hs. *)
+elim=> //= m ih a M am hm.
+
+(* have -> : (map_mx *)
+(*         (fun x : {poly R} => *)
+(*          if (size a == 1)%N *)
+(*          then pmul (size a).+2 (rdivp (R:=R) 'X^(size a).*2.+1 a) x *)
+(*          else pmul (size a).+3 (rdivp (R:=R) 'X^(size a).*2.+1 a) x) *)
+(*         (\matrix_(i, j) (pmul (size a).-2 (M 0 0) ((drsubmx M) i j) - *)
+(*                          pmul (size a).-2 ((dlsubmx M) i 0) ((ursubmx M) 0 j)))) = (map_mx ((rdivp (R:=R))^~ a) *)
+(*         (M 0 0 *: drsubmx M - dlsubmx M *m ursubmx M)); last first. *)
+(*   admit. *)
+
+
+rewrite ih; last first.
+  admit.
+  (* move=> i. *)
+  (* rewrite !mxE !pmulP -prptnl_sub !lshift0 !rshift1. *)
+  (* case: ifP => sa1; rewrite prptnl_monic. *)
+  (* rewrite (eqP sa1) /= prptnl0p. *)
+  (* admit. *)
+  (* admit. *)
+  
+(* simpl. *)
+(*   move=> i j. *)
+(*   rewrite !mxE !pmulP -prptnl_sub !lshift0 !rshift1. *)
+(*   case: ifP => sa1. *)
+(*   rewrite (eqP sa1) /= !prptnl0p. *)
+(* Search _ rdivp size. *)
+(* have -> : lift 0 0 = 1. *)
+(*   by move=> n; apply/ord_inj. *)
+(*   admit. *)
+(*   admit. *)
+  
+(*   move=> i j. *)
+(*   rewrite !mxE !pmulP -prptnl_sub !lshift0 !rshift1. *)
+(*   case: ifP => sa1. *)
+(*   rewrite (eqP sa1) /= prptnl0p. *)
+(*   admit. *)
+(*   admit. *)
+
+(*   move=> i. *)
+(*   rewrite !mxE !pmulP -prptnl_sub !lshift0 !rshift1. *)
+(*   case: ifP => sa1; rewrite prptnl_monic. *)
+(*   rewrite (eqP sa1) /= prptnl0p. *)
+
+(*     admit. *)
+  exact: (hm 0).
+(* move=> f g. *)
+(* rewrite minor2 !mxE !pmulP -prptnl_sub !lshift0 !rshift1. *)
+
+(* case: ifP=> sa. *)
+(* rewrite (eqP sa) /= !prptnl0p size_addl.  *)
+(* rewrite size_proper_mul. *)
+(* rewrite !size_prptnl. *)
+(* rewrite size_proper_mul. *)
+(* Search _ size rdivp. *)
+
+(* rewrite /minor. *)
+(* simpl. *)
+
+(* move=> i j. *)
+(* case: ifP=> hij. *)
+(* rewrite (eqP hij). *)
+(* rewrite !mxE !pmulP !rshift1 !lshift0 -prptnl_sub. *)
+(* case: ifP => sa. *)
+(* set q := rdivp _ _. *)
+(* set d := M _ _; set N := M _ _; set c := M _ _; set l := M _ _. *)
+
+(*   admit. *)
+(* admit. *)
+(* admit. *)
+  
+congr bareiss_rec.
+apply/matrixP=> i j; rewrite !mxE big_ord1 !pmulP !mxE lshift0 -prptnl_sub !rshift1.
+have [sa0|an0] := boolP (size a == 0)%N.
+  rewrite (eqP sa0); move: sa0; rewrite size_poly_eq0 => /eqP -> /=.
+  by rewrite !rdivp0 mul0r prptnlp0.
+have a0 : a != 0 by rewrite -size_poly_eq0.
+set d := M _ _; set N := M _ _; set c := M _ _; set l := M _ _.
+
+have hdvd : rdvdp a (d * N - c * l) by admit.
+
+have := (rdivp_eq am ('X^(size a).*2.+1)).
+set q := rdivp _ _; set r := rmodp _ _; set M' := rdivp _ _. 
+move=> Hqr.
+
+have H1 : M' * 'X^(size a).*2.+1 = (d * N - c * l) * q + M' * r.
+  rewrite Hqr mulrDr.
+  congr (_ + _).
+  rewrite mulrC -mulrA mulrC.
+  congr (_ * _).
+  rewrite /M' mulrC rdivpK //.
+  move: am.
+  by rewrite monicE => /eqP ->; rewrite expr1n mulr1.
+
+have := (ltn_rmodpN0 'X^(size a).*2.+1 a0); rewrite -/r => Hr.
+
+have q0 : q != 0.
+  apply/eqP => q0; move: Hqr Hr.
+  rewrite q0 !mul0r add0r => <-.
+  by rewrite size_polyXn -addnn -!addnS -{3}[size a]addn0 leq_add2l.
+
+have laq0 : lead_coef q * lead_coef a != 0.
+  have H : GRing.lreg (lead_coef a).
+    move: am.
+    rewrite monicE => /eqP ->.
+    exact: lreg1.
+  by rewrite mulrC (mulrI_eq0 _ H) lead_coef_eq0.
+
+have Hsize : size q = (size a).+3.
+  have := (size_polyXn R (size a).*2.+1).
+  rewrite Hqr size_addl size_proper_mul //.
+    rewrite -addnn -addSn => /eqP.
+    rewrite -eqSS -!addSn prednK /=.
+      by rewrite eqn_add2r => /eqP.
+    by rewrite addn_gt0 !lt0n an0 orbT.
+  move: q0.
+  rewrite -size_poly_eq0.
+  case: (size q) => // n _.
+  exact: (ltn_addl n Hr).
+
+have Hm' : size M' <= (size a).+2.
+  (* rewrite /M'. *)
+  (* apply/(leq_trans (leq_rdivp (d * N - c * l) a)). *)
+  (* rewrite /d /N /c /l. *)
+  (* rewrite size_addl. *)
+  (* case hij: (i == j). *)
+  (*   rewrite (eqP hij). *)
+  (* rewrite size_proper_mul. *)
+  (* move: (hs 0 0). *)
+  (* rewrite eqxx => /eqP ->. *)
+  (* move: (hs (lift 0 j) (lift 0 j)). *)
+  (* rewrite eqxx => /eqP ->. *)
+  (* rewrite addnS /=. *)
+  (* move: (hs i j). *)
+  (* done. *)
+  admit.
+(* exact: (key_invariant Hs i j). *)
+
+have H2 : size (M' * r) <= (size a).*2.+1.
+  rewrite (leq_trans (size_mul_leq M' r)) // -addnn.
+  have := (leq_add Hm' Hr).
+  rewrite !addSn addnS ltnS => HH.
+  have H : (size M' + size r).-1 <= (size M' + size r).
+    by case: (size M' + size r)%N.
+  exact: (leq_trans H HH).
+
+rewrite (test H1 H2).
+case sa: (size a == 1)%N.
+  by rewrite (eqP sa) prptnl0p -addnn mulrC.
+rewrite -Hsize -prptnl_mul Hsize mulrC.
+f_equal.
+rewrite -addnn !addSn -!addnS prednK.
+  rewrite prednK //.
+  by case: (size a) an0.
+by case: (size a) an0 sa => //= [[]].
+Qed. 
+
 
 
 
