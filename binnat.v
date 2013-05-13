@@ -57,43 +57,68 @@ Global Instance add_positive : add positive := Pos.add.
 Global Instance refines_add_pos :
   param (refines ==> refines ==> refines)%C add_pos +%C. 
 Proof.
-rewrite paramE => x x' rx y y' ry; congr Some; apply: val_inj; rewrite !val_insubd.
-rewrite [x]refines_posE [y]refines_posE.
-rewrite Pos2Nat.inj_add ?ltn_addl ?valP //.
-Admitted.
+rewrite paramE => x x' rx y y' ry; congr Some; apply: val_inj.
+rewrite [x]refines_posE [y]refines_posE !val_insubd Pos2Nat.inj_add.
+by move: (Pos2Nat.is_pos x') (Pos2Nat.is_pos y') => /leP -> /leP ->.
+Qed.
 
 Global Instance mul_positive : mul positive := Pos.mul.
 Global Instance refines_mul_pos :
   param (refines ==> refines ==> refines)%C mul_pos *%C. 
 Proof.
-rewrite paramE => x x' rx y y' ry; congr Some; apply: val_inj; rewrite !val_insubd.
-rewrite [x]refines_posE [y]refines_posE.
-rewrite Pos2Nat.inj_mul ?ltn_mul ?valP //.
-Admitted.
+rewrite paramE => x x' rx y y' ry; congr Some; apply: val_inj.
+rewrite [x]refines_posE [y]refines_posE !val_insubd Pos2Nat.inj_mul.
+by move: (Pos2Nat.is_pos x') (Pos2Nat.is_pos y') => /leP -> /leP ->.
+Qed.
 
 Global Instance sub_positive : sub positive := Pos.sub.
 Global Instance refines_sub_pos :
   param (refines ==> refines ==> refines)%C sub_pos sub_op. 
 Proof.
-Admitted.
+rewrite paramE => x x' rx y y' ry; congr Some; apply: val_inj.
+rewrite [x]refines_posE [y]refines_posE !val_insubd.
+move: (Pos2Nat.is_pos x') (Pos2Nat.is_pos y') => /leP -> /leP ->.
+have [/leP h|/leP h] := (ltnP (Pos.to_nat y') (Pos.to_nat x')).
+  by have := (Pos2Nat.inj_sub x' y'); rewrite Pos2Nat.inj_lt => ->.
+rewrite /sub_op /sub_positive Pos.sub_le ?Pos2Nat.inj_le //.
+by rewrite subn_gt0 ltnNge; move/leP: h ->.
+Qed.
 
+(* TODO: This proof is not nice! *)
 Global Instance eq_positive : eq positive := Pos.eqb.
 Global Instance refines_eq_pos :
   param (refines ==> refines ==> refines)%C eqtype.eq_op eq_op. 
 Proof.
-Admitted.
+rewrite paramE => /= x x' rx y y' ry; congr Some. 
+rewrite [x]refines_posE [y]refines_posE /=.
+rewrite /pos_of_positive /eq_op /eq_positive Pos.eqb_compare Pos2Nat.inj_compare.
+have [/eqP->|/eqP h] := (boolP (Pos.to_nat x' == Pos.to_nat y')); 
+  rewrite -Pos2Nat.inj_compare -Pos.eqb_compare.
+  by rewrite Pos.eqb_refl /insubd; case: insubP => //= u _ _; rewrite eqxx.
+move: (h); rewrite Pos2Nat.inj_iff -Pos.eqb_neq => ->.
+apply/negbTE; move/eqP: h; apply/contra_neq; rewrite !val_insubd.
+by move: (Pos2Nat.is_pos x') (Pos2Nat.is_pos y') => /leP -> /leP ->.
+Qed.
 
 Global Instance le_positive : leq positive := Pos.leb.
 Global Instance refines_le_pos :
   param (refines ==> refines ==> refines)%C leq_pos leq_op. 
 Proof.
-Admitted.
+rewrite paramE => /= x x' rx y y' ry; congr Some. 
+rewrite [x]refines_posE [y]refines_posE /leq_pos !val_insubd.
+move: (Pos2Nat.is_pos x') (Pos2Nat.is_pos y') => /leP -> /leP ->.
+by apply/leP/idP => [|h]; rewrite -Pos2Nat.inj_le -Pos.leb_le.
+Qed.
 
 Global Instance lt_positive : lt positive := Pos.ltb.
 Global Instance refines_lt_pos :
   param (refines ==> refines ==> refines)%C lt_pos lt_op. 
 Proof.
-Admitted.
+rewrite paramE => /= x x' rx y y' ry; congr Some. 
+rewrite [x]refines_posE [y]refines_posE /lt_pos !val_insubd.
+move: (Pos2Nat.is_pos x') (Pos2Nat.is_pos y') => /leP -> /leP ->.
+by apply/ltP/idP => [|h]; rewrite -Pos2Nat.inj_lt -Pos.ltb_lt.
+Qed.
 
 End positive.
 
@@ -180,19 +205,29 @@ apply param_abstr2 => x x' rx y y' ry; rewrite paramE /refines.
 by rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge [y <= x]refines_boolE.
 Qed.
 
+Lemma nat_of_posE : forall (p : positive), Pos.to_nat p = nat_of_pos p.
+Proof.
+by elim=> //= p <-; rewrite ?Pos2Nat.inj_xI ?Pos2Nat.inj_xO NatTrec.trecE -mul2n.
+Qed.
+
 Global Instance cast_positive_N : cast_class positive N := Npos.
 Global Instance refines_cast_positive_N :
   param (refines ==> refines)%C val (cast : positive -> N).
 Proof.
-apply param_abstr => x x' rx /=; rewrite paramE.
-congr Some; rewrite /cast //=.
-Admitted.
+apply param_abstr => x x' rx; rewrite paramE /cast; congr Some. 
+rewrite [x]refines_posE val_insubd subn_eq0.
+by move: (Pos2Nat.is_pos x') => /leP ->; rewrite nat_of_posE.
+Qed.
 
 Global Instance cast_N_positive : cast_class N positive :=
   fun n => if n is Npos p then p else 1%C.
 Global Instance refines_cast_N_positive :
   param (refines ==> refines)%C (insubd pos1) (cast : N -> positive).
-Proof. Admitted.
+Proof. 
+apply param_abstr => x x' rx; rewrite paramE /cast; congr Some. 
+apply/val_inj; rewrite [x]refines_natE {rx} !val_insubd nat_of_posE.
+by case: x'.
+Qed.
 
 (* Fixpoint is_closed n := (if n is n.+1 then is_closed n else 0 = 0)%N. *)
 
