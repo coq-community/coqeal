@@ -789,7 +789,7 @@ by case: (size a) an0 sa => //= [[]].
 Qed. 
 
 
-
+End poly_op.
 
 (* (* Test computations *) *)
 
