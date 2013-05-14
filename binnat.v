@@ -47,6 +47,12 @@ Global Instance refinement_positive : refinement pos positive :=
 Lemma refines_posE (p : pos) (x : positive) : refines p x -> p = pos_of_positive x. 
 Proof. by case. Qed.
 
+(* Why is this not in ssrnat? *)
+Lemma nat_of_posE : forall (p : positive), Pos.to_nat p = nat_of_pos p.
+Proof.
+by elim=> //= p <-; rewrite ?Pos2Nat.inj_xI ?Pos2Nat.inj_xO NatTrec.trecE -mul2n.
+Qed.
+
 (* Constants *)
 Global Instance one_positive : one positive := xH.
 Global Instance refines_pos1 : param refines (pos1 : pos) (1%C : positive).
@@ -156,14 +162,19 @@ Proof.
 by apply param_abstr => m n rmn; rewrite -add1n paramE; exact/refinesP.
 Qed.
 
-(* TODO: Finish! *)
+Lemma nat_of_binK : forall x, N.of_nat (nat_of_bin x) = x.
+Proof.
+case => //= p; apply: Nnat.N2Nat.inj.
+by rewrite Nnat.Nat2N.id /= nat_of_posE.
+Qed.
+
 Global Instance sub_N : sub N := N.sub.
 Global Instance refines_nat_sub :
   param (refines ==> refines ==> refines)%C subn sub_op.
 Proof.
-rewrite paramE => x x' rx y y' ry; rewrite /refines /=.
+rewrite paramE => x x' rx y y' ry; congr Some.
 rewrite [x]refines_natE [y]refines_natE.
-admit.
+by apply: Nnat.Nat2N.inj; rewrite Nnat.Nat2N.inj_sub !nat_of_binK.
 Qed.
 
 Global Instance mul_N : mul N := N.mul.
@@ -203,11 +214,6 @@ Global Instance refines_nat_lt :
 Proof.
 apply param_abstr2 => x x' rx y y' ry; rewrite paramE /refines.
 by rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge [y <= x]refines_boolE.
-Qed.
-
-Lemma nat_of_posE : forall (p : positive), Pos.to_nat p = nat_of_pos p.
-Proof.
-by elim=> //= p <-; rewrite ?Pos2Nat.inj_xI ?Pos2Nat.inj_xO NatTrec.trecE -mul2n.
 Qed.
 
 Global Instance cast_positive_N : cast_class positive N := Npos.
