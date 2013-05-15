@@ -392,15 +392,32 @@ Local Notation "x <= y" := (leq_op x y) : computable_scope.
 Class cast_class A B := cast_op : A -> B.
 Global Instance id_cast A : cast_class A A := id.
 
-Definition subr {R : zmodType} (x y : R) := x - y.
-Definition divr {R : unitRingType} (x y : R) := x / y.
-
 Class dvd B := dvd_op : B -> B -> bool.
 Local Notation "x %| y" := (dvd_op x y) : computable_scope.
+
+(* Heterogeneous operations *)
+(* Represent a pre-additive category *)
+Class hzero I B := hzero_op : forall m n : I, B m n.
+
+Class hone I B := hone_op : forall n : I, B n n.
+
+Class hadd I B := hadd_op : forall m n : I, B m n -> B m n -> B m n.
+
+Class hsub I B := hsub_op : forall m n : I, B m n -> B m n -> B m n.
+
+Class hmul I B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
+
+Class heq I B := heq_op : forall m n : I, B m n -> B m n -> bool.
+
+Class hcast I B := hcast_op : forall m n m' n' : I,
+  (m = m') * (n = n') -> B m n -> B m' n'.
 
 End Op.
 
 End Refinements.
+
+Definition subr {R : zmodType} (x y : R) := x - y.
+Definition divr {R : unitRingType} (x y : R) := x / y.
 
 Import Refinements.Op.
 
