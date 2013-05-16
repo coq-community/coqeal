@@ -466,10 +466,20 @@ Typeclasses Opaque eqtype.eq_op.
 Typeclasses Opaque addn subn muln expn.
 Typeclasses Opaque GRing.zero GRing.add GRing.opp GRing.natmul.
 Typeclasses Opaque GRing.one GRing.mul GRing.inv GRing.exp GRing.scale.
-Typeclasses Opaque subr divr.
 Typeclasses Opaque Num.le Num.lt Num.norm.
 Typeclasses Opaque intmul exprz absz.
 
 Typeclasses Transparent zero one add opp sub.
 Typeclasses Transparent mul exp inv div scale.
 Typeclasses Transparent eq lt leq cast_class.
+
+Module AlgOp.
+Section AlgOp.
+
+Definition subr {R : zmodType} (x y : R) := x - y.
+Definition divr {R : unitRingType} (x y : R) := x / y.
+
+End AlgOp.
+End AlgOp.
+
+Typeclasses Opaque AlgOp.subr AlgOp.divr.

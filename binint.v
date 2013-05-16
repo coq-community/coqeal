@@ -34,7 +34,7 @@ Definition Zmatch2 T (m n : Z) fpp fnn fpn fnp : T :=
   Zmatch m (fun x => Zmatch n (fpp x) (fpn x)) (fun x => Zmatch n (fnp x) (fnn x)).
 
 Local Open Scope computable_scope.
-Import Op.
+Import Op AlgOp.
 
 Context `{zero N, one N, sub N, add N, mul N, leq N, eq N}.
 Context `{one P, sub P, add P, mul P, eq P}.
@@ -112,7 +112,7 @@ Proof. by rewrite /Z_of_int /int_of_Z => [[[]|]]. Qed.
 
 Global Instance refinement_int_Z : refinement int Z := Refinement Z_of_intK.
 
-Import Op.
+Import Op AlgOp.
 Local Instance zero_nat : zero nat := 0%N.
 Local Instance one_nat : one nat := 1%N.
 Local Instance add_nat : add nat := addn.
@@ -298,7 +298,7 @@ Global Instance refines_oppZ :
 Proof. exact: param_trans. Qed.
 
 Global Instance refines_subZ :
-  param (refines ==> refines ==> refines)%C Op.subr Op.sub_op.
+  param (refines ==> refines ==> refines)%C AlgOp.subr Op.sub_op.
 Proof. exact: param_trans. Qed.
 
 Global Instance refines_compZ :

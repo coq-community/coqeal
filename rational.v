@@ -161,12 +161,12 @@ by rewrite a1_neq0 invfM invrK mulrC.
 Qed.
 
 Instance refines_subq :
-  param (refines ==> refines ==> refines) subr (@sub_op Qint _).
-Proof. rewrite /subr /sub_op /subQ /unfold; exact: get_param. Qed.
+  param (refines ==> refines ==> refines) AlgOp.subr (@sub_op Qint _).
+Proof. rewrite /AlgOp.subr /sub_op /subQ /unfold; exact: get_param. Qed.
 
 Instance refines_divq :
-  param (refines ==> refines ==> refines) divr (@div_op Qint _).
-Proof. rewrite /divr /div_op /divQ /unfold; exact: get_param. Qed.
+  param (refines ==> refines ==> refines) AlgOp.divr (@div_op Qint _).
+Proof. rewrite /AlgOp.divr /div_op /divQ /unfold; exact: get_param. Qed.
 
 Instance refines_compq :
   param (refines ==> refines ==> refines) eqtype.eq_op (@eq_op Qint _).
@@ -229,11 +229,11 @@ Global Instance refines_invQ :
 Proof. exact: param_trans. Qed.
 
 Global Instance refines_subQ :
-  param (refines ==> refines ==> refines) subr (@sub_op Q _).
+  param (refines ==> refines ==> refines) AlgOp.subr (@sub_op Q _).
 Proof. exact: param_trans. Qed.
 
 Global Instance refines_divQ :
-  param (refines ==> refines ==> refines) divr (@div_op Q _).
+  param (refines ==> refines ==> refines) AlgOp.divr (@div_op Q _).
 Proof. exact: param_trans. Qed.
 
 Global Instance refines_eqQ :
