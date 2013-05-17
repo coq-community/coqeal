@@ -1,9 +1,31 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
-Require Import ZArith.
+Require Import ZArith Ncring Ncring_tac.
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
 Require Import perm zmodp matrix refinements seqmatrix.
+
+Instance Zops (R : ringType) (n : nat) : @Ring_ops 'M[R]_n 0%R
+  (scalar_mx 1) (@addmx R _ _) mulmx (fun M N => addmx M (oppmx N)) (@oppmx R _ _) eq.
+
+Instance Zr (R : ringType) (n : nat) : (@Ring _ _ _ _ _ _ _ _ (Zops R n)).
+Proof.
+constructor=> //.
+  + exact:eq_equivalence.
+  + by move=> x y H1 u v H2; rewrite H1 H2.
+  + by move=> x y H1 u v H2; rewrite H1 H2.
+  + by move=> x y H1 u v H2; rewrite H1 H2.
+  + by move=> x y H1; rewrite H1.
+  + exact:add0mx.
+  + exact:addmxC.
+  + exact:addmxA.
+  + exact:mul1mx.
+  + exact:mulmx1.
+  + exact:mulmxA.
+  + exact:mulmxDl.
+  + by move=> M N P ; exact:mulmxDr.
+  + by move=> M; rewrite /addition /add_notation (addmxC M) addNmx.
+Qed.
 
 Section Strassen_generic.
 
@@ -120,13 +142,86 @@ end.
 
 End Strassen_generic.
 
-Section Strassen_abstract.
+Section Strassen_correctness.
 
 Variable R : ringType.
 
-Definition Strassen_abstract {p} := @Strassen (matrix R) (@addmx R) (fun m n x => @addmx R m n (oppmx x)) (@mulmx R) (@ulsubmx R) (@ursubmx R) (@dlsubmx R) (@drsubmx R) (@block_mx R) (@castmx R) p.
+Local Coercion nat_of_pos : positive >-> nat.
 
-End Strassen_abstract.
+Local Open Scope ring_scope.
+
+Definition Strassen_stepR {p} := @Strassen_step (matrix R) (@addmx R) (fun m n x y => @addmx R m n x (oppmx y)) (@ulsubmx R) (@ursubmx R) (@dlsubmx R) (@drsubmx R) (@block_mx R) p.
+
+Lemma Strassen_stepP (p : positive) (A B : 'M[R]_(p + p)) f :
+  f =2 mulmx -> Strassen_stepR A B f = A *m B.
+Proof.
+move=> Hf; rewrite -{2}[A]submxK -{2}[B]submxK mulmx_block /Strassen_stepR /Strassen_step !Hf.
+rewrite /GRing.add /= /GRing.opp /=.
+by congr block_mx; non_commutative_ring.
+Qed.
+
+Definition StrassenR {p} := @Strassen (matrix R) (@addmx R) (fun m n x y => @addmx R m n x (oppmx y)) (@mulmx R) (@ulsubmx R) (@ursubmx R) (@dlsubmx R) (@drsubmx R) (@block_mx R) (@castmx R) p.
+
+Lemma mulmx_cast {R' : ringType} {m n p m' n' p'} {M:'M[R']_(m,p)} {N:'M_(p,n)}
+  {eqm : m = m'} (eqp : p = p') {eqn : n = n'} :
+  castmx (eqm,eqn) (M *m N) = castmx (eqm,eqp) M *m castmx (eqp,eqn) N.
+Proof. by case eqm ; case eqn ; case eqp. Qed.
+
+Lemma StrassenP p : param (refines_id ==> refines_id ==> refines_id) mulmx (@StrassenR p).
+Proof.
+rewrite paramE => a _ [<-] b _ [<-]; congr Some.
+elim: p a b => // [p IHp|p IHp] M N.
+  rewrite /=; case:ifP=> // _.
+  by rewrite -/Strassen_stepR Strassen_stepP // -mulmx_block !submxK -mulmx_cast castmxK.
+rewrite /=; case:ifP=> // _.
+by rewrite -/Strassen_stepR Strassen_stepP // -mulmx_cast castmxK.
+Qed.
+
+End Strassen_correctness.
+
+Section strassen_param.
+
+Local Coercion nat_of_pos : positive >-> nat.
+
+Variable A : ringType.
+Variable mxA : nat -> nat -> Type.
+Variables (addmxA submxA : forall (m n : nat), mxA m n -> mxA m n -> mxA m n).
+Variable mulmxA : forall (m n p : nat), mxA m n -> mxA n p -> mxA m p.
+Variable ulsubmxA : forall (m1 m2 n1 n2 : nat), mxA (m1 + m2) (n1 + n2) -> mxA m1 n1.
+Variable ursubmxA : forall (m1 m2 n1 n2 : nat), mxA (m1 + m2) (n1 + n2) -> mxA m1 n2.
+Variable dlsubmxA : forall (m1 m2 n1 n2 : nat), mxA (m1 + m2) (n1 + n2) -> mxA m2 n1.
+Variable drsubmxA : forall (m1 m2 n1 n2 : nat), mxA (m1 + m2) (n1 + n2) -> mxA m2 n2.
+Variable block_mxA : forall (m1 m2 n1 n2 : nat),
+  mxA m1 n1 -> mxA m1 n2 -> mxA m2 n1 -> mxA m2 n2 -> mxA (m1 + m2) (n1 + n2).
+Variable castmxA : forall (m n m' n' : nat),
+  (m = m') * (n = n') -> mxA m n -> mxA m' n'.
+
+Context `{forall m n, refinement 'M[A]_(m,n) (mxA m n)}.
+Context `{forall m n, param (refines ==> refines ==> refines)%C (@addmx A m n) (addmxA m n)}.
+
+Instance param_elim_positive P P' (R : forall p, P p -> P' p -> Prop) 
+  txI txI' txO txO' txH txH' : 
+  (forall p, param (R p ==> R (p~1)%positive) (txI p) (txI' p)) ->
+  (forall p, param (R p ==> R (p~0)%positive) (txO p) (txO' p)) ->
+  (param (R 1%positive) txH txH') ->
+  forall p, param (R p) (positive_rect P  txI  txO  txH p)
+                        (positive_rect P' txI' txO' txH' p).
+Admitted.
+
+Existing Instance StrassenP.
+Global Instance refines_Strassen (p : positive) : param (refines ==> refines ==> refines) (@mulmx A p p p) (@Strassen mxA addmxA submxA mulmxA ulsubmxA ursubmxA dlsubmxA drsubmxA block_mxA castmxA p).
+Proof.
+eapply param_trans.
+  Focus 2.
+  eapply set_param.
+  Set Typeclasses Debug.
+  tc.
+  tc.
+  
+ last 2 first.
+  tc.
+  tc.
+
 
 Section Strassen_seqmx.
 

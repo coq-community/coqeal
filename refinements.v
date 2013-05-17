@@ -104,11 +104,11 @@ Arguments getparam {A B} R%computable_scope m n.
 Lemma paramE A B (R : A -> B -> Prop) : (param R = R) * (getparam R = R).
 Proof. by rewrite /param /getparam !unlock. Qed.
 
-Lemma param_refl A (a : A) :
+Lemma getparam_refl A (a : A) :
   getparam (@refines _ _ (@refinement_id A)) a a.
 Proof. by rewrite paramE. Qed.
 Global Hint Extern 0 (getparam _ _ _)
-  => now eapply @param_refl : typeclass_instances.
+  => now eapply @getparam_refl : typeclass_instances.
 
 Global Instance param_apply A B C D
  (R : A -> B -> Prop) (R' : C -> D -> Prop)
