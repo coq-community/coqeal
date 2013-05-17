@@ -173,8 +173,8 @@ by rewrite !paramE => cABC rab rbc; apply: composable_trans rab rbc.
 Qed.
 
 Lemma composable_rid1 A B (R : A -> B -> Prop):
-  composable R refines_id R.
-Proof. by move=> b a c rab [<-]. Qed.
+  composable refines_id R R.
+Proof. by move=> b a c [<-]. Qed.
 
 Lemma composable_refines A B C
   (rAB : refinement A B) (rBC : refinement B C) :
@@ -216,12 +216,11 @@ Qed.
 
 End local_trans.
 
-(* refines_step is a copy of refines, in order to ensure the termination *)
-(* of proof search *)
-
-Instance param_refines A B (rAB : refinement A B) (a : A) (b : B)
-  (rab : param refines a b) : refines a b.
+Lemma paramR A B (R : A -> B -> Prop) (a : A) (b : B)
+  (rab : param R a b) : R a b.
 Proof. by rewrite paramE in rab. Qed.
+
+Hint Extern 0 (refines _ _) => eapply paramR : typeclass_instances.
 
 Hint Extern 0 (composable _ _ refines)
  => now eapply composable_refines : typeclass_instances.
@@ -277,9 +276,12 @@ Qed.
 
 Instance param_if 
          (c : bool) (c' : bool) (a : A) (a' : A') (b : A) (b' : A') 
-   {rc : param refines c c'}  `{!param refines a a'} `{!param refines b b'} :
-  param refines (if c then a else b) (if c' then a' else b').
-Proof. Admitted.
+         (R : A -> A' -> Prop)
+   {rc : param refines c c'}  `{!param R a a'} `{!param R b b'} :
+  param R (if c then a else b) (if c' then a' else b').
+Proof.
+by rewrite paramE; move: rc; rewrite paramE => [[<-]] {c'}; case: c; apply: paramR.
+Qed.
 
 End Parametricity.
 
@@ -334,7 +336,7 @@ Proof. by move=> H; do ?[eapply param_abstr => *]; apply: H. Qed.
 Definition unfold A := @id A.
 Typeclasses Opaque unfold.
 
-Global Instance set_param_pair X A
+Global Instance param_unfold X A
   (R : X -> A -> Prop) (x : X) (a : A) :
  param R x a -> param R (unfold x) (unfold a). 
 Proof. by []. Qed.

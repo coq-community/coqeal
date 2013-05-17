@@ -3,7 +3,7 @@
 Require Import ZArith Ncring Ncring_tac.
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
-Require Import perm zmodp matrix refinements seqmatrix.
+Require Import perm zmodp matrix refinements.
 
 Instance Zops (R : ringType) (n : nat) : @Ring_ops 'M[R]_n 0%R
   (scalar_mx 1) (@addmx R _ _) mulmx (fun M N => addmx M (oppmx N)) (@oppmx R _ _) eq.
@@ -113,15 +113,15 @@ Definition Strassen_step {p : positive} (A B : mxA (p + p) (p + p)) f :
   let C11 := addmx X C11 in
   block_mx C11 C12 C21 C22.
 
-Fixpoint Strassen {n : positive} {struct n} :=
-  match n return let M := mxA n n in M -> M -> M with
-  | xH => fun M N => mulmx M N
-  | xO p => fun A B =>
+Definition Strassen_xO {p : positive} Strassen_p := 
+  fun A B =>
     if p <= K then mulmx A B else
     let A := castmx (addpp p,addpp p) A in
     let B := castmx (addpp p,addpp p) B in
-    castmx (esym (addpp p),esym (addpp p)) (Strassen_step A B Strassen)
-  | xI p => fun M N =>
+    castmx (esym (addpp p),esym (addpp p)) (Strassen_step A B Strassen_p).
+  
+Definition Strassen_xI {p : positive} Strassen_p :=
+   fun M N =>
     if p <= K then mulmx M N else
     let M := castmx (addpp1 p, addpp1 p) M in
     let N := castmx (addpp1 p, addpp1 p) N in
@@ -133,12 +133,16 @@ Fixpoint Strassen {n : positive} {struct n} :=
     let N12 := ursubmx N in
     let N21 := dlsubmx N in
     let N22 := drsubmx N in
-    let C := addmx (Strassen_step M11 N11 Strassen) (mulmx M12 N21) in
+    let C := addmx (Strassen_step M11 N11 Strassen_p) (mulmx M12 N21) in
     let R12 := addmx (mulmx M11 N12) (mulmx M12 N22) in
     let R21 := addmx (mulmx M21 N11) (mulmx M22 N21) in
     let R22 := addmx (mulmx M21 N12) (mulmx M22 N22) in
-    castmx (esym (addpp1 p), esym (addpp1 p)) (block_mx C R12 R21 R22)
-end.
+    castmx (esym (addpp1 p), esym (addpp1 p)) (block_mx C R12 R21 R22).
+
+Definition Strassen := unfold
+  (positive_rect (fun p => (mxA p p -> mxA p p -> mxA p p))
+                 (@Strassen_xI) (@Strassen_xO) (fun M N => mulmx M N)).
+Arguments Strassen {p} M N.
 
 End Strassen_generic.
 
@@ -171,9 +175,9 @@ Lemma StrassenP p : param (refines_id ==> refines_id ==> refines_id) mulmx (@Str
 Proof.
 rewrite paramE => a _ [<-] b _ [<-]; congr Some.
 elim: p a b => // [p IHp|p IHp] M N.
-  rewrite /=; case:ifP=> // _.
+  rewrite /= /unfold /Strassen_xI; case:ifP=> // _.
   by rewrite -/Strassen_stepR Strassen_stepP // -mulmx_block !submxK -mulmx_cast castmxK.
-rewrite /=; case:ifP=> // _.
+rewrite /= /unfold /Strassen_xO; case:ifP=> // _.
 by rewrite -/Strassen_stepR Strassen_stepP // -mulmx_cast castmxK.
 Qed.
 
@@ -198,6 +202,7 @@ Variable castmxA : forall (m n m' n' : nat),
 
 Context `{forall m n, refinement 'M[A]_(m,n) (mxA m n)}.
 Context `{forall m n, param (refines ==> refines ==> refines)%C (@addmx A m n) (addmxA m n)}.
+Context `{forall m n p, param (refines ==> refines ==> refines)%C (@mulmx A m n p) (mulmxA m n p)}.
 
 Instance param_elim_positive P P' (R : forall p, P p -> P' p -> Prop) 
   txI txI' txO txO' txH txH' : 
@@ -208,23 +213,39 @@ Instance param_elim_positive P P' (R : forall p, P p -> P' p -> Prop)
                         (positive_rect P' txI' txO' txH' p).
 Admitted.
 
-Existing Instance StrassenP.
-Global Instance refines_Strassen (p : positive) : param (refines ==> refines ==> refines) (@mulmx A p p p) (@Strassen mxA addmxA submxA mulmxA ulsubmxA ursubmxA dlsubmxA drsubmxA block_mxA castmxA p).
-Proof.
-eapply param_trans.
-  Focus 2.
-  eapply set_param.
-  Set Typeclasses Debug.
-  tc.
-  tc.
-  
- last 2 first.
-  tc.
-  tc.
+Import Parametricity.
 
+Existing Instance StrassenP.
+Global Instance refines_Strassen (p : positive) :
+   param (refines ==> refines ==> refines)
+         (@mulmx A p p p) 
+         (@Strassen mxA addmxA submxA mulmxA ulsubmxA ursubmxA
+                        dlsubmxA drsubmxA block_mxA castmxA p).
+Proof.
+eapply param_trans; tc.
+apply set_param.
+rewrite -[X in param X]/((fun p : positive => ((@refines _ _ (H p p))
+ ==> @refines _ _ (H p p) ==> @refines _ _ (H p p))%C) p).
+(* how to get this ??? *)
+eapply (@param_elim_positive 
+          (fun p0 : positive => 'M_p0 -> 'M_p0 -> 'M_p0) 
+          (fun p0 : positive => mxA p0 p0 -> mxA p0 p0 -> mxA p0 p0)) => {p}.
+  move=> p.
+  apply get_param.
+  rewrite /Strassen_xI.
+  apply getparam_abstr => ???.
+  apply getparam_abstr2 => ??? ???.
+  apply set_param.
+  apply param_if.
+    by rewrite paramE. (* which rule should be used? *)
+    tc.
+Abort.
+
+End strassen_param.
 
 Section Strassen_seqmx.
 
+Require Import seqmatrix.
 Import Refinements.Op.
 
 Variable A : Type.
