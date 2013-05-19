@@ -1,7 +1,7 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-Require Import path choice fintype tuple finset ssralg bigop ssrnum ssrint.
+Require Import path choice fintype tuple finset ssralg bigop ssrnum ssrint matrix.
 
 (** This file implements the basic theory of refinements 
 
@@ -399,20 +399,29 @@ Local Notation "x %| y" := (dvd_op x y) : computable_scope.
 
 (* Heterogeneous operations *)
 (* Represent a pre-additive category *)
-Class hzero I B := hzero_op : forall m n : I, B m n.
+Class hzero {I} B := hzero_op : forall m n : I, B m n.
 
-Class hone I B := hone_op : forall n : I, B n n.
+Class hone {I} B := hone_op : forall n : I, B n n.
 
-Class hadd I B := hadd_op : forall m n : I, B m n -> B m n -> B m n.
+Class hadd {I} B := hadd_op : forall m n : I, B m n -> B m n -> B m n.
 
-Class hsub I B := hsub_op : forall m n : I, B m n -> B m n -> B m n.
+Class hsub {I} B := hsub_op : forall m n : I, B m n -> B m n -> B m n.
 
-Class hmul I B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
+Class hmul {I} B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
 
-Class heq I B := heq_op : forall m n : I, B m n -> B m n -> bool.
+Class heq {I} B := heq_op : forall m n : I, B m n -> B m n -> bool.
 
-Class hcast I B := hcast_op : forall m n m' n' : I,
+Class hcast {I} B := hcast_op : forall m n m' n' : I,
   (m = m') * (n = n') -> B m n -> B m' n'.
+
+(* Surgery on matrix-like data types *)
+Local Open Scope nat_scope.
+Class ulsub B := ulsub_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n1.
+Class ursub B := ursub_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n2.
+Class dlsub B := dlsub_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n1.
+Class drsub B := drsub_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
+Class block B := block_op : forall (m1 m2 n1 n2 : nat),
+  B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
 
 End Op.
 
@@ -461,7 +470,19 @@ Ltac simpC :=
       | rewrite -[(_ <= _)%C]/(_ <= _)%N
       | rewrite -[(_ < _)%C]/(_ < _)%N
       | rewrite -[cast _]/(_%:R)
-      | rewrite -[cast _]/(_%:~R)].
+      | rewrite -[cast _]/(_%:~R)
+      | rewrite -[hzero_op _ _]/(const_mx 0)
+      | rewrite -[hone_op _]/1%R
+      | rewrite -[hadd_op _ _]/(addmx _ _)
+      | rewrite -[hsub_op _ _]/(fun _ _ => addmx _ (oppmx _))
+      | rewrite -[hmul_op _ _]/(mulmx _ _)
+      | rewrite -[heq_op _ _]/(_ == _)%bool
+      | rewrite -[hcast_op _ _]/(castmx _ _)
+      | rewrite -[ulsub_op _]/(ulsubmx _)
+      | rewrite -[ursub_op _]/(ursubmx _)
+      | rewrite -[dlsub_op _]/(dlsubmx _)
+      | rewrite -[drsub_op _]/(drsubmx _)
+      | rewrite -[block_op _ _ _ _]/(block_mx _ _ _ _)].
 
 (* Opacity of ssr symbols *)
 Typeclasses Opaque eqtype.eq_op.
