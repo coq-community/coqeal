@@ -113,6 +113,8 @@ Variable A : Type.
 
 Definition seqmatrix := seq (seq A).
 
+Definition hseqmatrix := fun (_ _ : nat) => seqmatrix.
+
 Definition ord_enum_eq n : seq 'I_n := pmap (insub_eq _) (iota 0 n).
 
 Definition mkseqmx_ord m n (f : 'I_m -> 'I_n -> A) : seqmatrix :=
@@ -172,6 +174,16 @@ Definition block_seqmx Aul Aur Adl Adr : seqmatrix :=
 
 End seqmx_block.
 
+Global Instance hulsubseqmx : ulsub hseqmatrix := fun m1 m2 n1 n2 => ulsubseqmx m1 n1.
+Global Instance hursubseqmx : ursub hseqmatrix := fun m1 m2 n1 n2 => ursubseqmx m1 n1.
+Global Instance hdlsubseqmx : dlsub hseqmatrix := fun m1 m2 n1 n2 => dlsubseqmx m1 n1.
+Global Instance hdrsubseqmx : drsub hseqmatrix := fun m1 m2 n1 n2 => drsubseqmx m1 n1.
+
+Global Instance hblock_seqmx : block hseqmatrix := fun _ _ _ _ Aul Aur Adl Adr =>
+  block_seqmx Aul Aur Adl Adr.
+
+Global Instance castseqmx : hcast hseqmatrix := fun _ _ _ _ _ M => M.
+
 (* Definition of operations, using an abstract base type and operations *)
 
 Section seqmx_ops.
@@ -180,6 +192,9 @@ Context `{zero A, opp A, add A, sub A, mul A, eq A}.
 Global Instance oppseqmx : opp seqmatrix := map_seqmx -%C.
 Global Instance addseqmx : add seqmatrix := zipwithseqmx +%C.
 Global Instance subseqmx : sub seqmatrix := zipwithseqmx sub_op.
+
+Global Instance haddseqmx : hadd hseqmatrix := fun _ _ => zipwithseqmx +%C.
+Global Instance hsubseqmx : hsub hseqmatrix := fun _ _ => zipwithseqmx sub_op.
 
 Fixpoint eq_seq T f (s1 s2 : seq T) :=
   match s1, s2 with
@@ -193,16 +208,21 @@ Definition eq_seqmx : eq seqmatrix := eq_seq (eq_seq eq_op).
 
 Global Existing Instance eq_seqmx.
 
-Definition seqmx0 m n := const_seqmx m n 0%C.
+Global Instance heq_seqmx : heq hseqmatrix := fun _ _ => eq_seq (eq_seq eq_op).
+
+Global Instance seqmx0 : hzero hseqmatrix := fun m n => const_seqmx m n 0%C.
 
 Definition mulseqmx (n p : nat) (M N : seqmatrix) : seqmatrix :=
   let N := trseqmx N in
   if n is O then seqmx0 (size M) p else
   map (fun r => map (foldl2 (fun z x y => (x * y) + z) 0 r)%C N) M.
 
+Global Instance hmulseqmx : hmul hseqmatrix := fun m n p => mulseqmx n p.
 
-Definition scaleseqmx (x : A) (M : seqmatrix) :=
+Global Instance scaleseqmx : scale A seqmatrix := fun (x : A) (M : seqmatrix) =>
   map_seqmx (mul_op x) M.
+
+Global Instance hscaleseqmx m n : scale A (hseqmatrix m n) := scaleseqmx.
 
 Definition scalar_seqmx (n : nat) x :=
   @mkseqmx_ord n n (fun i j => if i == j then x else 0%C).
@@ -255,7 +275,7 @@ rewrite (nth_map (M i j)) (nth_map i) 1?(nth_map j) ?nth_ord_enum //;
 by rewrite ?(size_enum_ord, size_map).
 Qed.
 
-Global Program Instance refinement_mx_seqmx m n :
+Global Instance refinement_mx_seqmx m n :
   refinement 'M[A]_(m,n) seqmatrix := Refinement (@seqmx_of_mxK m n).
 
 (* Basic refinement properties *)
