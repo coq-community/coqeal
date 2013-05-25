@@ -90,9 +90,9 @@ Variables (Aul : 'M[R]_(m1, n1)) (Aur : 'M[R]_(m1, n2)).
 Variables  (Adl : 'M[R]_(m2, n1)) (Adr : 'M[R]_(m2, n2)).
 
 Lemma upper_triangular_block_mxdl :
- n1 <= m1 -> upper_triangular_mx (block_mx Aul Aur Adl Adr) -> Adl = 0.
+ upper_triangular_mx (block_mx Aul Aur Adl Adr) -> n1 <= m1 -> Adl = 0.
 Proof.
-move=> Hn1 HA.
+move=> HA Hn1.
 apply/matrixP=> i j.
 transitivity (block_mx Aul Aur Adl Adr (rshift m1 i) (lshift n2 j)).
   by rewrite block_mxEdl.
@@ -101,18 +101,26 @@ by apply/ltn_addr/(leq_trans (ltn_ord j)).
 Qed.
 
 Lemma upper_triangular_block_mxdr :
-  n1 <= m1 -> upper_triangular_mx (block_mx Aul Aur Adl Adr) ->
+  upper_triangular_mx (block_mx Aul Aur Adl Adr) -> n1 <= m1 -> 
   upper_triangular_mx Adr.
 Proof.
-move=> Hn1 /upper_triangular_mxP HA; apply/upper_triangular_mxP=> i j Hij.
+move=> /upper_triangular_mxP HA Hn1; apply/upper_triangular_mxP=> i j Hij.
 rewrite -(HA (rshift m1 i) (rshift n1 j)) ?block_mxEdr // -addnS.
 exact:leq_add.
 Qed.
 
-Lemma upper_triangular_block : m1 <= n1 -> upper_triangular_mx Aul -> 
-  upper_triangular_mx Adr -> upper_triangular_mx (block_mx Aul 0 0 Adr).
+Lemma upper_triangular_block_mxul :
+  upper_triangular_mx (block_mx Aul Aur Adl Adr) ->
+  upper_triangular_mx Aul.
 Proof.
-move=> H /upper_triangular_mxP HAul /upper_triangular_mxP HAdr.
+move=> /upper_triangular_mxP HA; apply/upper_triangular_mxP=> i j Hij.
+by rewrite -(HA (lshift m2 i) (lshift n2 j)) ?block_mxEul.
+Qed.
+
+Lemma upper_triangular_block : upper_triangular_mx Aul ->
+  upper_triangular_mx Adr -> m1 <= n1 -> upper_triangular_mx (block_mx Aul 0 0 Adr).
+Proof.
+move=> /upper_triangular_mxP HAul /upper_triangular_mxP HAdr H.
 apply/upper_triangular_mxP=> i j Hij; rewrite !mxE.
 case: splitP=> k Hk; rewrite !mxE; case: splitP=> l Hl; rewrite ?mxE //.
   by apply: HAul; rewrite -Hk -Hl.
@@ -134,10 +142,10 @@ Proof.
 elim=> [M _|n IHn]; first by rewrite det_mx00 big_ord0.
 rewrite -[n.+1]add1n=> M.
 rewrite -(submxK M)=> HM.
-rewrite (upper_triangular_block_mxdl _ HM) // det_ublock IHn.
+rewrite (upper_triangular_block_mxdl HM) // det_ublock IHn.
   rewrite {1}[ulsubmx M]mx11_scalar det_scalar1 big_split_ord big_ord1.
   by rewrite block_mxEul; congr *%R; apply:eq_bigr=> i _; rewrite block_mxEdr.
-exact: (upper_triangular_block_mxdr _ HM).
+exact: (upper_triangular_block_mxdr HM).
 Qed.
 
 Lemma char_poly_mx_triangular_mx n (M : 'M[R]_n) :
@@ -443,13 +451,13 @@ Lemma diag_mx_seq_block_mx m m' n n' s :
 Proof.
 move=> H; apply/matrixP=> i j; rewrite !mxE.
 case: (splitP _)=> k Hk; rewrite mxE; case: (splitP _)=> l Hl; rewrite mxE Hk Hl //.
-  +case: (altP (k =P (n + l)%N :> nat))=> // ->.
-   rewrite nth_default ?mul0rn // (leq_trans H) //.
-   by rewrite (leq_trans (geq_minr m n)) // leq_addr.
-  -rewrite nth_default ?mul0rn // (leq_trans H) //.
-   by rewrite (leq_trans (geq_minl m n)) // leq_addr.
-  +rewrite nth_default ?mul0rn // (leq_trans H) //.
-   by rewrite (leq_trans (geq_minl m n)) // leq_addr.
++ case: (altP (k =P (n + l)%N :> nat))=> // ->.
+  rewrite nth_default ?mul0rn // (leq_trans H) //.
+  by rewrite (leq_trans (geq_minr m n)) // leq_addr.
++ rewrite nth_default ?mul0rn // (leq_trans H) //.
+  by rewrite (leq_trans (geq_minl m n)) // leq_addr.
++ rewrite nth_default ?mul0rn // (leq_trans H) //.
+  by rewrite (leq_trans (geq_minl m n)) // leq_addr.
 Qed.
 
 Lemma diag_mx_seq_block s :
