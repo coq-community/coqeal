@@ -70,6 +70,51 @@ Qed.
 
 *)
 
+Definition perm_union_fun {m n} (s1 : 'S_m) (s2 : 'S_n) jk :=
+  match (split jk) with
+  | inl j => lshift _ (s1 j)
+  | inr k => rshift _ (s2 k)
+  end.
+
+Lemma ltn_lshift {m} n i : @lshift m n i < m.
+Proof. exact: ltn_ord. Qed.
+
+Lemma ltn_rshift m n i : m <= @rshift m n i.
+Proof. exact: leq_addr. Qed.
+
+Lemma perm_unionK m n s1 s2 :
+  cancel (@perm_union_fun m n s1 s2) (@perm_union_fun m n (s1^-1) (s2^-1)).
+Proof.
+move=> jk; rewrite /perm_union_fun.
+case: (splitP jk) => [j|k] eq_jk.
+have := ltn_lshift n (s1 j).
+case: splitP => //= j' /val_inj <- _.
+  by rewrite permK; apply: val_inj.
+have := ltn_rshift m n (s2 k).
+rewrite leqNgt; case: splitP => //= k' /addnI /val_inj <- _; rewrite permK.
+by apply: val_inj.
+Qed.
+
+Lemma perm_union_subproof m n (s1 : 'S_m) (s2 : 'S_n) :
+  injective (perm_union_fun s1 s2).
+Proof. exact: (can_inj (perm_unionK m n s1 s2)). Qed.
+
+Definition perm_union {m n} (s1 : 'S_m) (s2 : 'S_n) : 'S_(m + n) :=
+  perm (perm_union_subproof m n s1 s2).
+
+Definition cast_perm_fun m n (eq_mn : m = n) (s : 'S_m) k :=
+  cast_ord eq_mn (s (cast_ord (esym eq_mn) k)).
+
+Lemma cast_perm_subproof m n eq_mn s : injective (cast_perm_fun m n eq_mn s).
+Proof.
+move: s; case: _ / eq_mn => s k l /=.
+rewrite /cast_perm_fun /= !cast_ord_id.
+exact: perm_inj.
+Qed.
+
+Definition cast_perm m n (eq_mn : m = n) (s : 'S_m) :=
+  perm (cast_perm_subproof m n eq_mn s).
+
 End prelude.
 
 Section fast_triangular.
@@ -204,23 +249,52 @@ End fast_triangular.
 
 Section Bunch_Hopcroft.
 
+Local Open Scope nat_scope.
+
+Lemma foo {n p} : p <= n -> p + (n - p).+1 = n.+1.
+Proof.
+by move=> le_pn; rewrite -subSn // subnKC //; apply: ltnW.
+Qed.
+
 Variable F : fieldType.
 
 Local Coercion nat_of_pos : positive >-> nat.
 
+Local Open Scope ring_scope.
+
 Variable f : forall n, 'rV[F]_n -> option 'I_n.
 
-Fixpoint lup (m n : positive) :=
-  match m return 'M[F]_(m,n) -> 'M[F]_m * 'M[F]_(m,n) * 'M[F]_n with
-  | xH => fun A => let A := castmx (erefl _, esym (predpK _)) A in
+Fixpoint lup {m : positive} {n : nat} :=
+  match m return 'M[F]_(m,n.+1) -> option ('M[F]_m * 'M[F]_(m,n.+1) * 'S_n.+1) with
+  | xH => fun A =>
     if f _ A is Some i then
-      let U := castmx (erefl _, predpK _) (xcol 0%R i A) in
-      let P := castmx (predpK _, predpK _) (tperm_mx 0%R i) in
-      (1, U, P)%R
-    else (0,0,0)%R
+      let U := xcol 0%R i A in
+      let P := tperm 0%R i in
+      Some (1, U, P)%R
+    else None
   | xO p => fun A => 
-    let A := castmx (addpp p,erefl _) A in (0,0,0)%R
-  | xI p => fun _ => (0,0,0)%R
+    let A := castmx (addpp p, erefl _) A in
+    if lup (usubmx A) is Some (L1, U1, P1) then
+      let B2 := col_perm P1 (dsubmx A) in (* P1^-1 ? *)
+      if @idP (p <= n) is ReflectT lt_mn then
+        let U1 := castmx (erefl _, esym (subnKC (leqW lt_mn))) U1 in
+        let V1 := lsubmx U1 in let B := rsubmx U1 in
+        let V2 := upper_tri_inv F V1 in
+        let B2 := castmx (erefl _, esym (subnKC (leqW lt_mn))) B2 in
+        let C := lsubmx B2 in let D := rsubmx B2 in
+        let C1 := Strassen _ C V2 in
+        let F := C1 *m B in (* Should it be Strassen here? *)
+        let E := castmx (erefl _, subSn lt_mn) (D - F) in
+        if lup E is Some (L2, U2, P2) then
+          let B2 := col_perm P2 (castmx (erefl _, subSn lt_mn) B) in (* P2^-1 ?*)
+          let P := (P1 * cast_perm _ _ (foo lt_mn) (@perm_union p _ 1 P2))%g in
+          let L := castmx (esym (addpp _), esym (addpp _)) (block_mx L1 0 C1 L2) in
+          let U := castmx (esym (addpp _), foo lt_mn) (block_mx V1 B2 0 U2) in
+          Some (L,U,P)%R
+        else None
+      else None
+    else None 
+  | xI p => fun _ => Some (0,0,1%g)%R
   end.
 
 End Bunch_Hopcroft.
