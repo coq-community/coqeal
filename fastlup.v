@@ -3,6 +3,10 @@ Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
 Require Import perm zmodp matrix mxalgebra refinements mxstructure seqmatrix strassen.
 
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
 Section prelude.
 
 Import GRing.Theory.
@@ -10,6 +14,11 @@ Import GRing.Theory.
 Variable F : fieldType.
 
 Local Open Scope ring_scope.
+
+Lemma mulmx_cast {R' : ringType} {m n p m' n' p'} {M:'M[R']_(m,p)} {N:'M_(p,n)}
+  {eqm : m = m'} (eqp : p = p') {eqn : n = n'} :
+  castmx (eqm,eqn) (M *m N) = castmx (eqm,eqp) M *m castmx (eqp,eqn) N.
+Proof. by case eqm ; case eqn ; case eqp. Qed.
 
 Lemma invmx_ublock m n (Aul : 'M[F]_m) Aur (Adr : 'M[F]_n) :
   block_mx Aul Aur 0 Adr \in unitmx ->
@@ -90,30 +99,30 @@ case: (splitP jk) => [j|k] eq_jk.
 have := ltn_lshift n (s1 j).
 case: splitP => //= j' /val_inj <- _.
   by rewrite permK; apply: val_inj.
-have := ltn_rshift m n (s2 k).
+have := ltn_rshift m (s2 k).
 rewrite leqNgt; case: splitP => //= k' /addnI /val_inj <- _; rewrite permK.
 by apply: val_inj.
 Qed.
 
 Lemma perm_union_subproof m n (s1 : 'S_m) (s2 : 'S_n) :
   injective (perm_union_fun s1 s2).
-Proof. exact: (can_inj (perm_unionK m n s1 s2)). Qed.
+Proof. exact: (can_inj (perm_unionK s1 s2)). Qed.
 
-Definition perm_union {m n} (s1 : 'S_m) (s2 : 'S_n) : 'S_(m + n) :=
-  perm (perm_union_subproof m n s1 s2).
+Definition perm_union m n s1 s2 : 'S_(m + n) :=
+  perm (@perm_union_subproof m n s1 s2).
 
 Definition cast_perm_fun m n (eq_mn : m = n) (s : 'S_m) k :=
   cast_ord eq_mn (s (cast_ord (esym eq_mn) k)).
 
-Lemma cast_perm_subproof m n eq_mn s : injective (cast_perm_fun m n eq_mn s).
+Lemma cast_perm_subproof m n eq_mn s : injective (@cast_perm_fun m n eq_mn s).
 Proof.
 move: s; case: _ / eq_mn => s k l /=.
 rewrite /cast_perm_fun /= !cast_ord_id.
 exact: perm_inj.
 Qed.
 
-Definition cast_perm m n (eq_mn : m = n) (s : 'S_m) :=
-  perm (cast_perm_subproof m n eq_mn s).
+Definition cast_perm m n eq_mn s :=
+  perm (@cast_perm_subproof m n eq_mn s).
 
 End prelude.
 
@@ -200,7 +209,7 @@ Fixpoint upper_tri_inv {n : positive} :=
   end.
 *)
 
-Lemma tri_invP (p : positive) (M : 'M[F]_p) :
+Lemma upper_tri_invP (p : positive) (M : 'M[F]_p) :
   M \in unitmx -> upper_triangular_mx M -> upper_tri_inv M = invmx M.
 Proof.
 elim: p M => [p IHp|p IHp|] M unitM triM.
@@ -267,7 +276,7 @@ Variable f : forall n, 'rV[F]_n -> option 'I_n.
 Fixpoint lup {m : positive} {n : nat} :=
   match m return 'M[F]_(m,n.+1) -> option ('M[F]_m * 'M[F]_(m,n.+1) * 'S_n.+1) with
   | xH => fun A =>
-    if f _ A is Some i then
+    if f A is Some i then
       let U := xcol 0%R i A in
       let P := tperm 0%R i in
       Some (1, U, P)%R
@@ -279,7 +288,7 @@ Fixpoint lup {m : positive} {n : nat} :=
       if @idP (p <= n) is ReflectT lt_mn then
         let U1 := castmx (erefl _, esym (subnKC (leqW lt_mn))) U1 in
         let V1 := lsubmx U1 in let B := rsubmx U1 in
-        let V2 := upper_tri_inv F V1 in
+        let V2 := upper_tri_inv V1 in
         let B2 := castmx (erefl _, esym (subnKC (leqW lt_mn))) B2 in
         let C := lsubmx B2 in let D := rsubmx B2 in
         let C1 := Strassen _ C V2 in
@@ -287,7 +296,7 @@ Fixpoint lup {m : positive} {n : nat} :=
         let E := castmx (erefl _, subSn lt_mn) (D - F) in
         if lup E is Some (L2, U2, P2) then
           let B2 := col_perm P2 (castmx (erefl _, subSn lt_mn) B) in (* P2^-1 ?*)
-          let P := (P1 * cast_perm _ _ (foo lt_mn) (@perm_union p _ 1 P2))%g in
+          let P := (P1 * cast_perm (foo lt_mn) (@perm_union p _ 1 P2))%g in
           let L := castmx (esym (addpp _), esym (addpp _)) (block_mx L1 0 C1 L2) in
           let U := castmx (esym (addpp _), foo lt_mn) (block_mx V1 B2 0 U2) in
           Some (L,U,P)%R
@@ -298,3 +307,131 @@ Fixpoint lup {m : positive} {n : nat} :=
   end.
 
 End Bunch_Hopcroft.
+
+Section Bunch_Hopcroft_correctness.
+
+Variable F : fieldType.
+
+Local Coercion nat_of_pos : positive >-> nat.
+
+Local Open Scope ring_scope.
+
+CoInductive lup_spec (m : positive) n (M : 'M[F]_(m,n.+1)) :
+  option ('M[F]_m * 'M[F]_(m,n.+1) * 'S_n.+1) -> Type :=
+  | LupSpec L U P of col_perm P M = L *m U
+      & lower_triangular_mx L 
+      & upper_triangular_mx U
+      & (forall i, L i i = 1)
+      & \rank U = m :
+      (* Fortement régulière ?
+      & (forall (i : 'I_m) (j : 'I_n.+1), i == j :> nat -> U i j \is a GRing.unit) :
+      *)
+
+      lup_spec M (Some (L,U,P)).
+
+      (*
+  | LupDegenerate of \rank M < m : lup_spec M None.
+*)
+
+Lemma lupP (m : positive) n f (M : 'M[F]_(m,n.+1)) :
+  (forall k (A : 'rV_k), pick_spec [pred i | A 0 i != 0] (f _ A)) ->
+  \rank M = m -> lup_spec M (lup f M).
+Proof.
+elim: m n M => [p IHp|p IHp|] n M pickf rk_M /=.
++ admit.
++ case: IHp => // [|L1 U1 P1 corrM1 triL1 triU1 diagL1 rk_u1].
+    move: rk_M.
+    have->: \rank M = \rank (castmx (addpp p, erefl n.+1) M).
+      by case: _ / (addpp p).
+    rewrite -{1}[castmx _ _]vsubmxK.
+    rewrite -addsmxE.
+    admit.
+  case (@idP (p <= n)) => [le_pn|lt_np]; last first.
+  suff: False => //.
+  move/negP: lt_np.
+rewrite -ltnNge.
+have := (rank_leq_col M).
+rewrite rk_M.
+rewrite addpp.
+move=> H.
+move/(leq_trans H).
+rewrite -{3}(addn0 p).
+rewrite leq_add2l leqn0.
+rewrite eqn0Ngt.
+by rewrite lt0p.
+
+set C := lsubmx _.
+set D := rsubmx _.
+set V1 := lsubmx _.
+set B := rsubmx _.
+set E := castmx _ _.
+rewrite StrassenP.
+rewrite upper_tri_invP.
+
+
+case: pickf => [i /= nz_m0i0|eq_M0].
+  constructor.
+  - by rewrite xcolE col_permE tpermV mul1mx.
+  - admit.
+  - admit.
+  - by move=> k; rewrite mxE eqxx.
+  by rewrite xcolE mxrankMfree // row_free_unit unitmx_perm.
+admit.
+
+rewrite ltnS leqn0 mxrank_eq0.
+apply/eqP/matrixP => i j.
+by rewrite ord1 mxE; have := (eq_M0 j) => /= /negbFE /eqP.
+
+
+
+
+Lemma lupP (m : positive) n f (M : 'M[F]_(m,n.+1)) :
+  (forall k (A : 'rV_k), pick_spec [pred i | A 0 i != 0] (f _ A)) ->
+      lup_spec M (lup f M).
+Proof.
+elim: m n M => [p IHp|p IHp|] n M pickf /=.
++ admit.
++ case: (IHp _ _ pickf) => [L1 U1 P1 corrM1|rk_Mu].
+  (* Coq's case seems more powerful here, probably because SSR picks *
+   * all occurrences of b1 in idP : reflect b1 b1                    *)
+    case (@idP (p <= n)) => [le_pn|lt_np].
+      rewrite StrassenP.
+      case: (IHp _ _ pickf) => [L2 U2 P2 corrE|rk_E]; constructor.
+rewrite -mulmx_cast.
+rewrite upper_tri_invP.
+set U1' := castmx _ U1.
+set M' := castmx _ M.
+
+
+rewrite mulmx_block.
+rewrite !mul0mx !mulmx0 !GRing.addr0.
+rewrite -[_ *m invmx _ *m _]mulmxA.
+rewrite mulVmx.
+rewrite mulmx1.
+
+
+      admit.
+    constructor.
+    move/negP: lt_np; rewrite -ltnNge {2}addpp => lt_np.
+    apply: (leq_ltn_trans (rank_leq_col _)).
+    rewrite -addn1.
+    apply: leq_add => //.
+    exact: lt0p.
+  constructor.
+  have->: \rank M = \rank (castmx (addpp p, erefl n.+1) M).
+    by case: _ / (addpp p).
+  rewrite -[castmx _ _]vsubmxK.
+  rewrite -addsmxE.
+  apply: (leq_ltn_trans (mxrank_adds_leqif _ _)).
+  rewrite {5}addpp.
+  rewrite -addSn.
+  apply: leq_add => //.
+  exact: rank_leq_row.
+case: pickf => [i /= nz_m0i0|eq_M0]; constructor.
+  by rewrite xcolE col_permE tpermV mul1mx.
+rewrite ltnS leqn0 mxrank_eq0.
+apply/eqP/matrixP => i j.
+by rewrite ord1 mxE; have := (eq_M0 j) => /= /negbFE /eqP.
+Qed.
+
+End Bunch_Hopcroft_correctness.
