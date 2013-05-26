@@ -22,90 +22,160 @@ Reserved Notation "\refines_ r a b"
           r at level 0, a at next level).
 
 Delimit Scope computable_scope with C.
+Delimit Scope hetero_computable_scope with HC.
+Delimit Scope rel_scope with rel.
 
+(* Shortcut for triggering typeclass resolution *)
 Ltac tc := do 1?typeclasses eauto.
 
-Local Open Scope ring_scope.
+Require Import Setoid Basics Equivalence Morphisms.
 
-Import GRing.Theory.
+(***************************)
+(* Heterogeneous Relations *)
+(***************************)
+Section HeterogeneousRelations.
 
-(* This class describe what is a type refinement *)
-Class refinement A B := Refinement {
-  implem : A -> B;
-  spec : B -> option A;
-  implemK : pcancel implem spec
-}.
-Notation "\implem_ B" := (@implem _ B _) : computable_scope.
-Notation "\implem" := (@implem _ _ _) (only parsing) : computable_scope.
-Notation "\spec_ A" := (@spec A _ _) : computable_scope.
-Notation "\spec" := (@spec _ _ _) (only parsing) : computable_scope.
+Definition sub_hrel {A B : Type} (R R' : A -> B -> Prop) :=
+  forall (x : A) (y : B), R x y -> R' x y.
+Arguments sub_hrel A B R%rel R'%rel.
+Notation "X <= Y" := (sub_hrel X Y) : rel_scope.
 
-Lemma implem_inj A B `{refinement A B} : injective implem.
-Proof. exact: (pcan_inj implemK). Qed.
+Lemma sub_Falsel {A B} (R : A -> B -> Prop) : ((fun _ _ => False) <= R)%rel.
+Proof. done. Qed.
 
-Definition specd A B `{refinement A B} (a : A) (b : B) := odflt a (spec b).
+Lemma sub_Truer {A B} (R : A -> B -> Prop) : (R <= (fun _ _ => True))%rel.
+Proof. done. Qed.
 
-Lemma implem_composeK A B C `{refinement A B, refinement B C} :
-  pcancel (\implem_C \o \implem_B)%C (obind \spec_A \o \spec_B)%C.
-Proof. by move=> a /=; rewrite implemK /= implemK. Qed.
+Lemma sub_eql {A : Type} (R : A -> A -> Prop) `{!Reflexive R} : (eq <= R)%rel.
+Proof. by move=> x _ <-. Qed.
 
-Definition refinement_id A : refinement A A := 
-  Refinement (fun _ => erefl).
+Inductive eq_hrel {A B} (R R' : A -> B -> Prop) :=
+  EqHrel of (R <= R')%rel & (R' <= R)%rel.
+Arguments eq_hrel A B R%rel R'%rel.
+Notation "X <=> Y" := (eq_hrel X Y) (format "X  <=>  Y", at level 95) : rel_scope.
 
-(* This class describes what is a term refinement *)
-Class refines {A B} `{refinement A B} (a : A) (b : B) :=
-  spec_refines_def : Some a = spec b.
+Lemma eq_hrelRL {A B} (R R' : A -> B -> Prop) : (R <=> R')%rel -> (R <= R')%rel.
+Proof. by case. Qed.
 
-Lemma spec_refines A B `{refinement A B} (a : A) (b : B)
-      `{!refines a b} :  spec b = Some a.
-Proof. by rewrite spec_refines_def. Qed.
+Lemma eq_hrelLR {A B} (R R' : A -> B -> Prop) : (R <=> R')%rel -> (R' <= R)%rel.
+Proof. by case. Qed.
 
-Lemma specd_refines A B `{refinement A B} (a a0 : A) (b : B) `{!refines a b}: 
-  specd a0 b = a.
-Proof. by rewrite /specd spec_refines. Qed.
+Global Instance sub_hrel_partialorder A B : PreOrder (@sub_hrel A B).
+Proof. by constructor=> [R|R S T RS ST a b /RS /ST]. Qed.
 
-Global Instance refinement_bool : refinement bool bool := refinement_id bool.
+Global Instance eq_hrel_equiv A B : Equivalence (@eq_hrel A B).
+Proof.
+constructor=> [R|R S []|R S T [RS SR] [ST TS]];
+by do ?split => //; transitivity S.
+Qed.
 
-Lemma refines_boolE (b b' : bool) {rb : refines b b'} : b = b'.
-Proof. by move: b b' rb (@spec_refines _ _ _ _ _ rb) => [] []. Qed.
+Global Instance sub_hrel_proper A B : Proper (eq_hrel ==> eq_hrel ==> iff) (@sub_hrel A B).
+Proof.
+move=> R S [RS SR] T U [TU UT]; split=> [RT|SU].
+  by transitivity T => //; transitivity R => //.
+by transitivity U => //; transitivity S => //.
+Qed.
 
-Lemma refinesP {A B} `{refinement A B}  (x y : A) (a : B) :
-  refines x a -> (x = y <-> refines y a).
-Proof. by move=> ra; split => [<- //|]; rewrite /refines -ra => [[->]]. Qed.
+Global Instance sub_hrel_partial_order A B : PartialOrder (@eq_hrel A B ) (@sub_hrel A B).
+Proof. by move=> R S; split=> [[RS SR]|[]]; constructor. Qed.
 
-Notation refines_id := (@refines _ _ (@refinement_id _)).
-Notation "@refines_id A" := (@refines A A (@refinement_id _))
-  (at level 10).
+Definition comp_hrel {A B C} (R : A -> B -> Prop) (R' : B -> C -> Prop) : A -> C -> Prop :=
+  fun a c => exists b, R a b /\ R' b c.
+
+Arguments comp_hrel A B C R%rel R'%rel _ _.
+Notation "X \o Y" := (comp_hrel X Y) : rel_scope.
+
+Lemma comp_hrelP {A B C} (R : A -> B -> Prop) (R' : B -> C -> Prop)
+  (b : B) (a : A) (c : C) : R a b -> R' b c -> (R \o R')%rel a c.
+Proof. by exists b. Qed.
+
+Global Instance comp_hrel_sub_proper {A B C} :
+  Proper (sub_hrel ==> sub_hrel ==> sub_hrel) (@comp_hrel A B C).
+Proof.
+move=> R S RS T U TU x z [y [Rxy Tyz]].
+by exists y; split; [apply: RS|apply: TU].
+Qed.
+
+Global Instance comp_hrel_eq_proper {A B C} :
+  Proper (eq_hrel ==> eq_hrel ==> eq_hrel) (@comp_hrel A B C).
+Proof. by move=> ?? [??] ?? [??]; split; apply: comp_hrel_sub_proper. Qed.
+
+Lemma comp_eqr {A B} (R : A -> B -> Prop) : (R \o eq <=> R)%rel.
+Proof. by split=> [x y [y' [? <-]] //|x y Rxy]; exists y. Qed.
+
+Lemma comp_eql {A B} (R : A -> B -> Prop) : (eq \o R <=> R)%rel.
+Proof. by split=> [x y [x' [<- ?]] //|x y Rxy]; exists x. Qed.
+
+Definition fun_hrel {A B} (f : B -> A) : A -> B -> Prop :=
+  fun a b => f b = a.
+
+Definition ofun_hrel {A B} (f : B -> option A) : A -> B -> Prop :=
+  fun a b => f b = Some a.
+
+End HeterogeneousRelations.
+
+Notation "X \o Y" := (comp_hrel X Y) : rel_scope.
+Notation "X <= Y" := (sub_hrel X Y) : rel_scope.
+Notation "X <=> Y" := (eq_hrel X Y) (format "X  <=>  Y", at level 95) : rel_scope.
+
+(*****************************************)
+(* Respectful on heterogeneous relations *)
+(*****************************************)
+Definition hrespectful {A B C D : Type}
+  (R : A -> B -> Prop) (R' : C -> D -> Prop) : (A -> C) -> (B -> D) -> Prop :=
+  Classes.Morphisms.respectful_hetero _ _ _ _ R (fun x y => R').
+
+Arguments hrespectful {A B C D} R%rel R'%rel _ _.
+Notation " R ==> S " := (@hrespectful _ _ _ _ R S)
+    (right associativity, at level 55) : rel_scope.
+
+Global Instance hrespectful_sub_proper {A B C D} :
+   Proper (sub_hrel --> sub_hrel ==> sub_hrel) (@hrespectful A B C D).
+Proof.
+move=> R S /= SR T U TU x y /= RTxy a b Sab.
+by apply: TU; apply: RTxy; apply: SR.
+Qed.
+
+Global Instance hrespectful_proper {A B C D} :
+   Proper (eq_hrel ==> eq_hrel ==> eq_hrel) (@hrespectful A B C D).
+Proof. by move=> ?? [??] ?? [??]; split; apply: hrespectful_sub_proper. Qed.
+
+Lemma sub_hresp_comp  {A B C} (R1 R1': A -> B -> Prop) (R2 R2': B -> C -> Prop) :
+  (((R1 ==> R1') \o (R2 ==> R2')) <= ((R1 \o R2) ==> (R1' \o R2')))%rel.
+Proof.
+move=> f h [g [rfg rgh]] x z [y [rxy ryz]]; exists (g y).
+by split; [apply: rfg | apply: rgh].
+Qed.
 
 (*****************)
 (* PARAMETRICITY *)
 (*****************)
-
-Definition respectful_gen {A B C D : Type}
-  (R : A -> B -> Prop) (R' : C -> D -> Prop) : (A -> C) -> (B -> D) -> Prop :=
-  Classes.Morphisms.respectful_hetero _ _ _ _ R (fun x y => R').
-
-Arguments respectful_gen {A B C D}
-  R%computable_scope R'%computable_scope _ _.
-Notation " R ==> S " := (@respectful_gen _ _ _ _ R S)
-    (right associativity, at level 55) : computable_scope.
-
 Fact getparam_key : unit. Proof. done. Qed.
-Fact    param_key : unit. Proof. done. Qed.
 
-Class param A B (R : A -> B -> Prop) (m : A) (n : B) := 
-  param_rel : (locked_with param_key R) m n.
-Arguments param {A B} R%computable_scope m n.
+Class param {A B} (R : A -> B -> Prop) (m : A) (n : B) := 
+  param_rel : R m n.
+Arguments param {A B} R%rel_scope m n.
 
 Class getparam {A B} (R : A -> B -> Prop) (m : A) (n : B) := 
   getparam_rel : (locked_with getparam_key R) m n.
-Arguments getparam {A B} R%computable_scope m n.
+Arguments getparam {A B} R%rel_scope m n.
 
 Lemma paramE A B (R : A -> B -> Prop) : (param R = R) * (getparam R = R).
 Proof. by rewrite /param /getparam !unlock. Qed.
 
-Lemma getparam_refl A (a : A) :
-  getparam (@refines _ _ (@refinement_id A)) a a.
+Global Instance param_sub_proper {A B} :
+   Proper (sub_hrel ==> eq ==> eq ==> impl) (@param A B).
+Proof. by move=> R S RS x _ <- y _ <-; move: x y; rewrite !paramE. Qed.
+
+Global Instance param_proper {A B} :
+   Proper (eq_hrel ==> eq ==> eq ==> iff) (@param A B).
+Proof. by move=> ?? [??] ??? ???; split; apply: param_sub_proper. Qed.
+
+Global Instance getparam_proper {A B} :
+   Proper (eq_hrel ==> eq ==> eq ==> iff) (@getparam A B).
+Proof. by move=> *; rewrite !paramE; apply: param_proper. Qed.
+
+Lemma getparam_refl A (a : A) : getparam eq a a.
 Proof. by rewrite paramE. Qed.
 Global Hint Extern 0 (getparam _ _ _)
   => now eapply @getparam_refl : typeclass_instances.
@@ -113,16 +183,19 @@ Global Hint Extern 0 (getparam _ _ _)
 Global Instance param_apply A B C D
  (R : A -> B -> Prop) (R' : C -> D -> Prop)
  (a :  A) (b : B) (c : A -> C) (d : B -> D):
-  param (R ==> R') c d ->
-  param R a b -> param R' (c a) (d b) | 1.
-Proof. by rewrite !paramE => rcd rab; apply rcd. Qed.
+  param (R ==> R') c d -> param R a b -> param R' (c a) (d b) | 1.
+Proof. by move=> rcd rab; apply rcd. Qed.
 
 Global Instance param_id (T T' : Type) (R : T -> T' -> Prop) :
    param (R ==> R) id id.
-Proof. by rewrite paramE. Qed.
+Proof. done. Qed.
 
 Lemma id_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
   param R x y -> param R x y.
+Proof. done. Qed.
+
+Global Instance trivial_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
+  R x y -> param R x y.
 Proof. done. Qed.
 
 Lemma get_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
@@ -132,100 +205,78 @@ Proof. by rewrite !paramE. Qed.
 Lemma set_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
   param R x y -> getparam R x y.
 Proof. by rewrite !paramE. Qed.
-Global Hint Extern 999 (getparam refines _ _)
- => eapply set_param : typeclass_instances.
+(* Global Hint Extern 999 (getparam refines _ _) *)
+(*  => eapply set_param : typeclass_instances. *)
 
-Class composable A B C
- (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop) : Type :=
-  composable_trans : forall b a c, rAB a b -> rBC b c -> rAC a c.
-Arguments composable {A B C} rAB%computable_scope
-  rBC%computable_scope rAC%computable_scope.
+Class composable {A B C}
+ (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop) := 
+  Composable : (rAB \o rBC <= rAC)%rel.
+Arguments composable {A B C} rAB%rel rBC%rel rAC%rel.
 
-Section local_trans.
-Local Instance refinement_trans A B C
-  (rab : refinement A B) (rbc : refinement B C) : refinement A C := 
-  Refinement (@implem_composeK _ _ _ rab rbc).
+Global Instance composable_sub_proper {A B C} :
+   Proper (sub_hrel --> sub_hrel --> sub_hrel ==> impl) (@composable A B C).
+Proof. 
+rewrite /composable => R S RS T U TU V W VW RTV.
+by setoid_rewrite <- RS; setoid_rewrite <- TU; setoid_rewrite <- VW.
+Qed.
 
-Lemma refines_trans A B C (rab : refinement A B) (rbc : refinement B C)
-  (a : A) (b : B) (c : C) `{!refines a b, !refines b c} : refines a c.
-Proof. by do? rewrite /refines /= spec_refines. Qed.
-(* rac := refinement_trans rab rbc and leaving it implicit in the *)
-(* conclusion leads to a Bad implicit argument number: 11 *)
-
-Lemma refines_split A B C
-  (rab : refinement A B) (rbc : refinement B C)
-  (a : A) (c : C) : refines a c ->
-  {b : B | (refines a b * refines b c)%type}.
-Proof. by rewrite /refines /=; case: (spec c) => //= b; exists b. Qed.
+Global Instance composable_proper {A B C} :
+   Proper (eq_hrel ==> eq_hrel ==> eq_hrel ==> iff) (@composable A B C).
+Proof.
+by move=> ?? [??] ?? [??] ?? [??]; split; apply: composable_sub_proper.
+Qed.
 
 Lemma param_trans A B C
   (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop)
   (a : A) (b : B) (c : C) :
-  composable rAB rBC rAC ->
- (* This is wrong: it may cause an exponential behavior.
-    Ideally, the next argument should come first, but it triggets
-    a loop in the proof search and I can't figure out why 
-    -- Cyril *)
-  param rAB a b ->
+  param rAB a b ->  composable rAB rBC rAC ->
   getparam rBC b c -> param rAC a c.
-Proof.
-by rewrite !paramE => cABC rab rbc; apply: composable_trans rab rbc.
-Qed.
+Proof. by rewrite !paramE => rab rABC rbc; apply: rABC; exists b. Qed.
 
-Lemma composable_rid1 A B (R : A -> B -> Prop):
-  composable refines_id R R.
-Proof. by move=> b a c [<-]. Qed.
+(* Local Instance refinement_trans A B C *)
+(*   (rab : refinement A B) (rbc : refinement B C) : refinement A C :=  *)
+(*   Refinement (@implem_composeK _ _ _ rab rbc). *)
 
-Lemma composable_refines A B C
-  (rAB : refinement A B) (rBC : refinement B C) :
-  composable (@refines A B _) (@refines B C _) refines.
-Proof. by move=> b a c; eapply @refines_trans. Qed.
+(* Lemma refines_trans A B C (rab : refinement A B) (rbc : refinement B C) *)
+(*   (a : A) (b : B) (c : C) `{!refines a b, !refines b c} : refines a c. *)
+(* Proof. by do? rewrite /refines /= spec_refines. Qed. *)
+(* (* rac := refinement_trans rab rbc and leaving it implicit in the *) *)
+(* (* conclusion leads to a Bad implicit argument number: 11 *) *)
 
-Lemma composable_imply_id1 A B A' B' C'
-  (rAB : refinement A B)
+Lemma composable_rid1 A B (R : A -> B -> Prop): composable eq R R.
+Proof. by rewrite /composable comp_eql. Qed.
+
+Lemma composable_comp A B C (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) :
+  composable rAB rBC (rAB \o rBC)%rel.
+Proof. done. Qed.
+
+Lemma composable_imply {A B C A' B' C'}
+  (rAB : A -> B -> Prop) (rBC : B -> C -> Prop)
   (R1 : A' -> B' -> Prop) (R2 : B' -> C' -> Prop) (R3 : A' -> C' -> Prop):
-composable R1 R2 R3 ->
-composable (refines_id ==> R1)
-           (@refines A B _  ==> R2) (refines ==> R3).
+composable R1 R2 R3 -> composable (rAB ==> R1) (rBC ==> R2) (rAB \o rBC ==> R3).
 Proof.
-move=> cR b a c rab rbc x z rxz /=.
-exact: (composable_trans (rab x x erefl) (rbc x z rxz)).
+rewrite /composable => R123.
+transitivity (rAB \o rBC ==> R1 \o R2)%rel; last exact: hrespectful_sub_proper.
+move=> f h [g []] Rfg Rgh x z [y [rxy ryz]]; exists (g y).
+by split; [apply: Rfg|apply: Rgh].
 Qed.
 
-(* Lemma composable_imply_id2 A A' B' C' *)
-(*   (R1 : A' -> B' -> Prop) (R2 : B' -> C' -> Prop) (R3 : A' -> C' -> Prop): *)
-(* composable R1 R2 R3 -> *)
-(* composable (refines_id ==> R1) *)
-(*            (refines_id ==> R2) (@refines_id A ==> R3). *)
-(* Proof. *)
-(* move=> cR b a c rab rbc x z rxz /=. *)
-(* exact: (composable_trans (rab x z rxz) (rbc z z erefl)). *)
-(* Qed. *)
-
-Lemma composable_imply A B C A' B' C'
-  (rAB : refinement A B) (rBC : refinement B C)
+Lemma composable_imply_id1 {A B A' B' C'}
+  (rAB : A -> B -> Prop)
   (R1 : A' -> B' -> Prop) (R2 : B' -> C' -> Prop) (R3 : A' -> C' -> Prop):
-composable R1 R2 R3 ->
-composable (@refines A B _ ==> R1)
-           (@refines B C _ ==> R2) (refines ==> R3).
-Proof.
-move=> cR b a c rab rbc x z rxz /=.
-have [y [rxy ryz]] := (refines_split rxz).
-exact: (composable_trans (rab x y rxy) (rbc y z ryz)).
-Qed.
-
-End local_trans.
+composable R1 R2 R3 -> composable (eq ==> R1) (rAB ==> R2) (rAB ==> R3).
+Proof. by rewrite -[X in (X ==> R3)%rel]comp_eql; apply: composable_imply. Qed.
 
 Lemma paramR A B (R : A -> B -> Prop) (a : A) (b : B)
   (rab : param R a b) : R a b.
 Proof. by rewrite paramE in rab. Qed.
 
-Hint Extern 0 (refines _ _) => eapply paramR : typeclass_instances.
+(* Hint Extern 0 (refines _ _) => eapply paramR : typeclass_instances. *)
 
-Hint Extern 0 (composable _ _ refines)
- => now eapply composable_refines : typeclass_instances.
+Hint Extern 0 (composable _ _ (_ \o _))
+ => now eapply composable_comp : typeclass_instances.
 
-Hint Extern 1 (composable _ _ refines)
+Hint Extern 1 (composable _ _ _)
  => now eapply @composable_rid1 : typeclass_instances.
 
 Hint Extern 2 (composable _ _ (_ ==> _))
@@ -238,52 +289,52 @@ Hint Extern 3 (composable _ _ (_ ==> _))
 (* We could use instead a "container datatype" library *)
 (* where container T -> forall A B, refinement (T A) (T B) *)
 
-Module Parametricity.
 Section Parametricity.
 
-Variables (A A' B B' : Type).
-Context `{refinement A A'} `{refinement B B'}.
+Local Open Scope ring_scope.
 
-Definition ABtoAB' (ab : A * B) : (A' * B') := (implem ab.1, implem ab.2).
-Definition AB'toAB (ab : A' * B') : option (A * B) :=
-  obind (fun x => obind (fun y => Some (x, y)) (spec ab.2)) (spec ab.1).
-Lemma ABtoAB'K : pcancel ABtoAB' AB'toAB.
-Proof. by case=> x y; rewrite /ABtoAB' /AB'toAB !implemK. Qed.
+Import GRing.Theory.
 
-Definition pair_refinement : refinement (A * B) (A' * B') := Refinement ABtoAB'K.
+(* This class describe what is a type refinement *)
+Class refinement {A B} (R : A -> B -> Prop) := Refinement {
+  implem : A -> B;
+  spec : B -> option A;
+  implemK : pcancel implem spec;
+  refinementP : ((fun x y => spec y = Some x) <=> R)%rel
+}.
+Notation "\implem_ B" := (@implem _ B _ _) : computable_scope.
+Notation "\implem" := (@implem _ _ _ _) (only parsing) : computable_scope.
+Notation "\spec_ A" := (@spec A _ _ _) : computable_scope.
+Notation "\spec" := (@spec _ _ _ _) (only parsing) : computable_scope.
 
-Hint Extern 1 (@refinement (_ * _) (_ * _)) =>
-  eapply pair_refinement : typeclass_instances.
+Lemma implem_inj `{refinement} : injective implem.
+Proof. exact: (pcan_inj implemK). Qed.
 
-Instance param_pair :
-  param (refines ==> refines ==> refines) (@pair A B) (@pair A' B').
-Proof.
-rewrite !paramE => a a' ra b b' br.
-by rewrite /refines /= /AB'toAB /= !spec_refines.
-Qed.
+Definition specd A B `{refinement A B} (a : A) (b : B) := odflt a (spec b).
 
-Instance param_fst : param (refines ==> refines) (@fst A B) (@fst A' B').
-Proof.
-rewrite !paramE => ab ab'; rewrite /refines /= /AB'toAB.
-by move: (spec _.1) (spec _.2) => [a|//] [b|//] [->].
-Qed.
+Lemma implem_composeK A B C rAB rBC `{refinement A B rAB, refinement B C rBC} :
+  pcancel (\implem_C \o \implem_B)%C (obind \spec_A \o \spec_B)%C.
+Proof. by move=> a /=; rewrite implemK /= implemK. Qed.
 
-Instance param_snd : param (refines ==> refines) (@snd A B) (@snd A' B').
-Proof.
-rewrite !paramE => ab ab'; rewrite /refines /= /AB'toAB.
-by move: (spec _.1) (spec _.2) => [a|//] [b|//] [->].
-Qed.
+Program Definition refinement_id A : refinement (@eq A) :=
+  Refinement (fun _ => erefl) _.
+Next Obligation. by apply: EqHrel => [x y []|x y ->]. Qed.
 
-Instance param_if 
-         (c : bool) (c' : bool) (a : A) (a' : A') (b : A) (b' : A') 
-         (R : A -> A' -> Prop)
-   {rc : param refines c c'}  `{!param R a a'} `{!param R b b'} :
-  param R (if c then a else b) (if c' then a' else b').
-Proof.
-by rewrite paramE; move: rc; rewrite paramE => [[<-]] {c'}; case: c; apply: paramR.
-Qed.
+(* This class describes what is a term refinement *)
+Definition refines {A B R} `{refinement A B R} := R.
 
-End Parametricity.
+Lemma spec_refines A B R `{refinement A B R} (a : A) (b : B) :
+  param R a b -> spec b = Some a.
+Proof. by apply: eq_hrelLR refinementP _ _. Qed.
+
+Global Instance refinement_bool : refinement (@eq bool) := refinement_id bool.
+
+Lemma refines_boolE (b b' : bool) {rb : refines b b'} : b = b'.
+Proof. by rewrite rb. Qed.
+
+Lemma refinesP {A B} `{refinement A B}  (x y : A) (a : B) :
+  param refines x a -> (param refines y a <-> x = y).
+Proof. by rewrite -[refines]refinementP paramE => ->; split=> [[]|->]. Qed.
 
 Lemma getparam_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
       (c : A -> C) (d : B -> D):
@@ -291,7 +342,7 @@ Lemma getparam_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
         getparam (R ==> R') c d.
 Proof. by rewrite !paramE; apply. Qed.
 
-Global Hint Extern 2 (getparam (_ ==> _) _ _)
+Hint Extern 2 (getparam (_ ==> _) _ _)
  => eapply @getparam_abstr=>??? : typeclass_instances.
 
 Lemma getparam_abstr2 A B A' B' A'' B'' 
@@ -302,21 +353,8 @@ Lemma getparam_abstr2 A B A' B' A'' B''
         getparam (R ==> R' ==> R'') f g.
 Proof. by tc. Qed.
 
-Global Hint Extern 1 (getparam (_ ==> _ ==> _) _ _)
+Hint Extern 1 (getparam (_ ==> _ ==> _) _ _)
  => eapply @getparam_abstr2=> ??? ??? : typeclass_instances.
-
-Hint Extern 1 (@refinement _ (_ * _)) =>
-  eapply pair_refinement : typeclass_instances.
-
-Hint Extern 1 (@refinement (_ * _) _) =>
-  eapply pair_refinement : typeclass_instances.
-
-Existing Instance param_if.
-Existing Instance param_pair.
-Existing Instance param_fst.
-Existing Instance param_snd.
-
-End Parametricity.
 
 Lemma param_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
       (c : A -> C) (d : B -> D):
@@ -331,15 +369,98 @@ Lemma param_abstr2 A B A' B' A'' B''
          forall (a' : A') (b' : B'), param R' a' b' ->
         param R'' (f a a') (g b b')) ->
         param (R ==> R' ==> R'') f g.
-Proof. by move=> H; do ?[eapply param_abstr => *]; apply: H. Qed.
+Proof. by move=> H; do 2![eapply param_abstr => *]; apply: H. Qed.
 
 Definition unfold A := @id A.
 Typeclasses Opaque unfold.
 
-Global Instance param_unfold X A
+(* buggy *)
+Lemma param_unfold X A
   (R : X -> A -> Prop) (x : X) (a : A) :
- param R x a -> param R (unfold x) (unfold a). 
-Proof. by []. Qed.
+ param R x a -> getparam R (unfold x) (unfold a).
+Proof. by rewrite !paramE. Qed.
+
+End Parametricity.
+
+Global Hint Extern 999 (getparam _ _ _)
+ => apply set_param : typeclass_instances.
+
+Hint Extern 2 (getparam (_ ==> _) _ _)
+ => eapply @getparam_abstr=> ??? : typeclass_instances.
+
+Hint Extern 1 (getparam (_ ==> _ ==> _) _ _)
+ => eapply @getparam_abstr2=> ??? ??? : typeclass_instances.
+
+
+Section prod.
+Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
+
+Definition prod_hrel : A * B -> A' * B' -> Prop :=
+  fun x y => param rA x.1 y.1 /\ param rB x.2 y.2.
+
+Global Instance param_pair : param (rA ==> rB ==> prod_hrel) (@pair A B) (@pair A' B').
+Proof. done. Qed.
+
+Global Instance param_fst : param (prod_hrel ==> rA) (@fst _ _) (@fst _ _).
+Proof. by move=> [??] [??] []. Qed.
+
+Global Instance param_snd : param (prod_hrel ==> rB) (@snd _ _) (@snd _ _).
+Proof. by move=> [??] [??] []. Qed.
+
+Definition implem_prod (RA : refinement rA) (RB : refinement rB) (x : A * B) :=
+  (implem x.1, implem x.2).
+Definition spec_prod (RA : refinement rA) (RB : refinement rB) (x : A' * B') :=
+  if (spec x.1, spec x.2) is (Some a, Some b) then Some (a, b) else None.
+
+Program Definition refinement_prod (RA : refinement rA) (RB : refinement rB) :
+  refinement prod_hrel := @Refinement _ _ _ (implem_prod RA RB) (spec_prod RA RB) _ _.
+Next Obligation. by move=> [x y] /=; rewrite /spec_prod !implemK. Qed.
+Next Obligation.
+split=> [[??][??]|[??][??][]]; rewrite /prod_hrel /=;
+rewrite -[rA]refinementP -[rB]refinementP !paramE /=;
+rewrite /spec_prod; do 2![case: spec => // ?].
+  by case=> -> ->.
+by move=> [->] [->].
+Qed.
+
+End prod.
+Arguments prod_hrel {_ _ _ _} rA%rel rB%rel _ _.
+Notation "X * Y" := (prod_hrel X Y) : rel_scope.
+Global Existing Instance refinement_prod.
+
+Section param_seq.
+Context {A B : Type} (rAB : A -> B -> Prop).
+
+Fixpoint seq_hrel sa sb : Prop :=
+  match sa, sb with
+    | [::],    [::]    => True
+    | a :: sa, b :: sb => rAB a b /\ seq_hrel sa sb
+    | _,       _       => False
+  end.
+
+Global Instance param_nil : param seq_hrel nil nil. Proof. done. Qed.
+
+Global Instance param_cons : param (rAB ==> seq_hrel ==> seq_hrel) cons cons.
+Proof. done. Qed.
+
+Definition seq_elim {X Y} (f0 : Y) (f_cons : X -> Y -> Y) :=
+  fix f s := match s with [::] => f0 | x :: s => f_cons x (f s) end.
+
+Global Instance param_seq_rect {C D : Type} (rCD : C -> D -> Prop) :
+  param (rCD ==> (rAB ==> rCD ==> rCD) ==> seq_hrel ==> rCD) seq_elim seq_elim.
+Proof. 
+move=> c d rcd f g rfg; elim=> [|x s /= ihs] [|y t] // [rxy rst].
+by apply: rfg => //; apply: ihs.
+Qed.
+
+End param_seq.
+
+Global Instance param_if {A A'}
+       (c : bool) (c' : bool) (a : A) (a' : A') (b : A) (b' : A') 
+         (R : A -> A' -> Prop)
+   {rc : param eq c c'}  `{!param R a a'} `{!param R b b'} :
+  param R (if c then a else b) (if c' then a' else b').
+Proof. by move: rc => [[<-]]; case: c. Qed.
 
 Module Refinements.
 
@@ -400,16 +521,30 @@ Local Notation "x %| y" := (dvd_op x y) : computable_scope.
 (* Heterogeneous operations *)
 (* Represent a pre-additive category *)
 Class hzero {I} B := hzero_op : forall m n : I, B m n.
+Local Notation "0" := hzero_op : hetero_computable_scope.
 
 Class hone {I} B := hone_op : forall n : I, B n n.
+Local Notation "!" := hone_op : hetero_computable_scope.
 
 Class hadd {I} B := hadd_op : forall m n : I, B m n -> B m n -> B m n.
+Local Notation "+%HC" := hadd_op.
+Local Notation "x + y" := (add_op x y) : hetero_computable_scope.
+
+Class hopp {I} B := hopp_op : forall m n : I, B m n -> B m n.
+Local Notation "-%HC" := hopp_op.
+Local Notation "- x" := (hopp_op x) : hetero_computable_scope.
 
 Class hsub {I} B := hsub_op : forall m n : I, B m n -> B m n -> B m n.
+Local Notation "x - y" := (sub_op x y) : hetero_computable_scope.
+
+Class hinv {I} B := hinv_op : forall m n : I, B m n -> B m n.
+Local Notation "x ^-1" := (hinv_op x) : hetero_computable_scope.
 
 Class hmul {I} B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
 
 Class heq {I} B := heq_op : forall m n : I, B m n -> B m n -> bool.
+Local Notation "==%HC" := heq_op.
+Local Notation "x == y" := (heq_op x y) : hetero_computable_scope.
 
 Class hcast {I} B := hcast_op : forall m n m' n' : I,
   (m = m') * (n = n') -> B m n -> B m' n'.
@@ -426,6 +561,8 @@ Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
 End Op.
 
 End Refinements.
+
+Local Open Scope ring_scope.
 
 Definition subr {R : zmodType} (x y : R) := x - y.
 Definition divr {R : unitRingType} (x y : R) := x / y.
@@ -452,6 +589,16 @@ Notation "x > y"  := (lt_op y x)  (only parsing) : computable_scope.
 Notation "x >= y" := (leq_op y x) (only parsing) : computable_scope.
 Notation cast := (@cast_op _).
 Notation "x %| y" := (dvd_op x y)   : computable_scope.
+
+Notation "0"      := hzero_op        : hetero_computable_scope.
+Notation "1"      := hone_op         : hetero_computable_scope.
+Notation "-%HC"    := hopp_op.
+Notation "- x"    := (hopp_op x)     : hetero_computable_scope.
+Notation "x ^-1"  := (hinv_op x)     : hetero_computable_scope.
+Notation "+%HC"    := hadd_op.
+Notation "x + y"  := (hadd_op x y)   : hetero_computable_scope.
+Notation "x - y"  := (hsub_op x y)   : hetero_computable_scope.
+Notation "x == y" := (heq_op x y)    : hetero_computable_scope.
 
 Ltac simpC :=
   do ?[ rewrite -[0%C]/0%R | rewrite -[1%C]/1%R

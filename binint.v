@@ -110,7 +110,10 @@ Definition int_of_Z (m : Z) : int := match m with
 Lemma Z_of_intK : pcancel Z_of_int (some \o int_of_Z).
 Proof. by rewrite /Z_of_int /int_of_Z => [[[]|]]. Qed.
 
-Global Instance refinement_int_Z : refinement int Z := Refinement Z_of_intK.
+Definition Rint : int -> Z -> Prop := fun_hrel int_of_Z.
+
+Global Program Instance refinement_int_Z : refinement Rint := Refinement Z_of_intK _.
+Next Obligation. by split=> [??[<-]|??<-]. Qed.
 
 Import Op AlgOp.
 Local Instance zero_nat : zero nat := 0%N.
@@ -143,15 +146,15 @@ Global Instance refines_int_1 : param refines (1%R : int) (1%C : Z).
 Proof. by rewrite paramE. Qed.
 
 Global Instance refines_int_Posz :
-  param (refines_id ==> refines)%C Posz (cast : nat -> Z).
+  param (Logic.eq ==> refines) Posz (cast : nat -> Z).
 Proof. by rewrite paramE=> n n' [<-]. Qed.
 
 Global Instance refines_int_add :
-  param (refines ==> refines ==> refines)%C +%R +%C.
+  param (refines ==> refines ==> refines) +%R +%C.
 Proof.
-rewrite paramE=> x x' rx y y' ry.
-rewrite /refines [x]refines_intE [y]refines_intE /add_op /=.
-case: x' y' {rx ry} => [x'|x'] [y'|y'] //=; rewrite ?(add0r, addr0) //; simpC.
+apply param_abstr2 => _ x <- _ y <-.
+rewrite /refines paramE /Rint /fun_hrel /add_op /=.
+case: x y => [x|x] [y|y] //=; rewrite ?(add0r, addr0) //=; simpC.
     have [yx|xy] /= := leqP; first by rewrite subzn.
     by rewrite insubdK -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprB.
   have [yx|xy] /= := leqP; first by rewrite addrC subzn.
@@ -159,150 +162,154 @@ case: x' y' {rx ry} => [x'|x'] [y'|y'] //=; rewrite ?(add0r, addr0) //; simpC.
 by rewrite !insubdK -?topredE /= ?addn_gt0 ?valP // -opprB opprK addrC.
 Qed. 
 
-Global Instance refines_int_opp : param (refines ==> refines)%C -%R -%C.
+Global Instance refines_int_opp : param (refines ==> refines) -%R -%C.
 Proof.
-rewrite paramE=> x x' rx; rewrite [x]refines_intE; congr some.
-by case: x' {rx} => [[]|] //= n; rewrite ?insubdK ?opprK.
+rewrite paramE /refines /Rint /fun_hrel => _ x <-.
+by case: x => [[]|] //= n; rewrite ?insubdK ?opprK.
 Qed.
 
 Global Instance refines_int_sub :
-  param (refines ==> refines ==> refines)%C subr sub_op.
+  param (refines ==> refines ==> refines) subr sub_op.
 Proof.
-rewrite paramE=> x x' rx y y' ry.
-rewrite [x]refines_intE [y]refines_intE /subr /sub_op; congr some.
-case: x' y' {rx ry} => [x'|x'] [y'|y']; rewrite ?opprK //=; simpC.
+rewrite paramE /refines /Rint /fun_hrel /subr /sub_op => _ x <- _ y <-.
+case: x y => [x|x] [y|y]; rewrite ?opprK //=; simpC.
     have [yx|xy] /= := leqP; first by rewrite subzn.
     by rewrite insubdK -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprB.
-  have [->|y'_neq0 /=] := (altP eqP); first by rewrite subr0.
+  have [->|y_neq0 /=] := (altP eqP); first by rewrite subr0.
   by rewrite !insubdK -?opprD -?topredE //= ?addn_gt0 ?valP ?lt0n.
 have [yx|xy] /= := leqP; first by rewrite addrC subzn.
 by rewrite insubdK // -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprD opprK.
 Qed.
 
 Global Instance refines_int_eq :
-  param (refines ==> refines ==> refines)%C eqtype.eq_op (@eq_op Z _).
+  param (refines ==> refines ==> refines) eqtype.eq_op (@eq_op Z _).
 Proof.
-rewrite paramE=> x x' rx y y' ry.
-rewrite /refines [x]refines_intE [y]refines_intE /= /eq_op => {rx ry}.
-case: x' y' => [x'|x'] [y'|y'] //=; rewrite ?eqr_opp // ?[- _ == _]eq_sym;
+rewrite paramE /refines /Rint /fun_hrel  /eq_op => _ x <- _ y <-.
+case: x y => [x|x] [y|y] //=; rewrite ?eqr_opp // ?[- _ == _]eq_sym;
 by rewrite gtr_eqF // (@ltr_le_trans _ 0) // ltr_oppl oppr0 [_ < _]valP.
 Qed.
 
 Global Instance refines_int_mul :
-  param (refines ==> refines ==> refines)%C *%R *%C.
+  param (refines ==> refines ==> refines) *%R *%C.
 Proof.
-rewrite paramE=> x x' rx y y' ry.
-rewrite /refines [x]refines_intE [y]refines_intE /mul_op /=; congr some.
-case: x' y' {rx ry} => [x'|x'] [y'|y'] //=; simpC; last by rewrite mulrNN.
-  have [->|y'_neq0 /=] := (altP eqP); first by rewrite mul0r.
+rewrite paramE /refines /Rint /fun_hrel  /mul_op => _ x <- _ y <-.
+case: x y => [x|x] [y|y] //=; simpC; last by rewrite mulrNN.
+  have [->|y_neq0 /=] := (altP eqP); first by rewrite mul0r.
   by rewrite mulrN !insubdK -?topredE /= ?muln_gt0 ?valP ?andbT ?lt0n.
-have [->|y'_neq0 /=] := (altP eqP); first by rewrite mulr0.
+have [->|y_neq0 /=] := (altP eqP); first by rewrite mulr0.
 by rewrite mulNr !insubdK -?topredE /= ?muln_gt0 ?valP ?andbT ?lt0n.
 Qed. 
 
 End Z_nat_pos.
 
-
-Section Zparametric.
-
-Import Parametricity.
-
-Section Zrefinement.
-Variables N N' P P' : Type.
-Context `{refinement N N'} `{refinement P P'}. 
-
-Definition implem_ZNpos (x : Z N P) : (Z N' P') :=
-    match x with Zpos n => Zpos _ (implem n) | Zneg n => Zneg _ (implem n) end.
-Definition spec_ZNpos (x : Z N' P') : option (Z N P) :=
-    match x with Zpos n => omap (@Zpos _ _) (spec n) | Zneg n => omap (@Zneg _ _) (spec n) end.
-Lemma implem_ZNposK : pcancel implem_ZNpos spec_ZNpos.
-Proof. by case => //= n; rewrite !implemK. Qed.
-
-Local Instance refinementZ : refinement (Z N P) (Z N' P') :=
-  Refinement implem_ZNposK.
-
-Global Instance param_Zpos :
-   param (refines ==> refines)%C (@Zpos N P) (@Zpos N' P').
-Proof. by rewrite paramE=> x x' rx /=; rewrite /refines /= spec_refines. Qed.
-
-Global Instance param_Zneg :
-   param (refines ==> refines)%C (@Zneg N P) (@Zneg N' P').
-Proof. by rewrite paramE=> x x' rx /=; rewrite /refines /= spec_refines. Qed.
-
-Lemma param_Zmatch T T' (R : T -> T' -> Prop) : 
-       (param refines ==> getparam (refines ==> R) ==> getparam (refines ==> R) ==> param R)%C
-       (fun n f g => match n with Zpos p => f p | Zneg n => g n end)
-       (fun n f g => match n with Zpos p => f p | Zneg n => g n end).
-Proof.
-rewrite !paramE.
-move=> n n' rn f f' rf g g' rg.
-case: n n' rn=> [n|p] [n'|p'] //=; rewrite /refines //=;
-  do ? by case: spec.
-  by case hn': spec => [a|] //= [] [->]; apply rf.
-by case hn': spec => [a|] //= [] [->]; apply rg.
-Qed.
+(************************************************************************)
+(* The presentation of what follows must be changed drastically:        *)
+(*                                                                      *)
+(* Indeed, refinementZ should not be presented as a refinement anymore, *)
+(* but rather as the relation RZ which happens to be the sum relation   *)
+(* between RNN' and RPP', and which  satisfies:                         *)
+(* refines int (Z N P) \o RZ <=> refines int (Z N' P')                  *)
+(************************************************************************)
 
 
-End Zrefinement.
+(* Section Zparametric. *)
 
-Hint Extern 0 (param _ _ _) =>
- eapply param_Zmatch : typeclass_instances.
+(* Section Zrefinement. *)
+(* Variables N N' P P' : Type. *)
+(* Context `{refinement N N'} `{refinement P P'}.  *)
 
-Hint Extern 1 (@refinement (@Z _ _) _) =>
-  apply refinementZ : typeclass_instances.
+(* Definition implem_ZNpos (x : Z N P) : (Z N' P') := *)
+(*     match x with Zpos n => Zpos _ (implem n) | Zneg n => Zneg _ (implem n) end. *)
+(* Definition spec_ZNpos (x : Z N' P') : option (Z N P) := *)
+(*     match x with Zpos n => omap (@Zpos _ _) (spec n) | Zneg n => omap (@Zneg _ _) (spec n) end. *)
+(* Lemma implem_ZNposK : pcancel implem_ZNpos spec_ZNpos. *)
+(* Proof. by case => //= n; rewrite !implemK. Qed. *)
 
-Hint Extern 1 (@refinement _ (@Z _ _)) =>
-  apply refinementZ : typeclass_instances.
+(* Local Instance refinementZ : refinement (Z N P) (Z N' P') := *)
+(*   Refinement implem_ZNposK. *)
 
-(* Existing Instances refines_split1 refines_split2. *)
+(* Global Instance param_Zpos : *)
+(*    param (refines ==> refines) (@Zpos N P) (@Zpos N' P'). *)
+(* Proof. by rewrite paramE=> x x' rx /=; rewrite /refines /= spec_refines. Qed. *)
 
-(* Hint Extern 0 (param _ (@addZ _ _) (@addZ _ _)) *)
-(*  => eapply param_addZ : typeclass_instances. *)
+(* Global Instance param_Zneg : *)
+(*    param (refines ==> refines) (@Zneg N P) (@Zneg N' P'). *)
+(* Proof. by rewrite paramE=> x x' rx /=; rewrite /refines /= spec_refines. Qed. *)
 
-Definition ZNP := Z N positive.
+(* Lemma param_Zmatch T T' (R : T -> T' -> Prop) :  *)
+(*        (param refines ==> getparam (refines ==> R) ==> getparam (refines ==> R) ==> param R) *)
+(*        (fun n f g => match n with Zpos p => f p | Zneg n => g n end) *)
+(*        (fun n f g => match n with Zpos p => f p | Zneg n => g n end). *)
+(* Proof. *)
+(* rewrite !paramE. *)
+(* move=> n n' rn f f' rf g g' rg. *)
+(* case: n n' rn=> [n|p] [n'|p'] //=; rewrite /refines //=; *)
+(*   do ? by case: spec. *)
+(*   by case hn': spec => [a|] //= [] [->]; apply rf. *)
+(* by case hn': spec => [a|] //= [] [->]; apply rg. *)
+(* Qed. *)
 
-Global Instance Zrefinement_N_pos :
-  refinement int ZNP :=  @refinement_trans _ (Z nat pos) _ _ _.
 
-(* Hint Extern 4 (composable _ _ (_ ==> _)%C) *)
-(*  => eapply composable_imply_id2 : typeclass_instances. *)
+(* End Zrefinement. *)
 
-(* Hint Extern 1 (composable _ _ _) *)
-(*  => eapply imply_composable : typeclass_instances. *)
+(* Hint Extern 0 (param _ _ _) => *)
+(*  eapply param_Zmatch : typeclass_instances. *)
 
-(* Z is a type that should implement int *)
-(* Variable (Z : Type). *)
+(* Hint Extern 1 (@refinement (@Z _ _) _) => *)
+(*   apply refinementZ : typeclass_instances. *)
 
-Local Notation Z := ZNP.
+(* Hint Extern 1 (@refinement _ (@Z _ _)) => *)
+(*   apply refinementZ : typeclass_instances. *)
 
-Global Instance refines_zeroZ  : param refines (0 : int) (0%C : Z).
-Proof. exact: param_trans. Qed.
+(* (* Existing Instances refines_split1 refines_split2. *) *)
 
-Global Instance refines_oneZ  : param refines (1 : int) (1%C : Z).
-Proof. exact: param_trans. Qed.
+(* (* Hint Extern 0 (param _ (@addZ _ _) (@addZ _ _)) *) *)
+(* (*  => eapply param_addZ : typeclass_instances. *) *)
 
-Global Instance refines_embedZ :
-  param (refines ==> refines)%C (Posz : nat -> int) (cast : N -> Z).
-Proof. exact: param_trans. Qed.  
+(* Definition ZNP := Z N positive. *)
 
-Global Instance refines_addZ :
-  param (refines ==> refines ==> refines)%C +%R +%C.
-Proof. exact: param_trans. Qed.
+(* Global Instance Zrefinement_N_pos : *)
+(*   refinement int ZNP :=  @refinement_trans _ (Z nat pos) _ _ _. *)
 
-Global Instance refines_mulZ :
-  param (refines ==> refines ==> refines)%C *%R *%C.
-Proof. exact: param_trans. Qed.
+(* (* Hint Extern 4 (composable _ _ (_ ==> _)) *) *)
+(* (*  => eapply composable_imply_id2 : typeclass_instances. *) *)
 
-Global Instance refines_oppZ :
-  param (refines ==> refines)%C -%R -%C.
-Proof. exact: param_trans. Qed.
+(* (* Hint Extern 1 (composable _ _ _) *) *)
+(* (*  => eapply imply_composable : typeclass_instances. *) *)
 
-Global Instance refines_subZ :
-  param (refines ==> refines ==> refines)%C AlgOp.subr Op.sub_op.
-Proof. exact: param_trans. Qed.
+(* (* Z is a type that should implement int *) *)
+(* (* Variable (Z : Type). *) *)
 
-Global Instance refines_compZ :
-  param (refines ==> refines ==> refines)%C eqtype.eq_op (@Op.eq_op Z _).
-Proof. exact: param_trans. Qed.
+(* Local Notation Z := ZNP. *)
 
-End Zparametric.
+(* Global Instance refines_zeroZ  : param refines (0 : int) (0%C : Z). *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance refines_oneZ  : param refines (1 : int) (1%C : Z). *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance refines_embedZ : *)
+(*   param (refines ==> refines) (Posz : nat -> int) (cast : N -> Z). *)
+(* Proof. exact: param_trans. Qed.   *)
+
+(* Global Instance refines_addZ : *)
+(*   param (refines ==> refines ==> refines) +%R +%C. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance refines_mulZ : *)
+(*   param (refines ==> refines ==> refines) *%R *%C. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance refines_oppZ : *)
+(*   param (refines ==> refines) -%R -%C. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance refines_subZ : *)
+(*   param (refines ==> refines ==> refines) AlgOp.subr Op.sub_op. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance refines_compZ : *)
+(*   param (refines ==> refines ==> refines) eqtype.eq_op (@Op.eq_op Z _). *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* End Zparametric. *)

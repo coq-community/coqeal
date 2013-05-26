@@ -190,11 +190,15 @@ Global Instance castseqmx : hcast hseqmatrix := fun _ _ _ _ _ M => M.
 (* Definition of operations, using an abstract base type and operations *)
 
 Section seqmx_ops.
+Import Refinements.Op.
 Context `{zero A, opp A, add A, sub A, mul A, eq A}.
 
-Global Instance oppseqmx : opp seqmatrix := map_seqmx -%C.
-Global Instance addseqmx : add seqmatrix := zipwithseqmx +%C.
-Global Instance subseqmx : sub seqmatrix := zipwithseqmx sub_op.
+Global Instance oppseqmx : @hopp nat (fun _ _ => seqmatrix) :=
+   fun _ _ => map_seqmx -%C.
+Global Instance addseqmx : @hadd nat (fun _ _ => seqmatrix) :=
+   fun _ _ => zipwithseqmx +%C.
+Global Instance subseqmx : @hsub nat (fun _ _ => seqmatrix) :=
+   fun _ _ => zipwithseqmx sub_op.
 
 Global Instance haddseqmx : hadd hseqmatrix := fun _ _ => zipwithseqmx +%C.
 Global Instance hsubseqmx : hsub hseqmatrix := fun _ _ => zipwithseqmx sub_op.
@@ -207,28 +211,29 @@ Fixpoint eq_seq T f (s1 s2 : seq T) :=
   end.
 
 (* Try to inline to see if higher order style hurts performance *)
-Definition eq_seqmx : eq seqmatrix := eq_seq (eq_seq eq_op).
+Global Instance eq_seqmx : @heq nat (fun _ _ => seqmatrix) :=
+  fun _ _ => eq_seq (eq_seq eq_op).
 
-Global Existing Instance eq_seqmx.
+Instance seqmx0 : hzero (fun _ _ => seqmatrix) := 
+  fun m n => const_seqmx m n 0%C.
 
 Global Instance heq_seqmx : heq hseqmatrix := fun _ _ => eq_seq (eq_seq eq_op).
 
 Global Instance seqmx0 : hzero hseqmatrix := fun m n => const_seqmx m n 0%C.
 
-Definition mulseqmx (n p : nat) (M N : seqmatrix) : seqmatrix :=
-  let N := trseqmx N in
-  if n is O then seqmx0 (size M) p else
-  map (fun r => map (foldl2 (fun z x y => (x * y) + z) 0 r)%C N) M.
+Global Instance mulseqmx : @hmul nat (fun _ _ => seqmatrix) :=
+  fun _ n p M N => 
+    let N := trseqmx N in
+    if n is O then seqmx0 (size M) p else
+      map (fun r => map (foldl2 (fun z x y => (x * y) + z) 0 r)%C N) M.
 
-Global Instance hmulseqmx : hmul hseqmatrix := fun m n p => mulseqmx n p.
 
-Global Instance scaleseqmx : scale A seqmatrix := fun (x : A) (M : seqmatrix) =>
-  map_seqmx (mul_op x) M.
+Global Instance scaleseqmx : scale A seqmatrix :=
+  fun x M => map_seqmx (mul_op x) M.
 
-Global Instance hscaleseqmx m n : scale A (hseqmatrix m n) := scaleseqmx.
 
-Definition scalar_seqmx (n : nat) x :=
-  @mkseqmx_ord n n (fun i j => if i == j then x else 0%C).
+Global Instance scalar_seqmx (n : nat) : cast_class A seqmatrix :=
+  fun x => @mkseqmx_ord n n (fun i j => if i == j then x else 0%C).
 
 Definition swap (T : Type) m1 m2 (x : T) (s : seq T) :=
   let r := set_nth x s m1 (nth x s m2) in
@@ -593,12 +598,13 @@ Typeclasses Opaque row_mx col_mx block_mx castmx.
 
 
 Section seqmx_eqtype_refinement.
+Import Refinements.
 
 Import Refinements.Op.
 
 Variable A : eqType.
 
-Local Instance eq_A : eq A := eqtype.eq_op.
+Local Instance eq_A : Op.eq A := eq_op.
 
 Lemma eq_seqE (T : Type) (f : T -> T -> bool) s1 s2 : size s1 = size s2 ->
   eq_seq f s1 s2 = all (fun xy => f xy.1 xy.2) (zip s1 s2).
@@ -607,15 +613,18 @@ elim: s1 s2 => [|x1 s1 IHs] [] //= x2 s2 /eqP eq_sz.
 by rewrite IHs //; apply/eqP.
 Qed.
 
-Lemma refines_eqseqmx m n (x y : 'M[A]_(m,n)) (a b : seqmatrix A)
-  (rp : refines x a) (rq : refines y b) : (x == y)%R = (a == b)%C.
+Lemma refines_eqseqmx m n :
+  param (refines ==> refines ==> refines_id)%C
+        (eq_op : 'M[A]_(m,n) -> _ -> _)
+        (@Op.heq_op _ (fun _ _ => seqmatrix A) _ m n).
 Proof.
-rewrite /eq_op /eq_seqmx eq_seqE ?sizeE //.
-case: m x y rp rq=> [|m] x y rp rq.
+apply param_abstr2 => x a rx y b ry; rewrite paramE; congr Some.
+rewrite /Op.heq_op /eq_seqmx eq_seqE ?sizeE //.
+case: m x y rx ry => [|m] x y rx ry.
   rewrite [a]size0nil ?sizeE // [b]size0nil ?sizeE //.
   by apply/eqP/matrixP; case.
-case: n x y rp rq=> [|n] x y rp rq.
-  rewrite /eq_op /eq_seqmx.
+case: n x y rx ry=> [|n] x y rx ry.
+  rewrite /Op.eq_op /eq_seqmx.
   have->: x = y by apply/matrixP=> i; case.
   rewrite eqxx; apply/esym/(all_nthP ([::],[::])) => j.
   by rewrite nth_zip !sizeE //= => lt_jm; rewrite 2![nth _ _ _]size0nil ?sizeE.
@@ -637,9 +646,7 @@ Typeclasses Opaque matrix_of_fun const_mx map_mx.
 
 (* Commutative group related refinement properties *)
 Section seqmx_zmod_refinement.
-
-Import Refinements.Op.
-
+Import Refinements.
 Variable A : zmodType.
 
 Lemma zmod_mx_of_seqmxE m n (M : seqmatrix A) :
@@ -672,34 +679,44 @@ move=> rMN; have := rMN; rewrite /refines /= zmod_mx_of_seqmxE.
 by rewrite sizeE // eqxx; have [_ []|/all_nthP hN] := boolP (all _ _).
 Qed.
 
-Local Instance zero_A : zero A := 0%R.
-Local Instance opp_A : opp A := -%R.
-Local Instance add_A : add A := +%R.
-Local Instance sub_A : sub A := (fun x y => x - y)%R.
+Local Instance zero_A : Op.zero A := 0%R.
+Local Instance opp_A : Op.opp A := -%R.
+Local Instance add_A : Op.add A := +%R.
+Local Instance sub_A : Op.sub A := (fun x y => x - y)%R.
 
-Global Instance refines_oppseqmx m n (x : 'M[A]_(m,n)) (a : seqmatrix A) 
-  (xa : refines x a) : refines (- x)%R (- a)%C.
+Global Instance refines_oppseqmx m n :
+  param (refines ==> refines)%C (-%R : 'M[A]_(m,n) -> 'M[A]_(m,n))
+        (@Op.hopp_op _ (fun _ _ => seqmatrix A) _ m n).
 Proof.
-by rewrite /opp_op /oppseqmx; apply/refinesP/matrixP=> i j; rewrite !mxE.
+apply param_abstr => x a rxa; rewrite paramE /Op.opp_op /oppseqmx.
+by apply/refinesP/matrixP=> i j; rewrite !mxE.
 Qed.
 
-Global Instance refines_addseqmx m n (x y : 'M[A]_(m,n)) (a b : seqmatrix A) 
-  (xa : refines x a) (yb : refines y b) : refines (x + y)%R (a + b)%C.
+Global Instance refines_addseqmx m n :
+  param (refines ==> refines ==> refines)%C (+%R : _ -> _ -> 'M[A]_(m,n))
+        (@Op.hadd_op _ (fun _ _ => seqmatrix A) _ m n).
 Proof.
-by rewrite /add_op /addseqmx; apply/refinesP/matrixP=> i j; rewrite !mxE.
+apply param_abstr2 => x a rxa y b ryb; rewrite paramE.
+by apply/refinesP/matrixP=> i j; rewrite !mxE.
 Qed.
 
-Global Instance refines_subseqmx m n (x y : 'M[A]_(m,n)) (a b : seqmatrix A) 
-  (xa : refines x a) (yb : refines y b) : refines (x - y)%R (sub_op a b)%C.
+Global Instance refines_subseqmx m n :
+  param (refines ==> refines ==> refines)%C (AlgOp.subr : _ -> _ -> 'M[A]_(m,n))
+        (@Op.hsub_op _ (fun _ _ => seqmatrix A) _ m n).
 Proof.
-by rewrite /sub_op /subseqmx; apply/refinesP/matrixP=> i j; rewrite !mxE.
+apply param_abstr2 => x a rxa y b ryb; rewrite paramE.
+by apply/refinesP/matrixP=> i j; rewrite !mxE.
 Qed.
 
 (* We use zero as a default element here, but we could relax the zmodType constraint *)
-Global Instance refines_xcolseqmx m n (x : 'M[A]_(m,n)) (a : seqmatrix A) i j :
-  refines x a -> refines (xcol i j x) (xcolseqmx i j a).
+Global Instance refines_xcolseqmx m n :
+  param (refines_id ==> refines_id ==> refines ==> refines)%C
+        (@xcol _ m n) (@xcolseqmx _ _).
 Proof.
-move=> ref_xa; apply/refines_seqmxP=> [|k Hk|k l].
+apply param_abstr2 => i i' ri j j' rj.
+move: ri rj; rewrite {1 2}paramE => [[<-] [<-]] {i' j'}.
+apply param_abstr => x a rxa; rewrite paramE.
+apply/refines_seqmxP=> [|k Hk|k l].
 + by rewrite size_map sizeE.
 + by rewrite (nth_map [::]) ?sizeE // !size_set_nth !(elimT maxn_idPr) ?sizeE.
 rewrite (nth_map [::]) ?sizeE //.
@@ -720,13 +737,11 @@ End seqmx_zmod_refinement.
 
 (* Ring related refinement properties *)
 Section seqmx_ring_refinement.
-
-Import Refinements.Op.
-
+Import Refinements.
 Variable (A : ringType).
 
 Existing Instances zero_A add_A.
-Local Instance mul_A : mul A := *%R.
+Local Instance mul_A : Op.mul A := *%R.
 
 (* Instance refines_seqmx0 m n : refines (0 : 'M[A]_(m,n)) (seqmx0 m n). *)
 (* Proof. exact: refines_const_seqmx. Qed. *)
@@ -734,10 +749,13 @@ Local Instance mul_A : mul A := *%R.
 Lemma minSS (p q : nat) : minn p.+1 q.+1 = (minn p q).+1.
 Proof. by rewrite /minn ltnS; case:ifP. Qed.
 
-Global Instance refines_mulseqmx p m n (x : 'M_(m,p)) (y : 'M_(p,n)) (a b : seqmatrix A)
-  (xa : refines x a) (yb : refines y b) : refines (x *m y) (mulseqmx p n a b).
+Global Instance refines_mulseqmx m n p : 
+  param (refines ==> refines ==> refines)%C 
+        (mulmx : 'M[A]_(m, n) -> 'M[A]_(n, p) -> _)
+        (@Op.hmul_op _ (fun _ _ => seqmatrix A) _ m n p).
 Proof.
-case: p x y xa yb=> [|p] x y xa yb.
+apply param_abstr2 => x a xa y b yb; rewrite paramE /Op.hmul_op /mulseqmx.
+case: n x y xa yb=> [|n] x y xa yb.
   rewrite thinmx0 mul0mx /mulseqmx sizeE.
   exact: refines_const_seqmx.
 rewrite /refines [x]refines_mxE [y]refines_mxE /= zmod_mx_of_seqmxE.
@@ -759,22 +777,38 @@ rewrite add0r ?sizeE // big_mkord; apply: eq_bigr=> k _.
 by rewrite !mxE !refines_nth_def mxE.
 Qed.
 
-Global Instance refines_scaleseqmx m n (c : A) (x : 'M[A]_(m,n))
-  (a : seqmatrix A) : refines x a -> refines (c *: x) (scaleseqmx c a).
+Lemma param_eq T (x y : T) : param refines_id x y -> x = y.
+Proof. by rewrite paramE => [[]]. Qed.
+
+Global Instance refines_scaleseqmx m n :
+  param (refines_id ==> refines ==> refines)%C 
+        (@GRing.scale _ _ : _ -> 'M[A]_(m, n)  -> _)
+        (@Op.scale_op A (seqmatrix A) _).
 Proof.
-move=> ref_xa.
+apply param_abstr2 => x x' rx M M' rM; rewrite paramE.
 apply/refines_seqmxP=> [|i Hi|i j].
-+ by rewrite sizeE.
-+ by rewrite !sizeE.
-by rewrite mxE (nth_map [::]) ?(nth_map c) ?sizeE // refines_nth_def.
+  by rewrite sizeE.
+  by rewrite !sizeE.
+rewrite mxE (nth_map [::]) ?(nth_map x) ?sizeE //.
+by rewrite refines_nth_def [x]param_eq.
 Qed.
 
 Global Instance refines_scalar_seqmx n (x : A) :
-  refines (@scalar_mx _ n x) (scalar_seqmx n x).
+  param refines (@scalar_mx _ n x) (scalar_seqmx n x).
 Proof.
-apply/refinesP/matrixP=> i j; rewrite !mxE.
+rewrite paramE; apply/refinesP/matrixP=> i j; rewrite !mxE.
 by have [] := altP (i =P j).
 Qed.
+
+(* Global Instance refines_matrix m n : *)
+(*   param ((refines_id ==> refines_id ==> refines_id) ==> refines) *)
+(*         (@matrix_of_fun A m n matrix_key) (@mkseqmx_ord A m n). *)
+(* Proof. *)
+(* apply param_abstr => f f' rf; rewrite paramE. *)
+(* apply/refinesP/matrixP=> i j; rewrite !mxE. *)
+(* have [ri rj] : (param refines_id i i * param refines_id j j)%type by rewrite !paramE. *)
+(* by rewrite [f i j]param_eq. *)
+(* Qed. *)
 
 End seqmx_ring_refinement.
 
