@@ -18,7 +18,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory Refinements.Op.
+Import GRing.Theory.
 
 (********************************************************)
 (* Preamble: a few additions from the libraries we use. *)
@@ -107,6 +107,9 @@ End extra_seq.
 (*************************************************************)
 
 Section seqmx.
+
+Import Refinements.Op.
+  
 Variable A : Type.
 
 (* Definition of seqmatrix and basic combinators *)
@@ -242,10 +245,18 @@ Definition row_perm_seqmx m (s : nat -> nat) (M : seqmatrix) : seqmatrix :=
 
 End seqmx_ops.
 
+End seqmx.
+
 (***********************************************************)
 (* PART II: Proving the properties of the previous objects *)
 (***********************************************************)
 (* Stating that seqmatrix refines 'M_(_, _) *)
+
+Section seqmx2.
+
+Variable A : Type.
+
+Local Notation seqmatrix := (seqmatrix A).
 
 Section seqmx_raw_refinement.
 
@@ -303,7 +314,6 @@ move=> rMN; move: (rMN).
 rewrite /refines /= /mx_of_seqmx.
 case: ifP=> // _; case: ifP=> // _.
 rewrite (omap_funoptE (fun ij : 'I_m * 'I_n => nth x0 (nth [::] N ij.1) ij.2)) //=.
-(* Why can't we move/Some_inj ? *)
 + by move=> H; rewrite (Some_inj H) mxE.
 + by move=> g g' eq_gg'; apply/matrixP=> k l; rewrite !mxE eq_gg'.
 by case=> k l; rewrite (nth_map [::]) /= ?(nth_map x0) ?sizeE.
@@ -575,7 +585,7 @@ Proof. by case: _ / e1; case: _ / e2. Qed.
 End seqmx_block3.
 
 End seqmx_raw_refinement.
-End seqmx.
+End seqmx2.
 
 Typeclasses Opaque usubmx dsubmx lsubmx rsubmx.
 Typeclasses Opaque ulsubmx ursubmx dlsubmx drsubmx.
@@ -583,6 +593,8 @@ Typeclasses Opaque row_mx col_mx block_mx castmx.
 
 
 Section seqmx_eqtype_refinement.
+
+Import Refinements.Op.
 
 Variable A : eqType.
 
@@ -625,6 +637,9 @@ Typeclasses Opaque matrix_of_fun const_mx map_mx.
 
 (* Commutative group related refinement properties *)
 Section seqmx_zmod_refinement.
+
+Import Refinements.Op.
+
 Variable A : zmodType.
 
 Lemma zmod_mx_of_seqmxE m n (M : seqmatrix A) :
@@ -705,6 +720,8 @@ End seqmx_zmod_refinement.
 
 (* Ring related refinement properties *)
 Section seqmx_ring_refinement.
+
+Import Refinements.Op.
 
 Variable (A : ringType).
 

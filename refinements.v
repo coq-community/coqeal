@@ -416,11 +416,11 @@ Class hcast {I} B := hcast_op : forall m n m' n' : I,
 
 (* Surgery on matrix-like data types *)
 Local Open Scope nat_scope.
-Class ulsub B := ulsub_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n1.
-Class ursub B := ursub_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n2.
-Class dlsub B := dlsub_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n1.
-Class drsub B := drsub_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
-Class block B := block_op : forall (m1 m2 n1 n2 : nat),
+Class ulsub B := ulsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n1.
+Class ursub B := ursubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n2.
+Class dlsub B := dlsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n1.
+Class drsub B := drsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
+Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
   B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
 
 End Op.
