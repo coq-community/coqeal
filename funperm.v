@@ -1,12 +1,41 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq path choice fintype.
-Require Import tuple finfun bigop finset binomial fingroup perm.
+Require Import tuple finfun bigop finset binomial fingroup perm refinements.
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
 
 Section cperm_def.
 
-Variable n' : nat.
-Local Notation n := n'.+1.
+Definition funperm := nat -> nat.
 
-Definition cperm_of_perm (s : 'S_n) k := s (inord k) : nat.
+Definition funperm_of_perm n : 'S_n -> funperm :=
+  if n is _.+1 return 'S_n -> (nat -> nat) then fun s k => s (inord k)
+  else fun _ => id.
+
+Definition finfun_of_funperm n f : {ffun ('I_n.+1 -> 'I_n.+1)} :=
+  [ffun k => inord (f k)].
+  
+(* Magie à méditer : *)
+(* case: {-}_ / idP. *)
+(* cf insubP dans eqtype.v *)
+
+
+Definition perm_of_funperm n (f : funperm) : option 'S_n :=
+  if n is n'.+1 return option 'S_n then insub (@finfun_of_funperm n' f)
+  else Some 1%g.
+ 
+Lemma funperm_of_permK n : pcancel (@funperm_of_perm n) (@perm_of_funperm n).
+Proof.
+case: n => [|n] s; first by congr Some; apply/permP; case.
+rewrite /= insubT => [|?].
+  by apply/injectiveP=> k l; rewrite !ffunE !inord_val; apply: perm_inj.
+congr Some; apply/permP=> k.
+by rewrite {1}PermDef.fun_of_permE ffunE !inord_val.
+Qed.
+
+Global Instance refinement_perm_funperm n :
+  refinement 'S_n funperm := Refinement (@funperm_of_permK n).
 
 Definition ctperm (i j k : nat) :=
   if i == k then j else if j == k then i else k.
