@@ -3,7 +3,7 @@ Require Import fintype perm choice matrix bigop zmodp poly polydiv mxpoly.
 
 Require Import refinements minor.
 
-Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic Refinements.Op.
+Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
