@@ -237,7 +237,7 @@ Qed.
 (* Proof. exact: param_trans. Qed. *)
 
 (* End Qparametric. *)
-(* End Qint. *)
+End Qint.
 
 (* Section tests. *)
 
