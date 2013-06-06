@@ -22,7 +22,7 @@ Import GRing.Theory Num.Theory Refinements.Op.
 (* rational - Non normalized rational numbers *)
 
 (*************************************************************)
-(* PART I: Definiting datastructures and programming with it *)
+(* PART I: Defining datastructures and programming with them *)
 (*************************************************************)
 Section Q.
 
