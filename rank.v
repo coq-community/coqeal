@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype fingroup perm.
-Require Import matrix bigop zmodp mxalgebra mxtens.
+Require Import matrix bigop zmodp mxalgebra.
 
 Require Import refinements (* seqmatrix *) ssrcomplements.
 
