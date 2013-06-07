@@ -125,12 +125,12 @@ Section seqpoly_ring.
 Variable A : ringType.
 
 Instance zeroA : zero A := 0%R.
-Instance oneA : one A := 1%R.
-Instance addA : add A := +%R.
-Instance oppA : opp A := -%R.
-Instance subA : sub A := (fun x y => x - y)%R.
-Instance mulA : mul A := *%R.
-Instance eqA : eq A := eqtype.eq_op.
+Instance oneA  : one A  := 1%R.
+Instance addA  : add A  := +%R.
+Instance oppA  : opp A  := -%R.
+Instance subA  : sub A  := subr.
+Instance mulA  : mul A  := *%R.
+Instance eqA   : eq A   := eqtype.eq_op.
 
 Lemma seqpoly_of_polyK : pcancel (@polyseq A) (some \o Poly).
 Proof. by move=> p /=; rewrite polyseqK. Qed.
@@ -249,129 +249,137 @@ Lemma refines_seqpoly_split2 n p q :
   refines p q -> refines (rmodp p 'X^n) (split_seqpoly n q).2.
 Proof. by move=> /refines_seqpoly_split -/(_ n)=> [] [/= ? <-]. Qed.
 
-(* TODO: Fix the rest of the file! *)
 (* scaling *)
-(* Lemma refines_seqpoly_scale (x : A) (p : {poly A}) (s : seqpoly A) *)
-(*   (ps : refines p s) : refines (x *: p)%R (x *: s)%C. *)
-(* Proof. *)
-(* congr Some; apply/polyP => i /=; rewrite /scale_seqpoly. *)
-(* rewrite [p]refines_polyE coefZ !coef_Poly. *)
-(* have [hlt|hleq] := ltnP i (size s); first by rewrite (nth_map 0%C). *)
-(* by rewrite !nth_default ?mulr0 ?size_mkseq ?size_map. *)
-(* Qed. *)
+Instance refines_seqpoly_scale : param (Logic.eq ==> refines ==> refines) *:%R *:%C.
+Proof.
+apply param_abstr2 => /= a b -> {a} p s ps.
+apply/polyP => i /=; rewrite [p]refines_polyE coefZ !coef_Poly.
+have [hlt|hleq] := ltnP i (size s); first by rewrite (nth_map 0%C).
+by rewrite !nth_default ?mulr0 ?size_mkseq ?size_map.
+Qed.
 
 (* shifting = * 'X^n *)
-(* Instance refines_seqpoly_shift n (p : {poly A}) (s : seqpoly A) *)
-(*   (ps : refines p s) : refines (p * 'X^n)%R (shift n s)%C. *)
-(* Proof. *)
-(* congr Some; apply/polyP => i /=; rewrite /shift. *)
-(* by rewrite [p]refines_polyE coefMXn !coef_Poly nth_ncons. *)
-(* Qed. *)
+Instance refines_seqpoly_shift : param (Logic.eq ==> refines ==> refines) 
+  (fun n p => p * 'X^n) (fun n => shift n).
+Proof.
+apply param_abstr2 => /= m n -> {m} p s ps.
+by apply/polyP => i /=; rewrite [p]refines_polyE coefMXn !coef_Poly nth_ncons.
+Qed.
 
-(* Instance refines_seqpoly_cons a (p : {poly A}) (s : seqpoly A) *)
-(*   (ps : refines p s) : refines (p * 'X + a%:P)%R (a :: s). *)
-(* Proof. *)
-(* by congr Some; apply/polyP => i /=; rewrite [p]refines_polyE cons_poly_def. *)
-(* Qed. *)
+
+Instance refines_seqpoly_cons : param (Logic.eq ==> refines ==> refines) 
+  (fun a p => p * 'X + a%:P) (fun a s => a :: s).
+Proof.
+apply param_abstr2 => /= b a -> {b} p s ps.
+by apply/polyP => i /=; rewrite [p]refines_polyE cons_poly_def.
+Qed.
 
 (* maybe this should be "all (fun x => x == 0) s" ? *)
-(* Lemma refines_poly0 (s : seqpoly A) : refines 0 s -> *)
-(*   forall x, x \in s -> x = 0. *)
-(* Proof. by move=> [hs] x /(nthP 0) [i hi <-]; rewrite -coef_Poly -hs coef0. Qed. *)
+Lemma refines_poly0 (s : seqpoly A) : param refines 0 s ->
+  forall x, x \in s -> x = 0.
+Proof. 
+move=> hs x /(nthP 0) [i hi <-].
+by rewrite -coef_Poly -(refines_polyE hs) coef0. 
+Qed.
 
-(* Lemma refines_poly_MXaddC a p (s : seqpoly A) : *)
-(*   refines (p * 'X + a%:P) s -> refines p (behead s) /\ a = (head 0 s). *)
-(* Proof. *)
-(* wlog -> : s / s = (head 0 s) :: (behead s) => [hwlog|]. *)
-(*   case: s => [rp|x s]; last by apply: hwlog. *)
-(*   have /= := hwlog [::0] erefl; rewrite [_ + _]refines_polyE /=. *)
-(*   by rewrite {1}/refines /= cons_poly_def mul0r addr0 => /(_ erefl). *)
+Lemma refines_poly_MXaddC a p (s : seqpoly A) :
+  param refines (p * 'X + a%:P) s -> param refines p (behead s) /\ a = (head 0 s).
+Proof.
+wlog -> : s / s = (head 0 s) :: (behead s) => [hwlog|].
+  case: s => [rp|x s]; last by apply: hwlog.
+  have /= := hwlog [::0] erefl; rewrite [_ + _]refines_polyE /= => H; apply H.
+  by apply/polyP=> i /=; rewrite cons_poly_def mul0r addr0.
+(* What to do here? *)
 (* rewrite /refines /Rpoly /fun_hrel /= cons_poly_def => [[hp]]. *)
 (* have := congr1 (fun p => some (rdivp p 'X)) hp. *)
 (* have := congr1 (fun p => (rmodp p 'X)) hp. *)
 (* rewrite ?(rdivp_addl_mul_small, rmodp_addl_mul_small); *)
 (*   do ?by rewrite ?monicX ?size_polyC ?size_polyX ?ltnS ?leq_b1. *)
 (* by move=> /polyC_inj. *)
-(* Qed. *)
+admit.
+Qed.
 
-(* Lemma refines_poly0_cons a s : refines 0 (a :: s) -> (refines 0 s /\ a = 0). *)
-(* Proof. *)
-(* have {1}-> : 0 = 0 * 'X + 0%:P :> {poly A} by rewrite mul0r addr0. *)
-(* by move/refines_poly_MXaddC => [? ->]. *)
-(* Qed. *)
+Lemma refines_poly0_cons a s : refines 0 (a :: s) -> (refines 0 s /\ a = 0).
+Proof.
+have {1}-> : 0 = 0 * 'X + 0%:P :> {poly A} by rewrite mul0r addr0.
+by move/refines_poly_MXaddC => [? ->].
+Qed.
 
-(* Lemma refines_poly_cons p x s : refines p (x :: s) -> *)
-(*   {pa | [/\ p = pa.1 * 'X + pa.2%:P, pa.2 = x & refines pa.1 s]}. *)
-(* Proof. *)
-(* elim/poly_ind: p => [|p a ihp] in s *. *)
-(*   by move=> /refines_poly0_cons [rs ->]; exists 0; rewrite mul0r add0r. *)
-(* by move=> /refines_poly_MXaddC /= [rps ->]; exists (p, x). *)
-(* Qed. *)
+Lemma refines_poly_cons p x s : refines p (x :: s) ->
+  {pa | [/\ p = pa.1 * 'X + pa.2%:P, pa.2 = x & refines pa.1 s]}.
+Proof.
+elim/poly_ind: p => [|p a ihp] in s *.
+  by move=> /refines_poly0_cons [rs ->]; exists 0; rewrite mul0r add0r.
+by move=> /refines_poly_MXaddC /= [rps ->]; exists (p, x).
+Qed.
 
 (* size *)
-(* Lemma refines_seqpoly_size (p : {poly A}) (sp : seqpoly A) *)
-(*   (ps : refines p sp) : size p = size_seqpoly sp. *)
-(* Proof. *)
-(* symmetry; elim: sp => [|x sp ihs] //= in p ps *. *)
-(*   by rewrite [p]refines_polyE size_poly0. *)
-(* move: ps => /refines_poly_cons [[p' a /= [-> -> rp']]]. *)
-(* rewrite ihs size_poly_eq0 size_MXaddC; simpC. *)
-(* by have [->|] //= := (altP eqP); case: ifP => //=; rewrite size_poly0. *)
-(* Qed. *)
+Instance refines_seqpoly_size : param (refines ==> Logic.eq) 
+  (fun (p : {poly A}) => size p) (fun s => size_seqpoly s).
+Proof.
+apply param_abstr => p s ps.
+symmetry; elim: s => [|x sp ihs] //= in p ps *.
+  by rewrite [p]refines_polyE size_poly0.
+move: ps => /refines_poly_cons [[p' a /= [-> -> rp']]].
+rewrite (ihs p' rp') size_poly_eq0 size_MXaddC; simpC.
+by have [->|] //= := (altP eqP); case: ifP => //=; rewrite size_poly0.
+Qed.
 
 (* lead_coef *)
-(* For some strange reason this does not work... *)
-(* Global Instance refines_seqpoly_lead_coef (p : {poly A}) (sp : seqpoly A) *)
-(*   (ps : refines p sp) : refines (lead_coef p) (lead_coef_seqpoly sp). *)
-(* Lemma refines_seqpoly_lead_coef (p : {poly A}) (sp : seqpoly A) *)
-(*   (ps : refines p sp) : lead_coef p = lead_coef_seqpoly sp. *)
-(* Proof. *)
-(* rewrite /lead_coef_seqpoly /lead_coef refines_seqpoly_size [p]refines_polyE. *)
-(* by rewrite coef_Poly.  *)
-(* Qed. *)
+Instance refines_seqpoly_lead_coef : 
+  param (refines ==> Logic.eq) lead_coef (fun p => lead_coef_seqpoly p).
+Proof.
+apply param_abstr => p s ps; rewrite /lead_coef_seqpoly /lead_coef.
+rewrite (refines_seqpoly_size ps). (* Why do I have to give ps? *)
+by rewrite [p]refines_polyE coef_Poly.
+Qed.
 
 (* polyC *)
-(* Global Instance refines_seqpoly_polyC a : refines a%:P (a%:SP)%C. *)
-(* Proof. *)
-(* congr Some; rewrite /seqpolyC; simpC. *)
-(* by have [->|_] //= := (altP eqP); rewrite cons_poly_def mul0r add0r. *)
-(* Qed. *)
+Instance refines_seqpoly_polyC : param (Logic.eq ==> refines) (fun a => a%:P) (fun a => cast a)%C.
+Proof.
+apply param_abstr => b a -> {b}.
+rewrite /cast /embed_seqpoly; simpC.
+have [->|_] //= := (altP eqP). 
+by apply/polyP=> i /=; rewrite cons_poly_def mul0r add0r.
+Qed.
 
 (* multiplication *)
-(* Instance refines_poly_mul : param (refines ==> refines ==> refines) *%R *%C. *)
-(*  (* (p q : {poly A}) (sp sq : seqpoly A) *) *)
-(*  (*  (rp : refines p sp) (rq : refines q sq) : refines (p * q)%R (sp * sq)%C. *) *)
-(* Proof. *)
-(* apply param_abstr2 => /= p sp rp q sq rq. *)
-(* elim: sp => [|a sp ihp] in p rp *; first by rewrite [p]refines_polyE mul0r. *)
-(* admit. *)
-(* (* move: rp => /refines_poly_cons [[sp' a' /= [-> -> rp']]]; apply/refinesP. *) *)
-(* (* by rewrite mulrDl addrC mul_polyC addr0 -mulrA !(commr_polyX, mulrA). *) *)
-(* Qed. *)
+Instance refines_poly_mul : param (refines ==> refines ==> refines) *%R *%C.
+Proof.
+apply param_abstr2 => /= p sp rp q sq rq.
+elim: sp => [|a sp ihp] in p rp *; first by rewrite [p]refines_polyE mul0r.
+move: rp => /refines_poly_cons [[sp' a' /= [-> -> rp']]].
+admit.
+(* This does not work anymore... *)
+(* move: rp => /refines_poly_cons [[sp' a' /= [-> -> rp']]]; apply/refinesP. *)
+(* by rewrite mulrDl addrC mul_polyC addr0 -mulrA !(commr_polyX, mulrA). *)
+Qed.
 
 (* equality *)
-(* Lemma refines_poly_eq (p q : {poly A}) (sp sq : seqpoly A) *)
-(*   (rp : refines p sp) (rq : refines q sq) : (p == q)%R = (sp == sq)%C. *)
-(* Proof. *)
-(* rewrite /eq_op /eq_seqpoly zippolywithE [p]refines_polyE [q]refines_polyE. *)
-(* apply/eqP/idP => [hpq|/allP hpq]. *)
-(*   apply/allP => x /(nthP true) [i]; rewrite size_mkseq => hi <-. *)
-(*   by rewrite nth_mkseq // eq_sym -coef_Poly hpq coef_Poly [(_ == _)%C]eqxx. *)
-(* apply/polyP => i; rewrite !coef_Poly; apply/eqP. *)
-(* set m := maxn _ _ in hpq; have [ge_im|lt_im] := leqP m i. *)
-(*   by rewrite !nth_default // (leq_trans _ ge_im) // leq_max leqnn ?orbT. *)
-(* rewrite -[_ == _](eqP (hpq _ _)) //; apply/(nthP true); rewrite size_mkseq. *)
-(* by exists i => //; rewrite nth_mkseq. *)
-(* Qed. *)
+Instance refines_poly_eq : param (refines ==> refines ==> Logic.eq) 
+  (fun p q => p == q) (fun sp sq => sp == sq)%C.
+Proof.
+apply param_abstr2 => p sp hsp q sq hsq.
+rewrite /eq_op /eq_seqpoly zippolywithE [p]refines_polyE [q]refines_polyE.
+apply/eqP/idP => [hpq|/allP hpq].
+  apply/allP => x /(nthP true) [i]; rewrite size_mkseq => hi <-.
+  by rewrite nth_mkseq // eq_sym -coef_Poly hpq coef_Poly [(_ == _)%C]eqxx.
+apply/polyP => i; rewrite !coef_Poly; apply/eqP.
+set m := maxn _ _ in hpq; have [ge_im|lt_im] := leqP m i.
+  by rewrite !nth_default // (leq_trans _ ge_im) // leq_max leqnn ?orbT.
+rewrite -[_ == _](eqP (hpq _ _)) //; apply/(nthP true); rewrite size_mkseq.
+by exists i => //; rewrite nth_mkseq.
+Qed.
 
 (* horner evaluation *)
-(* Lemma refines_seqpoly_horner (p : {poly A}) (x : A) (sp : seqpoly A) (rp : refines p sp) : *)
-(*   p.[x] = horner_seq sp x. *)
-(* Proof. *)
-(* elim: sp => [|a sp ih] //= in p rp *; first by rewrite [p]refines_polyE /= horner0. *)
-(* move: rp => /refines_poly_cons [[p' b /= [-> -> rp']]]. *)
-(* by rewrite -cons_poly_def horner_cons ih; simpC. *)
-(* Qed. *)
+Instance refines_seqpoly_horner : param (refines ==> Logic.eq ==> Logic.eq) 
+  (fun p x => p.[x]) (fun sp x => horner_seq sp x).
+Proof.
+apply param_abstr2 => p sp hsp x' x -> {x'}.
+elim: sp => [|a sp ih] //= in p hsp *; first by rewrite [p]refines_polyE /= horner0.
+move: hsp => /refines_poly_cons [[p' b /= [-> -> rp']]].
+by rewrite -cons_poly_def horner_cons (ih _ rp'); simpC. (* Why do I have to give rp' to ih? *)
+Qed.
 
 (* pseudo-division *)
 (* Lemma refines_edivp_rec_seqpoly : forall n k (q qq r : {poly A}) (sq sqq sr : seqpoly A) *)
