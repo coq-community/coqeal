@@ -3,11 +3,7 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop ssrnum ssrint matrix.
 
-(** This file implements the basic theory of refinements 
-
-refinement_of A B == B is a refinement of A
-refines a b       == a refines to b
-*)
+(** This file implements the basic theory of refinements *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -150,10 +146,11 @@ Qed.
 (*****************)
 (* PARAMETRICITY *)
 (*****************)
+Fact param_key : unit. Proof. done. Qed.
 Fact getparam_key : unit. Proof. done. Qed.
 
 Class param {A B} (R : A -> B -> Prop) (m : A) (n : B) := 
-  param_rel : R m n.
+  param_rel : (locked_with param_key R) m n.
 Arguments param {A B} R%rel_scope m n.
 
 Class getparam {A B} (R : A -> B -> Prop) (m : A) (n : B) := 
@@ -167,13 +164,17 @@ Global Instance param_sub_proper {A B} :
    Proper (sub_hrel ==> eq ==> eq ==> impl) (@param A B).
 Proof. by move=> R S RS x _ <- y _ <-; move: x y; rewrite !paramE. Qed.
 
+Global Instance getparam_sub_proper {A B} :
+   Proper (sub_hrel ==> eq ==> eq ==> impl) (@getparam A B).
+Proof. by move=> R S RS x _ <- y _ <-; move: x y; rewrite !paramE. Qed.
+
 Global Instance param_proper {A B} :
    Proper (eq_hrel ==> eq ==> eq ==> iff) (@param A B).
 Proof. by move=> ?? [??] ??? ???; split; apply: param_sub_proper. Qed.
 
 Global Instance getparam_proper {A B} :
    Proper (eq_hrel ==> eq ==> eq ==> iff) (@getparam A B).
-Proof. by move=> *; rewrite !paramE; apply: param_proper. Qed.
+Proof. by move=> ?? [??] ??? ???; split; apply: getparam_sub_proper. Qed.
 
 Lemma getparam_refl A (a : A) : getparam eq a a.
 Proof. by rewrite paramE. Qed.
@@ -184,19 +185,25 @@ Global Instance param_apply A B C D
  (R : A -> B -> Prop) (R' : C -> D -> Prop)
  (a :  A) (b : B) (c : A -> C) (d : B -> D):
   param (R ==> R') c d -> param R a b -> param R' (c a) (d b) | 1.
-Proof. by move=> rcd rab; apply rcd. Qed.
+Proof. by rewrite !paramE => rcd rab; apply rcd. Qed.
 
-Global Instance param_id (T T' : Type) (R : T -> T' -> Prop) :
+Lemma param_id (T T' : Type) (R : T -> T' -> Prop) :
    param (R ==> R) id id.
-Proof. done. Qed.
+Proof. by rewrite !paramE. Qed.
 
 Lemma id_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
   param R x y -> param R x y.
 Proof. done. Qed.
 
-Global Instance trivial_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
+Lemma trivial_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
   R x y -> param R x y.
-Proof. done. Qed.
+Proof. by rewrite !paramE. Qed.
+Global Hint Extern 0 (param _ _ _)
+  => apply trivial_param; eassumption : typeclass_instances.
+
+Lemma paramP T T' (R : T -> T' -> Prop) (x : T) (y : T') :
+  param R x y -> R x y.
+Proof. by rewrite !paramE. Qed.
 
 Lemma get_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
    getparam R x y -> param R x y.
@@ -208,15 +215,22 @@ Proof. by rewrite !paramE. Qed.
 (* Global Hint Extern 999 (getparam refines _ _) *)
 (*  => eapply set_param : typeclass_instances. *)
 
+Fact composable_lock : unit. Proof. exact tt. Qed.
+
 Class composable {A B C}
  (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop) := 
-  Composable : (rAB \o rBC <= rAC)%rel.
+  Composable : locked_with composable_lock (rAB \o rBC <= rAC)%rel.
 Arguments composable {A B C} rAB%rel rBC%rel rAC%rel.
+
+Lemma composableE A B C
+ (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop) :
+  composable rAB rBC rAC = (rAB \o rBC <= rAC)%rel.
+Proof. by rewrite /composable unlock. Qed.
 
 Global Instance composable_sub_proper {A B C} :
    Proper (sub_hrel --> sub_hrel --> sub_hrel ==> impl) (@composable A B C).
 Proof. 
-rewrite /composable => R S RS T U TU V W VW RTV.
+move => R S RS T U TU V W VW; rewrite !composableE => RTV.
 by setoid_rewrite <- RS; setoid_rewrite <- TU; setoid_rewrite <- VW.
 Qed.
 
@@ -229,9 +243,11 @@ Qed.
 Lemma param_trans A B C
   (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop)
   (a : A) (b : B) (c : C) :
-  param rAB a b ->  composable rAB rBC rAC ->
+  composable rAB rBC rAC -> param rAB a b ->
   getparam rBC b c -> param rAC a c.
-Proof. by rewrite !paramE => rab rABC rbc; apply: rABC; exists b. Qed.
+Proof.
+by rewrite !paramE composableE => rABC rab rbc; apply: rABC; exists b.
+Qed.
 
 (* Local Instance refinement_trans A B C *)
 (*   (rab : refinement A B) (rbc : refinement B C) : refinement A C :=  *)
@@ -244,18 +260,18 @@ Proof. by rewrite !paramE => rab rABC rbc; apply: rABC; exists b. Qed.
 (* (* conclusion leads to a Bad implicit argument number: 11 *) *)
 
 Lemma composable_rid1 A B (R : A -> B -> Prop): composable eq R R.
-Proof. by rewrite /composable comp_eql. Qed.
+Proof. by rewrite composableE comp_eql. Qed.
 
 Lemma composable_comp A B C (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) :
   composable rAB rBC (rAB \o rBC)%rel.
-Proof. done. Qed.
+Proof. by rewrite composableE. Qed.
 
 Lemma composable_imply {A B C A' B' C'}
   (rAB : A -> B -> Prop) (rBC : B -> C -> Prop)
   (R1 : A' -> B' -> Prop) (R2 : B' -> C' -> Prop) (R3 : A' -> C' -> Prop):
 composable R1 R2 R3 -> composable (rAB ==> R1) (rBC ==> R2) (rAB \o rBC ==> R3).
 Proof.
-rewrite /composable => R123.
+rewrite !composableE => R123.
 transitivity (rAB \o rBC ==> R1 \o R2)%rel; last exact: hrespectful_sub_proper.
 move=> f h [g []] Rfg Rgh x z [y [rxy ryz]]; exists (g y).
 by split; [apply: Rfg|apply: Rgh].
@@ -276,8 +292,8 @@ Proof. by rewrite paramE in rab. Qed.
 Hint Extern 0 (composable _ _ (_ \o _))
  => now eapply composable_comp : typeclass_instances.
 
-Hint Extern 1 (composable _ _ _)
- => now eapply @composable_rid1 : typeclass_instances.
+Hint Extern 1 (composable eq _ _)
+ => exact: @composable_rid1 : typeclass_instances.
 
 Hint Extern 2 (composable _ _ (_ ==> _))
  => eapply composable_imply : typeclass_instances.
@@ -296,45 +312,10 @@ Local Open Scope ring_scope.
 Import GRing.Theory.
 
 (* This class describe what is a type refinement *)
-Class refinement {A B} (R : A -> B -> Prop) := Refinement {
-  implem : A -> B;
-  spec : B -> option A;
-  implemK : pcancel implem spec;
-  refinementP : ((fun x y => spec y = Some x) <=> R)%rel
-}.
-Notation "\implem_ B" := (@implem _ B _ _) : computable_scope.
-Notation "\implem" := (@implem _ _ _ _) (only parsing) : computable_scope.
-Notation "\spec_ A" := (@spec A _ _ _) : computable_scope.
-Notation "\spec" := (@spec _ _ _ _) (only parsing) : computable_scope.
-
-Lemma implem_inj `{refinement} : injective implem.
-Proof. exact: (pcan_inj implemK). Qed.
-
-Definition specd A B `{refinement A B} (a : A) (b : B) := odflt a (spec b).
-
-Lemma implem_composeK A B C rAB rBC `{refinement A B rAB, refinement B C rBC} :
-  pcancel (\implem_C \o \implem_B)%C (obind \spec_A \o \spec_B)%C.
-Proof. by move=> a /=; rewrite implemK /= implemK. Qed.
-
-Program Definition refinement_id A : refinement (@eq A) :=
-  Refinement (fun _ => erefl) _.
-Next Obligation. by apply: EqHrel => [x y []|x y ->]. Qed.
+Class refinement {A B} (R : A -> B -> Prop) := Refinement {}.
 
 (* This class describes what is a term refinement *)
 Definition refines {A B R} `{refinement A B R} := R.
-
-Lemma spec_refines A B R `{refinement A B R} (a : A) (b : B) :
-  param R a b -> spec b = Some a.
-Proof. by apply: eq_hrelLR refinementP _ _. Qed.
-
-Global Instance refinement_bool : refinement (@eq bool) := refinement_id bool.
-
-Lemma refines_boolE (b b' : bool) {rb : refines b b'} : b = b'.
-Proof. by rewrite rb. Qed.
-
-Lemma refinesP {A B} `{refinement A B}  (x y : A) (a : B) :
-  param refines x a -> (param refines y a <-> x = y).
-Proof. by rewrite -[refines]refinementP paramE => ->; split=> [[]|->]. Qed.
 
 Lemma getparam_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
       (c : A -> C) (d : B -> D):
@@ -383,7 +364,7 @@ Proof. by rewrite !paramE. Qed.
 End Parametricity.
 
 Global Hint Extern 999 (getparam _ _ _)
- => apply set_param : typeclass_instances.
+ => eapply param_unfold : typeclass_instances.
 
 Hint Extern 2 (getparam (_ ==> _) _ _)
  => eapply @getparam_abstr=> ??? : typeclass_instances.
@@ -391,42 +372,55 @@ Hint Extern 2 (getparam (_ ==> _) _ _)
 Hint Extern 1 (getparam (_ ==> _ ==> _) _ _)
  => eapply @getparam_abstr2=> ??? ??? : typeclass_instances.
 
+Arguments refinement {A B} _%rel.
 
 Section prod.
 Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
 
 Definition prod_hrel : A * B -> A' * B' -> Prop :=
-  fun x y => param rA x.1 y.1 /\ param rB x.2 y.2.
+  fun x y => rA x.1 y.1 /\ rB x.2 y.2.
 
 Global Instance param_pair : param (rA ==> rB ==> prod_hrel) (@pair A B) (@pair A' B').
-Proof. done. Qed.
+Proof. by rewrite paramE. Qed.
 
 Global Instance param_fst : param (prod_hrel ==> rA) (@fst _ _) (@fst _ _).
-Proof. by move=> [??] [??] []. Qed.
+Proof. by rewrite paramE => [??] [??]. Qed.
 
 Global Instance param_snd : param (prod_hrel ==> rB) (@snd _ _) (@snd _ _).
-Proof. by move=> [??] [??] []. Qed.
-
-Definition implem_prod (RA : refinement rA) (RB : refinement rB) (x : A * B) :=
-  (implem x.1, implem x.2).
-Definition spec_prod (RA : refinement rA) (RB : refinement rB) (x : A' * B') :=
-  if (spec x.1, spec x.2) is (Some a, Some b) then Some (a, b) else None.
-
-Program Definition refinement_prod (RA : refinement rA) (RB : refinement rB) :
-  refinement prod_hrel := @Refinement _ _ _ (implem_prod RA RB) (spec_prod RA RB) _ _.
-Next Obligation. by move=> [x y] /=; rewrite /spec_prod !implemK. Qed.
-Next Obligation.
-split=> [[??][??]|[??][??][]]; rewrite /prod_hrel /=;
-rewrite -[rA]refinementP -[rB]refinementP !paramE /=;
-rewrite /spec_prod; do 2![case: spec => // ?].
-  by case=> -> ->.
-by move=> [->] [->].
-Qed.
+Proof. by rewrite paramE => [??] [??]. Qed.
 
 End prod.
 Arguments prod_hrel {_ _ _ _} rA%rel rB%rel _ _.
 Notation "X * Y" := (prod_hrel X Y) : rel_scope.
-Global Existing Instance refinement_prod.
+
+Section sum.
+Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
+
+Definition sum_hrel : A + B -> A' + B' -> Prop :=
+  fun x y => match x, y with inl x, inl y => rA x y
+                          | inr x, inr y => rB x y
+                          | _, _ => False end.
+
+Global Instance param_inl : param (rA ==> sum_hrel) (@inl _ _) (@inl _ _).
+Proof. by rewrite paramE. Qed.
+
+Global Instance param_inr : param (rB ==> sum_hrel) (@inr _ _) (@inr _ _).
+Proof. by rewrite paramE. Qed.
+
+Definition sum_elim {A B T} (ab : A + B) (f : A -> T) (g : B -> T) :=
+  match ab with inl a => f a | inr b => g b end.
+
+Lemma param_sum_rect T T' (R : T -> T' -> Prop) :
+      param (sum_hrel ==> (rA ==> R) ==> (rB ==> R) ==> R)%rel sum_elim sum_elim.
+Proof.
+rewrite paramE => x x' rx f f' rf g g' rg.
+by case: x x' rx=> [a|b] [a'|b'] //= rab; [apply: rf|apply: rg].
+Qed.
+
+End sum.
+Arguments sum_hrel {_ _ _ _} rA%rel rB%rel _ _.
+Notation "X + Y" := (sum_hrel X Y) : rel_scope.
+
 
 Section param_seq.
 Context {A B : Type} (rAB : A -> B -> Prop).
@@ -438,29 +432,34 @@ Fixpoint seq_hrel sa sb : Prop :=
     | _,       _       => False
   end.
 
-Global Instance param_nil : param seq_hrel nil nil. Proof. done. Qed.
+Global Instance param_nil : param seq_hrel nil nil.
+Proof. by rewrite paramE. Qed.
 
 Global Instance param_cons : param (rAB ==> seq_hrel ==> seq_hrel) cons cons.
-Proof. done. Qed.
+Proof. by rewrite paramE. Qed.
 
-Definition seq_elim {X Y} (f0 : Y) (f_cons : X -> Y -> Y) :=
-  fix f s := match s with [::] => f0 | x :: s => f_cons x (f s) end.
-
-Global Instance param_seq_rect {C D : Type} (rCD : C -> D -> Prop) :
-  param (rCD ==> (rAB ==> rCD ==> rCD) ==> seq_hrel ==> rCD) seq_elim seq_elim.
-Proof. 
-move=> c d rcd f g rfg; elim=> [|x s /= ihs] [|y t] // [rxy rst].
+Global Instance param_foldr {C D : Type} (rCD : C -> D -> Prop) :
+  param ((rAB ==> rCD ==> rCD) ==> rCD ==> seq_hrel ==> rCD) foldr foldr.
+Proof.
+rewrite paramE => f g rfg c d rcd; elim=> [|x s /= ihs] [|y t] //= [rxy rst].
 by apply: rfg => //; apply: ihs.
+Qed.
+
+Lemma param_foldl {C D : Type} (rCD : C -> D -> Prop) :
+  param ((rCD ==> rAB ==> rCD) ==> rCD ==> seq_hrel ==> rCD) foldl foldl.
+Proof.
+rewrite paramE => f g rfg c d rcd s.
+elim: s c d rcd => [|x s /= ihs] c d rcd [|y t] //= [rxy rst].
+by apply: ihs => //; apply: rfg.
 Qed.
 
 End param_seq.
 
-Global Instance param_if {A A'}
-       (c : bool) (c' : bool) (a : A) (a' : A') (b : A) (b' : A') 
-         (R : A -> A' -> Prop)
-   {rc : param eq c c'}  `{!param R a a'} `{!param R b b'} :
-  param R (if c then a else b) (if c' then a' else b').
-Proof. by move: rc => [[<-]]; case: c. Qed.
+Definition bool_if {A} (c : bool) (a b : A) : A := if c then a else b.
+
+Lemma param_if {A A'} (R : A -> A' -> Prop) :
+(param eq ==> getparam R ==> getparam R ==> getparam R)%rel bool_if bool_if.
+Proof. by rewrite paramE; move => [] _ <- ??? ???. Qed.
 
 Module Refinements.
 
@@ -558,6 +557,10 @@ Class dlsub B := dlsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> 
 Class drsub B := drsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
 Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
   B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
+
+Class spec_of (A B : Type) := spec : A -> B.
+(* Class implem_of A B := implem : A -> B. *)
+Definition spec_id {A : Type} : spec A A := id A.
 
 End Op.
 
