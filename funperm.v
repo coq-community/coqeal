@@ -34,9 +34,10 @@ congr Some; apply/permP=> k.
 by rewrite {1}PermDef.fun_of_permE ffunE !inord_val.
 Qed.
 
+Definition Rfunperm {n} := ofun_hrel (perm_of_funperm n).
+
 Global Instance refinement_perm_funperm n :
-  refinement (ofun_hrel (perm_of_funperm n)) := Refinement (@funperm_of_permK n) _.
-Proof. reflexivity. Qed.
+  refinement _ := Refinement (@Rfunperm n).
 
 Definition ctperm (i j k : nat) :=
   if i == k then j else if j == k then i else k.
