@@ -43,17 +43,10 @@ Qed.
 
 Definition Rpos := fun_hrel pos_of_positive.
 
-Global Program Instance refinement_positive : refinement Rpos :=
-  @Refinement _ _ _ positive_of_pos (some \o pos_of_positive) _ _.
-Next Obligation.
-by move=> x /=; rewrite positive_of_posK.
-Qed.
-Next Obligation.
-by constructor=> /= [x y []|x y ->].
-Qed.
+Global Program Instance refinement_positive : refinement Rpos.
 
-Lemma RposE (p : pos) (x : positive) : Rpos p x -> p = pos_of_positive x. 
-Proof. by case. Qed.
+Lemma RposE (p : pos) (x : positive) : param Rpos p x -> p = pos_of_positive x. 
+Proof. by rewrite paramE; case. Qed.
 
 (* Why is this not in ssrnat? *)
 Lemma to_natE : forall (p : positive), Pos.to_nat p = nat_of_pos p.
@@ -67,11 +60,15 @@ by rewrite to_natE; elim: p => //= p; rewrite NatTrec.trecE double_gt0.
 Qed.
 Hint Resolve to_nat_gt0.
 
+Definition spec_id {A} : A -> A := id.
+Global Instance spec_positive : spec_of positive pos := pos_of_positive.
+Global Instance Rpos_spec : param (Logic.eq ==> Rpos) spec spec_id.
+Proof. by rewrite !paramE; move=> x y <-. Qed.
 
 (* Constants *)
 Global Instance one_positive : one positive := xH.
 Global Instance refines_pos1 : param Rpos (pos1 : pos) (1%C : positive).
-Proof. by rewrite paramE; apply: val_inj; rewrite /= insubdK. Qed.
+Proof. by rewrite !paramE; apply: val_inj; rewrite /= insubdK. Qed.
 
 (* Binary operations *)
 Global Instance add_positive : add positive := Pos.add.
@@ -143,17 +140,17 @@ Section binnat.
 
 Definition Rnat : nat -> N -> Prop := fun_hrel nat_of_bin.
 
-Global Program Instance refinement_nat_N : refinement Rnat :=
-   @Refinement _ _ _ bin_of_nat (some \o nat_of_bin) _ _.
-Next Obligation.
-by move=> n /=; rewrite bin_of_natK.
-Qed.
-Next Obligation.
-by constructor => //= [??[<-]|??<-].
-Qed.
+Global Program Instance refinement_nat_N : refinement Rnat.
 
-Lemma refines_natE (n : nat) (x : N) : Rnat n x -> n = x. 
-Proof. by case. Qed.
+Lemma RboolE (b b' : bool) : param Logic.eq b b' -> b = b'. 
+Proof. by rewrite paramE. Qed.
+
+Lemma RnatE (n : nat) (x : N) : param Rnat n x -> n = x. 
+Proof. by rewrite paramE; case. Qed.
+
+Global Instance spec_N : spec_of N nat := nat_of_bin.
+Global Instance Rnat_spec : param (Logic.eq ==> Rnat) spec spec_id.
+Proof. by rewrite paramE => x _ <-. Qed.
 
 (* Constants *)
 Global Instance zero_N : zero N := N.zero.
@@ -176,8 +173,8 @@ Qed.
 Definition succN (n : N) : N := unfold (1 + n)%C.
 Global Instance refines_natS : param (Rnat ==> Rnat) S succN.
 Proof.
-apply param_abstr => m n rmn; rewrite -add1n.
-by apply: refines_nat_add.
+rewrite !paramE => m n rmn; rewrite -add1n.
+by rewrite /succN /unfold; apply: paramP.
 Qed.
 
 Lemma nat_of_binK : forall x, N.of_nat (nat_of_bin x) = x.
@@ -216,12 +213,10 @@ Global Instance leq_N : leq N := N.leb.
 Global Instance refines_nat_leq :
   param (Rnat ==> Rnat ==> Logic.eq) ssrnat.leq leq_op.
 Proof.
-apply param_abstr2 => _ x <- _ y <-.
-rewrite paramE; rewrite /leq_op /leq_N.
+rewrite paramE => x x' rx y y' ry; rewrite /leq_op /leq_N.
 case: (N.leb_spec0 _ _) => [/N.sub_0_le|] /= h.
-  by apply/eqP; rewrite -(refines_nat_sub erefl erefl) [(_ - _)%C]h.
-apply/negP => /eqP; rewrite -(refines_nat_sub erefl erefl) -[0]/(nat_of_bin 0).
-(* Cyril: this was wrong to do it like that, we should come back and fix *)
+  by apply/eqP; rewrite [x - y]RnatE [(_ - _)%C]h.
+apply/negP => /eqP; rewrite [x - y]RnatE [0]RnatE.
 by move/(can_inj nat_of_binK)/N.sub_0_le.
 Qed.
 
@@ -229,9 +224,8 @@ Global Instance lt_N : lt N := N.ltb.
 Global Instance refines_nat_lt :
   param (Rnat ==> Rnat ==> Logic.eq) ltn lt_op.
 Proof.
-apply param_abstr2 => _ x <- _ y <-; rewrite paramE /Rnat /fun_hrel.
-rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge.
-by rewrite (refines_nat_leq erefl erefl).
+apply param_abstr2 => x x' rx y y' ry; rewrite paramE /Rnat /fun_hrel.
+by rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge [y <= x]RboolE.
 (* Cyril: this was wrong to do it like that, we should come back and fix *)
 Qed.
 
@@ -239,8 +233,8 @@ Global Instance cast_positive_N : cast_class positive N := Npos.
 Global Instance refines_cast_positive_N :
   param (Rpos ==> Rnat) val (cast : positive -> N).
 Proof.
-apply param_abstr => _ x <-; rewrite paramE /cast /Rnat /fun_hrel.
-by rewrite val_insubd //= to_nat_gt0 to_natE. 
+apply param_abstr => x x' rx; rewrite paramE /cast /Rnat /fun_hrel.
+by rewrite [x]RposE val_insubd //= to_nat_gt0 to_natE. 
 (* wrong mix between nat_of_pos and to_nat *)
 Qed.
 
@@ -249,19 +243,9 @@ Global Instance cast_N_positive : cast_class N positive :=
 Global Instance refines_cast_N_positive :
   param (Rnat ==> Rpos) (insubd pos1) (cast : N -> positive).
 Proof. 
-apply param_abstr => _ x <-; apply/val_inj.
-by rewrite  !val_insubd to_natE; case: x.
+apply param_abstr => x x' rx; rewrite paramE [x]RnatE.
+case: x' {x rx} => [|p] /=; last by rewrite -to_natE.
+by rewrite /insubd insubF //= /cast; apply: paramP.
 Qed.
 
-(* Fixpoint is_closed n := (if n is n.+1 then is_closed n else 0 = 0)%N. *)
-
-(* Lemma refines_closed_nat n : *)
-(*   is_closed n -> param refines n (implem n). *)
-(* Proof. by move=> _; rewrite paramE /refines implemK. Qed. *)
-
 End binnat.
-
-
-(* (* Some tests *) *)
-(* Eval compute in 0%C. *)
-(* Eval compute in (1 + 1 * 1 + 1)%C. *)
