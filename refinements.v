@@ -634,11 +634,11 @@ Ltac simpC :=
       | rewrite -[hmul_op _ _]/(mulmx _ _)
       | rewrite -[heq_op _ _]/(_ == _)%bool
       | rewrite -[hcast_op _ _]/(castmx _ _)
-      | rewrite -[ulsub_op _]/(ulsubmx _)
-      | rewrite -[ursub_op _]/(ursubmx _)
-      | rewrite -[dlsub_op _]/(dlsubmx _)
-      | rewrite -[drsub_op _]/(drsubmx _)
-      | rewrite -[block_op _ _ _ _]/(block_mx _ _ _ _)].
+      | rewrite -[ulsubmx _]/(matrix.ulsubmx _)
+      | rewrite -[ursubmx _]/(matrix.ursubmx _)
+      | rewrite -[dlsubmx _]/(matrix.dlsubmx _)
+      | rewrite -[drsubmx _]/(matrix.drsubmx _)
+      | rewrite -[block_mx _ _ _ _]/(matrix.block_mx _ _ _ _)].
 
 (* Opacity of ssr symbols *)
 Typeclasses Opaque eqtype.eq_op.
