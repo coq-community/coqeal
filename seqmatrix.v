@@ -755,7 +755,6 @@ Global Instance refines_addseqmx m n :
     (@Op.hadd_op _ (fun _ _ => seqmatrix A) _ m n).
 Proof.
 apply param_abstr2 => x a rxa y b ryb; rewrite paramE.
-Set Typeclasses Debug.
 have->: x + y = zipwithmx +%R x y by apply/matrixP=> i j; rewrite !mxE.
 rewrite -[Rseqmx]paramE /Op.hadd_op /haddseqmx.
 by tc.
