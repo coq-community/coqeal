@@ -181,6 +181,10 @@ Proof. by rewrite paramE. Qed.
 Global Hint Extern 0 (getparam _ _ _)
   => now eapply @getparam_refl : typeclass_instances.
 
+Global Instance param_fun_eq A B (f f' : A -> B) : param eq f f' ->
+  param (eq ==> eq) f f'.
+Proof. by rewrite !paramE => -> x x' ->. Qed.
+
 Global Instance param_apply A B C D
  (R : A -> B -> Prop) (R' : C -> D -> Prop)
  (a :  A) (b : B) (c : A -> C) (d : B -> D):
