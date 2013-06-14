@@ -19,7 +19,7 @@ Definition karatsuba_normZ : seqpoly Z -> seqpoly Z -> seqpoly Z :=
 
 (* Degree 1000 *)
 Definition p1000 : seqpoly Z :=
-  Eval vm_compute in map (embed \o bin_of_nat) (iota 1 1000).
+  Eval vm_compute in map (cast \o bin_of_nat) (iota 1 1000).
 
 (* Time Eval vm_compute in size_seqpoly (p1000 * p1000). *)
 Time Eval vm_compute in size_seqpoly (karatsubaZ p1000 p1000).
@@ -27,7 +27,7 @@ Time Eval vm_compute in size_seqpoly (karatsuba_normZ p1000 p1000).
 
 (* Degree 2000 *)
 Definition p2000 : seqpoly Z :=
-  Eval vm_compute in map (embed \o bin_of_nat) (iota 1 2000).
+  Eval vm_compute in map (cast \o bin_of_nat) (iota 1 2000).
 
 Time Eval vm_compute in size_seqpoly (p2000 * p2000).
 Time Eval vm_compute in size_seqpoly (karatsubaZ p2000 p2000).
