@@ -37,6 +37,15 @@ Fixpoint normalize (p : hpoly) : hpoly := match p with
     end
   end.
 
+Fixpoint eq_hpoly_op p q {struct p} := match p, q with
+  | Pc a, Pc b => (a == b)%C
+  | PX a n p', PX b m q' => (a == b)%C && (cast n == cast m) && (eq_hpoly_op p' q')
+  | _, _ => false
+  end.
+
+Global Instance eq_hpoly : eq hpoly := 
+  fun p q => eq_hpoly_op (normalize p) (normalize q).
+
 (* Fixpoint to_seq (p : hpoly A) : seq A := match p with *)
 (*   | Pc c => [:: c] *)
 (*   | PX a n p => a :: ncons (pred n) 0%C (to_seq p) *)
@@ -67,22 +76,20 @@ Fixpoint addXn_const n a q := match q with
                         else PX b m (addXn_const (n - cast m)%N a q')
   end.
 
-Arguments addXn_const n a q : simpl never. 
-
 (* Why do I need this? Why isn't simpl never enough?! *)
-Definition why n a m q' := addXn_const n a (PX 0 m q').
+(* Definition why n a m q' := addXn_const n a (PX 0 m q'). *)
 
 Fixpoint addXn (n : nat) p q {struct p} := match p, q with
   | Pc a      , q      => addXn_const n a q
-  | PX a n' p', Pc b   => if n == 0%N then PX (a + b) n' p' else PX b (cast n) (PX a n' p')
+  | PX a n' p', Pc b   => if n == 0%N then PX (a + b) n' p' 
+                                      else PX b (cast n) (PX a n' p')
   | PX a n' p', PX b m q' => 
-    if n == 0%N then if (n' == m)%C then PX (a + b) n' (addXn 0 p' q') else
-                     if n' < m      then PX (a + b) n' (addXn 0 p' (PX 0 (m - n') q'))
-                                    else PX (a + b) m (addXn (cast (n' - m)) p' q')
-                else addXn (n + cast n') p' (addXn_const 0%N b (why n a m q'))
+    if n == 0%N then 
+      if (n' == m)%C then PX (a + b) n' (addXn 0 p' q') else
+      if n' < m      then PX (a + b) n' (addXn 0 p' (PX 0 (m - n') q'))
+                     else PX (a + b) m (addXn (cast (n' - m)) p' q')
+    else addXn (n + cast n') p' (addXn_const 0%N b (addXn_const n a (PX 0 m q')))
   end.
-
-Arguments addXn n p q : simpl never. 
 
 (* (* This definition is nicer but Coq doesn't like it *) *)
 (* Fixpoint add_hpoly_op p q := match p, q with *)
@@ -95,24 +102,25 @@ Arguments addXn n p q : simpl never.
 (*                               else PX (a + b) m (add_hpoly_op q (PX 0 (n - m) p)) *)
 (*   end. *)
 
-Global Instance add_hpoly : add hpoly := fun p q => addXn 0%N p q.
+Global Instance add_hpoly : add hpoly := addXn 0%N.
 
-(* TODO: Prove these operations correct! *)
-
-Fixpoint scale_hpoly a p := match p with
+Fixpoint scale_hpoly_op a p := match p with
   | Pc b => Pc (a * b)
-  | PX b n q => PX (a * b) n (scale_hpoly a q)
+  | PX b n q => PX (a * b) n (scale_hpoly_op a q)
   end.
 
+Global Instance scale_hpoly : scale A hpoly := scale_hpoly_op.
+
 Fixpoint mul_hpoly_op p q := match p, q with
-  | Pc a, q => scale_hpoly a q
-  | p, Pc b => scale_hpoly b p
+  | Pc a, q => a *: q
+  | p, Pc b => b *: p
   | PX a n p, PX b m q => 
-     Pc (a * b) + PX 0 n (scale_hpoly a q) + PX 0 m (scale_hpoly b p) + 
-     PX 0 (n + m) (mul_hpoly_op p q)
+     PX 0 (n + m) (mul_hpoly_op p q) + PX 0 m (a *: q) + (PX 0 n (b *: p) + Pc (a * b))
   end.
 
 Global Instance mul_hpoly : mul hpoly := mul_hpoly_op.
+
+(* TODO: Prove these operations correct! *)
 
 (* TODO: Optimize *)
 Definition sub_hpoly_op p q := p + - q.
@@ -123,7 +131,7 @@ Definition shift_hpoly n p := PX 0 n p.
 
 Fixpoint size_hpoly p : nat := match p with
   | Pc a => if (a == 0)%C then 0%N else 1%N
-  | PX _ n p' => (cast n + size_hpoly p')%N
+  | PX a n p' => if (p == 0)%C && (a == 0)%C then 0%N else (cast n + size_hpoly p').+1
   end.
 
 Fixpoint split_hpoly m p : hpoly * hpoly := match p with
@@ -209,6 +217,17 @@ Definition Rhpoly : {poly A} -> hpoly A pos -> Prop := fun_hrel to_poly.
 Lemma refines_hpolyE p q : param Rhpoly p q -> p = to_poly q.
 Proof. by rewrite paramE. Qed.
 
+Instance refines_hpoly_eq : param (Rhpoly ==> Rhpoly ==> Logic.eq) 
+  (fun p q => p == q) (fun hp hq => hp == hq)%C.
+Proof.
+apply param_abstr2 => p hp h1 q hq h2.
+rewrite [p]refines_hpolyE [q]refines_hpolyE paramE {p h1 q h2}.
+rewrite /eq_op /eq_hpoly.
+elim: hp hq => [a|a n p ih].
+  admit.
+admit.
+Qed.
+
 (* zero and one *)
 Instance refines_hpoly0 : param Rhpoly 0%R 0%C.
 Proof. by rewrite paramE. Qed.
@@ -225,65 +244,38 @@ apply param_abstr => p hp h1.
 rewrite [p]refines_hpolyE paramE /Rhpoly /fun_hrel {p h1}.
 elim: hp => /= [a|a n p ->]; by rewrite polyC_opp // opprD mulNr.
 Qed.
- 
-Lemma addXn_constE : forall n a q, to_poly (addXn_const n a q) = a%:P * 'X^n + to_poly q.
+
+Lemma addXn_constE n a q : to_poly (addXn_const n a q) = a%:P * 'X^n + to_poly q.
 Proof.
-move=> n a q.
-elim: q n a.
-  move=> a [|n] b /=.
-    by rewrite polyC_add expr0 mulr1.
-  by rewrite /cast /cast_pos_nat /cast_nat_pos insubdK.
-move=> b m q' ih n a /=.
-have [->|/eqP m0] /= := eqP; first by rewrite polyC_add expr0 mulr1 addrCA.
-have [hn|hnc] /= := eqP; first by rewrite ih expr0 mulr1 -hn mulrDl -addrA.
-have [hlt|hleq] /= := ltnP.
-rewrite /cast /cast_pos_nat /cast_nat_pos insubdK; last by rewrite -topredE /= lt0n.
-rewrite mulrDl -mulrA -exprD addrCA -addrA.
-f_equal.
-f_equal.
-f_equal.
-rewrite /sub_op /sub_pos /=.
-rewrite ?insubdK.
-rewrite subnK //.
-by apply/ltnW.
-by rewrite -topredE /= lt0n.
-by rewrite -topredE /= subn_gt0.
-by rewrite -topredE /= lt0n.
+elim: q n => [b [|n]|b m q' ih n] /=; first by rewrite polyC_add expr0 mulr1.
+  by rewrite /cast /cast_pos_nat insubdK.
+case: eqP => [->|/eqP n0] /=; first by rewrite polyC_add expr0 mulr1 addrCA.
+case: eqP => [hn|hnc] /=; first by rewrite ih expr0 mulr1 -hn mulrDl -addrA.
+have [hlt|hleq] /= := ltnP; rewrite /cast /cast_nat_pos /cast_pos_nat.
+  rewrite insubdK -?topredE /= ?lt0n // mulrDl -mulrA -exprD addrCA -addrA.
+  by rewrite ?insubdK -?topredE /= ?subn_gt0 ?lt0n ?subnK // ltnW. 
 by rewrite ih mulrDl -mulrA -exprD subnK // addrA.
 Qed.
 
+Arguments addXn_const _ _ _ _ _ _ n a q : simpl never. 
+
 Lemma addXnE n p q : to_poly (addXn n p q) = to_poly p * 'X^n + to_poly q.
 Proof.
-elim: p n q.
-  move=> a n q.
-  simpl.
-  by rewrite addXn_constE.
-move=> a n' p ih n [b|b m q].
-  simpl.
-  have [->|/eqP n0] := eqP; first by rewrite expr0 mulr1 /= polyC_add addrA.
+elim: p n q => [a n q|a n' p ih n [b|b m q]] /=; first by rewrite addXn_constE.
+  case: eqP => [->|/eqP n0]; first by rewrite expr0 mulr1 /= polyC_add addrA.
   by rewrite /= /cast /cast_pos_nat /cast_nat_pos insubdK // -topredE /= lt0n.
-simpl.
-have [->|/eqP no] := eqP.
-  rewrite expr0 mulr1 /lt_op /lt_pos.
-  case: ifP => [/eqP ->|Hneq] /=.
+case: eqP => [->|/eqP no].
+  rewrite expr0 mulr1 /lt_op /lt_pos /eq_op /eq_pos.
+  case: ifP => [/eqP ->|hneq] /=.
     by rewrite ih expr0 mulr1 mulrDl polyC_add -!addrA [_ + (a%:P + _)]addrCA.
-  have [hlt|hleq] /= := ltnP.
-    rewrite ih expr0 mulr1 mulrDl /= addr0 -mulrA -exprD polyC_add -!addrA [_ + (a%:P + _)]addrCA.
-    rewrite /= /cast /cast_pos_nat /cast_nat_pos insubdK ?subnK //. 
-      by apply/ltnW.
-    by rewrite -topredE /= subn_gt0.
-  rewrite ih mulrDl -mulrA -exprD polyC_add -!addrA [_ + (a%:P + _)]addrCA.
-  rewrite /= /cast /cast_pos_nat /cast_nat_pos insubdK ?subnK //. 
-  rewrite -topredE /= subn_gt0.
-  move: hleq Hneq.
-  rewrite leq_eqVlt; case/orP=> // /eqP /val_inj -> /=.
-  by rewrite /eq_op /eq_pos eqxx.
+  have [hlt|hleq] /= := ltnP; rewrite ih polyC_add mulrDl -!addrA ?expr0.
+    rewrite mulr1 /= addr0 -mulrA -exprD [_ + (a%:P + _)]addrCA /cast.
+    by rewrite /cast_pos_nat insubdK ?subnK -?topredE /= ?subn_gt0 // ltnW. 
+  rewrite -mulrA -exprD [_ + (a%:P + _)]addrCA /cast /cast_pos_nat.
+  rewrite  insubdK ?subnK // -?topredE /= subn_gt0; rewrite leq_eqVlt in hleq.
+  by case/orP: hleq hneq => // /eqP /val_inj ->; rewrite eqxx.
 rewrite !ih !addXn_constE expr0 mulr1 /= addr0 mulrDl -mulrA -exprD addnC.
-rewrite -!addrA.
-f_equal.
-rewrite addrCA.
-f_equal.
-by rewrite addrC.
+by rewrite -!addrA [b%:P + (_ + _)]addrCA [b%:P + _]addrC.
 Qed.
 
 Instance refines_addhpoly : param (Rhpoly ==> Rhpoly ==> Rhpoly) +%R +%C.
@@ -291,6 +283,67 @@ Proof.
 apply param_abstr2 => p hp h1 q hq h2.
 rewrite [p]refines_hpolyE [q]refines_hpolyE paramE /Rhpoly /fun_hrel {p q h1 h2}.
 by rewrite /add_op /add_hpoly addXnE expr0 mulr1.
+Qed.
+
+(* This should not be necessary *)
+Lemma temp a p : to_poly (a *: p)%C = a *: to_poly p.
+Proof.
+elim: p => [b|b n p ih] /=; first by rewrite polyC_mul mul_polyC.
+by rewrite ih polyC_mul -!mul_polyC mulrDr mulrA.
+Qed.
+
+Instance refines_hpoly_scale : param (Logic.eq ==> Rhpoly ==> Rhpoly) *:%R *:%C.
+Proof.
+apply param_abstr2 => /= a b -> p hp h1.
+rewrite [p]refines_hpolyE paramE /Rhpoly /fun_hrel {a p h1}.
+elim: hp => [a|a n p ih] /=; first by rewrite polyC_mul mul_polyC.
+by rewrite ih polyC_mul -!mul_polyC mulrDr mulrA.
+Qed.
+
+Instance refines_hpolymul : param (Rhpoly ==> Rhpoly ==> Rhpoly) *%R *%C.
+Proof. 
+apply param_abstr2 => p hp h1 q hq h2.
+rewrite [p]refines_hpolyE [q]refines_hpolyE paramE /Rhpoly /fun_hrel {p q h1 h2}.
+elim: hp hq => [a [b|b m q]|a n p ih [b|b m q]] /=; rewrite ?polyC_mul //.
+    rewrite mulrDr mulrA !mul_polyC.
+    (* Now what? *)
+    by rewrite temp.
+  by rewrite mulrDl temp ![_ * b%:P]mulrC mulrA !mul_polyC.
+rewrite mulrDr !mulrDl mulrCA -!mulrA -exprD mulrCA !mulrA [_ * _ * b%:P]mulrC.
+rewrite -polyC_mul !mul_polyC /mul_op /= /add_op /add_hpoly !addXnE /= expr0.
+rewrite !mulr1 !addr0 ih !temp scalerAl /add_pos /cast /cast_pos_nat insubdK //.
+by rewrite -topredE /= addn_gt0; case: n => /= x ->.
+Qed.
+
+Instance refines_hpolysub : param (Rhpoly ==> Rhpoly ==> Rhpoly) subr sub_op.
+Proof.
+apply param_abstr2 => p hp h1 q hq h2.
+by rewrite /sub_op /sub_hpoly /sub_hpoly_op /subr; tc.
+Qed.
+
+(* Maybe Logic.eq is not right here? Maybe we should have refines for pos? *)
+Instance refines_shift_hpoly : param (Logic.eq ==> Rhpoly ==> Rhpoly) 
+  (fun n p => p * 'X^(cast n)) (fun n p => shift_hpoly n p).
+Proof.
+apply param_abstr2 => /= a n -> p hp h1.
+by rewrite [p]refines_hpolyE paramE /Rhpoly /fun_hrel {a p h1} /= addr0.
+Qed.
+
+Lemma size_MXnaddC : forall (R : ringType) (p : {poly R}) (c : R) n,
+   size (p * 'X^n + c%:P) = (if (p == 0) && (c == 0) then 0%N else (n + size p).+1).
+Proof.
+admit.
+Qed.
+
+Instance refines_size_hpoly : param (Rhpoly ==> Logic.eq) 
+  (fun p => size p) (fun p => size_hpoly p).
+Proof.
+apply param_abstr => /= p hp h1.
+rewrite [p]refines_hpolyE paramE /Rhpoly /fun_hrel {p h1}.
+elim: hp => [a|a n p ih] /=.
+  by rewrite size_polyC; simpC; case: eqP.
+rewrite size_MXnaddC ih.
+admit.
 Qed.
 
 End hpoly_theory.
