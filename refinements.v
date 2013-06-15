@@ -601,8 +601,8 @@ Notation "x - y"  := (sub_op x y)   : computable_scope.
 Notation "x ^ y"  := (exp_op x y)   : computable_scope.
 Notation "*%C"    := mul_op.
 Notation "x * y"  := (mul_op x y)   : computable_scope.
-Notation "x *: y" := (scale_op x y) : computable_scope.
 Notation "*:%C"   := scale_op.
+Notation "x *: y" := (scale_op x y) : computable_scope.
 Notation "x / y"  := (div_op x y)   : computable_scope.
 Notation "x == y" := (eq_op x y)    : computable_scope.
 Notation "x < y " := (lt_op x y)    : computable_scope.
