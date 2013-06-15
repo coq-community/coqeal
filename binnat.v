@@ -63,8 +63,10 @@ Qed.
 Hint Resolve to_nat_gt0.
 
 Global Instance spec_positive : spec_of positive pos := pos_of_positive.
-Global Instance Rpos_spec x : param Rpos (spec x) x.
+Global Instance refines_spec_pos_r x : param Rpos (spec x) x.
 Proof. by rpos; rewrite !paramE. Qed.
+Global Instance refines_spec_pos_l : param (Rpos ==> Logic.eq) spec_id spec.
+Proof. by rpos; rewrite !paramE => x x' rx; rewrite [spec _]RposE. Qed.
 
 (* Constants *)
 Global Instance one_positive : one positive := xH.
@@ -138,7 +140,7 @@ Qed.
 End positive.
 
 Typeclasses Opaque pos_of_positive positive_of_pos.
-Opaque pos_of_positive positive_of_pos.
+Global Opaque pos_of_positive positive_of_pos.
 
 Section binnat.
 
@@ -152,8 +154,11 @@ Lemma RnatE (n : nat) (x : N) : param Rnat n x -> n = x.
 Proof. by rnat; rewrite paramE; case. Qed.
 
 Global Instance spec_N : spec_of N nat := nat_of_bin.
-Global Instance Rnat_spec x : param Rnat (spec x) x.
+Global Instance refines_spec_nat_r x : param Rnat (spec x) x.
 Proof. by rnat; rewrite paramE. Qed.
+Global Instance refines_spec_nat_l : 
+  param (Rnat ==> Logic.eq) spec_id spec.
+Proof. by rnat; rewrite !paramE => x x' rx; rewrite [spec _]RnatE. Qed.
 
 (* Constants *)
 Global Instance zero_N : zero N := N.zero.
@@ -254,7 +259,7 @@ Qed.
 End binnat.
 
 Typeclasses Opaque nat_of_bin bin_of_nat.
-Opaque nat_of_bin bin_of_nat.
+Global Opaque nat_of_bin bin_of_nat.
 
 Section test.
 Import Refinements.
@@ -263,6 +268,11 @@ Instance : refinement Rnat.
 
 Lemma test : 10000%num * 10000%num * (99999999%num + 1) =
              10000000000000000%num.
-Proof. by apply/eqP; rewrite [(_ == _)]RboolE. Qed.
+Proof. rewrite [X in X = _]RnatE; compute; reflexivity. Qed.
+
+Lemma test' : 10000%num * 10000%num * (99999999%num + 1) =
+             10000000000000000%num.
+Proof. by apply/eqP; rewrite [_ == _]RboolE. Qed.
 
 End test.
+
