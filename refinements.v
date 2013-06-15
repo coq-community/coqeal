@@ -291,13 +291,19 @@ Lemma paramR A B (R : A -> B -> Prop) (a : A) (b : B)
   (rab : param R a b) : R a b.
 Proof. by rewrite paramE in rab. Qed.
 
+Lemma RboolE (b b' : bool) : param Logic.eq b b' -> b = b'. 
+Proof. by rewrite paramE. Qed.
+
 (* Hint Extern 0 (refines _ _) => eapply paramR : typeclass_instances. *)
 
 Hint Extern 0 (composable _ _ (_ \o _))
  => now eapply composable_comp : typeclass_instances.
 
-Hint Extern 1 (composable eq _ _)
- => exact: @composable_rid1 : typeclass_instances.
+Hint Extern 0 (composable eq _ _)
+ => now eapply composable_rid1 : typeclass_instances.
+
+Hint Extern 0 (composable _ _ eq)
+ => now eapply composable_rid1 : typeclass_instances.
 
 Hint Extern 2 (composable _ _ (_ ==> _))
  => eapply composable_imply : typeclass_instances.
@@ -368,7 +374,10 @@ Proof. by rewrite !paramE. Qed.
 End Parametricity.
 
 Global Hint Extern 999 (getparam _ _ _)
- => eapply param_unfold : typeclass_instances.
+ => eapply set_param : typeclass_instances.
+
+(* Global Hint Extern 1000 (getparam _ _ _) *)
+(*  => eapply param_unfold : typeclass_instances. *)
 
 Hint Extern 2 (getparam (_ ==> _) _ _)
  => eapply @getparam_abstr=> ??? : typeclass_instances.
@@ -464,6 +473,8 @@ Definition bool_if {A} (c : bool) (a b : A) : A := if c then a else b.
 Lemma param_if {A A'} (R : A -> A' -> Prop) :
 (param eq ==> getparam R ==> getparam R ==> getparam R)%rel bool_if bool_if.
 Proof. by rewrite paramE; move => [] _ <- ??? ???. Qed.
+
+Hint Extern 1 (getparam _ _ _) => eapply param_if: typeclass_instances.
 
 Module Refinements.
 
@@ -564,7 +575,7 @@ Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
 
 Class spec_of (A B : Type) := spec : A -> B.
 (* Class implem_of A B := implem : A -> B. *)
-Definition spec_id {A : Type} : spec A A := id A.
+Definition spec_id {A : Type} : spec_of A A := id.
 
 End Op.
 
