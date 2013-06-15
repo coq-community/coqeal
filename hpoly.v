@@ -294,8 +294,8 @@ Qed.
 
 Instance refines_hpoly_scale : param (Logic.eq ==> Rhpoly ==> Rhpoly) *:%R *:%C.
 Proof.
-apply param_abstr2 => /= a b -> p hp h1.
-rewrite [p]refines_hpolyE paramE /Rhpoly /fun_hrel {a p h1}.
+rewrite paramE => /= a b -> p hp h1.
+rewrite [p]refines_hpolyE /Rhpoly /fun_hrel {a p h1}.
 elim: hp => [a|a n p ih] /=; first by rewrite polyC_mul mul_polyC.
 by rewrite ih polyC_mul -!mul_polyC mulrDr mulrA.
 Qed.
@@ -325,8 +325,8 @@ Qed.
 Instance refines_shift_hpoly : param (Logic.eq ==> Rhpoly ==> Rhpoly) 
   (fun n p => p * 'X^(cast n)) (fun n p => shift_hpoly n p).
 Proof.
-apply param_abstr2 => /= a n -> p hp h1.
-by rewrite [p]refines_hpolyE paramE /Rhpoly /fun_hrel {a p h1} /= addr0.
+rewrite paramE => /= a n -> p hp h1.
+by rewrite [p]refines_hpolyE /Rhpoly /fun_hrel {a p h1} /= addr0.
 Qed.
 
 Lemma size_MXnaddC : forall (R : ringType) (p : {poly R}) (c : R) n,
