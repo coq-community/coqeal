@@ -5,6 +5,7 @@ dvdring.v
 bareiss.v
 binnat.v
 binint.v
+basics.v
 # binint_direct.v
 invmx.v
 karatsuba.v
