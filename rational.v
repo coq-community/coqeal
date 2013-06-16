@@ -97,19 +97,14 @@ Proof. by move=> x; rewrite /Qint_to_rat ?denq_eq0 ?divq_num_den. Qed.
 
 Definition Rrat : rat -> Q int -> Prop := ofun_hrel Qint_to_rat.
 
-(* We have a quotient type where rat is the quotients of Qint *)
-Program Instance rat_refinement : refinement Rrat :=
-  Refinement Qrat_to_intK _.
-Next Obligation. reflexivity. Qed.
-
-Lemma Qint2_eq0 (a : Qint) : (a.2 == 0) = ~~ spec a :> bool.
+Lemma Qint2_eq0 (a : Qint) : (a.2 == 0) = ~~ Qint_to_rat a :> bool.
 Proof. by rewrite /= /Qint_to_rat; case: (altP eqP). Qed.
 
 (* this kind of things should be internalized in the theory of refinements *)
 Lemma dom_refines (x : rat) (r : Qint) `{!param Rrat x r} : r.2 != 0.
-Proof. by rewrite Qint2_eq0 spec_refines. Qed.
+Proof. rewrite Qint2_eq0. Qed.
 
-Lemma refines_ratE (x : rat) (a : Qint) `{!param Rrat x a} : x = a.1%:~R / a.2%:~R.
+Lemma RratE (x : rat) (a : Qint) `{!param Rrat x a} : x = a.1%:~R / a.2%:~R.
 Proof. 
 by apply: Some_inj; rewrite -spec_refines /= /Qint_to_rat dom_refines.
 Qed.

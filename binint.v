@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
-Require Import refinements binnat.
+Require Import refinements basics.
 
 (******************************************************************************)
 (* Attempt to refine SSReflect integers (ssrint) are to a new type            *)
@@ -259,10 +259,8 @@ eapply param_Zpos: typeclass_instances.
 Section Zrefinement_nat_pos.
 Variables N P : Type.
 Variables (Rnat : nat -> N -> Prop) (Rpos : pos -> P -> Prop).
-Variables (rRN : refinement Rnat) (rRP : refinement Rpos).
 
 Definition RZNP := (Rint \o RZ Rnat Rpos)%rel.
-Variable (rRZNP : refinement RZNP).
 
 Import Op.
 Context `{zero N, one N, sub N, add N, mul N, leq N, eq N}.
@@ -336,28 +334,3 @@ Proof. exact: param_trans. Qed.
 End Zrefinement_nat_pos.
 End Zparametric.
 End Z_nat_pos.
-
-Section Tests.
-
-Instance: refinement Rnat.
-Instance: refinement Rpos.
-Instance: refinement (RZNP Rnat Rpos).
-
-Lemma test : 10000%num%:Z * 10000%num%:Z =
-             100000000%num%:Z :> int.
-Proof. by apply/eqP; rewrite [(_ == _)]RboolE. Qed.
-
-Lemma test' : 10000%num%:Z * 10000%num%:Z * (99999999%num%:Z + 1) =
-             10000000000000000%num%:Z :> int.
-Proof. by apply/eqP; rewrite [(_ == _)]RboolE. Qed.
-
-Lemma test'' : 10000%num%:Z * 10000%num%:Z * (99999999%num%:Z + 1) =
-             10000000000000000%num%:Z :> int.
-Proof.
-rewrite -[X in X = _]specE.
-set a := (X in Op.spec X); vm_compute in a.
-(* we should make specZ locked somehow *)
-done.
-Qed.
-
-End Tests.

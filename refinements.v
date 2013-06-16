@@ -676,8 +676,7 @@ End AlgOp.
 
 Typeclasses Opaque AlgOp.subr AlgOp.divr.
 
-Lemma specE A C (R : A -> C -> Prop) 
-      `{spec_of C A, !refinement R} :
+Lemma specE A C (R : A -> C -> Prop) `{spec_of C A} :
   (param (R ==> Logic.eq) spec_id spec) ->
   forall a c, param R a c -> spec c = a.
 Proof.
