@@ -893,18 +893,3 @@ Typeclasses Opaque matrix_of_fun const_mx map_mx mulmx.
 
 (* (* Some tests *) *)
 
-Require Import ZArith ssrint binint.
-
-Definition M := \matrix_(i,j < 2) 1%:Z.
-Definition N := \matrix_(i,j < 2) 2%:Z.
-Definition P := \matrix_(i,j < 2) 14%:Z.
-
-Goal (M + N + M + N + M + N + N + M + N) *m
-   (M + N + M + N + M + N + N + M + N) = 
-(P *m M + P *m N + P *m M + P *m N + 
- P *m M + P *m N + P *m N + P *m M + P *m N).
-Proof.
-apply/eqP.
-rewrite [_ == _]RboolE.
-by compute.
-Qed.

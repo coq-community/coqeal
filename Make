@@ -5,7 +5,7 @@ dvdring.v
 bareiss.v
 binnat.v
 binint.v
-binint_direct.v
+# binint_direct.v
 invmx.v
 karatsuba.v
 minor.v
@@ -18,5 +18,10 @@ boolF2.v
 funperm.v
 rank.v
 strassen.v
+
+binint_test.v
+seqmatrix_test.v
+strassen_test.v
+
 OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
 COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"
