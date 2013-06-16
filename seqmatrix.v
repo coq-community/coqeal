@@ -659,7 +659,7 @@ elim: s1 s2 => [|x1 s1 IHs] [] //= x2 s2 /eqP eq_sz.
 by rewrite IHs //; apply/eqP.
 Qed.
 
-Lemma refines_eqseqmx m n :
+Global Instance refines_eqseqmx m n :
   param (Rseqmx ==> Rseqmx ==> Logic.eq)
         (eqtype.eq_op : 'M[A]_(m,n) -> _ -> _)
         (@Op.heq_op _ (fun _ _ => seqmatrix A) _ m n).
@@ -736,6 +736,12 @@ Local Instance sub_A : Op.sub A := (fun x y => x - y)%R.
 (* This helps automation a bit *)
 Local Instance param_eq_refl T (x : T) : param eq x x.
 Proof. by rewrite paramE. Qed.
+
+Local Instance param_fun_eq A B (f f' : A -> B) :
+  param eq f f' -> param (eq ==> eq) f f'.
+Proof.
+by rewrite !paramE => <- {f'} x x' <-.
+Qed.
 
 Global Instance refines_oppseqmx m n :
   param (Rseqmx ==> Rseqmx) (-%R : 'M[A]_(m,n) -> 'M[A]_(m,n))
@@ -844,6 +850,8 @@ have->: y k j = y^T j k by rewrite mxE.
 by rewrite [x]refines_mxE [y^T]refines_mxE !mxE.
 Qed.
 
+Existing Instance param_fun_eq.
+
 Global Instance refines_scaleseqmx m n :
   param (eq ==> Rseqmx ==> Rseqmx)
         (@GRing.scale _ _ : _ -> 'M[A]_(m, n)  -> _)
@@ -884,8 +892,8 @@ Typeclasses Opaque matrix_of_fun const_mx map_mx mulmx.
 
 
 (* (* Some tests *) *)
-(*
-Require Import ZArith ssrint binint seqpoly.
+
+Require Import ZArith ssrint binint.
 
 Definition M := \matrix_(i,j < 2) 1%:Z.
 Definition N := \matrix_(i,j < 2) 2%:Z.
@@ -896,7 +904,7 @@ Goal (M + N + M + N + M + N + N + M + N) *m
 (P *m M + P *m N + P *m M + P *m N + 
  P *m M + P *m N + P *m N + P *m M + P *m N).
 Proof.
-apply/eqP; rewrite refines_eqseqmx.
-reflexivity.
+apply/eqP.
+rewrite [_ == _]RboolE.
+by compute.
 Qed.
-*)
