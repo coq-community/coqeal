@@ -140,7 +140,7 @@ Definition Rseqpoly : {poly A} -> seqpoly A -> Prop := fun_hrel Poly.
 Program Instance refinement_poly_seqpoly :
   refinement Rseqpoly := Refinement Rseqpoly.
 
-Lemma refines_polyE p q : param Rseqpoly p q -> p = Poly q.
+Lemma RpolyE p q : param Rseqpoly p q -> p = Poly q.
 Proof. by rewrite paramE. Qed.
 
 (* zero and one *)
@@ -192,7 +192,7 @@ Instance refines_seqpoly_add :
 Proof.
 rewrite paramE => /= x a xa y b yb.
 apply/polyP => i; rewrite /add_op /add_seqpoly /= zippolywithE.
-rewrite [x]refines_polyE [y]refines_polyE /= coef_Poly.
+rewrite [x]RpolyE [y]RpolyE /= coef_Poly.
 have [i_small|i_large] := ltnP i (maxn (size a) (size b)).
   by rewrite nth_mkseq // coef_add_poly //= !coef_Poly.
 rewrite !nth_default // ?size_mkseq //.
@@ -205,7 +205,7 @@ Instance refines_seqpoly_opp : param (Rseqpoly ==> Rseqpoly) -%R -%C.
 Proof.
 rewrite paramE => /= x a xa.
 apply/polyP => i /=; rewrite /opp_op /opp_seqpoly /=.
-rewrite [x]refines_polyE coef_opp_poly !coef_Poly.
+rewrite [x]RpolyE coef_opp_poly !coef_Poly.
 have [hlt|hleq] := ltnP i (size a); first by rewrite (nth_map 0%C).
 by rewrite !nth_default ?oppr0 ?size_mkseq ?size_map.
 Qed.
@@ -216,7 +216,7 @@ Instance refines_seqpoly_sub : param (Rseqpoly ==> Rseqpoly ==> Rseqpoly)
 Proof.
 rewrite paramE => /= x a xa y b yb.
 apply/polyP => i; rewrite /sub_op /sub_seqpoly /= zippolywithE.
-rewrite [x]refines_polyE [y]refines_polyE /= coef_Poly.
+rewrite [x]RpolyE [y]RpolyE /= coef_Poly.
 have [i_small|i_large] := ltnP i (maxn (size a) (size b)).
   by rewrite nth_mkseq // coef_add_poly //= coef_opp_poly !coef_Poly. 
 rewrite !nth_default // ?size_mkseq //.
@@ -259,7 +259,7 @@ Qed.
 Instance refines_seqpoly_scale : param (Logic.eq ==> Rseqpoly ==> Rseqpoly) *:%R *:%C.
 Proof.
 rewrite paramE => /= a b -> {a} p s ps.
-apply/polyP => i /=; rewrite [p]refines_polyE coefZ !coef_Poly.
+apply/polyP => i /=; rewrite [p]RpolyE coefZ !coef_Poly.
 have [hlt|hleq] := ltnP i (size s); first by rewrite (nth_map 0%C).
 by rewrite !nth_default ?mulr0 ?size_mkseq ?size_map.
 Qed.
@@ -269,7 +269,7 @@ Instance refines_seqpoly_shift : param (Logic.eq ==> Rseqpoly ==> Rseqpoly)
   (fun n p => p * 'X^n) (fun n => shift n).
 Proof.
 rewrite paramE => /= m n -> {m} p s ps.
-by apply/polyP => i /=; rewrite [p]refines_polyE coefMXn !coef_Poly nth_ncons.
+by apply/polyP => i /=; rewrite [p]RpolyE coefMXn !coef_Poly nth_ncons.
 Qed.
 
 
@@ -277,7 +277,7 @@ Instance refines_seqpoly_cons : param (Logic.eq ==> Rseqpoly ==> Rseqpoly)
   (fun a p => p * 'X + a%:P) (fun a s => a :: s).
 Proof.
 rewrite paramE => /= b a -> {b} p s ps.
-by apply/polyP => i /=; rewrite [p]refines_polyE cons_poly_def.
+by apply/polyP => i /=; rewrite [p]RpolyE cons_poly_def.
 Qed.
 
 (* maybe this should be "all (fun x => x == 0) s" ? *)
@@ -285,7 +285,7 @@ Lemma refines_poly0 (s : seqpoly A) : param Rseqpoly 0 s ->
   forall x, x \in s -> x = 0.
 Proof. 
 move=> hs x /(nthP 0) [i hi <-].
-by rewrite -coef_Poly -(refines_polyE hs) coef0. 
+by rewrite -coef_Poly -(RpolyE hs) coef0. 
 Qed.
 
 Lemma refines_poly_MXaddC a p (s : seqpoly A) :
@@ -293,7 +293,7 @@ Lemma refines_poly_MXaddC a p (s : seqpoly A) :
 Proof.
 wlog -> : s / s = (head 0 s) :: (behead s) => [hwlog|].
   case: s => [rp|x s]; last by apply: hwlog.
-  have /= := hwlog [::0] erefl; rewrite [_ + _]refines_polyE /= => H; apply H.
+  have /= := hwlog [::0] erefl; rewrite [_ + _]RpolyE /= => H; apply H.
   by rewrite paramE; apply/polyP=> i /=; rewrite cons_poly_def mul0r addr0.
 (* What to do here? *)
 (* rewrite /refines /Rpoly /fun_hrel /= cons_poly_def => [[hp]]. *)
@@ -325,27 +325,29 @@ Qed.
 Instance refines_seqpoly_size : param (refines ==> Logic.eq) 
   (fun (p : {poly A}) => size p) (fun s => size_seqpoly s).
 Proof.
-apply param_abstr => p s ps.
+rewrite paramE => p s ps.
 symmetry; elim: s => [|x sp ihs] //= in p ps *.
-  by rewrite [p]refines_polyE size_poly0.
+  by rewrite [p]RpolyE size_poly0.
 move: ps => /refines_poly_cons [[p' a /= [-> -> rp']]].
 rewrite (ihs p' rp') size_poly_eq0 size_MXaddC; simpC.
 by have [->|] //= := (altP eqP); case: ifP => //=; rewrite size_poly0.
 Qed.
 
+Lemma refines_eq T (x y : T) : param Logic.eq x y -> x = y.
+Proof. by rewrite paramE. Qed.
+
 (* lead_coef *)
 Instance refines_seqpoly_lead_coef : 
   param (refines ==> Logic.eq) lead_coef (fun p => lead_coef_seqpoly p).
 Proof.
-apply param_abstr => p s ps; rewrite /lead_coef_seqpoly /lead_coef.
-rewrite (refines_seqpoly_size ps). (* Why do I have to give ps? *)
-by rewrite [p]refines_polyE coef_Poly.
+rewrite paramE => p s ps; rewrite /lead_coef_seqpoly /lead_coef.
+by rewrite -[size_seqpoly _]refines_eq [p]RpolyE coef_Poly.
 Qed.
 
 (* polyC *)
 Instance refines_seqpoly_polyC : param (Logic.eq ==> refines) (fun a => a%:P) (fun a => cast a)%C.
 Proof.
-apply param_abstr => b a -> {b}.
+rewrite paramE => b a -> {b}.
 rewrite /cast /embed_seqpoly; simpC.
 have [->|_] //= := (altP eqP). 
 by apply/polyP=> i /=; rewrite cons_poly_def mul0r add0r.
@@ -354,8 +356,8 @@ Qed.
 (* multiplication *)
 Instance refines_poly_mul : param (refines ==> refines ==> refines) *%R *%C.
 Proof.
-apply param_abstr2 => /= p sp rp q sq rq.
-elim: sp => [|a sp ihp] in p rp *; first by rewrite [p]refines_polyE mul0r.
+rewrite paramE => /= p sp rp q sq rq.
+elim: sp => [|a sp ihp] in p rp *; first by rewrite [p]RpolyE mul0r.
 move: rp => /refines_poly_cons [[sp' a' /= [-> -> rp']]].
 admit.
 (* This does not work anymore... *)
@@ -367,8 +369,8 @@ Qed.
 Instance refines_poly_eq : param (refines ==> refines ==> Logic.eq) 
   (fun p q => p == q) (fun sp sq => sp == sq)%C.
 Proof.
-apply param_abstr2 => p sp hsp q sq hsq.
-rewrite /eq_op /eq_seqpoly zippolywithE [p]refines_polyE [q]refines_polyE.
+rewrite paramE => p sp hsp q sq hsq.
+rewrite /eq_op /eq_seqpoly zippolywithE [p]RpolyE [q]RpolyE.
 apply/eqP/idP => [hpq|/allP hpq].
   apply/allP => x /(nthP true) [i]; rewrite size_mkseq => hi <-.
   by rewrite nth_mkseq // eq_sym -coef_Poly hpq coef_Poly [(_ == _)%C]eqxx.
@@ -383,8 +385,8 @@ Qed.
 Instance refines_seqpoly_horner : param (refines ==> Logic.eq ==> Logic.eq) 
   (fun p x => p.[x]) (fun sp x => horner_seq sp x).
 Proof.
-apply param_abstr2 => p sp hsp x' x -> {x'}.
-elim: sp => [|a sp ih] //= in p hsp *; first by rewrite [p]refines_polyE /= horner0.
+rewrite paramE => p sp hsp x' x -> {x'}.
+elim: sp => [|a sp ih] //= in p hsp *; first by rewrite [p]RpolyE /= horner0.
 move: hsp => /refines_poly_cons [[p' b /= [-> -> rp']]].
 by rewrite -cons_poly_def horner_cons (ih _ rp'); simpC. (* Why do I have to give rp' to ih? *)
 Qed.
