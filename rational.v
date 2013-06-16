@@ -101,12 +101,13 @@ Lemma Qint2_eq0 (a : Qint) : (a.2 == 0) = ~~ Qint_to_rat a :> bool.
 Proof. by rewrite /= /Qint_to_rat; case: (altP eqP). Qed.
 
 (* this kind of things should be internalized in the theory of refinements *)
-Lemma dom_refines (x : rat) (r : Qint) `{!param Rrat x r} : r.2 != 0.
-Proof. rewrite Qint2_eq0. Qed.
+Lemma dom_refines (x : rat) (r : Qint) : param Rrat x r -> r.2 != 0.
+Proof. by rewrite paramE => rxr; rewrite Qint2_eq0 negbK rxr. Qed.
 
-Lemma RratE (x : rat) (a : Qint) `{!param Rrat x a} : x = a.1%:~R / a.2%:~R.
+Lemma RratE (x : rat) (a : Qint) : param Rrat x a -> x = a.1%:~R / a.2%:~R.
 Proof. 
-by apply: Some_inj; rewrite -spec_refines /= /Qint_to_rat dom_refines.
+rewrite paramE => rxa.
+by apply: Some_inj; rewrite -rxa /= /Qint_to_rat dom_refines.
 Qed.
 
 (* We establish the correction of Q int with regard to rat *)
@@ -128,7 +129,7 @@ Instance refines_addq :
 Proof.
 apply param_abstr2 => x a rx y b ry; rewrite paramE.
 rewrite /refines /Rrat /ofun_hrel /= /Qint_to_rat mulf_neq0 ?dom_refines //=.
-rewrite [x]refines_ratE [y]refines_ratE.
+rewrite [x]RratE [y]RratE.
 by rewrite addf_div ?intr_eq0 ?dom_refines ?(rmorphD, rmorphM).
 Qed.
 
@@ -136,7 +137,7 @@ Instance refines_oppq : param (Rrat ==> Rrat) -%R -%C.
 Proof.
 apply param_abstr => x a rx; rewrite paramE.
 rewrite /refines /Rrat /ofun_hrel /= /Qint_to_rat /= ?dom_refines //=.
-by rewrite [x]refines_ratE rmorphN mulNr.
+by rewrite [x]RratE rmorphN mulNr.
 Qed.
 
 Instance refines_mulq :
@@ -144,7 +145,7 @@ Instance refines_mulq :
 Proof.
 apply param_abstr2  => x a rx y b ry; rewrite paramE.
 rewrite /refines /Rrat /ofun_hrel /= /Qint_to_rat mulf_neq0 ?dom_refines //=.
-rewrite [x]refines_ratE [y]refines_ratE.
+rewrite [x]RratE [y]RratE.
 by rewrite mulrACA -invfM ?(rmorphD, rmorphM).
 Qed.
 
@@ -153,7 +154,7 @@ Instance refines_invq :
 Proof.
 apply param_abstr => x a rx; rewrite paramE.
 rewrite /refines /Rrat /ofun_hrel /= /Qint_to_rat /= /inv_op /invQ.
-rewrite [x]refines_ratE /= -[(_ == _)%C]/(_ == _).
+rewrite [x]RratE /= -[(_ == _)%C]/(_ == _).
 have [-> /=|a1_neq0 /=] := altP (a.1 =P 0); first by rewrite !mul0r ?invr0.
 by rewrite a1_neq0 invfM invrK mulrC.
 Qed.
@@ -170,7 +171,7 @@ Instance refines_compq :
   param (Rrat ==> Rrat ==> Logic.eq) eqtype.eq_op (@eq_op Qint _).
 Proof.
 apply param_abstr2  => x a rx y b ry; rewrite paramE /= /eq_op /eqQ.
-rewrite [x]refines_ratE [y]refines_ratE /= -[(_ == _)%C]/(_ == _).
+rewrite [x]RratE [y]RratE /= -[(_ == _)%C]/(_ == _).
 rewrite divq_eq ?intr_eq0 ?dom_refines // -!rmorphM eqr_int.
 by rewrite [X in (_ == X)]mulrC.
 Qed.
