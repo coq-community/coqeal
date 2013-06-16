@@ -176,7 +176,7 @@ Qed.
 End Strassen_correctness.
 
 Section strassen_param.
-
+Existing Instance param_eq.
 Import Refinements.Op.
 
 Local Coercion nat_of_pos : positive >-> nat.
@@ -231,9 +231,6 @@ elim => [p ihp|p ihp|]; rewrite ?paramE //.
   by have := RI p; rewrite !paramE in ihp *; apply.
 by have := RO p; rewrite !paramE in ihp *; apply.
 Qed.
-
-Instance param_eq T (x : T) : param Logic.eq x x.
-Proof. by rewrite paramE. Qed.
 
 Existing Instance StrassenP.
 

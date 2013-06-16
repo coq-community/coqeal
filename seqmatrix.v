@@ -38,6 +38,22 @@ Proof. by elim: s1 s2 => [|x1 s1 ihs1] [|x2 s2] //=; rewrite ihs1. Qed.
 
 End zipwith.
 
+Arguments zipwith {_ _ _} _ _ _.
+
+Lemma param_zipwith A A' (rA : A -> A' -> Prop)
+      B B' (rB : B -> B' -> Prop) C C' (rC : C -> C' -> Prop): 
+  (getparam (rA ==> rB ==> rC) ==> getparam (seq_hrel rA) ==>
+    getparam (seq_hrel rB) ==> getparam (seq_hrel rC))%rel zipwith zipwith.
+Proof.
+rewrite !paramE => f f' rf.
+elim => [|a sa iha] [|a' sa'] //= [ra rsa].
+move => [|b sb] [|b' sb'] //= [rb rsb].
+by split; [exact: rf|exact: iha].
+Qed.
+Arguments param_zipwith {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_zipwith : typeclass_instances.
+
 Section oextract.
 
 Lemma oextract_subdef A (o : option A) : o -> {a | o = Some a}.
@@ -178,13 +194,17 @@ Definition block_seqmx Aul Aur Adl Adr : seqmatrix :=
 
 End seqmx_block.
 
-Global Instance hulsubseqmx : ulsub hseqmatrix := fun m1 m2 n1 n2 => ulsubseqmx m1 n1.
-Global Instance hursubseqmx : ursub hseqmatrix := fun m1 m2 n1 n2 => ursubseqmx m1 n1.
-Global Instance hdlsubseqmx : dlsub hseqmatrix := fun m1 m2 n1 n2 => dlsubseqmx m1 n1.
-Global Instance hdrsubseqmx : drsub hseqmatrix := fun m1 m2 n1 n2 => drsubseqmx m1 n1.
+Global Instance hulsubseqmx : ulsub hseqmatrix :=
+  fun m1 m2 n1 n2 => ulsubseqmx m1 n1.
+Global Instance hursubseqmx : ursub hseqmatrix :=
+  fun m1 m2 n1 n2 => ursubseqmx m1 n1.
+Global Instance hdlsubseqmx : dlsub hseqmatrix :=
+  fun m1 m2 n1 n2 => dlsubseqmx m1 n1.
+Global Instance hdrsubseqmx : drsub hseqmatrix :=
+  fun m1 m2 n1 n2 => drsubseqmx m1 n1.
 
-Global Instance hblock_seqmx : block hseqmatrix := fun _ _ _ _ Aul Aur Adl Adr =>
-  block_seqmx Aul Aur Adl Adr.
+Global Instance hblock_seqmx : block hseqmatrix :=
+  fun _ _ _ _ Aul Aur Adl Adr => block_seqmx Aul Aur Adl Adr.
 
 Global Instance castseqmx : hcast hseqmatrix := fun _ _ _ _ _ M => M.
 
@@ -194,15 +214,17 @@ Section seqmx_ops.
 Import Refinements.Op.
 Context `{zero A, opp A, add A, sub A, mul A, eq A}.
 
-Global Instance oppseqmx : @hopp nat (fun _ _ => seqmatrix) :=
+Global Instance oppseqmx : @hopp nat hseqmatrix :=
    fun _ _ => map_seqmx -%C.
-Global Instance addseqmx : @hadd nat (fun _ _ => seqmatrix) :=
+Global Instance addseqmx : @hadd nat hseqmatrix :=
    fun _ _ => zipwithseqmx +%C.
-Global Instance subseqmx : @hsub nat (fun _ _ => seqmatrix) :=
+Global Instance subseqmx : @hsub nat hseqmatrix :=
    fun _ _ => zipwithseqmx sub_op.
 
-Global Instance haddseqmx : hadd hseqmatrix := fun _ _ => zipwithseqmx +%C.
-Global Instance hsubseqmx : hsub hseqmatrix := fun _ _ => zipwithseqmx sub_op.
+Global Instance haddseqmx : hadd hseqmatrix :=
+  fun _ _ => zipwithseqmx +%C.
+Global Instance hsubseqmx : hsub hseqmatrix :=
+  fun _ _ => zipwithseqmx sub_op.
 
 Fixpoint eq_seq T f (s1 s2 : seq T) :=
   match s1, s2 with
@@ -212,14 +234,14 @@ Fixpoint eq_seq T f (s1 s2 : seq T) :=
   end.
 
 (* Try to inline to see if higher order style hurts performance *)
-Global Instance eq_seqmx : @heq nat (fun _ _ => seqmatrix) :=
+Global Instance eq_seqmx : @heq nat hseqmatrix :=
   fun _ _ => eq_seq (eq_seq eq_op).
 
 Global Instance heq_seqmx : heq hseqmatrix := fun _ _ => eq_seq (eq_seq eq_op).
 
 Global Instance seqmx0 : hzero hseqmatrix := fun m n => const_seqmx m n 0%C.
 
-Global Instance mulseqmx : @hmul nat (fun _ _ => seqmatrix) :=
+Global Instance mulseqmx : @hmul nat hseqmatrix :=
   fun _ n p M N => 
     let N := trseqmx N in
     if n is O then seqmx0 (size M) p else
@@ -288,9 +310,6 @@ by rewrite ?(size_enum_ord, size_map).
 Qed.
 
 Definition Rseqmx {m n} := ofun_hrel (mx_of_seqmx m n).
-
-Global Instance refinement_mx_seqmx m n :
-  refinement Rseqmx := Refinement (@Rseqmx m n).
 
 (* TODO: there should be an equivalent in refinements *)
 Lemma refinesP {m n} {x y : 'M[A]_(m,n)} {a : seqmatrix}
@@ -387,15 +406,15 @@ Definition map_mx_wrapper {A B} (m n : nat) (f : A -> B) (M : 'M_(m,n)) :=
 (* We should probably be more parametric here, refining f : R -> R to f : A -> A *)
 (* TODO: I don't know how to state this lemma *)
 Global Instance refines_map_seqmx m n :
-param ((eq ==> eq) ==> Rseqmx ==> Rseqmx) (@map_mx_wrapper A A m n)
+param (Logic.eq ==> Rseqmx ==> Rseqmx) (@map_mx_wrapper A A m n)
   (@map_seqmx A).
 Proof.
-rewrite paramE => f f' eq_ff' x a rxa.
+rewrite paramE => f _ <- x a rxa.
 apply/refines_seqmxP=> [|i lt_im|i j].
 + by rewrite !sizeE.
 + by rewrite (nth_map [::]) !sizeE.
-rewrite !mxE (nth_map [::]) ?sizeE // (nth_map (x i j)) ?sizeE // refines_nth.
-by rewrite (eq_ff' (x i j) (x i j)).
+rewrite !mxE (nth_map [::]) ?sizeE //.
+by rewrite (nth_map (x i j)) ?sizeE // refines_nth.
 Qed.
 
 Definition zipwithmx m n (f : A -> A -> A) (M N : 'M[A]_(m,n)) :=
@@ -637,11 +656,6 @@ End seqmx_raw_refinement.
 End seqmx2.
 
 Arguments Rseqmx {A m n} _ _.
-
-Typeclasses Opaque usubmx dsubmx lsubmx rsubmx.
-Typeclasses Opaque ulsubmx ursubmx dlsubmx drsubmx.
-Typeclasses Opaque row_mx col_mx block_mx castmx.
-
 
 Section seqmx_eqtype_refinement.
 Import Refinements.
@@ -890,6 +904,53 @@ Typeclasses Opaque matrix_of_fun const_mx map_mx mulmx.
 (* PART III: Parametricity (coming soon) *)
 (*****************************************)
 
+Section seqmx_parametricity.
+Import Refinements.Op.
 
-(* (* Some tests *) *)
+Context (A : Type) (C : Type) (rAC : A -> C -> Prop).
+Definition RseqmxA {m n} := (@Rseqmx A m n \o (seq_hrel (seq_hrel rAC)))%rel.
+
+Global Instance RseqmxA_map_seqmx m n :
+  param ((rAC ==> rAC) ==> RseqmxA ==> RseqmxA)
+        (@map_mx_wrapper A A m n) (@map_seqmx C).
+Proof. exact: param_trans. Qed.
+
+Global Instance RseqmxA_trseqmx m n :
+  param (RseqmxA ==> RseqmxA) (@trmx A m.+1 n) (@trseqmx C).
+Proof. 
+eapply param_trans.
+  tc.
+tc.
+eapply getparam_abstr=> ???.
+eapply param_foldr.
+  tc.
+  tc.
+  eapply getparam_abstr2=> ??? ???.
+  eapply param_zipwith.
+  tc.
+  tc.
+  tc.
+  admit. (* treat ncons and/or iter *)
+by tc.
+Qed.
+
+End seqmx_parametricity.
+
+Section seqmx_ring_parametricity.
+Import Refinements.Op.
+
+Context (A : ringType) (C : Type) (rAC : A -> C -> Prop).
+Notation RseqmxA := (RseqmxA rAC).
+Context `{zero C, opp C, add C, sub C, mul C, eq C}.
+
+Global Instance RseqmxA_oppseqmx m n :
+  param (RseqmxA ==> RseqmxA) (-%R : 'M[A]_(m,n) -> 'M[A]_(m,n))
+        (@hopp_op _ (hseqmatrix C) _ m n).
+Proof.
+eapply param_trans.
+  tc.  tc.
+eapply getparam_abstr=> ???.
+Admitted.
+
+End seqmx_ring_parametricity.
 

@@ -176,10 +176,13 @@ Global Instance getparam_proper {A B} :
    Proper (eq_hrel ==> eq ==> eq ==> iff) (@getparam A B).
 Proof. by move=> ?? [??] ??? ???; split; apply: getparam_sub_proper. Qed.
 
-Lemma getparam_refl A (a : A) : getparam eq a a.
+Lemma getparam_eq A (a : A) : getparam eq a a.
 Proof. by rewrite paramE. Qed.
 Global Hint Extern 0 (getparam _ _ _)
-  => now eapply @getparam_refl : typeclass_instances.
+  => now eapply @getparam_eq : typeclass_instances.
+
+Lemma param_eq A (a : A) : param eq a a.
+Proof. by rewrite paramE. Qed.
 
 (* Global Instance param_fun_eq A B (f f' : A -> B) : param eq f f' -> *)
 (*   param (eq ==> eq) f f'. *)
@@ -395,18 +398,32 @@ Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
 Definition prod_hrel : A * B -> A' * B' -> Prop :=
   fun x y => rA x.1 y.1 /\ rB x.2 y.2.
 
-Global Instance param_pair : param (rA ==> rB ==> prod_hrel) (@pair A B) (@pair A' B').
-Proof. by rewrite paramE. Qed.
+Lemma param_pair : 
+  (getparam rA ==> getparam rB ==> getparam prod_hrel)%rel
+    (@pair A B) (@pair A' B').
+Proof. by rewrite !paramE. Qed.
 
-Global Instance param_fst : param (prod_hrel ==> rA) (@fst _ _) (@fst _ _).
-Proof. by rewrite paramE => [??] [??]. Qed.
+Lemma param_fst :
+  (getparam prod_hrel ==> getparam rA)%rel (@fst _ _) (@fst _ _).
+Proof. by rewrite !paramE => [??] [??]. Qed.
 
-Global Instance param_snd : param (prod_hrel ==> rB) (@snd _ _) (@snd _ _).
-Proof. by rewrite paramE => [??] [??]. Qed.
+Lemma param_snd :
+  (getparam prod_hrel ==> getparam rB)%rel (@snd _ _) (@snd _ _).
+Proof. by rewrite !paramE => [??] [??]. Qed.
 
 End prod.
 Arguments prod_hrel {_ _ _ _} rA%rel rB%rel _ _.
 Notation "X * Y" := (prod_hrel X Y) : rel_scope.
+
+Arguments param_pair {_ _ _ _ _ _ _ _ _ _ _ _}.
+Arguments param_fst {_ _ _ _ _ _ _ _ _}.
+Arguments param_snd {_ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_pair : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_fst : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_snd : typeclass_instances.
 
 Section sum.
 Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
@@ -416,19 +433,22 @@ Definition sum_hrel : A + B -> A' + B' -> Prop :=
                           | inr x, inr y => rB x y
                           | _, _ => False end.
 
-Global Instance param_inl : param (rA ==> sum_hrel) (@inl _ _) (@inl _ _).
-Proof. by rewrite paramE. Qed.
+Lemma param_inl :
+  (getparam rA ==> getparam sum_hrel)%rel (@inl _ _) (@inl _ _).
+Proof. by rewrite !paramE. Qed.
 
-Global Instance param_inr : param (rB ==> sum_hrel) (@inr _ _) (@inr _ _).
-Proof. by rewrite paramE. Qed.
+Lemma param_inr :
+  (getparam rB ==> getparam sum_hrel)%rel (@inr _ _) (@inr _ _).
+Proof. by rewrite !paramE. Qed.
 
 Definition sum_elim {A B T} (ab : A + B) (f : A -> T) (g : B -> T) :=
   match ab with inl a => f a | inr b => g b end.
 
 Lemma param_sum_rect T T' (R : T -> T' -> Prop) :
-      param (sum_hrel ==> (rA ==> R) ==> (rB ==> R) ==> R)%rel sum_elim sum_elim.
+  (getparam sum_hrel ==> getparam (rA ==> R) ==>
+            getparam (rB ==> R) ==> getparam R)%rel sum_elim sum_elim.
 Proof.
-rewrite paramE => x x' rx f f' rf g g' rg.
+rewrite !paramE => x x' rx f f' rf g g' rg.
 by case: x x' rx=> [a|b] [a'|b'] //= rab; [apply: rf|apply: rg].
 Qed.
 
@@ -436,6 +456,15 @@ End sum.
 Arguments sum_hrel {_ _ _ _} rA%rel rB%rel _ _.
 Notation "X + Y" := (sum_hrel X Y) : rel_scope.
 
+Arguments param_inr {_ _ _ _ _ _ _ _ _}.
+Arguments param_inl {_ _ _ _ _ _ _ _ _}.
+Arguments param_sum_rect {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_sum_rect : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_inr : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_inl : typeclass_instances.
 
 Section param_seq.
 Context {A B : Type} (rAB : A -> B -> Prop).
@@ -447,28 +476,52 @@ Fixpoint seq_hrel sa sb : Prop :=
     | _,       _       => False
   end.
 
-Global Instance param_nil : param seq_hrel nil nil.
+Global Instance param_nil : getparam seq_hrel nil nil.
 Proof. by rewrite paramE. Qed.
 
-Global Instance param_cons : param (rAB ==> seq_hrel ==> seq_hrel) cons cons.
-Proof. by rewrite paramE. Qed.
+Lemma param_cons : 
+  (getparam rAB ==> getparam seq_hrel ==> getparam seq_hrel)%rel cons cons.
+Proof. by rewrite !paramE. Qed.
 
-Global Instance param_foldr {C D : Type} (rCD : C -> D -> Prop) :
-  param ((rAB ==> rCD ==> rCD) ==> rCD ==> seq_hrel ==> rCD) foldr foldr.
+Lemma param_foldr {C D : Type} (rCD : C -> D -> Prop) :
+   (getparam (rAB ==> rCD ==> rCD) ==> getparam rCD ==> 
+             getparam seq_hrel ==> getparam rCD)%rel foldr foldr.
 Proof.
-rewrite paramE => f g rfg c d rcd; elim=> [|x s /= ihs] [|y t] //= [rxy rst].
+rewrite !paramE => f g rfg c d rcd; elim=> [|x s /= ihs] [|y t] //= [rxy rst].
 by apply: rfg => //; apply: ihs.
 Qed.
 
 Lemma param_foldl {C D : Type} (rCD : C -> D -> Prop) :
-  param ((rCD ==> rAB ==> rCD) ==> rCD ==> seq_hrel ==> rCD) foldl foldl.
+   (getparam (rCD ==> rAB ==> rCD) ==> getparam rCD ==> 
+             getparam seq_hrel ==> getparam rCD)%rel foldl foldl.
 Proof.
-rewrite paramE => f g rfg c d rcd s.
+rewrite !paramE => f g rfg c d rcd s.
 elim: s c d rcd => [|x s /= ihs] c d rcd [|y t] //= [rxy rst].
 by apply: ihs => //; apply: rfg.
 Qed.
 
 End param_seq.
+
+Arguments param_cons {_ _ _ _ _ _ _ _ _}.
+Arguments param_foldr {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Arguments param_foldl {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_cons : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_foldr : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_foldl : typeclass_instances.
+
+Lemma param_map A A' (rA : A -> A' -> Prop) B B' (rB : B -> B' -> Prop) : 
+  (getparam (rA ==> rB) ==> getparam (seq_hrel rA) ==>
+    getparam (seq_hrel rB))%rel map map.
+Proof.
+rewrite !paramE => f f' rf; elim => [|a sa iha] [|b sb] //= [rab rsab].
+by split; [exact: rf|exact: iha].
+Qed.
+Arguments param_map {_ _ _ _ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_map : typeclass_instances.
 
 Definition bool_if {A} (c : bool) (a b : A) : A := if c then a else b.
 
@@ -660,6 +713,9 @@ Typeclasses Opaque GRing.zero GRing.add GRing.opp GRing.natmul.
 Typeclasses Opaque GRing.one GRing.mul GRing.inv GRing.exp GRing.scale.
 Typeclasses Opaque Num.le Num.lt Num.norm.
 Typeclasses Opaque intmul exprz absz.
+Typeclasses Opaque matrix.usubmx matrix.dsubmx matrix.lsubmx matrix.rsubmx.
+Typeclasses Opaque matrix.ulsubmx matrix.ursubmx matrix.dlsubmx matrix.drsubmx.
+Typeclasses Opaque matrix.row_mx matrix.col_mx matrix.block_mx matrix.castmx.
 
 Typeclasses Transparent zero one add opp sub.
 Typeclasses Transparent mul exp inv div scale.

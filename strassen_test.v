@@ -9,10 +9,7 @@ Require Import binnat binint seqmatrix strassen.
 
 Section Strassen_seqmx.
 
-Definition Strassen_seqmx p := (Strassen (mxA := hseqmatrix A) (p := p)).
-
-
-
+(* Definition Strassen_seqmx p := (Strassen (mxA := hseqmatrix A) (p := p)). *)
 (*
 Eval cbv delta[Strassen_seqmx Strassen] beta zeta in Strassen_seqmx.
 *)
