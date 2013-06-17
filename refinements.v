@@ -184,15 +184,13 @@ Global Hint Extern 0 (getparam _ _ _)
 Lemma param_eq A (a : A) : param eq a a.
 Proof. by rewrite paramE. Qed.
 
-(* Global Instance param_fun_eq A B (f f' : A -> B) : param eq f f' -> *)
-(*   param (eq ==> eq) f f'. *)
-(* Proof. by rewrite !paramE => -> x x' ->. Qed. *)
-
-Global Instance param_apply A B C D
- (R : A -> B -> Prop) (R' : C -> D -> Prop)
- (a :  A) (b : B) (c : A -> C) (d : B -> D):
-  param (R ==> R') c d -> param R a b -> param R' (c a) (d b) | 1.
-Proof. by rewrite !paramE => rcd rab; apply rcd. Qed.
+Global Instance param_apply 
+   A B (R : A -> B -> Prop) C D (R' : C -> D -> Prop) :
+   forall (c : A -> C) (d : B -> D), param (R ==> R') c d ->
+   forall (a : A) (b : B), param R a b ->
+(* --------------------------------------------------------- *)
+   param R' (c a) (d b).
+Proof. by rewrite !paramE => c d rcd a b rab; apply: rcd. Qed.
 
 Lemma param_id (T T' : Type) (R : T -> T' -> Prop) :
    param (R ==> R) id id.
@@ -332,25 +330,17 @@ Class refinement {A B} (R : A -> B -> Prop) := Refinement {}.
 (* This class describes what is a term refinement *)
 Definition refines {A B R} `{refinement A B R} := R.
 
-Lemma getparam_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
-      (c : A -> C) (d : B -> D):
-        (forall (a :  A) (b : B), param R a b -> getparam R' (c a) (d b)) ->
-        getparam (R ==> R') c d.
+Lemma getparam_abstr
+   A   B   (R   : A   -> B   -> Prop)
+   A'  B'  (R'  : A'  -> B'  -> Prop) 
+   (f : A -> A' ) (g : B -> B') :
+   (forall (a : A) (b : B), param R a b -> getparam R' (f a) (g b)) ->
+(* ---------------------------------------------------------------------- *)
+   getparam (R ==> R') f g.
 Proof. by rewrite !paramE; apply. Qed.
 
 Hint Extern 2 (getparam (_ ==> _) _ _)
  => eapply @getparam_abstr=>??? : typeclass_instances.
-
-Lemma getparam_abstr2 A B A' B' A'' B'' 
-      (R : A -> B -> Prop) (R' : A' -> B' -> Prop) (R'' : A'' -> B'' -> Prop)
-      (f : A -> A' -> A'' ) (g : B -> B' -> B''):
-        (forall (a : A) (b : B) (a' : A') (b' : B'),
-           param R a b -> param R' a' b' -> getparam R'' (f a a') (g b b')) ->
-        getparam (R ==> R' ==> R'') f g.
-Proof. by tc. Qed.
-
-Hint Extern 1 (getparam (_ ==> _ ==> _) _ _)
- => eapply @getparam_abstr2=> ??? ??? : typeclass_instances.
 
 Lemma param_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
       (c : A -> C) (d : B -> D):
@@ -378,7 +368,7 @@ Proof. by rewrite !paramE. Qed.
 
 End Parametricity.
 
-Global Hint Extern 999 (getparam _ _ _)
+Global Hint Extern 1 (getparam _ _ _)
  => eapply set_param : typeclass_instances.
 
 (* Global Hint Extern 1000 (getparam _ _ _) *)
@@ -386,9 +376,6 @@ Global Hint Extern 999 (getparam _ _ _)
 
 Hint Extern 2 (getparam (_ ==> _) _ _)
  => eapply @getparam_abstr=> ??? : typeclass_instances.
-
-Hint Extern 1 (getparam (_ ==> _ ==> _) _ _)
- => eapply @getparam_abstr2=> ??? ??? : typeclass_instances.
 
 Arguments refinement {A B} _%rel.
 

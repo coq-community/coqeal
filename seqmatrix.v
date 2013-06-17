@@ -925,7 +925,8 @@ eapply getparam_abstr=> ???.
 eapply param_foldr.
   tc.
   tc.
-  eapply getparam_abstr2=> ??? ???.
+  eapply getparam_abstr=> ???.
+  eapply getparam_abstr=> ???.
   eapply param_zipwith.
   tc.
   tc.
