@@ -21,16 +21,26 @@ Import Refinements.Op.
 
 Notation A := int_Ring.
 
-Instance : hadd (matrix A) := @addmx A.
-Instance : hsub (matrix A) := (fun _ _ M N => addmx M (oppmx N)).
-Instance : hmul (matrix A) := @mulmx A.
-Instance : hcast (matrix A) := @castmx A.
-Instance : ulsub (matrix A) := @matrix.ulsubmx A.
-Instance : ursub (matrix A) := @matrix.ursubmx A.
-Instance : dlsub (matrix A) := @matrix.dlsubmx A.
-Instance : drsub (matrix A) := @matrix.drsubmx A.
-Instance : block (matrix A) := @matrix.block_mx A.
+Instance AD : add A := +%R.
+Instance AB : sub A := AlgOp.subr.
+Instance AM : mul A := *%R.
+Instance A0 : zero A := 0%R.
+Instance A1 : one A := 1%R.
+Instance mxAD : hadd (matrix A) := (fun m n => +%R).
+Instance mxAB : hsub (matrix A) := (fun _ _ M N => M - N ).
+Instance mxAM : hmul (matrix A) := @mulmx A.
+Instance mxAC : hcast (matrix A) := @castmx A.
+Instance ul : ulsub (matrix A) := @matrix.ulsubmx A.
+Instance ur : ursub (matrix A) := @matrix.ursubmx A.
+Instance dl : dlsub (matrix A) := @matrix.dlsubmx A.
+Instance dr : drsub (matrix A) := @matrix.drsubmx A.
+Instance blk : block (matrix A) := @matrix.block_mx A.
 
+(* HACK *)
+Hint Extern 1000 (param _ _ _) =>
+  by rewrite !paramE; do ?[move->|move=>?] : typeclass instances.
+
+Typeclasses Transparent AlgOp.subr.
 
 Goal Strassen (M + N + M + N + M + N + N + M + N)
    (M + N + M + N + M + N + N + M + N) = 
@@ -38,8 +48,12 @@ Goal Strassen (M + N + M + N + M + N + N + M + N)
  P *m M + P *m N + P *m N + P *m M + P *m N).
 Proof.
 apply/eqP.
-Set Typeclasses Debug.
-rewrite [_ == _]RboolE.
+set (x := Strassen _ _ == _).
+evar (y : bool).
+have : (param Logic.eq x y).
+  do ?[eapply param_apply; tc].
+  eapply refines_Strassen with (RmxA := @Rseqmx _); tc.
+move/RboolE ->.
 by compute.
 Qed.
 

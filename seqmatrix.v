@@ -132,7 +132,7 @@ Variable A : Type.
 
 Definition seqmatrix := seq (seq A).
 
-Definition hseqmatrix := fun (_ _ : nat) => seqmatrix.
+Notation hseqmatrix := (fun (_ _ : nat) => seqmatrix).
 
 Definition ord_enum_eq n : seq 'I_n := pmap (insub_eq _) (iota 0 n).
 
@@ -646,9 +646,12 @@ rewrite -[Rseqmx]paramE.
 by tc.
 Qed.
 
-Global Instance refines_cast_seqmx (x : 'M[A]_(m1,n1)) (e1 : m1 = m2) (e2 : n1 = n2) :
-  param (Rseqmx ==> Rseqmx) (castmx (e1,e2)) id | 100.
-Proof. by rewrite paramE => ? ?; case: _ / e1; case: _ / e2. Qed.
+Global Instance refines_cast_seqmx (p : (m1 = m2) * (n1 = n2)) :
+  param (Rseqmx ==> Rseqmx) (castmx p) id | 100.
+Proof. 
+rewrite paramE => ? ?; case: p=> e1 e2.
+by case: _ / e1; case: _ / e2.
+Qed.
 
 End seqmx_block3.
 
@@ -946,7 +949,7 @@ Context `{zero C, opp C, add C, sub C, mul C, eq C}.
 
 Global Instance RseqmxA_oppseqmx m n :
   param (RseqmxA ==> RseqmxA) (-%R : 'M[A]_(m,n) -> 'M[A]_(m,n))
-        (@hopp_op _ (hseqmatrix C) _ m n).
+        (@hopp_op _ (fun _ _ => seqmatrix C) _ m n).
 Proof.
 eapply param_trans.
   tc.  tc.

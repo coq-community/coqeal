@@ -181,7 +181,7 @@ Import Refinements.Op.
 
 Local Coercion nat_of_pos : positive >-> nat.
 
-Context (A : ringType) (C : Type) (RA : A -> C -> Prop).
+Context (A : ringType).
 Context (mxC : nat -> nat -> Type)
         (RmxA : forall {m n}, 'M[A]_(m, n) -> mxC m n -> Prop).
 Arguments RmxA {m n} _ _.
@@ -189,8 +189,8 @@ Arguments RmxA {m n} _ _.
 Context `{!hadd mxC, !hsub mxC, !hmul mxC, !hcast mxC}.
 Context `{!ulsub mxC, !ursub mxC, !dlsub mxC, !drsub mxC, !block mxC}.
 
-Instance : hadd (matrix A) := @addmx A.
-Instance : hsub (matrix A) := (fun _ _ M N => addmx M (oppmx N)).
+Instance : hadd (matrix A) := (fun _ _ => +%R).
+Instance : hsub (matrix A) := (fun _ _ M N => M - N)%R.
 Instance : hmul (matrix A) := @mulmx A.
 Instance : hcast (matrix A) := @castmx A.
 Instance : ulsub (matrix A) := @matrix.ulsubmx A.
@@ -199,7 +199,7 @@ Instance : dlsub (matrix A) := @matrix.dlsubmx A.
 Instance : drsub (matrix A) := @matrix.drsubmx A.
 Instance : block (matrix A) := @matrix.block_mx A.
 
-Context `{forall m n, param (RmxA ==> RmxA ==> RmxA) (@addmx A m n)
+Context `{forall m n, param (RmxA ==> RmxA ==> RmxA) +%R
   (@hadd_op _ _ _ m n)}.
 Context `{forall m n, param (RmxA ==> RmxA ==> RmxA) (@hsub_op _ _ _ m n)
   (@hsub_op _ _ _ m n)}.
