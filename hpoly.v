@@ -37,13 +37,6 @@ Fixpoint normalize (p : hpoly) : hpoly := match p with
     end
   end.
 
-Fixpoint eq_hpoly_op p q {struct p} := match p, q with
-  | Pc a, Pc b => (a == b)%C
-  | PX a n p', PX b m q' => (a == b)%C && (cast n == cast m) && (eq_hpoly_op p' q')
-  | _, _ => false
-  end.
-
-
 (* Fixpoint to_seq (p : hpoly A) : seq A := match p with *)
 (*   | Pc c => [:: c] *)
 (*   | PX a n p => a :: ncons (pred n) 0%C (to_seq p) *)
@@ -60,9 +53,9 @@ Fixpoint from_seq (p : seq A) : hpoly := match p with
 Global Instance zero_hpoly : zero hpoly := Pc 0.
 Global Instance one_hpoly  : one hpoly  := Pc 1.
 
-Global Instance opp_hpoly : opp hpoly := fix opp_hpoly p := match p with
+Global Instance opp_hpoly : opp hpoly := fix f p := match p with
   | Pc a => Pc (- a)
-  | PX a n p => PX (- a) n (opp_hpoly p)
+  | PX a n p => PX (- a) n (f p)
   end.
 
 Fixpoint addXn_const n a q := match q with
@@ -73,9 +66,6 @@ Fixpoint addXn_const n a q := match q with
       if (n < cast m)%N then PX b cn (PX a (m - cn) q') 
                         else PX b m (addXn_const (n - cast m)%N a q')
   end.
-
-(* Why do I need this? Why isn't simpl never enough?! *)
-(* Definition why n a m q' := addXn_const n a (PX 0 m q'). *)
 
 Fixpoint addXn (n : nat) p q {struct p} := match p, q with
   | Pc a      , q      => addXn_const n a q
@@ -102,28 +92,20 @@ Fixpoint addXn (n : nat) p q {struct p} := match p, q with
 
 Global Instance add_hpoly : add hpoly := addXn 0%N.
 
-Fixpoint scale_hpoly_op a p := match p with
+Global Instance scale_hpoly : scale A hpoly := fix f a p := match p with
   | Pc b => Pc (a * b)
-  | PX b n q => PX (a * b) n (scale_hpoly_op a q)
+  | PX b n q => PX (a * b) n (f a q)
   end.
 
-Global Instance scale_hpoly : scale A hpoly := scale_hpoly_op.
-
-Fixpoint mul_hpoly_op p q := match p, q with
+Global Instance mul_hpoly : mul hpoly := fix f p q := match p, q with
   | Pc a, q => a *: q
   | p, Pc b => b *: p
   | PX a n p, PX b m q => 
-     PX 0 (n + m) (mul_hpoly_op p q) + PX 0 m (a *: q) + (PX 0 n (b *: p) + Pc (a * b))
+     PX 0 (n + m) (f p q) + PX 0 m (a *: q) + (PX 0 n (b *: p) + Pc (a * b))
   end.
 
-Global Instance mul_hpoly : mul hpoly := mul_hpoly_op.
-
-(* TODO: Prove these operations correct! *)
-
 (* TODO: Optimize *)
-Definition sub_hpoly_op p q := p + - q.
-
-Global Instance sub_hpoly : sub hpoly := sub_hpoly_op.
+Global Instance sub_hpoly : sub hpoly := fun p q => p + - q.
 
 Fixpoint eq0_hpoly (p : hpoly) : bool :=
   match p with
@@ -133,6 +115,14 @@ Fixpoint eq0_hpoly (p : hpoly) : bool :=
 
 Global Instance eq_hpoly : eq hpoly := fun p q => eq0_hpoly (p - q).
 
+(* Alternative definition, should be used with normalize: *)
+(* Fixpoint eq_hpoly_op p q {struct p} := match p, q with *)
+(*   | Pc a, Pc b => (a == b)%C *)
+(*   | PX a n p', PX b m q' => (a == b)%C && (cast n == cast m) && (eq_hpoly_op p' q') *)
+(*   | _, _ => false *)
+(*   end. *)
+
+(* TODO: Prove these operations correct! *)
 Definition shift_hpoly n p := PX 0 n p.
 
 Fixpoint size_hpoly p : nat := match p with
@@ -190,6 +180,7 @@ Fixpoint to_poly (p : @hpoly A pos) := match p with
   | Pc c => c%:P 
   | PX a n p => to_poly p * 'X^(cast n) + a%:P
   end.
+
 (* Global Instance spec_hpoly : spec_of (hpoly A pos) {poly A} := to_poly. *)
 
 Definition to_hpoly : {poly A} -> @hpoly A pos := fun p => from_seq (polyseq p).
@@ -204,7 +195,6 @@ case: ifP => //= /eqP ->; case: n => [[]] //= n n0.
 by rewrite addr0 /cast /cast_pos_nat insubdK /= ?exprD ?mulrA ?addnS.
 Qed.
 
-
 Lemma to_hpolyK : cancel to_hpoly to_poly.
 Proof.
 elim/poly_ind; rewrite /to_hpoly ?polyseq0 // => p c ih.
@@ -212,17 +202,15 @@ rewrite -{1}cons_poly_def polyseq_cons.
 have [|pn0] /= := nilP.
   rewrite -polyseq0 => /poly_inj ->; rewrite mul0r add0r.
   apply/poly_inj; rewrite !polyseqC.
-  by case c0: (c == 0); rewrite ?polyseq0 // polyseqC c0.
+   by case c0: (c == 0); rewrite ?polyseq0 // polyseqC c0.
 by case: (polyseq p) ih => /= [<-| a l -> //]; rewrite mul0r add0r.
 Qed.
 
 Definition Rhpoly : {poly A} -> @hpoly A pos -> Prop := fun_hrel to_poly.
+
+(* This is OK here, but not everywhere *)
 Local Instance param_eqA (x : A) : param Logic.eq x x.
 Proof. by rewrite paramE. Qed.
-
-(* Program Instance refinement_poly_hpoly : *)
-(*   refinement Rhpoly := Refinement to_hpolyK _. *)
-(* Next Obligation. by split=> [??[<-]|??<-]. Qed. *)
 
 Lemma RhpolyE p q : param Rhpoly p q -> p = to_poly q.
 Proof. by rewrite paramE. Qed.
@@ -241,9 +229,20 @@ rewrite paramE => p hp rp.
 by rewrite /Rhpoly /fun_hrel normalizeK normalize_idE.
 Qed.
 
+(* For now, do it for comRingType *)
+Lemma size_MXnaddC (R : comRingType) (p : {poly R}) (c : R) n :
+   size (p * 'X^n + c%:P) = if (p == 0) && (c == 0) then 0%N else (n + size p).+1.
+Proof.
+admit.
+Qed.
+
 Instance refines_hpoly_eq0 : param (Rhpoly ==> Logic.eq) 
   (fun p => p == 0) (eq0_hpoly)%C.
-Proof. Admitted.
+Proof.
+rewrite paramE => p hp rp; rewrite [p]RhpolyE {p rp}.
+elim: hp => [a|a n p ih] /=; first by rewrite polyC_eq0.
+by rewrite -size_poly_eq0 -ih size_MXnaddC andbC; case: ifP.
+Qed.
 
 (* zero and one *)
 Instance refines_hpoly0 : param Rhpoly 0%R 0%C.
@@ -327,7 +326,7 @@ Qed.
 Instance refines_hpolysub : param (Rhpoly ==> Rhpoly ==> Rhpoly) subr sub_op.
 Proof.
 apply param_abstr2 => p hp h1 q hq h2.
-by rewrite /sub_op /sub_hpoly /sub_hpoly_op /subr; tc.
+by rewrite paramE /sub_op /sub_hpoly /Rhpoly /fun_hrel -[to_poly _]RhpolyE.
 Qed.
 
 Instance refines_hpoly_eq : param (Rhpoly ==> Rhpoly ==> Logic.eq) 
@@ -343,15 +342,6 @@ Instance refines_shift_hpoly : param (Logic.eq ==> Rhpoly ==> Rhpoly)
 Proof.
 rewrite paramE => /= a n -> p hp h1.
 by rewrite [p]RhpolyE /Rhpoly /fun_hrel {a p h1} /= addr0.
-Qed.
-
-Lemma size_MXnaddC (R : ringType) (p : {poly R}) (c : R) n :
-   size (p * 'X^n + c%:P) = (if (p == 0) && (c == 0) then 0%N else (n + size p).+1).
-Proof.
-rewrite -size_poly_eq0.
-have [] := posnP (size p).
-admit.
-admit.
 Qed.
 
 Instance refines_size_hpoly : param (Rhpoly ==> Logic.eq) 
