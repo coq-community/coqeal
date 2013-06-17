@@ -1,0 +1,7 @@
+<html>
+<head>
+<title>CoqEAL: dependency graph</title>
+</head>
+<body>
+<h2>In the graph below, you can click on filenames to access the documentation:</h2>
+<img src="depend.png" usemap="#depend" />
