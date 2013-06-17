@@ -11,3 +11,5 @@ cd doc
 ~/coqfinitgroup/trunk/doc/makeDot/makedot depend
 dot -Tpng -o depend.png -Tcmapx -o depend.map depend.dot
 dot -Tsvg -o depend.svg depend.dot
+cat toc.html.head depend.map toc.html.tail > toc.html
+#cp *.html depend.* /net/servers/www-sop/members/Maxime.Denes/coqeal
