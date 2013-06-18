@@ -7,6 +7,8 @@ Require Import ZArith.
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg ssrint ssrnum fintype.
 Require Import dvdring matrix mxalgebra bigop zmodp perm mxstructure.
+Require Import refinements seqmatrix.
+Require Import binint_direct.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -106,8 +108,8 @@ rewrite {1}H2.
 *)
 
 
-Lemma bz_mx_00 {m n : nat} {M : 'M_(1 + m,1 + n)} {k l : 'I_m} :
- (Bezout_mx (M 0 0) (M (rshift 1 k) 0) k l *m M) 0 0 %= gcdr (M 0 0) (M (rshift 1 k) 0).
+Lemma bz_mx_00 {m n : nat} {M : 'M_(1 + m,1 + n)} {k : 'I_m} :
+ (bz_mx (M 0 0) (M (rshift 1 k) 0) m k *m M) 0 0 %= gcdr (M 0 0) (M (rshift 1 k) 0).
 Proof.
 rewrite /bz_mx; case:egcdrP=> g u v a1 b1 Hg Hgcd H1 H2.
 by rewrite combine_mxE !mxE !addr0 {1}H1 {1}H2 !mulrA -mulrDl Hg mul1r.

@@ -19,8 +19,10 @@ boolF2.v
 funperm.v
 rank.v
 strassen.v
+
 binint_test.v
 seqmatrix_test.v
 strassen_test.v
-OTHERFLAGS = "-I $(SSRSRC) -I $(SSRLIB)"
+
+OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
 COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"
