@@ -350,24 +350,7 @@ elim: m n M => [p IHp|p IHp|] n M pickf rk_M /=.
   suff: False => //.
   move/negP: lt_np.
 rewrite -ltnNge.
-have := (rank_leq_col M).
-rewrite rk_M.
-rewrite addpp.
-move=> H.
-move/(leq_trans H).
-rewrite -{3}(addn0 p).
-rewrite leq_add2l leqn0.
-rewrite eqn0Ngt.
-by rewrite lt0p.
-
-set C := lsubmx _.
-set D := rsubmx _.
-set V1 := lsubmx _.
-set B := rsubmx _.
-set E := castmx _ _.
-rewrite StrassenP.
-rewrite upper_tri_invP.
-
+rewrite rank_leq_col.
 
 case: pickf => [i /= nz_m0i0|eq_M0].
   constructor.
