@@ -34,3 +34,33 @@ seqmatrix - First and incomplete attempt to refine SSReflect matrices
 seqpoly - First and incomplete attempt to refine SSReflect polynomials 
           ({poly R}) to lists (seq R).
 
+
+
+=== Conventions:
+
+- Files should follow this pattern (wrt Local and Global instances):
+
+(** Part 1: Generic operations *)
+Section generic_operations. 
+
+Global Instance generic_operation := ...
+
+(** Part 2: Correctness proof for proof-oriented types and programs *)
+Section theory.
+
+Local Instance param_correctness : param ...
+
+(** Part 3: Parametricity *)
+Section parametricity. 
+
+Global Instance param_parametricit : param ...
+Proof. exact: param_trans. Qed.
+
+End parametricity.
+End theory.
+
+
+- Naming convention: Lemmas that start with param should be named param_, e.g. 
+
+    Local Instance param_seqpoly0 : param Rseqpoly 0%R 0%C. 
+
