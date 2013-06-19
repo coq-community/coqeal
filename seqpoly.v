@@ -118,6 +118,21 @@ Fixpoint horner_seq (s : seqpoly) x :=
 
 End generic_operations.
 
+(* Maybe this should be moved down into the parametricity section... but at least it works! *)
+Lemma param_zippolywith {A B : Type} (rAB : A -> B -> Prop) {C D : Type} (rCD : C -> D -> Prop) 
+  {zA : zero A} {zB : zero B} : 
+  (getparam (rAB ==> rAB ==> rCD) ==> 
+   getparam (seq_hrel rAB) ==> getparam (seq_hrel rAB) ==> getparam (seq_hrel rCD))%rel
+  (@zippolywith A zA C) (@zippolywith B zB D).
+Proof.
+rewrite !paramE => f g rfg c d rcd s.
+admit.
+Qed.
+
+Arguments param_zippolywith {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_zippolywith : typeclass_instances.
+
 (******************************************************************************)
 (** PART II: Proving correctness properties of the previous objects           *)
 (******************************************************************************)
@@ -466,13 +481,11 @@ Proof. exact: param_trans. Qed.
 
 Global Instance param_add_seqpoly : 
   param (RseqpolyC ==> RseqpolyC ==> RseqpolyC) +%R +%C.
-Proof. admit. Qed.
-(* Proof. exact: param_trans. Qed. *)
+Proof. exact: param_trans. Qed.
 
 Global Instance param_sub_seqpoly : 
   param (RseqpolyC ==> RseqpolyC ==> RseqpolyC) subr sub_op.
-Proof. admit. Qed.
-(* Proof. exact: param_trans. Qed. *)
+Proof. exact: param_trans. Qed.
 
 Global Instance param_scale_seqpoly :
   param (rAC ==> RseqpolyC ==> RseqpolyC) *:%R *:%C.
