@@ -50,9 +50,6 @@ elim => [|a sa iha] [|a' sa'] //= [ra rsa].
 move => [|b sb] [|b' sb'] //= [rb rsb].
 by split; [exact: rf|exact: iha].
 Qed.
-Arguments param_zipwith {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
-Hint Extern 1 (getparam _ _ _) =>
-  eapply param_zipwith : typeclass_instances.
 
 Section oextract.
 
@@ -105,6 +102,10 @@ Qed.
 
 End oextract.
 End preamble.
+
+Arguments param_zipwith {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_zipwith : typeclass_instances.
 Arguments funoptPn {A B f} a _.
 Arguments omap_funoptE {A B C f} g _ _ _.
 
@@ -920,23 +921,7 @@ Proof. exact: param_trans. Qed.
 
 Global Instance RseqmxA_trseqmx m n :
   param (RseqmxA ==> RseqmxA) (@trmx A m.+1 n) (@trseqmx C).
-Proof. 
-eapply param_trans.
-  tc.
-tc.
-eapply getparam_abstr=> ???.
-eapply param_foldr.
-  tc.
-  tc.
-  eapply getparam_abstr=> ???.
-  eapply getparam_abstr=> ???.
-  eapply param_zipwith.
-  tc.
-  tc.
-  tc.
-  admit. (* treat ncons and/or iter *)
-by tc.
-Qed.
+Proof. exact: param_trans. Qed.
 
 End seqmx_parametricity.
 
@@ -945,16 +930,19 @@ Import Refinements.Op.
 
 Context (A : ringType) (C : Type) (rAC : A -> C -> Prop).
 Notation RseqmxA := (RseqmxA rAC).
-Context `{zero C, opp C, add C, sub C, mul C, eq C}.
+Context `{zero C, one C, opp C, add C, sub C, mul C, eq C}.
+
+Context `{!param rAC 0%R 0%C, !param rAC 1%R 1%C}.
+Context `{!param (rAC ==> rAC) -%R -%C}.
+Context `{!param (rAC ==> rAC ==> rAC) +%R +%C}.
+Context `{!param (rAC ==> rAC ==> rAC) subr sub_op}.
+Context `{!param (rAC ==> rAC ==> rAC) *%R *%C}.
+Context `{!param (rAC ==> rAC ==> Logic.eq) eqtype.eq_op eq_op}.
 
 Global Instance RseqmxA_oppseqmx m n :
   param (RseqmxA ==> RseqmxA) (-%R : 'M[A]_(m,n) -> 'M[A]_(m,n))
         (@hopp_op _ (fun _ _ => seqmatrix C) _ m n).
-Proof.
-eapply param_trans.
-  tc.  tc.
-eapply getparam_abstr=> ???.
-Admitted.
+Proof. exact: param_trans. Qed.
 
 End seqmx_ring_parametricity.
 
