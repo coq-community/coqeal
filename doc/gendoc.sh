@@ -4,9 +4,9 @@ make -C makeDot
 make -C $COQ2HTML
 cd $COQEAL/doc
 globs=`ls ../*.glob`
-for i in `ls ../*.v`
+for i in `grep -e "^[^ ]*\.v" ../Make`
 do
-  $COQ2HTML/coq2html -o %.html $globs $i
+  $COQ2HTML/coq2html -o %.html $globs ../$i
 done
 cd $COQEAL
 $COQBIN/coqdep -noglob -I . -R $SSRLIB Ssreflect *.v > depend
