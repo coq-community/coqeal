@@ -470,6 +470,16 @@ Lemma param_cons :
   (getparam rAB ==> getparam seq_hrel ==> getparam seq_hrel)%rel cons cons.
 Proof. by rewrite !paramE. Qed.
 
+Lemma param_rcons : 
+  (getparam seq_hrel ==> getparam rAB ==> getparam seq_hrel)%rel rcons rcons.
+Proof.
+have H: forall x x' s s', seq_hrel s s' -> rAB x x' -> seq_hrel (rcons s x) (rcons
+s' x').
+  move=> x x' s; elim: s => [|a s IHs] [] //= a' s' [r_aa' r_ss'] r_xx'.
+  by split=> //; apply: IHs.
+by rewrite !paramE => ??????; apply: H.
+Qed.
+
 Lemma param_foldr {C D : Type} (rCD : C -> D -> Prop) :
    (getparam (rAB ==> rCD ==> rCD) ==> getparam rCD ==> 
              getparam seq_hrel ==> getparam rCD)%rel foldr foldr.
@@ -487,17 +497,50 @@ elim: s c d rcd => [|x s /= ihs] c d rcd [|y t] //= [rxy rst].
 by apply: ihs => //; apply: rfg.
 Qed.
 
+Lemma param_iter :
+  (getparam Logic.eq ==> getparam (rAB ==> rAB) ==> getparam rAB ==>
+  getparam rAB)%rel (@iter A) (@iter B).
+Proof.
+rewrite !paramE => n n' <- {n'}.
+elim: n => [|n IHn] f f' rff' x x' rxx' //=.
+by apply: (rff'); apply: IHn.
+Qed.
+
+Lemma param_size :
+  (getparam seq_hrel ==> getparam eq)%rel size size.
+Proof. by rewrite !paramE; elim=> [|x s IHs] [] // x' s' /= [_ /IHs ->]. Qed.
+
+Lemma param_nth :
+  (getparam rAB ==> getparam seq_hrel ==> getparam eq ==> getparam rAB)%rel nth nth.
+Proof.
+rewrite !paramE => x x' rxx'.
+elim=> [|a s IHs] [|a' s'] //=; first by move=> ????; rewrite !nth_nil.
+by case=> raa' rss' [|n] n' <- {n'} //=; apply: IHs.
+Qed.
+
 End param_seq.
 
 Arguments param_cons {_ _ _ _ _ _ _ _ _}.
+Arguments param_rcons {_ _ _ _ _ _ _ _ _}.
 Arguments param_foldr {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
 Arguments param_foldl {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Arguments param_iter {_ _ _ _ _ _ _ _ _ _ _ _}.
+Arguments param_size {_ _ _ _ _ _}.
+Arguments param_nth {_ _ _ _ _ _ _ _ _ _ _ _}.
 Hint Extern 1 (getparam _ _ _) =>
   eapply param_cons : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_rcons : typeclass_instances.
 Hint Extern 1 (getparam _ _ _) =>
   eapply param_foldr : typeclass_instances.
 Hint Extern 1 (getparam _ _ _) =>
   eapply param_foldl : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_iter : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_size : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_nth : typeclass_instances.
 
 Lemma param_map A A' (rA : A -> A' -> Prop) B B' (rB : B -> B' -> Prop) : 
   (getparam (rA ==> rB) ==> getparam (seq_hrel rA) ==>
