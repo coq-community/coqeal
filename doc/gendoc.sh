@@ -4,12 +4,13 @@ make -C makeDot
 make -C $COQ2HTML
 cd $COQEAL/doc
 globs=`ls ../*.glob`
-for i in `grep -e "^[^ ]*\.v" ../Make`
+VFILES=`grep -e "^[^ ]*\.v" ../Make`
+for i in $VFILES
 do
   $COQ2HTML/coq2html -o %.html $globs ../$i
 done
 cd $COQEAL
-$COQBIN/coqdep -noglob -I . -R $SSRLIB Ssreflect *.v > depend
+$COQBIN/coqdep -noglob -I . -R $SSRLIB Ssreflect $VFILES > depend
 #sed s/[[:space:]][[:alnum:]]*.v.beautified//g depend > doc/depend
 cd $COQEAL/doc
 $WORKSPACE/makeDot/makedot depend
