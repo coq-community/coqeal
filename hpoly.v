@@ -4,6 +4,11 @@ Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop poly.
 Require Import refinements.
 
+(******************************************************************************)
+(** This file implements sparse polynomials in sparse Horner normal form.     *)
+(*                                                                            *)
+(******************************************************************************)
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -12,9 +17,9 @@ Local Open Scope ring_scope.
 
 Import GRing.Theory Refinements.Op. 
 
-(*************************************************************)
-(* PART I: Defining datastructures and programming with them *)
-(*************************************************************)
+(******************************************************************************)
+(** PART I: Defining generic datastructures and programming with them         *)
+(******************************************************************************)
 Section hpoly.
 
 Context {A pos : Type}.
@@ -25,7 +30,8 @@ Inductive hpoly := Pc : A -> hpoly
 Section hpoly_op.
 
 Context `{zero A, one A, add A, sub A, opp A, mul A, eq A}.
-Context `{one pos, add pos, sub pos, eq pos, lt pos, cast_class nat pos, cast_class pos nat}.
+Context `{one pos, add pos, sub pos, eq pos, lt pos}.
+Context `{cast_class nat pos, cast_class pos nat}.
 
 Local Open Scope computable_scope.
 
@@ -109,7 +115,7 @@ Global Instance sub_hpoly : sub hpoly := fun p q => p + - q.
 
 Fixpoint eq0_hpoly (p : hpoly) : bool :=
   match p with
-    | Pc a => (a == 0)%C
+    | Pc a      => (a == 0)%C
     | PX a n p' => (a == 0)%C && (eq0_hpoly p')
   end.
 
@@ -127,7 +133,8 @@ Definition shift_hpoly n p := PX 0 n p.
 
 Fixpoint size_hpoly p : nat := match p with
   | Pc a => if (a == 0)%C then 0%N else 1%N
-  | PX a n p' => if (p == 0)%C && (a == 0)%C then 0%N else (cast n + size_hpoly p').+1
+  | PX a n p' => if (p == 0)%C && (a == 0)%C 
+                 then 0%N else (cast n + size_hpoly p').+1
   end.
 
 Fixpoint split_hpoly m p : hpoly * hpoly := match p with
@@ -136,22 +143,18 @@ Fixpoint split_hpoly m p : hpoly * hpoly := match p with
     else let (p1,p2) := split_hpoly (m - cast n)%N p' in (PX a n p1, p2)
   end.
 
-(* These things are needed for Karatsuba *)
-(* Context `{add polyA, mul polyA, sub polyA}. *)
-(* Variable shift_polyA : nat -> polyA -> polyA. *)
-(* Variable size_polyA : polyA -> nat. *)
-(* Variable splitp_polyA : nat -> polyA -> polyA * polyA. *)
-
 End hpoly_op.
 End hpoly.
 
-(***************************)
-(* PART II: Develop theory *)
-(***************************)
+
+(******************************************************************************)
+(** PART II: Proving correctness properties of the previously defined objects *)
+(******************************************************************************)
 Section hpoly_theory.
+
 Variable A : comRingType.
 
-(* REMOVE this once binnat is ok *)
+(* TODO: Remove this once binnat is ok *)
 Notation pos := {n : nat | (n > 0)%N}.
 Definition posS (n : nat) : pos := exist _ n.+1 isT.
 
@@ -185,7 +188,8 @@ Fixpoint to_poly (p : @hpoly A pos) := match p with
 
 Definition to_hpoly : {poly A} -> @hpoly A pos := fun p => from_seq (polyseq p).
 
-Lemma ncons_add : forall m n (a : A) p, ncons (m + n) a p = ncons m a (ncons n a p).
+Lemma ncons_add : forall m n (a : A) p, 
+  ncons (m + n) a p = ncons m a (ncons n a p).
 Proof. by elim=> //= m ih n a p; rewrite ih. Qed.
 
 Lemma normalizeK : forall p, to_poly (normalize p) = to_poly p.
@@ -229,20 +233,21 @@ rewrite paramE => p hp rp.
 by rewrite /Rhpoly /fun_hrel normalizeK normalize_idE.
 Qed.
 
+(* TODO: Finish this proof! *)
 (* For now, do it for comRingType *)
-Lemma size_MXnaddC (R : comRingType) (p : {poly R}) (c : R) n :
-   size (p * 'X^n + c%:P) = if (p == 0) && (c == 0) then 0%N else (n + size p).+1.
-Proof.
-admit.
-Qed.
+(* Lemma size_MXnaddC (R : comRingType) (p : {poly R}) (c : R) n : *)
+(*    size (p * 'X^n + c%:P) = if (p == 0) && (c == 0) then 0%N else (n + size p).+1. *)
+(* Proof. *)
+(* admit. *)
+(* Qed. *)
 
-Instance refines_hpoly_eq0 : param (Rhpoly ==> Logic.eq) 
-  (fun p => p == 0) (eq0_hpoly)%C.
-Proof.
-rewrite paramE => p hp rp; rewrite [p]RhpolyE {p rp}.
-elim: hp => [a|a n p ih] /=; first by rewrite polyC_eq0.
-by rewrite -size_poly_eq0 -ih size_MXnaddC andbC; case: ifP.
-Qed.
+(* Instance refines_hpoly_eq0 : param (Rhpoly ==> Logic.eq)  *)
+(*   (fun p => p == 0) (eq0_hpoly)%C. *)
+(* Proof. *)
+(* rewrite paramE => p hp rp; rewrite [p]RhpolyE {p rp}. *)
+(* elim: hp => [a|a n p ih] /=; first by rewrite polyC_eq0. *)
+(* by rewrite -size_poly_eq0 -ih size_MXnaddC andbC; case: ifP. *)
+(* Qed. *)
 
 (* zero and one *)
 Instance refines_hpoly0 : param Rhpoly 0%R 0%C.
@@ -329,12 +334,12 @@ apply param_abstr2 => p hp h1 q hq h2.
 by rewrite paramE /sub_op /sub_hpoly /Rhpoly /fun_hrel -[to_poly _]RhpolyE.
 Qed.
 
-Instance refines_hpoly_eq : param (Rhpoly ==> Rhpoly ==> Logic.eq) 
-  (fun p q => p == q) (fun hp hq => hp == hq)%C.
-Proof.
-apply param_abstr2 => p hp h1 q hq h2.
-by rewrite /eq_op /eq_hpoly paramE -[eq0_hpoly _]RboolE subr_eq0.
-Qed.
+(* Instance refines_hpoly_eq : param (Rhpoly ==> Rhpoly ==> Logic.eq)  *)
+(*   (fun p q => p == q) (fun hp hq => hp == hq)%C. *)
+(* Proof. *)
+(* apply param_abstr2 => p hp h1 q hq h2. *)
+(* by rewrite /eq_op /eq_hpoly paramE -[eq0_hpoly _]RboolE subr_eq0. *)
+(* Qed. *)
 
 (* Maybe Logic.eq is not right here? Maybe we should have refines for pos? *)
 Instance refines_shift_hpoly : param (Logic.eq ==> Rhpoly ==> Rhpoly) 
@@ -344,16 +349,95 @@ rewrite paramE => /= a n -> p hp h1.
 by rewrite [p]RhpolyE /Rhpoly /fun_hrel {a p h1} /= addr0.
 Qed.
 
-Instance refines_size_hpoly : param (Rhpoly ==> Logic.eq) 
-  (fun p => size p) (fun p => size_hpoly p).
-Proof.
-apply param_abstr => /= p hp h1.
-rewrite [p]RhpolyE paramE /Rhpoly /fun_hrel {p h1}.
-elim: hp => [a|a n p ih] /=.
-  by rewrite size_polyC; simpC; case: eqP.
-rewrite size_MXnaddC ih.
-admit.
-Qed.
+(* Instance refines_size_hpoly : param (Rhpoly ==> Logic.eq)  *)
+(*   (fun p => size p) (fun p => size_hpoly p). *)
+(* Proof. *)
+(* apply param_abstr => /= p hp h1. *)
+(* rewrite [p]RhpolyE paramE /Rhpoly /fun_hrel {p h1}. *)
+(* elim: hp => [a|a n p ih] /=. *)
+(*   by rewrite size_polyC; simpC; case: eqP. *)
+(* rewrite size_MXnaddC ih. *)
+(* admit. *)
+(* Qed. *)
 
+
+(*************************************************************************)
+(* PART III: Parametricity part                                          *)
+(*************************************************************************)
+Section hpoly_parametricity.
+
+Import Refinements.Op.
+
+Context (C : Type) (rAC : A -> C -> Prop).
+Context `{zero C, one C, opp C, add C, sub C, mul C, eq C}.
+Context `{!param rAC 0%R 0%C, !param rAC 1%R 1%C}.
+Context `{!param (rAC ==> rAC) -%R -%C}.
+Context `{!param (rAC ==> rAC ==> rAC) +%R +%C}.
+Context `{!param (rAC ==> rAC ==> rAC) subr sub_op}.
+Context `{!param (rAC ==> rAC ==> rAC) *%R *%C}.
+Context `{!param (rAC ==> rAC ==> Logic.eq) eqtype.eq_op eq_op}.
+
+(* TODO: Write this section! *)
+
+(* Definition RhpolyC := (Rhpoly \o (seq_hrel rAC))%rel. *)
+
+(* Global Instance param_zero_hpoly : param RhpolyC 0%R 0%C. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance param_one_hpoly : param RhpolyC 1%R 1%C. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance param_opp_hpoly :  *)
+(*   param (RhpolyC ==> RhpolyC) -%R -%C. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance param_add_hpoly :  *)
+(*   param (RhpolyC ==> RhpolyC ==> RhpolyC) +%R +%C. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance param_sub_hpoly :  *)
+(*   param (RhpolyC ==> RhpolyC ==> RhpolyC) subr sub_op. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance param_scale_hpoly : *)
+(*   param (rAC ==> RhpolyC ==> RhpolyC) *:%R *:%C. *)
+(* Proof. exact: param_trans. Qed. *)
+
+(* Global Instance param_shift_hpoly : param (Logic.eq ==> RhpolyC ==> RhpolyC)  *)
+(*   (fun n p => p * 'X^n) (fun n => shift n). *)
+(* Proof. admit. Qed. *)
+(* (* Proof. exact: param_trans. Qed. *) *)
+
+(* Global Instance param_size_hpoly : param (RhpolyC ==> Logic.eq)  *)
+(*   (fun (p : {poly R}) => size p) (fun s => size_hpoly s). *)
+(* Proof. admit. Qed. *)
+(* (* Proof. exact: param_trans. Qed. *) *)
+
+(* Global Instance param_lead_coef_hpoly :  *)
+(*   param (RhpolyC ==> rAC) lead_coef (fun p => lead_coef_hpoly p). *)
+(* Proof. admit. Qed. *)
+(* (* Proof. exact: param_trans. Qed. *) *)
+
+(* Global Instance param_polyC_hpoly :  *)
+(*   param (rAC ==> RhpolyC) (fun a => a%:P) (fun a => cast a)%C. *)
+(* Proof. admit. Qed. *)
+(* (* Proof. exact: param_trans. Qed. *) *)
+
+(* Global Instance param_mul_hpoly :  *)
+(*   param (RhpolyC ==> RhpolyC ==> RhpolyC) *%R *%C. *)
+(* Proof. admit. Qed. *)
+(* (* Proof. exact: param_trans. Qed. *) *)
+
+(* Global Instance param_eq_hpoly : param (RhpolyC ==> RhpolyC ==> Logic.eq)  *)
+(*   (fun p q => p == q) (fun sp sq => sp == sq)%C. *)
+(* Proof. admit. Qed. *)
+(* (* Proof. exact: param_trans. Qed. *) *)
+
+(* Global Instance param_horner_hpoly : param (RhpolyC ==> rAC ==> rAC)  *)
+(*   (fun p x => p.[x]) (fun sp x => horner_seq sp x). *)
+(* Proof. admit. Qed. *)
+(* (* Proof. exact: param_trans. Qed. *) *)
+
+End hpoly_parametricity.
 End hpoly_theory.
 

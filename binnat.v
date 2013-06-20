@@ -6,9 +6,8 @@ Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
 Require Import refinements basics.
 
 (******************************************************************************)
-(* The binary naturals of Coq is a refinement of SSReflects naturals (ssrnat) *) 
+(** The binary naturals of Coq is a refinement of SSReflects naturals         *) 
 (*                                                                            *)
-(* Supported operations are: 0, 1, +, *, ==                                   *)
 (******************************************************************************)
 
 Set Implicit Arguments.

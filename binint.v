@@ -24,8 +24,10 @@ Import GRing.Theory Num.Theory Refinements.
 
 Notation pos := {n : nat | (n > 0)%N}.
 
-(* Programming part *)
-Section Zdef.
+(******************************************************************************)
+(** PART I: Defining generic datastructures and programming with them         *)
+(******************************************************************************)
+Section generic_operations.
 Variable N P : Type.
 
 Import Op AlgOp.
@@ -97,10 +99,12 @@ Global Instance specZ : spec_of Z int :=
              | Zneg n => - (val (spec n))%:Z
            end)%R.
 
-End Zdef.
+End generic_operations.
 
-(* Proof part, should be refactored *)
-Section Z_nat_pos.
+(******************************************************************************)
+(** PART II: Proving correctness properties of the previously defined objects *)
+(******************************************************************************)
+Section Z_theory.
 
 Notation Znp := (Z nat pos).
 
@@ -213,7 +217,10 @@ Local Instance refines_specZ' :
   param (Rint ==> Logic.eq) id spec.
 Proof. by rewrite paramE => a a' ra; rewrite [spec _]RintE. Qed.
 
-Section Zparametric.
+(*************************************************************************)
+(* PART III: Parametricity part                                          *)
+(*************************************************************************)
+Section Z_parametricity.
 
 Section Zrefinement.
 Variables N N' P P' : Type.
@@ -332,5 +339,5 @@ Global Instance param_specZ' :
 Proof. exact: param_trans. Qed.
 
 End Zrefinement_nat_pos.
-End Zparametric.
-End Z_nat_pos.
+End Z_parametricity.
+End Z_theory.
