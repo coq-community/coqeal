@@ -12,10 +12,9 @@ do
   $COQ2HTML/coq2html -R CoqEAL -o %.html $globs ../$i
 done
 cd $COQEAL
-echo $VFILES | xargs $COQBIN/coqdep -noglob -I . -R $SSRLIB Ssreflect > depend
-#sed s/[[:space:]][[:alnum:]]*.v.beautified//g depend > doc/depend
+echo $VFILES | xargs $COQBIN/coqdep -noglob -I . > depend.tmp
+sed s/[[:space:]][\-_A-Za-z0-9]*.v.beautified//g depend.tmp > doc/depend
 cd $COQEAL/doc
-$WORKSPACE/makeDot/makedot depend
+$WORKSPACE/makeDot/makedot depend $COQEALURL
 dot -Tpng -o depend.png -Tcmapx -o depend.map depend.dot
 dot -Tsvg -o depend.svg depend.dot
-cat toc.html.head depend.map toc.html.tail > toc.html
