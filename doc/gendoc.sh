@@ -10,7 +10,7 @@ do
   $COQ2HTML/coq2html -o %.html $globs ../$i
 done
 cd $COQEAL
-$COQBIN/coqdep -noglob -I . -R $SSRLIB Ssreflect $VFILES > depend
+echo $VFILES | xargs $COQBIN/coqdep -noglob -I . -R $SSRLIB Ssreflect > depend
 #sed s/[[:space:]][[:alnum:]]*.v.beautified//g depend > doc/depend
 cd $COQEAL/doc
 $WORKSPACE/makeDot/makedot depend
