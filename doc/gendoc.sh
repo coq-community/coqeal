@@ -1,4 +1,6 @@
 #!/bin/sh
+set -e
+set -x
 COQ2HTML=$COQEAL/../coq2html
 make -C makeDot
 make -C $COQ2HTML
