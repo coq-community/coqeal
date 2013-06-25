@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop poly.
-Require Import refinements.
+Require Import refinements pos.
 
 (******************************************************************************)
 (** This file implements sparse polynomials in sparse Horner normal form.     *)
@@ -154,10 +154,6 @@ Section hpoly_theory.
 
 Variable A : comRingType.
 
-(* TODO: Remove this once binnat is ok *)
-Notation pos := {n : nat | (n > 0)%N}.
-Definition posS (n : nat) : pos := exist _ n.+1 isT.
-
 Local Instance zeroA : zero A := 0%R.
 Local Instance oneA : one A := 1%R.
 Local Instance addA : add A := +%R.
@@ -165,19 +161,6 @@ Local Instance oppA : opp A := -%R.
 Local Instance subA : sub A := subr.
 Local Instance mulA : mul A := *%R.
 Local Instance eqA : eq A := eqtype.eq_op.
-
-Local Instance one_pos : one pos := posS 0.
-Local Instance add_pos : add pos :=
-  fun m n => insubd (posS 0) (val m + val n)%N.
-Local Instance sub_pos : sub pos :=
-  fun m n => insubd (posS 0) (val m - val n)%N.
-Local Instance mul_pos : mul pos :=
-  fun m n => insubd (posS 0) (val m * val n)%N.
-Local Instance eq_pos : eq pos := eqtype.eq_op.
-Local Instance lt_pos : lt pos := fun m n => val m < val n.
-
-Local Instance cast_pos_nat : cast_class pos nat := val.
-Local Instance cast_nat_pos : cast_class nat pos := insubd 1%C.
 
 Fixpoint to_poly (p : @hpoly A pos) := match p with
   | Pc c => c%:P 
@@ -440,4 +423,3 @@ Context `{!param (rAC ==> rAC ==> Logic.eq) eqtype.eq_op eq_op}.
 
 End hpoly_parametricity.
 End hpoly_theory.
-

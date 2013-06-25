@@ -5,7 +5,6 @@
 # bareiss.v
 binnat.v
 binint.v
-basics.v
 # binint_direct.v
 # invmx.v
 karatsuba.v
@@ -15,6 +14,7 @@ refinements.v
 rational.v
 seqpoly.v
 hpoly.v
+pos.v
 seqmatrix.v
 # boolF2.v
 # funperm.v

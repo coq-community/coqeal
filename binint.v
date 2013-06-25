@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
-Require Import refinements basics.
+Require Import refinements pos.
 
 (******************************************************************************)
 (* Attempt to refine SSReflect integers (ssrint) are to a new type            *)
@@ -21,8 +21,6 @@ Unset Printing Implicit Defensive.
 Local Open Scope ring_scope.
 
 Import GRing.Theory Num.Theory Refinements.
-
-Notation pos := {n : nat | (n > 0)%N}.
 
 (******************************************************************************)
 (** PART I: Defining generic datastructures and programming with them         *)

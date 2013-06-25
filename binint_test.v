@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
-Require Import refinements basics binint.
+Require Import refinements pos binint.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
