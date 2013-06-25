@@ -162,6 +162,19 @@ Local Instance subA : sub A := subr.
 Local Instance mulA : mul A := *%R.
 Local Instance eqA : eq A := eqtype.eq_op.
 
+Local Instance one_pos : one pos := posS 0.
+Local Instance add_pos : add pos :=
+  fun m n => insubd (posS 0) (val m + val n)%N.
+Local Instance sub_pos : sub pos :=
+  fun m n => insubd (posS 0) (val m - val n)%N.
+Local Instance mul_pos : mul pos :=
+  fun m n => insubd (posS 0) (val m * val n)%N.
+Local Instance eq_pos : eq pos := eqtype.eq_op.
+Local Instance lt_pos  : lt pos  := fun m n => val m < val n.
+
+Local Instance cast_pos_nat : cast_class pos nat := val.
+Local Instance cast_nat_pos : cast_class nat pos := insubd 1%C.
+
 Fixpoint to_poly (p : @hpoly A pos) := match p with
   | Pc c => c%:P 
   | PX a n p => to_poly p * 'X^(cast n) + a%:P

@@ -18,6 +18,115 @@ Import Refinements.Op.
 
 (* Notation for when we export this file *)
 Notation N := N.
+Notation positive := positive.
+
+Section positive.
+
+Definition positive_of_pos (p : pos) : positive := Pos.of_nat (val p).
+Definition pos_of_positive (p : positive) : pos := insubd pos1 (Pos.to_nat p).
+
+Lemma positive_of_posK : cancel positive_of_pos pos_of_positive.
+Proof.
+move=> n /=; rewrite /positive_of_pos /pos_of_positive /=.
+apply: val_inj; rewrite Nat2Pos.id ?insubdK -?topredE ?valP //.
+by apply/eqP; rewrite -lt0n valP.
+Qed.
+
+Definition Rpos := fun_hrel pos_of_positive.
+
+Lemma RposE (p : pos) (x : positive) : param Rpos p x -> p = pos_of_positive x. 
+Proof. by rewrite paramE; case. Qed.
+
+(* Why is this not in ssrnat? *)
+Lemma to_natE : forall (p : positive), Pos.to_nat p = nat_of_pos p.
+Proof.
+by elim=> //= p <-; rewrite ?Pos2Nat.inj_xI ?Pos2Nat.inj_xO NatTrec.trecE -mul2n.
+Qed.
+
+Lemma to_nat_gt0 p : 0 < Pos.to_nat p.
+Proof.
+by rewrite to_natE; elim: p => //= p; rewrite NatTrec.trecE double_gt0.
+Qed.
+Hint Resolve to_nat_gt0.
+
+Global Instance spec_positive : spec_of positive pos := pos_of_positive.
+Global Instance refines_spec_pos_r x : param Rpos (spec x) x.
+Proof. by rewrite !paramE. Qed.
+Global Instance refines_spec_pos_l : param (Rpos ==> Logic.eq) spec_id spec.
+Proof. by rewrite !paramE => x x' rx; rewrite [spec _]RposE. Qed.
+
+(* Constants *)
+Global Instance one_positive : one positive := xH.
+Global Instance refines_pos1 : param Rpos (pos1 : pos) (1%C : positive).
+Proof. by rewrite !paramE; apply: val_inj; rewrite /= insubdK. Qed.
+
+(* Binary operations *)
+Global Instance add_positive : add positive := Pos.add.
+Global Instance refines_add_pos :
+  param (Rpos ==> Rpos ==> Rpos) add_pos +%C. 
+Proof.
+rewrite paramE => _ x <- _ y <-; apply: val_inj.
+rewrite !val_insubd Pos2Nat.inj_add.
+by move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
+Qed.
+
+Global Instance mul_positive : mul positive := Pos.mul.
+Global Instance refines_mul_pos :
+  param (Rpos ==> Rpos ==> Rpos) mul_pos *%C. 
+Proof.
+rewrite paramE => _ x <- _ y <-; apply: val_inj.
+rewrite !val_insubd Pos2Nat.inj_mul.
+by move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
+Qed.
+
+Global Instance sub_positive : sub positive := Pos.sub.
+Global Instance refines_sub_pos :
+  param (Rpos ==> Rpos ==> Rpos) sub_pos sub_op. 
+Proof.
+rewrite paramE => _ x <- _ y <-; apply: val_inj; rewrite !val_insubd.
+move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
+have [/leP h|/leP h] := (ltnP (Pos.to_nat y) (Pos.to_nat x)).
+  by have := (Pos2Nat.inj_sub x y); rewrite Pos2Nat.inj_lt => ->.
+rewrite /sub_op /sub_positive Pos.sub_le ?Pos2Nat.inj_le //.
+by rewrite subn_gt0 !ltnNge; move/leP: h ->.
+Qed.
+
+Global Instance le_positive : leq positive := Pos.leb.
+Global Instance refines_le_pos :
+  param (Rpos ==> Rpos ==> Logic.eq) leq_pos leq_op. 
+Proof.
+rewrite paramE => /= _ x <- _ y <-; rewrite /leq_pos !val_insubd.
+move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
+by apply/leP/idP => [|h]; rewrite -Pos2Nat.inj_le -Pos.leb_le.
+Qed.
+
+Global Instance lt_positive : lt positive := Pos.ltb.
+Global Instance refines_lt_pos :
+  param (Rpos ==> Rpos ==> Logic.eq) lt_pos lt_op. 
+Proof.
+rewrite paramE => /= _ x <- _ y <-; rewrite /lt_pos !val_insubd.
+move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
+by apply/ltP/idP => [|h]; rewrite -Pos2Nat.inj_lt -Pos.ltb_lt.
+Qed.
+
+Global Instance eq_positive : eq positive := Pos.eqb.
+Global Instance refines_eq_pos :
+  param (Rpos ==> Rpos ==> Logic.eq) eq_pos eq_op. 
+Proof.
+rewrite paramE /eq_pos => /= _ x <- _ y <-.
+rewrite /pos_of_positive /eq_op /eq_positive Pos.eqb_compare Pos2Nat.inj_compare.
+have [/eqP->|/eqP h] := (boolP (Pos.to_nat x == Pos.to_nat y)); 
+  rewrite -Pos2Nat.inj_compare -Pos.eqb_compare.
+  by rewrite Pos.eqb_refl /insubd; case: insubP => //= u _ _; rewrite eqxx.
+move: (h); rewrite Pos2Nat.inj_iff -Pos.eqb_neq => ->.
+apply/negbTE; move/eqP: h; apply/contra_neq; rewrite !val_insubd.
+by move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
+Qed.
+
+End positive.
+
+Typeclasses Opaque pos_of_positive positive_of_pos.
+Global Opaque pos_of_positive positive_of_pos.
 
 Section binnat.
 
