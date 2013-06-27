@@ -22,7 +22,7 @@ Import GRing.Theory Refinements.Op.
 (******************************************************************************)
 Section hpoly.
 
-Context {A pos : Type}.
+Context {A N pos : Type}.
 
 Inductive hpoly := Pc : A -> hpoly
                  | PX : A -> pos -> hpoly -> hpoly.
@@ -31,7 +31,8 @@ Section hpoly_op.
 
 Context `{zero A, one A, add A, sub A, opp A, mul A, eq A}.
 Context `{one pos, add pos, sub pos, eq pos, lt pos}.
-Context `{cast_class nat pos, cast_class pos nat}.
+Context `{zero N, eq N, lt N, add N, sub N}.
+Context `{cast_class N pos, cast_class pos N, cast_class pos nat}.
 
 Local Open Scope computable_scope.
 
@@ -65,24 +66,24 @@ Global Instance opp_hpoly : opp hpoly := fix f p := match p with
   end.
 
 Fixpoint addXn_const n a q := match q with
-  | Pc b      => if n == 0%N then Pc (a + b) else PX b (cast n) (Pc a)
+  | Pc b      => if (n == 0)%C then Pc (a + b) else PX b (cast n) (Pc a)
   | PX b m q' => let cn := cast n in
-    if n == 0%N then PX (a + b) m q' else 
-      if n == cast m    then PX b m (addXn_const 0%N a q') else 
-      if (n < cast m)%N then PX b cn (PX a (m - cn) q') 
-                        else PX b m (addXn_const (n - cast m)%N a q')
+    if (n == 0)%C then PX (a + b) m q' else 
+      if (n == cast m)%C    then PX b m (addXn_const 0 a q') else 
+      if n < cast m then PX b cn (PX a (m - cn) q') 
+                    else PX b m (addXn_const (n - cast m)%C a q')
   end.
 
-Fixpoint addXn (n : nat) p q {struct p} := match p, q with
+Fixpoint addXn (n : N) p q {struct p} := match p, q with
   | Pc a      , q      => addXn_const n a q
-  | PX a n' p', Pc b   => if n == 0%N then PX (a + b) n' p' 
-                                      else PX b (cast n) (PX a n' p')
+  | PX a n' p', Pc b   => if (n == 0)%C then PX (a + b) n' p' 
+                                        else PX b (cast n) (PX a n' p')
   | PX a n' p', PX b m q' => 
-    if n == 0%N then 
+    if (n == 0)%C then 
       if (n' == m)%C then PX (a + b) n' (addXn 0 p' q') else
       if n' < m      then PX (a + b) n' (addXn 0 p' (PX 0 (m - n') q'))
                      else PX (a + b) m (addXn (cast (n' - m)) p' q')
-    else addXn (n + cast n') p' (addXn_const 0%N b (addXn_const n a (PX 0 m q')))
+    else addXn (n + cast n') p' (addXn_const 0 b (addXn_const n a (PX 0 m q')))
   end.
 
 (* (* This definition is nicer but Coq doesn't like it *) *)
@@ -96,7 +97,7 @@ Fixpoint addXn (n : nat) p q {struct p} := match p, q with
 (*                               else PX (a + b) m (add_hpoly_op q (PX 0 (n - m) p)) *)
 (*   end. *)
 
-Global Instance add_hpoly : add hpoly := addXn 0%N.
+Global Instance add_hpoly : add hpoly := addXn 0.
 
 Global Instance scale_hpoly : scale A hpoly := fix f a p := match p with
   | Pc b => Pc (a * b)
@@ -131,7 +132,7 @@ Global Instance eq_hpoly : eq hpoly := fun p q => eq0_hpoly (p - q).
 (* TODO: Prove these operations correct! *)
 Definition shift_hpoly n p := PX 0 n p.
 
-Fixpoint size_hpoly p : nat := match p with
+Fixpoint size_hpoly p := match p with
   | Pc a => if (a == 0)%C then 0%N else 1%N
   | PX a n p' => if (p == 0)%C && (a == 0)%C 
                  then 0%N else (cast n + size_hpoly p').+1
@@ -169,8 +170,14 @@ Local Instance sub_pos : sub pos :=
   fun m n => insubd (posS 0) (val m - val n)%N.
 Local Instance mul_pos : mul pos :=
   fun m n => insubd (posS 0) (val m * val n)%N.
-Local Instance eq_pos : eq pos := eqtype.eq_op.
+Local Instance eq_pos  : eq pos := eqtype.eq_op.
 Local Instance lt_pos  : lt pos  := fun m n => val m < val n.
+
+Local Instance zero_nat : zero nat := 0%N.
+Local Instance eq_nat   : eq nat   := fun m n => m == n.
+Local Instance lt_nat   : lt nat   := ltn.
+Local Instance add_nat  : add nat  := addn.
+Local Instance sub_nat  : sub nat  := subn.
 
 Local Instance cast_pos_nat : cast_class pos nat := val.
 Local Instance cast_nat_pos : cast_class nat pos := insubd 1%C.
@@ -264,7 +271,7 @@ Qed.
 
 Lemma addXn_constE n a q : to_poly (addXn_const n a q) = a%:P * 'X^n + to_poly q.
 Proof.
-elim: q n => [b [|n]|b m q' ih n] /=; first by rewrite polyC_add expr0 mulr1.
+elim: q n => [b [|n]|b m q' ih n] /=; simpC; first by rewrite polyC_add expr0 mulr1.
   by rewrite /cast /cast_pos_nat insubdK.
 case: eqP => [->|/eqP n0] /=; first by rewrite polyC_add expr0 mulr1 addrCA.
 case: eqP => [hn|hnc] /=; first by rewrite ih expr0 mulr1 -hn mulrDl -addrA.
@@ -274,11 +281,11 @@ have [hlt|hleq] /= := ltnP; rewrite /cast /cast_nat_pos /cast_pos_nat.
 by rewrite ih mulrDl -mulrA -exprD subnK // addrA.
 Qed.
 
-Arguments addXn_const _ _ _ _ _ _ n a q : simpl never. 
+Arguments addXn_const _ _ _ _ _ _ _ _ _ _ _ n a q : simpl never. 
 
 Lemma addXnE n p q : to_poly (addXn n p q) = to_poly p * 'X^n + to_poly q.
 Proof.
-elim: p n q => [a n q|a n' p ih n [b|b m q]] /=; first by rewrite addXn_constE.
+elim: p n q => [a n q|a n' p ih n [b|b m q]] /=; simpC; first by rewrite addXn_constE.
   case: eqP => [->|/eqP n0]; first by rewrite expr0 mulr1 /= polyC_add addrA.
   by rewrite /= /cast /cast_pos_nat /cast_nat_pos insubdK // -topredE /= lt0n.
 case: eqP => [->|/eqP no].
