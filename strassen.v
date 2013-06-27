@@ -240,7 +240,7 @@ Global Instance param_Strassen_step p :
          (@Strassen_step mxC _ _ _ _ _ _ _ p).
 Proof. by rewrite /Strassen_step; apply: get_param. Qed.
 
-Global Instance refines_Strassen p :
+Global Instance param_Strassen p :
    param (RmxA ==> RmxA ==> RmxA)%rel
          (@Strassen (@matrix A)  _ _ _ _ _ _ _ _ _ p)
          (@Strassen mxC _ _ _ _ _ _ _ _ _ p).
