@@ -31,8 +31,8 @@ Section hpoly_op.
 
 Context `{zero A, one A, add A, sub A, opp A, mul A, eq A}.
 Context `{one pos, add pos, sub pos, eq pos, lt pos}.
-Context `{zero N, eq N, lt N, add N, sub N}.
-Context `{cast_class N pos, cast_class pos N, cast_class pos nat}.
+Context `{zero N, one N, eq N, lt N, add N, sub N}.
+Context `{cast_class N pos, cast_class pos N}.
 
 Local Open Scope computable_scope.
 
@@ -132,21 +132,74 @@ Global Instance eq_hpoly : eq hpoly := fun p q => eq0_hpoly (p - q).
 (* TODO: Prove these operations correct! *)
 Definition shift_hpoly n p := PX 0 n p.
 
-Fixpoint size_hpoly p := match p with
-  | Pc a => if (a == 0)%C then 0%N else 1%N
+Fixpoint size_hpoly p : N := match p with
+  | Pc a => if (a == 0)%C then 0%C else 1%C
   | PX a n p' => if (p == 0)%C && (a == 0)%C 
-                 then 0%N else (cast n + size_hpoly p').+1
+                 then 0%C else (1 + (cast n + size_hpoly p'))%C
   end.
 
-Fixpoint split_hpoly m p : hpoly * hpoly := match p with
+Fixpoint split_hpoly (m : N) p : hpoly * hpoly := match p with
   | Pc a => (Pc a, Pc 0)
-  | PX a n p' => if (m == 0)%N then (Pc 0,p)
-    else let (p1,p2) := split_hpoly (m - cast n)%N p' in (PX a n p1, p2)
+  | PX a n p' => if (m == 0)%C then (Pc 0,p)
+    else let (p1,p2) := split_hpoly (m - cast n)%C p' in (PX a n p1, p2)
   end.
 
 End hpoly_op.
 End hpoly.
 
+(**************************************************)
+(* Interlude: parametric properties of hpoly_hrel *)
+(**************************************************)
+
+Lemma getparamE A B (R : A -> B -> Prop) : getparam R = param R.
+Proof. by rewrite !paramE. Qed.
+
+Fixpoint hpoly_elim {T A P} (fc : A -> T) (fX : A -> P -> hpoly -> T) 
+         (p : hpoly) : T :=
+  match p with
+    | Pc c => fc c
+    | PX a n p => fX a n p
+  end.
+
+Section ParamHpoly.
+
+Variables (A B : Type) (R : A -> B -> Prop) 
+         (P P' : Type) (RP : P -> P' -> Prop).
+
+Fixpoint hpoly_hrel (p : @hpoly A P) (q : @hpoly B P') : Prop :=
+  match p, q with 
+    | Pc a, Pc b => R a b
+    | PX a m p, PX b n q => [/\ R a b, RP m n & hpoly_hrel p q]
+    | _, _ => False
+  end.
+
+Lemma hpoly_hrel_Pc : (getparam R ==> getparam hpoly_hrel)%rel Pc Pc.
+Proof. by rewrite !paramE. Qed.
+
+Lemma hpoly_hrel_PX : (getparam R ==> getparam RP ==>
+  getparam hpoly_hrel ==> getparam hpoly_hrel)%rel PX PX.
+Proof. by rewrite !paramE. Qed.
+
+Lemma hpoly_hrel_elim (T T' : Type) (RT : T -> T' -> Prop) :
+  (getparam (R ==> RT) ==> getparam (R ==> RP ==> hpoly_hrel ==> RT) ==>
+            getparam hpoly_hrel ==> getparam RT)%rel hpoly_elim hpoly_elim.
+Proof.
+rewrite !getparamE => ??? ???.
+elim=> [c|a m p ihp] [d|b n q]; rewrite !paramE //=.
+  by move=> Rcd; exact: paramP.
+by move=> [???]; exact: paramP.
+Qed.
+ 
+End ParamHpoly.
+Arguments hpoly_hrel_Pc {_ _ _ _ _ _ _ _ _}.
+Arguments hpoly_hrel_PX {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Arguments hpoly_hrel_elim {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply hpoly_hrel_Pc : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply hpoly_hrel_PX : typeclass_instances.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply hpoly_hrel_elim : typeclass_instances.
 
 (******************************************************************************)
 (** PART II: Proving correctness properties of the previously defined objects *)
@@ -372,33 +425,64 @@ Section hpoly_parametricity.
 Import Refinements.Op.
 
 Context (C : Type) (rAC : A -> C -> Prop).
+Context (P : Type) (rP : pos -> P -> Prop).
+Context (N : Type) (rN : nat -> N -> Prop).
 Context `{zero C, one C, opp C, add C, sub C, mul C, eq C}.
+Context `{one P, add P, sub P, eq P, lt P}.
+Context `{zero N, one N, eq N, lt N, add N, sub N}.
+Context `{cast_class N P, cast_class P N}.
 Context `{!param rAC 0%R 0%C, !param rAC 1%R 1%C}.
 Context `{!param (rAC ==> rAC) -%R -%C}.
 Context `{!param (rAC ==> rAC ==> rAC) +%R +%C}.
 Context `{!param (rAC ==> rAC ==> rAC) subr sub_op}.
 Context `{!param (rAC ==> rAC ==> rAC) *%R *%C}.
 Context `{!param (rAC ==> rAC ==> Logic.eq) eqtype.eq_op eq_op}.
+Context `{!param rP pos1 1%C}.
+Context `{!param (rP ==> rP ==> rP) add_pos +%C}.
+Context `{!param (rP ==> rP ==> rP) sub_pos sub_op}.
+Context `{!param (rP ==> rP ==> Logic.eq) eqtype.eq_op eq_op}.
+Context `{!param (rP ==> rP ==> Logic.eq) lt_pos lt_op}.
+Context `{!param rN 0%N 0%C, !param rN 1%N 1%C}.
+Context `{!param (rN ==> rN ==> rN) addn +%C}.
+Context `{!param (rN ==> rN ==> rN) subn sub_op}.
+Context `{!param (rN ==> rN ==> Logic.eq) eqtype.eq_op eq_op}.
+Context `{!param (rN ==> rN ==> Logic.eq) ltn lt_op}.
+Context `{!param (rN ==> rP) cast_nat_pos cast}.
+Context `{!param (rP ==> rN) cast_pos_nat cast}.
 
-(* TODO: Write this section! *)
+Local Notation hpoly_hrel := (hpoly_hrel rAC rP).
+Definition RhpolyC := (Rhpoly \o hpoly_hrel)%rel.
 
-(* Definition RhpolyC := (Rhpoly \o (seq_hrel rAC))%rel. *)
+Global Instance param_zero_hpoly : param RhpolyC 0%R 0%C.
+Proof. exact: param_trans. Qed.
 
-(* Global Instance param_zero_hpoly : param RhpolyC 0%R 0%C. *)
-(* Proof. exact: param_trans. Qed. *)
+Global Instance param_one_hpoly : param RhpolyC 1%R 1%C.
+Proof. exact: param_trans. Qed.
 
-(* Global Instance param_one_hpoly : param RhpolyC 1%R 1%C. *)
-(* Proof. exact: param_trans. Qed. *)
+(* Lemma getparam_addXn_const : *)
+(*   (getparam rN ==> getparam rAC ==> getparam hpoly_hrel ==> getparam hpoly_hrel)%rel *)
+(*   addXn_const addXn_const. *)
+(* Proof. *)
+(* rewrite getparamE => ??? ??? ???. *)
+(* rewrite /addXn_const. *)
+(* (* eapply (@hpoly_hrel_elim _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _). *) *)
+(* (* tc. *) *)
+(* Admitted. *)
 
-(* Global Instance param_opp_hpoly :  *)
+(* Global Instance param_add_hpoly : *)
+(*   param (RhpolyC ==> RhpolyC ==> RhpolyC) +%R +%C. *)
+(* Proof.  *)
+(* eapply param_trans. *)
+(*   tc. *)
+(*   tc. *)
+(* tc. *)
+(* Admitted. *)
+
+(* Global Instance param_opp_hpoly : *)
 (*   param (RhpolyC ==> RhpolyC) -%R -%C. *)
 (* Proof. exact: param_trans. Qed. *)
 
-(* Global Instance param_add_hpoly :  *)
-(*   param (RhpolyC ==> RhpolyC ==> RhpolyC) +%R +%C. *)
-(* Proof. exact: param_trans. Qed. *)
-
-(* Global Instance param_sub_hpoly :  *)
+(* Global Instance param_sub_hpoly : *)
 (*   param (RhpolyC ==> RhpolyC ==> RhpolyC) subr sub_op. *)
 (* Proof. exact: param_trans. Qed. *)
 
@@ -406,37 +490,37 @@ Context `{!param (rAC ==> rAC ==> Logic.eq) eqtype.eq_op eq_op}.
 (*   param (rAC ==> RhpolyC ==> RhpolyC) *:%R *:%C. *)
 (* Proof. exact: param_trans. Qed. *)
 
-(* Global Instance param_shift_hpoly : param (Logic.eq ==> RhpolyC ==> RhpolyC)  *)
+(* Global Instance param_shift_hpoly : param (Logic.eq ==> RhpolyC ==> RhpolyC) *)
 (*   (fun n p => p * 'X^n) (fun n => shift n). *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
 
-(* Global Instance param_size_hpoly : param (RhpolyC ==> Logic.eq)  *)
+(* Global Instance param_size_hpoly : param (RhpolyC ==> Logic.eq) *)
 (*   (fun (p : {poly R}) => size p) (fun s => size_hpoly s). *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
 
-(* Global Instance param_lead_coef_hpoly :  *)
+(* Global Instance param_lead_coef_hpoly : *)
 (*   param (RhpolyC ==> rAC) lead_coef (fun p => lead_coef_hpoly p). *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
 
-(* Global Instance param_polyC_hpoly :  *)
+(* Global Instance param_polyC_hpoly : *)
 (*   param (rAC ==> RhpolyC) (fun a => a%:P) (fun a => cast a)%C. *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
 
-(* Global Instance param_mul_hpoly :  *)
+(* Global Instance param_mul_hpoly : *)
 (*   param (RhpolyC ==> RhpolyC ==> RhpolyC) *%R *%C. *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
 
-(* Global Instance param_eq_hpoly : param (RhpolyC ==> RhpolyC ==> Logic.eq)  *)
+(* Global Instance param_eq_hpoly : param (RhpolyC ==> RhpolyC ==> Logic.eq) *)
 (*   (fun p q => p == q) (fun sp sq => sp == sq)%C. *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
 
-(* Global Instance param_horner_hpoly : param (RhpolyC ==> rAC ==> rAC)  *)
+(* Global Instance param_horner_hpoly : param (RhpolyC ==> rAC ==> rAC) *)
 (*   (fun p x => p.[x]) (fun sp x => horner_seq sp x). *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
