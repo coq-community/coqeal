@@ -111,12 +111,12 @@ by apply: Some_inj; rewrite -rxa /= /Qint_to_rat dom_refines.
 Qed.
 
 (* We establish the correction of Q int with regard to rat *)
-Global Instance refines_zeroq : param Rrat 0 0%C.
+Local Instance refines_zeroq : param Rrat 0 0%C.
 Proof. by rewrite paramE. Qed.
-Global Instance refines_oneq : param Rrat 1 1%C.
+Local Instance refines_oneq : param Rrat 1 1%C.
 Proof. by rewrite paramE. Qed.
 
-Global Instance refines_embedq :
+Local Instance refines_embedq :
   param (Logic.eq ==> Rrat) intr (cast : int -> Q _).
 Proof. 
 rewrite paramE => n ? [<-].
@@ -124,7 +124,7 @@ by rewrite /refines /Rrat /ofun_hrel /cast /embedQ /= /Qint_to_rat /= mulr1.
 Qed.
 
 
-Global Instance refines_addq :
+Local Instance refines_addq :
   param (Rrat ==> Rrat ==> Rrat) +%R +%C.
 Proof.
 apply param_abstr2 => x a rx y b ry; rewrite paramE.
@@ -133,14 +133,14 @@ rewrite [x]RratE [y]RratE.
 by rewrite addf_div ?intr_eq0 ?dom_refines ?(rmorphD, rmorphM).
 Qed.
 
-Global Instance refines_oppq : param (Rrat ==> Rrat) -%R -%C.
+Local Instance refines_oppq : param (Rrat ==> Rrat) -%R -%C.
 Proof.
 apply param_abstr => x a rx; rewrite paramE.
 rewrite /refines /Rrat /ofun_hrel /= /Qint_to_rat /= ?dom_refines //=.
 by rewrite [x]RratE rmorphN mulNr.
 Qed.
 
-Global Instance refines_mulq :
+Local Instance refines_mulq :
   param (Rrat ==> Rrat ==> Rrat) *%R *%C.
 Proof.
 apply param_abstr2  => x a rx y b ry; rewrite paramE.
@@ -149,7 +149,7 @@ rewrite [x]RratE [y]RratE.
 by rewrite mulrACA -invfM ?(rmorphD, rmorphM).
 Qed.
 
-Global Instance refines_invq :
+Local Instance refines_invq :
   param (Rrat ==> Rrat) GRing.inv (@inv_op Qint _).
 Proof.
 apply param_abstr => x a rx; rewrite paramE.
@@ -159,15 +159,7 @@ have [-> /=|a1_neq0 /=] := altP (a.1 =P 0); first by rewrite !mul0r ?invr0.
 by rewrite a1_neq0 invfM invrK mulrC.
 Qed.
 
-Global Instance refines_subq :
-  param (Rrat ==> Rrat ==> Rrat) AlgOp.subr (@sub_op Qint _).
-Proof. by rewrite /AlgOp.subr /sub_op /subQ /unfold; apply: get_param. Qed.
-
-Global Instance refines_divq :
-  param (Rrat ==> Rrat ==> Rrat) AlgOp.divr (@div_op Qint _).
-Proof. rewrite /AlgOp.divr /div_op /divQ /unfold; exact: get_param. Qed.
-
-Global Instance refines_compq :
+Local Instance refines_compq :
   param (Rrat ==> Rrat ==> Logic.eq) eqtype.eq_op (@eq_op Qint _).
 Proof.
 apply param_abstr2  => x a rx y b ry; rewrite paramE /= /eq_op /eqQ.
@@ -176,7 +168,6 @@ rewrite divq_eq ?intr_eq0 ?dom_refines // -!rmorphM eqr_int.
 by rewrite [X in (_ == X)]mulrC.
 Qed.
 
-End Qint.
 
 (*************************************************************************)
 (* PART III: We take advantage of parametricity to extend correcion of   *)
@@ -208,6 +199,14 @@ Context `{!param (rintC ==> rintC ==> rintC) subr sub_op}.
 Context `{!param (rintC ==> rintC ==> rintC) *%R *%C}.
 Context `{!param (rintC ==> rintC ==> Logic.eq) eqtype.eq_op eq_op}.
 
+Local Instance param_fst A B (R : A -> B -> Prop) A' B' (R' : A' -> B' -> Prop) :
+  param (R * R' ==> R) (@fst _ _) (@fst _ _).
+Proof. exact: get_param. Qed.
+
+Local Instance param_snd A B (R : A -> B -> Prop) A' B' (R' : A' -> B' -> Prop) :
+  param (R * R' ==> R') (@snd _ _) (@snd _ _).
+Proof. exact: get_param. Qed.
+
 Global Instance refines_zeroQ  : param RratA (0 : rat) (0%C : Q).
 Proof. exact: param_trans. Qed.
 
@@ -220,80 +219,37 @@ Proof. exact: param_trans. Qed.
 
 Global Instance refines_addQ :
   param (RratA ==> RratA ==> RratA) +%R (+%C : Q -> Q -> Q).
+Proof. exact: param_trans. Qed.
+
+Global Instance refines_mulQ :
+  param (RratA ==> RratA ==> RratA) *%R ( *%C : Q -> Q -> Q).
+Proof. exact: param_trans. Qed.
+
+Global Instance refines_oppQ :
+  param (RratA ==> RratA) -%R (-%C : Q -> Q).
+Proof. exact: param_trans. Qed.
+
+Global Instance refines_invQ :
+  param (RratA ==> RratA) GRing.inv (@inv_op Q _).
+Proof. exact: param_trans. Qed.
+
+Global Instance refines_subQ :
+  param (RratA ==> RratA ==> RratA) AlgOp.subr (@sub_op Q _).
+Proof. by rewrite /AlgOp.subr /sub_op /subQ /unfold; apply: get_param. Qed.
+
+Global Instance refines_divq :
+  param (RratA ==> RratA ==> RratA) AlgOp.divr (@div_op Q _).
+Proof. rewrite /AlgOp.divr /div_op /divQ /unfold; exact: get_param. Qed.
+
+Global Instance refines_eqQ :
+  param (RratA ==> RratA ==> Logic.eq) eqtype.eq_op (@eq_op Q _).
 Proof.
-eapply param_trans.
-eapply composable_imply.
-eapply composable_imply.
-eapply composable_comp.
-eapply refines_addq.
-eapply getparam_abstr => ? ? ?.
-eapply getparam_abstr => ? ? ?.
-Typeclasses eauto := debug.
-eapply param_pair.
-eapply set_param.
-eapply param_apply.
-eapply param_apply.
-by tc.
-eapply param_apply.
-eapply param_apply.
-by tc.
-tc.
-eapply param_apply.
+eapply param_trans; tc.
+by rewrite /eq_op /eqQ /unfold; tc.
+(* temporary solution *)
+Qed.
 
-
-eapply get_param.
-eapply getparam_abstr => ? ? ?.
-eapply param_fst.
-by tc.
-by tc.
-
-
-eapply get_param.
-eapply param_snd.
-by tc.
-
-tc.
-eapply param_apply.
-eapply param_apply.
-by tc.
-
-eapply param_apply.
-
-eapply get_param.
-eapply getparam_abstr => ? ? ?.
-
-
-eapply param5.
-eapply get_param.
-tc.
-  
-  exact: param_trans. Qed.
-
-(* Global Instance refines_mulQ :  *)
-(*   param (refines ==> refines ==> refines) *%R ( *%C : Q -> Q -> Q). *)
-(* Proof. exact: param_trans. Qed. *)
-
-(* Global Instance refines_oppQ : *)
-(*   param (refines ==> refines) -%R (-%C : Q -> Q). *)
-(* Proof. exact: param_trans. Qed. *)
-
-(* Global Instance refines_invQ : *)
-(*   param (refines ==> refines) GRing.inv (@inv_op Q _). *)
-(* Proof. exact: param_trans. Qed. *)
-
-(* Global Instance refines_subQ : *)
-(*   param (refines ==> refines ==> refines) AlgOp.subr (@sub_op Q _). *)
-(* Proof. exact: param_trans. Qed. *)
-
-(* Global Instance refines_divQ : *)
-(*   param (refines ==> refines ==> refines) AlgOp.divr (@div_op Q _). *)
-(* Proof. exact: param_trans. Qed. *)
-
-(* Global Instance refines_eqQ : *)
-(*   param (refines ==> refines ==> refines) eqtype.eq_op (@eq_op Q _). *)
-(* Proof. exact: param_trans. Qed. *)
-
-(* End Qparametric. *)
+End Qparametric.
 End Qint.
 
 (* Section tests. *)
