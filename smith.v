@@ -354,7 +354,6 @@ constructor=> //.
 + by rewrite -HblockL -Hblock invrM // mulmxA mulmxKV.
 + rewrite -[m.+1]/(1 + m)%N -[n.+1]/(1 + n)%N => i j.
   rewrite -{3}(lshift0 m 0) -{3}(lshift0 n 0) block_mxEul mxE eqxx !mxE.
-
 (* Why do we have to specify all these arguments? *)
   case:splitP=> i' Hi'; rewrite !mxE; case:splitP=> j' Hj'; rewrite ?mxE ?ord1 //.
     by move:(negbFE (Hij (lshift m 0,j'))); rewrite block_mxEur !mxE.
@@ -363,10 +362,9 @@ constructor=> //.
   rewrite -{5}(lshift0 m 0) -{3 6}(lshift0 n 0).
   rewrite (block_mxEul (M 0 0)%:M (ursubmx M)) !mxE.
   by case:splitP=> i' _; rewrite row_mxEl !mxE ?ord1.
-+ rewrite -(lshift0 m 0) -(lshift0 n 0).
-  rewrite block_mxEul mxE dvdrr.
-+ by rewrite unitmxE det_lblock !det1 mulr1 unitr1.
-exact:unitmx1.
++ rewrite -{3}(lshift0 m 0) -{3}(lshift0 n 0).
+  by rewrite (block_mxEul (M 0 0)%:M (ursubmx M)) mxE dvdrr.
++ by rewrite -HblockL unitmx_mul unitmxE (det_lblock 1 P) !det1 mulr1 unitr1.
 Qed.
 
 End improve_pivot_correct.
