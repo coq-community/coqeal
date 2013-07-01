@@ -2,6 +2,7 @@ Require Import ZArith.
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg ssrint ssrnum fintype.
 Require Import dvdring matrix mxalgebra bigop zmodp perm mxstructure.
+Require Import refinements seqmatrix.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -99,75 +100,13 @@ case Hk:(i==rshift 1 k).
 by rewrite !mxE Hi Hj Hk !mulr0 !add0r !addr0.
 Qed.
 
-
-(*
-Definition combine_step (a b c d : R) (m n : nat) (M : 'M_(m,n)) k :=
-  let r0 := a *: row 0 M + b *: row k M in
-  let rl := c *: row k M + d *: row l M in
-  \matrix_i (rk *+ (i == k) + rl *+ (i == l) + row i M *+ ((i != k) && (i != l))).
-
-Definition combine_mx (a b c d : R) (m : nat) (k l : 'I_m) :=
-  let d := \row_j (a *+ (j == k) + d *+ (j == l) + ((j != k) && (j != l))%:R) in
-  diag_mx d + c *: delta_mx l k + b *: delta_mx k l.
-*)
-
-(*
-Definition Bezout_mx_inv (a b : R) (m : nat) (k : 'I_m) :=
-  let:(g,u,v,a1,b1) := egcdr a b in
-  let k' := rshift 1 k in
-  let d := \row_j (a1 *+ (j == 0) + u *+ (j == k') + ((j != 0) && (j != k'))%:R) in
-  diag_mx d + b1 *: delta_mx k' 0 - v *: delta_mx 0 k'.
-*)
-
-(*
-Definition Bezout_mx (a b : R) (m : nat) (k : 'I_m) : 'M_(1+m) :=
-  let:(g,u,v,a1,b1) := egcdr a b in
-  let d := \row_(j < m) (1 *+ (j != k) + a1 *+ (j == k)) in
-  block_mx (a%:M) (-b1 *: delta_mx 0 k) (v *: delta_mx k 0) (diag_mx d).
-*)
-
-
-
-(* Local Close Scope ring_scope. *)
-
-(*
-Lemma combine_stepE (a b c d : R) (m n : nat) (M : 'M_(m, n)) (k l : 'I_m) :
-  combine_step a b c d M k l = combine_mx a b c d k l *m M.
-Proof. admit. Qed.
-
-(* Try to rewrite without case analysis *)
-Lemma combine_mx_inv (a b c d : R) m (k l : 'I_m) :
-  a * d - b * c = 1 ->
-  combine_mx a b c d k l *m combine_mx d (-b) (-c) a k l = 1%:M.
-Proof. admit. Qed.
-*)
-
-
-(*
-Lemma Bezout_step_diag {m n : nat} {M : 'M_(m, n)} (k : 'I_m) (k' : 'I_n) l :
-  k = k' :> nat ->
-  Bezout_step (M k k') (M l k') M k l k k' %= gcdr (M k k') (M l k').
-Proof.
-move=> eq_kk'.
-rewrite /Bezout_step.
-case:egcdrP=> g u v a1 b1 Hg Hgcd H1 H2.
-rewrite !mxE eqxx !mxE addr0.
-set T := _ 0 k'.
-have->: T = 0.
-rewrite /T.
-move: H1.
-have [->|] := altP (k =P l); last by rewrite mxE.
-rewrite !mxE.
-rewrite {1}H2.
-*)
-
 Definition Bezout_mx (a b : R) (m : nat) (k : 'I_m) :=
   let:(_,u,v,a1,b1) := egcdr a b in combine_mx u v (-b1) a1 k.
 
 Definition Bezout_step (a b : R) (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :=
   let:(_,u,v,a1,b1) := egcdr a b in combine_step u v (-b1) a1 M k.
 
-Lemma Bezout_stepE (a b : R) (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
+Lemma Bezout_stepE a b (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
   Bezout_step a b M k = Bezout_mx a b k *m M.
 Proof.
 rewrite /Bezout_step /Bezout_mx; have [g u v a' b' _ _ _ _] := egcdrP.
@@ -188,23 +127,6 @@ move=> H ; rewrite /sdvdr (eqd_dvd (Bezout_step_mx00) (eqdd _)) dvdr_gcdl.
 rewrite (eqd_dvd (eqdd _ ) (Bezout_step_mx00)).
 by apply/negP=> H'; rewrite (dvdr_trans H' (dvdr_gcdr _ _)) in H.
 Qed.
-
-(*
-Lemma Bezout_mx_invP (a b : R) m k : Bezout_mx a b m k *m Bezout_mx_inv a b m k = 1%:M.
-Proof.
-rewrite Bezout_mxE /Bezout_mx_inv.
-apply/matrixP=> i j; rewrite !mxE.
-case:egcdrP=> g u v a1 b1 Huv Hg Ha Hb /=.
-case Hi:(i==0).
-  case Hj:(j==0).
-    rewrite !mxE (eqP Hi) (eqP Hj) !mulr1n !mulr0n !eqxx.
-    rewrite mxE !mulr0 !addr0 add0r !subr0 mulr1.
-    admit.
-  rewrite !mxE (eqP Hi) !mulr1n !mulr0n !eqxx.
-  rewrite mxE !mulr0 !addr0 add0r !subr0 mulr1.
-
-rewrite /Bezout_mx /Bezout_mx_inv.
-*)
 
 Lemma unit_Bezout_mx m a b (k : 'I_m) : Bezout_mx a b k \in unitmx.
 Proof.
@@ -248,7 +170,7 @@ Arguments find2 {m n} _ _.
 Hypothesis find2P : forall m n (A : 'M[R]_(1 + m,1 + n)) a,
   pick_spec [pred ij | ~~(a %| A ij.1 (rshift 1 ij.2))] (find2 A a).
 
-Fixpoint improve_pivot k {m n} : 'M_(1 + m) -> 'M_(1 + m, 1 + n) -> 'M_(1 + n) ->
+Fixpoint improve_pivot_rec k {m n} : 'M_(1 + m) -> 'M_(1 + m, 1 + n) -> 'M_(1 + n) ->
     'M_(1 + m) * 'M_(1 + m, 1 + n) * 'M_(1 + n) :=
   match k with
   | 0 => fun L A R => (L,A,R)
@@ -257,7 +179,7 @@ Fixpoint improve_pivot k {m n} : 'M_(1 + m) -> 'M_(1 + m, 1 + n) -> 'M_(1 + n) -
       if find1 A a is Some i then
         let L := Bezout_step (A 0 0) (A (rshift 1 i) 0) L i in
         let A := Bezout_step (A 0 0) (A (rshift 1 i) 0) A i in
-        improve_pivot p L A R
+        improve_pivot_rec p L A R
       else let u := dlsubmx A in let vA := ursubmx A in
       let vL := usubmx L in
       let u' := map_mx (fun x => 1 - odflt 0 (x %/? a)) u in
@@ -268,7 +190,7 @@ Fixpoint improve_pivot k {m n} : 'M_(1 + m) -> 'M_(1 + m, 1 + n) -> 'M_(1 + n) -
         let L := xrow 0 ij.1 L in
         let R := (Bezout_step (A 0 0) (A 0 (rshift 1 ij.2)) R^T ij.2)^T in
         let A := (Bezout_step (A 0 0) (A 0 (rshift 1 ij.2)) A^T ij.2)^T in
-        improve_pivot p L A R
+        improve_pivot_rec p L A R
       else (L, A, R)
   end.
 
@@ -276,14 +198,14 @@ Section improve_pivot_correct.
 
 Variables m n : nat.
 
-CoInductive improve_pivot_spec L M R :
+CoInductive improve_pivot_rec_spec L M R :
   'M_(1 + m) * 'M_(1 + m,1 + n) * 'M_(1 + n) -> Type :=
-  ImprovePivotSpec L' A R' of L^-1 *m M *m R^-1 = L'^-1 *m A *m R'^-1
+  ImprovePivotRecSpec L' A R' of L^-1 *m M *m R^-1 = L'^-1 *m A *m R'^-1
   & (forall i j, A 0 0 %| A i j)
   & (forall i, A i 0 = A 0 0)
   & A 0 0 %| M 0 0
   & L' \in unitmx & R' \in unitmx
-  : improve_pivot_spec L M R (L',A,R').
+  : improve_pivot_rec_spec L M R (L',A,R').
 
 Lemma unitrmxE k (M : 'M_k.+1) : (M \is a GRing.unit) = (M \in unitmx).
 Proof. by []. Qed.
@@ -291,10 +213,10 @@ Proof. by []. Qed.
 Definition unitmxEE := (unitmx_mul, unitmx_tr, unit_Bezout_mx,
   unitmx_perm).
 
-Lemma improve_pivotP : forall k (L : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) R,
+Lemma improve_pivot_recP : forall k (L : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) R,
   (enorm (M 0%R 0%R) <= k)%N -> M 0 0 != 0 ->
     L \in unitmx -> R \in unitmx ->
-    improve_pivot_spec L M R (improve_pivot k L M R).
+    improve_pivot_rec_spec L M R (improve_pivot_rec k L M R).
 Proof.
 elim=> [L M R0|k IHk L M R0 Hk nzM00 unitL unitR /=].
   by rewrite leqn0 ; move/eqP/enorm_eq0 -> ; rewrite eqxx.
@@ -367,78 +289,35 @@ constructor=> //.
 + by rewrite -HblockL unitmx_mul unitmxE (det_lblock 1 P) !det1 mulr1 unitr1.
 Qed.
 
+Definition improve_pivot k (M : 'M_(1 + m, 1 + n)) :=
+  improve_pivot_rec k 1%:M M 1%:M.
+
+CoInductive improve_pivot_spec M :
+  'M_(1 + m) * 'M_(1 + m,1 + n) * 'M_(1 + n) -> Type :=
+  ImprovePivotSpec L A R of L *m M *m R = A
+  & (forall i j, A 0 0 %| A i j)
+  & (forall i, A i 0 = A 0 0)
+  & A 0 0 %| M 0 0
+  & L \in unitmx & R \in unitmx
+  : improve_pivot_spec M (L,A,R).
+
+Lemma improve_pivotP k (M : 'M_(1 + m, 1 + n)) :
+  (enorm (M 0%R 0%R) <= k)%N -> M 0 0 != 0 ->
+  improve_pivot_spec M (improve_pivot k M).
+Proof.
+move=> ? ?; rewrite /improve_pivot.
+have [||||L0 A R0] := improve_pivot_recP; rewrite ?unitmx1 //.
+rewrite !invr1 mul1mx mulmx1 => eqM ? ? ? ? ?.
+by constructor=> //; rewrite eqM !mulmxA mulmxV // mul1mx mulmxKV.
+Qed.
+
 End improve_pivot_correct.
-
-Section improve_pivot_seqmx.
-
-Variable A : Type.
-
-Variable egcd : A -> A -> A * A * A * A * A.
-Variable odvd : A -> A -> option A.
-
-Import Refinements.Op.
-
-Context `{add A, mul A, one A, zero A, dvd A, opp A, sub A}.
-
-Definition combine_step_seqmx (a b c d : A) (M : seqmatrix A) k l :=
-  let rk := nth [::] M k in
-  let rl := nth [::] M l in
-  let r'k := (scaleseqmx a [:: rk] + scaleseqmx b [:: rl])%C in
-  let r'l := (scaleseqmx c [:: rk] + scaleseqmx d [:: rl])%C in
-  mkseq (fun i => if i == k then head [::] r'k else if i == l then head [::] r'l else nth [::] M i) (size M).
-
-Definition bz_step_seqmx (a b : A) (M : seqmatrix A) (k l : nat) : seqmatrix A :=
-  let:(_,u,v,a1,b1) := egcd a b in combine_step_seqmx u v (-b1)%C a1 M k l.
-
-Fixpoint find1_seqmx a i (M : seqmatrix A) {struct M} : option (nat * A) :=
-  if M is s::M' then
-    if (a %| head 0 s)%C then find1_seqmx a i.+1 M' else Some (i, head 0%C s)
-  else None.
-
-Fixpoint find2_seqmx_aux a j (r : seq A) {struct r} : option (nat * A) :=
-  if r is x::r' then
-    if (a %| x)%C then find2_seqmx_aux a j.+1 r' else Some (j, x)
-  else None.
-
-Fixpoint find2_seqmx a i (M : seqmatrix A) {struct M} : option (nat * nat * A) :=
-    if M is s::M' then
-      if find2_seqmx_aux a 0%N s is Some (j, x) then Some (i, j, x)
-      else find2_seqmx a i.+1 M'
-    else None.
-
-Fixpoint improve_pivot_seqmx (L M R : seqmatrix A) k :=
-  match k with
-  | 0%N => (L,M,R)
-  | p.+1 => 
-    let a := head 0%C (head [::] M) in
-    let m := size M in let mL := size L in let offset := (mL - m)%N in
-    if find1_seqmx a 0%N M is Some (i, b) then
-      let M := bz_step_seqmx a b M 0 i in
-      let L := bz_step_seqmx a b L offset (offset + i) in
-      improve_pivot_seqmx L M R p
-    else let u := dlsubseqmx 1 1 M in let v := ursubseqmx 1 1 M in
-    let u' := map_seqmx (fun x => 1 - odflt 0 (odvd x a))%C u in
-    (* L needs to be updated here *)
-    let n := size (head [::] M) in
-    let M := block_seqmx (scalar_seqmx 1 a) v (const_seqmx m.-1 1 a) (drsubseqmx 1 1 M + mulseqmx 1 n.-1 u' v)%C in
-    let vL := nth [::] L offset in
-    let L := (L + mulseqmx 1 n (col_seqmx (const_seqmx offset.+1 1%N 0%C) u') [::vL])%C in
-    if find2_seqmx a 0%N M is Some (i, j, x) then
-      let M := xrowseqmx 0%N i M in
-      let L := xrowseqmx offset (offset + i) L in
-      let M := trseqmx (bz_step_seqmx a x (trseqmx M) 0 j) in
-      let R := trseqmx (bz_step_seqmx a x (trseqmx R) (size R - n) (size R - n + j)) in
-      improve_pivot_seqmx L M R p
-    else (L,M,R)
-  end.
-
-End improve_pivot_seqmx.
 
 Variable find_pivot :
   forall m n, 'M[R]_(m.+1,n.+1) -> option ('I_(1 + m) * 'I_(1 + n)).
 
 Hypothesis find_pivotP : forall m n (A : 'M[R]_(1 + m,1 + n)),
-  pick_spec [pred ij | A ij.1 ij.2 != 0] (find_pivot m n A).
+  pick_spec [pred ij | A ij.1 ij.2 != 0] (find_pivot A).
 
 Fixpoint Smith {m n} : 'M_(m,n) -> 'M_(m) * seq R * 'M_(n) :=
   match m, n return 'M_(m, n) -> 'M_(m) * seq R * 'M_(n) with
@@ -469,12 +348,12 @@ Proof.
 elim=> [n M|m IHn]; first constructor; rewrite ?unitmx1 //.
   rewrite [M]flatmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
   by case:(i == j :> nat).
-case=> [M|n M]; first constructor; rewrite ?sorted_nil ?mxE ?unitmx1 //.
+case=> [M|n M /=]; first constructor; rewrite ?sorted_nil ?mxE ?unitmx1 //.
   rewrite [M]thinmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
   by case:(i == j :> nat).
-rewrite /Smith -{1}/Smith.
 case:pickP=>[[i j] HMij | H].
-  case:improve_pivotP=> [||L A R0 HA Hdiv HAi0 HA00]; rewrite ?mxE ?tpermR ?leqnn //.
+  case:improve_pivotP; rewrite ?mxE ?tpermR ?leqnn //.
+  rewrite -[m.+1]/(1 + m)%N -[n.+1]/(1 + n)%N => L A R0 HA Hdiv HAi0 HA00.
   set A' := map_mx _ _; set v' := map_mx _ _.
   case:IHn=> L' d R' Hd Hsorted HL' HR' HL HR.
   constructor.
@@ -518,7 +397,7 @@ case:pickP=>[[i j] HMij | H].
       by rewrite (nth_map 0 _ _ Hk) mulrC.
     by rewrite !nth_default ?size_map ?Hk // mulr0.
   * have {HA00}HA00: A 0 0 != 0.
-      by apply/eqP=> H; move:HA00; rewrite H dvd0r !mxE !tpermR (negbTE HMij).
+      by apply/eqP=> H; move:HA00; rewrite H dvd0r (negbTE HMij).
     rewrite /= path_min_sorted; last by move=> a /mapP [b _ ->]; exact:dvdr_mull.
     case: d Hsorted {Hd} => //= a d; elim: d a=> //= a1 d IHd a0 /andP[a01 /IHd].
     by rewrite dvdr_mul2r ?a01.
@@ -532,84 +411,6 @@ by case:(i == j :> nat); rewrite ?nth_nseq ?if_same nth_nil.
 Qed.
 
 End smith_def.
-
-Section Smith_seqmx.
-
-Variable A : Type.
-
-Variable egcd : A -> A -> A * A * A * A * A.
-Variable odvd : A -> A -> option A.
-Variable enorm : A -> nat.
-
-Import Refinements.Op.
-
-Context `{add A, mul A, one A, zero A, dvd A, opp A, sub A, eq A}.
-
-Fixpoint find_pivot_seqmx_aux j (r : seq A) {struct r} : option (nat * A) :=
-  if r is x::r' then
-    if (x == 0)%C then find_pivot_seqmx_aux j.+1 r' else Some (j, x)
-  else None.
-
-Fixpoint find_pivot_seqmx i (M : seqmatrix A) {struct M} : option (nat * nat * A) :=
-    if M is s::M' then
-      if find_pivot_seqmx_aux 0%N s is Some (j, x) then Some (i, j, x)
-      else find_pivot_seqmx i.+1 M'
-    else None.
-
-Fixpoint Smith_seqmx_rec m n (L M R : seqmatrix A) : seqmatrix A * seq A * seqmatrix A :=
-  match m, n with
-  | p.+1, q.+1 =>
-    if find_pivot_seqmx 0 M is Some (i, j, a) then
-      let offsety := size L - m in
-      let offsetx := size R - n in
-      let M := xrowseqmx i 0 (xcolseqmx j 0 M) in 
-      let L := xrowseqmx (offsety + i) offsety L in
-      let R := xcolseqmx (offsetx + j) offsetx R in
-      let: (L,M,R) := improve_pivot_seqmx A egcd odvd L M R (enorm a) in
-      let a := head 0%C (head [::] M) in
-      let u := dlsubseqmx 1 1 M in let v := ursubseqmx 1 1 M in
-      let v' := map_seqmx (fun x => odflt 0 (odvd x a))%C v in
-      let M := (drsubseqmx 1 1 M - mulseqmx 1 q (const_seqmx p 1 1) v)%C in
-      let vL := nth [::] L offsety in let mL := size L in
-      let L' := mulseqmx 1 mL (col_seqmx (const_seqmx offsety.+1 1 0%C) (const_seqmx p 1 1%C)) [:: vL] in
-      let L := (L - L')%C in
-(*      let L := col_seqmx vL (dsubseqmx 1 L - L')%C in *)
-      let uR := map (fun s => [:: nth 0%C s offsetx]) R in let nR := size R in
-      let R' := mulseqmx 1 q uR (row_seqmx (const_seqmx 1 offsetx.+1 0%C) v') in
-      let R := (R - R')%C in
-      let: (L,d,R) := Smith_seqmx_rec p q L (map_seqmx (fun x => odflt 0 (odvd x a))%C M) R in
-      (L, a :: [seq x * a | x <- d]%C, R)
-    else
-      (L, [::], R)
-  | _, _ => (L, [::], R)
-  end.
-
-Definition Smith_seqmx (M : seqmatrix A) :=
-  let m := size M in let n := size (head [::] M) in
-  Smith_seqmx_rec m n (scalar_seqmx m 1%C) M (scalar_seqmx n 1%C).
-
-(*
-Fixpoint Smith {m n} : 'M_(m,n) -> 'M_(m) * seq R * 'M_(n) :=
-  match m, n return 'M_(m, n) -> 'M_(m) * seq R * 'M_(n) with
-  | _.+1, _.+1 => fun A : 'M_(1 + _, 1 + _) =>
-      if [pick ij | A ij.1 ij.2 != 0] is Some (i, j) then
-      let a := A i j in let A := xrow i 0 (xcol j 0 A) in
-      (* this is where Euclidean norm eases termination argument *)
-      let:(L,A,R) := improve_pivot (enorm a) A in 
-      let a := A 0 0 in
-      let u := dlsubmx A in let v := ursubmx A in
-      let v' := map_mx (fun x => odflt 0 (x %/? a)) v in
-      let A := (drsubmx A) - (const_mx 1 *m v) in
-      let:(L', d, R') := Smith (map_mx (fun x => odflt 0 (x %/? a)) A) in
-      (lift0_mx L' *m block_mx 1 0 (-const_mx 1) 1%:M *m (xcol i 0 L),
-       a :: [seq x * a | x <- d],
-       (xrow j 0 R) *m block_mx 1 (-v') 0 1%:M *m lift0_mx R')
-    else (1%:M, [::], 1%:M)
-  | _, _ => fun A => (1%:M, [::], 1%:M)
-  end.
-*)
-
-End Smith_seqmx.
 
 Section bench.
 
