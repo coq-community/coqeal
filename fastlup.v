@@ -128,9 +128,9 @@ End prelude.
 
 Section fast_triangular.
 
-Variable F : fieldType.
-
 Local Coercion nat_of_pos : positive >-> nat.
+
+Section fast_triangular_generic.
 
 Lemma addpp p : xO p = (p + p)%N :> nat.
 Proof. by rewrite /= NatTrec.trecE addnn. Qed.
@@ -152,19 +152,36 @@ Qed.
 Lemma predpK (p : positive) : p.-1.+1 = p.
 Proof. exact/prednK/lt0p. Qed.
 
-Local Open Scope ring_scope.
+Local Open Scope computable_scope.
+Local Open Scope hetero_computable_scope.
 
-(* xI p case is wrong for now *)
-Fixpoint upper_tri_inv {n : positive} :=
-  match n return let M := 'M[F]_n in M -> M with
-  | xH => fun A => (A 0 0)^-1%:M
-  | xO p => fun A => let A := castmx (addpp _, addpp _) A in
-            let iA1 := upper_tri_inv (ulsubmx A) in
-            let iA3 := upper_tri_inv (drsubmx A) in
-            let R := Strassen _ (Strassen _ (- iA1) (ursubmx A)) iA3 in
-            castmx (esym (addpp _), esym (addpp _)) (block_mx iA1 R 0 iA3)
-  | xI p => fun A => let A := castmx (addpp1 _, addpp1 _) A in
-            let iA1 := upper_tri_inv (ulsubmx A) in
+Import Refinements.Op.
+
+Variable A : Type.
+Variable ordA : nat -> Type.
+Variable mxA : nat -> nat -> Type.
+
+Context `{forall n, zero (ordA n.+1)}.
+Context `{inv A}.
+Context `{!hzero mxA, !hone mxA, !hadd mxA, !hopp mxA, !hsub mxA, !hmul mxA}.
+Context `{!ulsub mxA, !ursub mxA, !dlsub mxA, !drsub mxA, !block mxA}.
+Context `{!lsub mxA, !rsub mxA, !row mxA}.
+Context `{!fun_of A ordA mxA, !scalar A mxA, !hcast mxA}.
+
+Typeclasses eauto := debug.
+
+(* The type annotation in the last branch is required to prevent typechecking *)
+(* from diverging... *)
+Fixpoint upper_tri_inv {n : positive} : mxA n n -> mxA n n :=
+  match n return let M := mxA n n in M -> M with
+  | xH => fun A => (fun_of_matrix A 0%C 0%C)^-1%:M
+  | xO p => fun A => let A := castmx (addpp p, addpp p) A in
+            let iA1 := @upper_tri_inv p (ulsubmx A) in
+            let iA3 := @upper_tri_inv p (drsubmx A) in
+            let R := Strassen (Strassen (- iA1) (ursubmx A)) iA3 in
+            castmx (esym (addpp p), esym (addpp p)) (block_mx iA1 R 0 iA3)
+  | xI p => fun (A' : mxA (xI p) (xI p)) => let A := castmx (addpp1 p, addpp1 p) A' in
+            let iA1 := @upper_tri_inv p (ulsubmx A) in
             let A2 := ursubmx A in
             let lA2 := lsubmx A2 in
             let rA2 := rsubmx A2 in
@@ -172,42 +189,86 @@ Fixpoint upper_tri_inv {n : positive} :=
             let A3ul := ulsubmx A3 in
             let A3ur := ursubmx A3 in
             let A3dr := drsubmx A3 in
-            let iA3ul := upper_tri_inv A3ul in
-            let iA3dr := (A3dr 0 0)^-1%:M in (* Could be improved *)
+            let iA3ul := @upper_tri_inv p A3ul in
+            let iA3dr := (fun_of_matrix A3dr 0%C 0%C)^-1%:M in (* Could be improved *)
             let R3 := - iA3ul *m A3ur *m iA3dr in
             let iA3 := block_mx iA3ul R3 0 iA3dr in
             let R := row_mx (- iA1 *m lA2 *m iA3ul)
-              (Strassen _ (Strassen _ iA1 lA2) iA3ul *m A3ur *m iA3dr +
+              (Strassen (Strassen iA1 lA2) iA3ul *m A3ur *m iA3dr +
               - iA1 *m rA2 *m iA3dr)
             in
-            castmx (esym (addpp1 _), esym (addpp1 _)) (block_mx iA1 R 0 iA3)
+            castmx (esym (addpp1 p), esym (addpp1 p)) (block_mx iA1 R (0 : mxA (p + 1) p) iA3)
   end.
 
-(*
-Fixpoint upper_tri_inv {n : positive} :=
-  match n return let M := 'M[F]_n in M -> M with
-  | xH => fun A => (A 0 0)^-1%:M
-  | xO p => fun A => let A := castmx (addpp _, addpp _) A in
-            let iA1 := tri_inv (ulsubmx A) in
-            let iA2 := tri_inv (drsubmx A) in
-            let R := - Strassen _ (Strassen _ iA2 (dlsubmx A)) iA1 in
-            castmx (esym (addpp _), esym (addpp _)) (block_mx iA1 0 R iA2)
-  | xI p => fun A => let A := castmx (addpp1 _, addpp1 _) A in
-            let iA1 := tri_inv (ulsubmx A) in
-            let A2 := drsubmx A in
-            let dlA2 := dlsubmx A2 in
-            let drA2 := drsubmx A2 in
-            let ulA2 := ulsubmx A2 in
-            let iulA2 := tri_inv ulA2 in
-            let R' := - drA2 *m dlA2 *m iulA2 in
-            let iA2 := block_mx iulA2 0 R' (drA2 0 0)^-1%:M in
-            let A3 := dlsubmx A in
-            let uA3 := usubmx A3 in let dA3 := dsubmx A3 in
-            let uR := Strassen _ (Strassen _ ulA2 uA3) iA1 in
-            let dR := (dlA2 *m uA3 + drA2 *m dA3) *m iA1 in
-            castmx (esym (addpp1 _), esym (addpp1 _)) (block_mx iA1 0 (- col_mx uR dR) iA2)
-  end.
-*)
+End fast_triangular_generic.
+
+Section fast_triangular_correctness.
+
+Variable F : fieldType.
+
+Instance : Refinements.Op.inv F := GRing.inv.
+Instance zero_ordinal n : Refinements.Op.zero (@ordinal n.+1) := 0%R.
+Instance zero_mx : Refinements.Op.hzero (matrix F) := fun m n => 0%R.
+Instance : Refinements.Op.hadd (matrix F) := @addmx F.
+Instance : Refinements.Op.hopp (matrix F) := @oppmx F.
+Instance : Refinements.Op.hsub (matrix F) := (fun _ _ M N => addmx M (oppmx N)).
+Instance : Refinements.Op.hmul (matrix F) := @mulmx F.
+Instance : Refinements.Op.hcast (matrix F) := @matrix.castmx F.
+Instance : Refinements.Op.ulsub (matrix F) := @matrix.ulsubmx F.
+Instance : Refinements.Op.ursub (matrix F) := @matrix.ursubmx F.
+Instance : Refinements.Op.dlsub (matrix F) := @matrix.dlsubmx F.
+Instance : Refinements.Op.drsub (matrix F) := @matrix.drsubmx F.
+Instance : Refinements.Op.block (matrix F) := @matrix.block_mx F.
+Instance : Refinements.Op.lsub (matrix F) := @matrix.lsubmx F.
+Instance : Refinements.Op.rsub (matrix F) := @matrix.rsubmx F.
+Instance : Refinements.Op.row (matrix F) := @matrix.row_mx F.
+Instance : Refinements.Op.scalar F (matrix F) := @matrix.scalar_mx F.
+Instance : Refinements.Op.fun_of F (@ordinal) (matrix F) := (@matrix.fun_of_matrix F).
+
+Ltac simpC2 :=
+  do ?[ rewrite -[0%C]/0%R | rewrite -[1%C]/1%R
+      | rewrite -[(_ + _)%C]/(_ + _)%R
+      | rewrite -[(_ + _)%C]/(_ + _)%N
+      | rewrite -[(- _)%C]/(- _)%R
+      | rewrite -[(_ - _)%C]/(_ - _)%R
+      | rewrite -[(_ - _)%C]/(_ - _)%N
+      | rewrite -[(_ * _)%C]/(_ * _)%R
+      | rewrite -[(_ * _)%C]/(_ * _)%N
+      | rewrite -[_^-1%C]/(_^-1%R)
+      | rewrite -[(_ *: _)%C]/(_ *: _)%R
+      | rewrite -[(_ / _)%C]/(_ / _)%R
+      | rewrite -[(_ == _)%C]/(_ == _)%bool
+      | rewrite -[(_ <= _)%C]/(_ <= _)%R
+      | rewrite -[(_ < _)%C]/(_ < _)%R
+      | rewrite -[(_ <= _)%C]/(_ <= _)%N
+      | rewrite -[(_ < _)%C]/(_ < _)%N
+      | rewrite -[0%HC]/(const_mx 0)
+      | rewrite -[1%HC]/1%R
+(* Missing in simpC *) | rewrite -[_%:M%HC]/(_%:M%R)
+(* To be removed *) | rewrite -[_%:M%C]/(_%:M%R)
+      | rewrite -[(- _)%HC]/(- _)%R
+      | rewrite -[(_ + _)%HC]/(_ + _)%R
+      | rewrite -[(_ - _)%HC]/(_ - _)%R
+      | rewrite -[Refinements.Op.hsub_op _ _]/(fun _ _ => addmx _ (oppmx _))
+      | rewrite -[Refinements.Op.heq_op _ _]/(_ == _)%bool
+      | rewrite -[(_ *m _)%HC]/(_ *m _)%R
+(* To be removed *)      | rewrite -[Refinements.Op.hmul_op _ _]/(mulmx _ _)
+(* To be removed *)      | rewrite -[Refinements.Op.hadd_op _ _]/(addmx _ _)
+(* To be removed *)      | rewrite -[Refinements.Op.hopp_op _]/(oppmx _)
+      | rewrite -[Refinements.Op.invmx _]/(invmx _)
+      | rewrite -[Refinements.Op.castmx _ _]/(castmx _ _)
+      | rewrite -[Refinements.Op.usubmx _]/(usubmx _)
+      | rewrite -[Refinements.Op.dsubmx _]/(dsubmx _)
+      | rewrite -[Refinements.Op.lsubmx _]/(lsubmx _)
+      | rewrite -[Refinements.Op.rsubmx _]/(rsubmx _)
+      | rewrite -[Refinements.Op.ulsubmx _]/(ulsubmx _)
+      | rewrite -[Refinements.Op.ursubmx _]/(ursubmx _)
+      | rewrite -[Refinements.Op.dlsubmx _]/(dlsubmx _)
+      | rewrite -[Refinements.Op.drsubmx _]/(drsubmx _)
+      | rewrite -[Refinements.Op.row_mx _ _]/(row_mx _ _)
+      | rewrite -[Refinements.Op.col_mx _ _]/(col_mx _ _)
+      | rewrite -[Refinements.Op.block_mx _ _ _ _]/(block_mx _ _ _ _)
+      | rewrite -[Refinements.Op.fun_of_matrix _]/(fun_of_matrix _)].
 
 Lemma upper_tri_invP (p : positive) (M : 'M[F]_p) :
   M \in unitmx -> upper_triangular_mx M -> upper_tri_inv M = invmx M.
@@ -232,8 +293,10 @@ elim: p M => [p IHp|p IHp|] M unitM triM.
   rewrite /=; apply/esym/castmx_sym/esym.
   have->: castmx (addpp1 p, addpp1 p) (invmx M) = invmx (castmx (addpp1 p, addpp1 p) M).
     by case: _ / (addpp1 p).
-  rewrite -{1}[castmx _ _]submxK Mdl0 invmx_ublock // !IHp // !StrassenP.
+(* TODO revert -!StrassenP to !StrassenP *)
+  rewrite -{1}[castmx _ _]submxK Mdl0 invmx_ublock // !IHp // -!StrassenP.
   rewrite -{1 2}[drsubmx _]submxK Mdrdl0 invmx_ublock //.
+simpC2.
   rewrite -invmx_scalar -mx11_scalar.
   congr block_mx.
   rewrite -{1}[ursubmx _]hsubmxK mul_mx_row mul_row_block.
@@ -249,10 +312,12 @@ elim: p M => [p IHp|p IHp|] M unitM triM.
   rewrite unitmxE det_ublock GRing.unitrM; case/andP => unitMul unitMdr.
   have triMdr := (upper_triangular_block_mxdr triM (leqnn _)).
   have triMul := (upper_triangular_block_mxul triM).
-  rewrite /= !IHp // !StrassenP; apply/esym/castmx_sym.
-  by rewrite -invmx_ublock // -Mdl0 submxK; case: _ / (addpp p).
+  rewrite /= !IHp // -!StrassenP; apply/esym/castmx_sym.
+  by simpC2; rewrite -invmx_ublock // -Mdl0 submxK; case: _ / (addpp p).
 by rewrite {2}[M]mx11_scalar invmx_scalar.
 Qed.
+
+End fast_triangular_correctness.
 
 End fast_triangular.
 
@@ -291,7 +356,7 @@ Fixpoint lup {m : positive} {n : nat} :=
         let V2 := upper_tri_inv V1 in
         let B2 := castmx (erefl _, esym (subnKC (leqW lt_mn))) B2 in
         let C := lsubmx B2 in let D := rsubmx B2 in
-        let C1 := Strassen _ C V2 in
+        let C1 := Strassen C V2 in
         let F := C1 *m B in (* Should it be Strassen here? *)
         let E := castmx (erefl _, subSn lt_mn) (D - F) in
         if lup E is Some (L2, U2, P2) then
@@ -350,24 +415,7 @@ elim: m n M => [p IHp|p IHp|] n M pickf rk_M /=.
   suff: False => //.
   move/negP: lt_np.
 rewrite -ltnNge.
-have := (rank_leq_col M).
-rewrite rk_M.
-rewrite addpp.
-move=> H.
-move/(leq_trans H).
-rewrite -{3}(addn0 p).
-rewrite leq_add2l leqn0.
-rewrite eqn0Ngt.
-by rewrite lt0p.
-
-set C := lsubmx _.
-set D := rsubmx _.
-set V1 := lsubmx _.
-set B := rsubmx _.
-set E := castmx _ _.
-rewrite StrassenP.
-rewrite upper_tri_invP.
-
+rewrite rank_leq_col.
 
 case: pickf => [i /= nz_m0i0|eq_M0].
   constructor.

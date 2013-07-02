@@ -620,10 +620,10 @@ Local Notation "x %| y" := (dvd_op x y) : computable_scope.
 
 (* Heterogeneous operations *)
 (* Represent a pre-additive category *)
-Class hzero {I} B := hzero_op : forall m n : I, B m n.
+Class hzero {I} B := hzero_op : forall {m n : I}, B m n.
 Local Notation "0" := hzero_op : hetero_computable_scope.
 
-Class hone {I} B := hone_op : forall n : I, B n n.
+Class hone {I} B := hone_op : forall {n : I}, B n n.
 Local Notation "!" := hone_op : hetero_computable_scope.
 
 Class hadd {I} B := hadd_op : forall m n : I, B m n -> B m n -> B m n.
@@ -646,17 +646,30 @@ Class heq {I} B := heq_op : forall m n : I, B m n -> B m n -> bool.
 Local Notation "==%HC" := heq_op.
 Local Notation "x == y" := (heq_op x y) : hetero_computable_scope.
 
-Class hcast {I} B := hcast_op : forall m n m' n' : I,
+Class hcast {I} B := castmx : forall m n m' n' : I,
   (m = m') * (n = n') -> B m n -> B m' n'.
 
 (* Surgery on matrix-like data types *)
 Local Open Scope nat_scope.
+Class usub B := usubmx : forall (m1 m2 n : nat), B (m1 + m2) n -> B m1 n.
+Class dsub B := dsubmx : forall (m1 m2 n : nat), B (m1 + m2) n -> B m2 n.
+Class lsub B := lsubmx : forall (m n1 n2 : nat), B m (n1 + n2) -> B m n1.
+Class rsub B := rsubmx : forall (m n1 n2 : nat), B m (n1 + n2) -> B m n2.
 Class ulsub B := ulsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n1.
 Class ursub B := ursubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n2.
 Class dlsub B := dlsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n1.
 Class drsub B := drsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
+Class row B := row_mx : forall (m n1 n2 : nat),
+  B m n1 -> B m n2 -> B m (n1 + n2).
+Class col B := col_mx : forall (m1 m2 n : nat),
+  B m1 n -> B m2 n -> B (m1 + m2) n.
 Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
   B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
+
+Class fun_of A I B :=
+  fun_of_matrix : forall (m n : nat), B m n -> I m -> I n -> A.
+
+Class scalar A B := scalar_op : forall {n : nat}, A -> B n n.
 
 Class spec_of (A B : Type) := spec : A -> B.
 (* Class implem_of A B := implem : A -> B. *)
@@ -694,16 +707,17 @@ Notation "x > y"  := (lt_op y x)  (only parsing) : computable_scope.
 Notation "x >= y" := (leq_op y x) (only parsing) : computable_scope.
 Notation cast := (@cast_op _).
 Notation "x %| y" := (dvd_op x y)   : computable_scope.
-
 Notation "0"      := hzero_op        : hetero_computable_scope.
 Notation "1"      := hone_op         : hetero_computable_scope.
 Notation "-%HC"    := hopp_op.
 Notation "- x"    := (hopp_op x)     : hetero_computable_scope.
-Notation "x ^-1"  := (hinv_op x)     : hetero_computable_scope.
 Notation "+%HC"    := hadd_op.
 Notation "x + y"  := (hadd_op x y)   : hetero_computable_scope.
 Notation "x - y"  := (hsub_op x y)   : hetero_computable_scope.
 Notation "x == y" := (heq_op x y)    : hetero_computable_scope.
+Notation "a %:M"  := (scalar_op a)   : hetero_computable_scope.
+Notation "*m%C"   := hmul_op.
+Notation "x *m y" := (hmul_op x y)   : hetero_computable_scope.
 
 Ltac simpC :=
   do ?[ rewrite -[0%C]/0%R | rewrite -[1%C]/1%R
@@ -727,14 +741,21 @@ Ltac simpC :=
       | rewrite -[hone_op _]/1%R
       | rewrite -[hadd_op _ _]/(addmx _ _)
       | rewrite -[hsub_op _ _]/(fun _ _ => addmx _ (oppmx _))
-      | rewrite -[hmul_op _ _]/(mulmx _ _)
       | rewrite -[heq_op _ _]/(_ == _)%bool
-      | rewrite -[hcast_op _ _]/(castmx _ _)
+      | rewrite -[hmul_op _ _]/(mulmx _ _)
+      | rewrite -[castmx _ _]/(matrix.castmx _ _)
+      | rewrite -[usubmx _]/(matrix.usubmx _)
+      | rewrite -[dsubmx _]/(matrix.dsubmx _)
+      | rewrite -[lsubmx _]/(matrix.lsubmx _)
+      | rewrite -[rsubmx _]/(matrix.rsubmx _)
       | rewrite -[ulsubmx _]/(matrix.ulsubmx _)
       | rewrite -[ursubmx _]/(matrix.ursubmx _)
       | rewrite -[dlsubmx _]/(matrix.dlsubmx _)
       | rewrite -[drsubmx _]/(matrix.drsubmx _)
-      | rewrite -[block_mx _ _ _ _]/(matrix.block_mx _ _ _ _)].
+      | rewrite -[row_mx _ _]/(matrix.row_mx _ _)
+      | rewrite -[col_mx _ _]/(matrix.col_mx _ _)
+      | rewrite -[block_mx _ _ _ _]/(matrix.block_mx _ _ _ _)
+      | rewrite -[fun_of_matrix _]/(matrix.fun_of_matrix _)].
 
 (* Opacity of ssr symbols *)
 Typeclasses Opaque eqtype.eq_op.

@@ -98,15 +98,15 @@ Definition Strassen_step {p : positive} (A B : mxA (p + p) (p + p))
 Definition Strassen_xO {p : positive} Strassen_p :=
   fun A B =>
     if p <= K then hmul_op A B else
-    let A := hcast_op (addpp p,addpp p) A in
-    let B := hcast_op (addpp p,addpp p) B in
-    hcast_op (esym (addpp p), esym (addpp p)) (Strassen_step A B Strassen_p).
+    let A := castmx (addpp p,addpp p) A in
+    let B := castmx (addpp p,addpp p) B in
+    castmx (esym (addpp p), esym (addpp p)) (Strassen_step A B Strassen_p).
   
 Definition Strassen_xI {p : positive} Strassen_p :=
    fun M N =>
     if p <= K then hmul_op M N else
-    let M := hcast_op (addpp1 p, addpp1 p) M in
-    let N := hcast_op (addpp1 p, addpp1 p) N in
+    let M := castmx (addpp1 p, addpp1 p) M in
+    let N := castmx (addpp1 p, addpp1 p) N in
     let M11 := ulsubmx M in
     let M12 := ursubmx M in
     let M21 := dlsubmx M in
@@ -119,7 +119,7 @@ Definition Strassen_xI {p : positive} Strassen_p :=
     let R12 := hadd_op (hmul_op M11 N12) (hmul_op M12 N22) in
     let R21 := hadd_op (hmul_op M21 N11) (hmul_op M22 N21) in
     let R22 := hadd_op (hmul_op M21 N12) (hmul_op M22 N22) in
-    hcast_op (esym (addpp1 p), esym (addpp1 p)) (block_mx C R12 R21 R22).
+    castmx (esym (addpp1 p), esym (addpp1 p)) (block_mx C R12 R21 R22).
 
 Definition Strassen := 
   (positive_rect (fun p => (mxA p p -> mxA p p -> mxA p p))
@@ -143,7 +143,7 @@ Local Open Scope ring_scope.
 Instance : hadd (matrix R) := @addmx R.
 Instance : hsub (matrix R) := (fun _ _ M N => addmx M (oppmx N)).
 Instance : hmul (matrix R) := @mulmx R.
-Instance : hcast (matrix R) := @castmx R.
+Instance : hcast (matrix R) := @matrix.castmx R.
 Instance : ulsub (matrix R) := @matrix.ulsubmx R.
 Instance : ursub (matrix R) := @matrix.ursubmx R.
 Instance : dlsub (matrix R) := @matrix.dlsubmx R.
@@ -160,13 +160,12 @@ Qed.
 
 Lemma mulmx_cast {R' : ringType} {m n p m' n' p'} {M:'M[R']_(m,p)} {N:'M_(p,n)}
   {eqm : m = m'} (eqp : p = p') {eqn : n = n'} :
-  castmx (eqm,eqn) (M *m N) = castmx (eqm,eqp) M *m castmx (eqp,eqn) N.
+  matrix.castmx (eqm,eqn) (M *m N) = matrix.castmx (eqm,eqp) M *m matrix.castmx (eqp,eqn) N.
 Proof. by case eqm ; case eqn ; case eqp. Qed.
 
-Lemma StrassenP p : param (Logic.eq ==> Logic.eq ==> Logic.eq) mulmx (Strassen (p := p)).
+Lemma StrassenP p : mulmx =2 (Strassen (p := p)).
 Proof.
-rewrite paramE => a _ <- b _ <-.
-elim: p a b => // [p IHp|p IHp] M N.
+elim: p => // [p IHp|p IHp] M N.
   rewrite /= /Strassen_xI; case:ifP=> // _.
   by simpC; rewrite Strassen_stepP // -mulmx_block !submxK -mulmx_cast castmxK.
 rewrite /= /Strassen_xO; case:ifP=> // _.
@@ -192,7 +191,7 @@ Context `{!ulsub mxC, !ursub mxC, !dlsub mxC, !drsub mxC, !block mxC}.
 Instance : hadd (matrix A) := (fun _ _ => +%R).
 Instance : hsub (matrix A) := (fun _ _ M N => M - N)%R.
 Instance : hmul (matrix A) := @mulmx A.
-Instance : hcast (matrix A) := @castmx A.
+Instance : hcast (matrix A) := @matrix.castmx A.
 Instance : ulsub (matrix A) := @matrix.ulsubmx A.
 Instance : ursub (matrix A) := @matrix.ursubmx A.
 Instance : dlsub (matrix A) := @matrix.dlsubmx A.
@@ -205,8 +204,8 @@ Context `{forall m n, param (RmxA ==> RmxA ==> RmxA) (@hsub_op _ _ _ m n)
   (@hsub_op _ _ _ m n)}.
 Context `{forall m n p, param (RmxA ==> RmxA ==> RmxA) (@mulmx A m n p)
   (@hmul_op _ _ _ m n p)}.
-Context `{forall m n m' n' p, param (RmxA ==> RmxA) (@castmx A m n m' n' p)
-  (@hcast_op _ _ _ m n m' n' p)}.
+Context `{forall m n m' n' p, param (RmxA ==> RmxA) (@matrix.castmx A m n m' n' p)
+  (@castmx _ _ _ m n m' n' p)}.
 Context `{forall m n m' n', param (RmxA ==> RmxA ==> RmxA ==> RmxA ==> RmxA)
   (@matrix.block_mx A m n m' n')  (@block_mx _ _ m n m' n')}.
 Context `{forall m n m' n', param (RmxA ==> RmxA)
@@ -231,8 +230,6 @@ elim => [p ihp|p ihp|]; rewrite ?paramE //.
   by have := RI p; rewrite !paramE in ihp *; apply.
 by have := RO p; rewrite !paramE in ihp *; apply.
 Qed.
-
-Existing Instance StrassenP.
 
 Global Instance param_Strassen_step p :
    param (RmxA ==> RmxA ==> (RmxA ==> RmxA ==> RmxA) ==> RmxA)%rel
