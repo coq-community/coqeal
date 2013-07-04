@@ -5,6 +5,9 @@ Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
 Require Import perm zmodp matrix refinements.
 
+(** This file describes a formally verified implementation of Strassen's
+algorithm (Winograd's variant). *)
+
 Instance Zops (R : ringType) (n : nat) : @Ring_ops 'M[R]_n 0%R
   (scalar_mx 1) (@addmx R _ _) mulmx (fun M N => addmx M (oppmx N)) (@oppmx R _ _) eq.
 
@@ -46,8 +49,8 @@ Proof. by rewrite /= NatTrec.trecE addnn. Qed.
 Lemma addp1 p : xI p = (xO p + 1)%N :> nat.
 Proof. by rewrite addn1. Qed.
 
-Lemma addpp1 p : xI p = (p + p + 1)%N :> nat.
-Proof. by rewrite /= NatTrec.trecE addnn addn1. Qed.
+Lemma add1pp p : xI p = (1 + (p + p))%N :> nat.
+Proof. by rewrite /= NatTrec.trecE addnn. Qed.
 
 Lemma lt0p : forall p : positive, 0 < p.
 Proof.
@@ -105,8 +108,8 @@ Definition Strassen_xO {p : positive} Strassen_p :=
 Definition Strassen_xI {p : positive} Strassen_p :=
    fun M N =>
     if p <= K then hmul_op M N else
-    let M := castmx (addpp1 p, addpp1 p) M in
-    let N := castmx (addpp1 p, addpp1 p) N in
+    let M := castmx (add1pp p, add1pp p) M in
+    let N := castmx (add1pp p, add1pp p) N in
     let M11 := ulsubmx M in
     let M12 := ursubmx M in
     let M21 := dlsubmx M in
@@ -115,11 +118,11 @@ Definition Strassen_xI {p : positive} Strassen_p :=
     let N12 := ursubmx N in
     let N21 := dlsubmx N in
     let N22 := drsubmx N in
-    let C := hadd_op (Strassen_step M11 N11 Strassen_p) (hmul_op M12 N21) in
+    let R11 := hadd_op (hmul_op M11 N11) (hmul_op M12 N21) in
     let R12 := hadd_op (hmul_op M11 N12) (hmul_op M12 N22) in
     let R21 := hadd_op (hmul_op M21 N11) (hmul_op M22 N21) in
-    let R22 := hadd_op (hmul_op M21 N12) (hmul_op M22 N22) in
-    castmx (esym (addpp1 p), esym (addpp1 p)) (block_mx C R12 R21 R22).
+    let R22 := hadd_op (hmul_op M21 N12) (Strassen_step M22 N22 Strassen_p) in
+    castmx (esym (add1pp p), esym (add1pp p)) (block_mx R11 R12 R21 R22).
 
 Definition Strassen := 
   (positive_rect (fun p => (mxA p p -> mxA p p -> mxA p p))
@@ -249,3 +252,132 @@ by apply (param_elim_positive (fun _ => _) (fun _ => _)); tc.
 Qed.
 
 End strassen_param.
+
+(* We now provide an (unverified) version of Strassen for rectangular matrices *)
+Section strassen_rectangular.
+
+Import Refinements.Op.
+
+Open Scope computable_scope.
+Open Scope hetero_computable_scope.
+
+Local Coercion nat_of_pos : positive >-> nat.
+
+Let K := 32%positive.
+
+Variable mxA : nat -> nat -> Type.
+
+Context `{!hadd mxA, !hsub mxA, !hmul mxA, !hcast mxA}.
+Context `{!ulsub mxA, !ursub mxA, !dlsub mxA, !drsub mxA, !block mxA}.
+Context `{!usub mxA, !dsub mxA, !lsub mxA, !rsub mxA, !row mxA, !col mxA}.
+
+Definition Strassen_rectangular_step {m n p : positive}
+  (A : mxA (m + m) (n + n)) (B : mxA (n + n) (p + p))
+  (f : mxA m n -> mxA n p -> mxA m p) : mxA (m + m) (p + p) :=
+  let A11 := ulsubmx A in
+  let A12 := ursubmx A in
+  let A21 := dlsubmx A in
+  let A22 := drsubmx A in
+  let B11 := ulsubmx B in
+  let B12 := ursubmx B in
+  let B21 := dlsubmx B in
+  let B22 := drsubmx B in
+  let X := hsub_op A11 A21 in
+  let Y := hsub_op B22 B12 in
+  let C21 := f X Y in
+  let X := hadd_op A21 A22 in
+  let Y := hsub_op B12 B11 in
+  let C22 := f X Y in
+  let X := hsub_op X A11 in
+  let Y := hsub_op B22 Y in
+  let C12 := f X Y in
+  let X := hsub_op A12 X in
+  let C11 := f X B22 in
+  let X := f A11 B11 in
+  let C12 := hadd_op X C12 in
+  let C21 := hadd_op C12 C21 in
+  let C12 := hadd_op C12 C22 in
+  let C22 := hadd_op C21 C22 in
+  let C12 := hadd_op C12 C11 in
+  let Y := hsub_op Y B21 in
+  let C11 := f A22 Y in
+  let C21 := hsub_op C21 C11 in
+  let C11 := f A12 B21 in
+  let C11 := hadd_op X C11 in
+  block_mx C11 C12 C21 C22.
+
+Fixpoint Strassen_rectangular {m n p : positive} :=
+  match m, n, p return mxA m n -> mxA n p -> mxA m p with
+  | xH, _, _ | _, xH, _ | _, _, xH => fun A B => A *m B
+  | xO m, xO n, xO p => fun A B =>
+    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
+    else let A := castmx (addpp m, addpp n) A in
+    let B := castmx (addpp n, addpp p) B in
+    castmx (esym (addpp m), esym (addpp p))
+      (Strassen_rectangular_step A B Strassen_rectangular)
+  | xI m, xO n, xO p => fun A B =>
+    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
+    else let A := castmx (add1pp m, addpp n) A in
+    let B := castmx (addpp n, addpp p) B in
+    let Au := usubmx A in let Ad := dsubmx A in
+    let C := Strassen_rectangular_step Ad B Strassen_rectangular in
+    castmx (esym (add1pp m), esym (addpp p)) (col_mx (Au *m B) C)
+  | xO m, xI n, xO p => fun A B =>
+    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
+    else let A := castmx (addpp m, add1pp n) A in
+    let B := castmx (add1pp n, addpp p) B in
+    let Al := lsubmx A in let Ar := rsubmx A in
+    let Bu := usubmx B in let Bd := dsubmx B in
+    let C := Strassen_rectangular_step Ar Bd Strassen_rectangular in
+    castmx (esym (addpp m), esym (addpp p)) (Al *m Bu + C)
+  | xO m, xO n, xI p => fun A B =>
+    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
+    else let A := castmx (addpp m, addpp n) A in
+    let B := castmx (addpp n, add1pp p) B in
+    let Bl := lsubmx B in let Br := rsubmx B in
+    let C := Strassen_rectangular_step A Br Strassen_rectangular in
+    castmx (esym (addpp m), esym (add1pp p)) (row_mx (A *m Bl) C)
+  | xI m, xI n, xO p => fun A B =>
+    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
+    else let A := castmx (add1pp m, add1pp n) A in
+    let B := castmx (add1pp n, addpp p) B in
+    let Aul := ulsubmx A in let Aur := ursubmx A in
+    let Adl := dlsubmx A in let Adr := drsubmx A in
+    let Bu := usubmx B in let Bd := dsubmx B in
+    let C := Strassen_rectangular_step Adr Bd Strassen_rectangular in
+    castmx (esym (add1pp m), esym (addpp p))
+      (col_mx (Aul *m Bu + Aur *m Bd) (Adl *m Bu + C))
+  | xI m, xO n, xI p => fun A B =>
+    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
+    else let A := castmx (add1pp m, addpp n) A in
+    let B := castmx (addpp n, add1pp p) B in
+    let Au := usubmx A in let Ad := dsubmx A in
+    let Bl := lsubmx B in let Br := rsubmx B in
+    let C := Strassen_rectangular_step Ad Br Strassen_rectangular in
+    castmx (esym (add1pp m), esym (add1pp p))
+      (block_mx (Au *m Bl) (Au *m Br) (Ad *m Bl) C)
+  | xO m, xI n, xI p => fun A B =>
+    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
+    else let A := castmx (addpp m, add1pp n) A in
+    let B := castmx (add1pp n, add1pp p) B in
+    let Al := lsubmx A in let Ar := rsubmx A in
+    let Bul := ulsubmx B in let Bur := ursubmx B in
+    let Bdl := dlsubmx B in let Bdr := drsubmx B in
+    let C := Strassen_rectangular_step Ar Bdr Strassen_rectangular in
+    castmx (esym (addpp m), esym (add1pp p))
+      (row_mx (Al *m Bul + Ar *m Bdl) (Al *m Bur + C))
+  | xI m, xI n, xI p => fun A B =>
+    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
+    else let A := castmx (add1pp m, add1pp n) A in
+    let B := castmx (add1pp n, add1pp p) B in
+    let Aul := ulsubmx A in let Aur := ursubmx A in
+    let Adl := dlsubmx A in let Adr := drsubmx A in
+    let Bul := ulsubmx B in let Bur := ursubmx B in
+    let Bdl := dlsubmx B in let Bdr := drsubmx B in
+    let C := Strassen_rectangular_step Adr Bdr Strassen_rectangular in
+    castmx (esym (add1pp m), esym (add1pp p))
+      (block_mx (Aul *m Bul + Aur *m Bdl) (Aul *m Bur + Aur *m Bdr)
+        (Adl *m Bul + Adr *m Bdl) (Adl *m Bur + C))
+  end.
+
+End strassen_rectangular.
