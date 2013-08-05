@@ -21,5 +21,5 @@ Definition N := S2.1.
 Eval native_compute in ignore M.
 Eval native_compute in ignore N.
 
-Definition P := mulseqmx n n M N.
+Definition P := @mulseqmx _ _ _ _ n n n M N.
 Time Eval native_compute in ignore P.

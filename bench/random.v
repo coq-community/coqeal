@@ -27,3 +27,7 @@ Fixpoint random_mx_rec {T: Type} (world : Stream T) (s : seq (seq T)) (m n : nat
   end.
 
 Definition random_mx (m n : nat) := random_mx_rec (rand 943876 3571 1009) [::] m n.
+
+Definition even (x : int) := Int31Native.eqb (Int31Native.mod x 2) 0.
+
+Definition random_mx_bool (m n : nat) := map (map even) (random_mx m n).1.

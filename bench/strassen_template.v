@@ -23,5 +23,5 @@ Definition N := S2.1.
 Eval native_compute in ignore M.
 Eval native_compute in ignore N.
 
-Definition P := Strassen_seqmx K int p M N.
+Definition P := Strassen K (p := p) M N.
 Time Eval native_compute in ignore P.
