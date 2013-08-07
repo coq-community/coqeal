@@ -152,6 +152,15 @@ Qed.
 Lemma predpK (p : positive) : p.-1.+1 = p.
 Proof. exact/prednK/lt0p. Qed.
 
+Lemma foo {n p} : p <= n -> (p + (n - p).+1 = n.+1)%N.
+Proof.
+by move=> le_pn; rewrite -subSn // subnKC //; apply: ltnW.
+Qed.
+
+Lemma bar {n p : positive} : p <= n -> (n.+1 - p)%N = Pos.succ (Pos.sub n p).
+admit.
+Qed.
+
 Local Open Scope computable_scope.
 Local Open Scope hetero_computable_scope.
 
@@ -165,10 +174,8 @@ Context `{forall n, zero (ordA n.+1)}.
 Context `{inv A}.
 Context `{!hzero mxA, !hone mxA, !hadd mxA, !hopp mxA, !hsub mxA, !hmul mxA}.
 Context `{!ulsub mxA, !ursub mxA, !dlsub mxA, !drsub mxA, !block mxA}.
-Context `{!lsub mxA, !rsub mxA, !row mxA}.
+Context `{!lsub mxA, !rsub mxA, !usub mxA, !dsub mxA, !row mxA}.
 Context `{!fun_of A ordA mxA, !scalar A mxA, !hcast mxA}.
-
-Typeclasses eauto := debug.
 
 (* The type annotation in the last branch is required to prevent typechecking *)
 (* from diverging... *)
@@ -199,6 +206,90 @@ Fixpoint upper_tri_inv {n : positive} : mxA n n -> mxA n n :=
             in
             castmx (esym (addpp1 p), esym (addpp1 p)) (block_mx iA1 R (0 : mxA (p + 1) p) iA3)
   end.
+
+Variable permA : nat -> Type.
+Variable f : forall n, mxA 1 n -> option (ordA n).
+
+Context `{forall n, one (permA n)}.
+Context `{xcol_class ordA mxA}.
+Context `{forall n, tperm_class (ordA n) (permA n)}.
+Context `{col_perm_class permA mxA}.
+Context `{forall n, mul (permA n)}.
+Context `{col mxA, forall m n, scale A (mxA m n)}.
+Variable perm_union : forall m n : nat, permA m -> permA n -> permA (m + n).
+Variable cast_perm : forall m n : nat, m = n -> permA m -> permA n.
+
+(*
+Print HintDb typeclass_instances.
+*)
+
+Lemma pos_of_natS m : m.+1 = (Pos.of_nat m.+1).
+Proof.
+admit.
+Qed.
+
+Definition Strassen_rectangular_nat (m n p : nat) (A : mxA m.+1 n.+1)
+  (B : mxA n.+1 p.+1) :=
+    let A := castmx (pos_of_natS _, pos_of_natS _) A in
+    let B := castmx (pos_of_natS _, pos_of_natS _) B in
+    let C := Strassen_rectangular A B in
+    castmx (esym (pos_of_natS _), esym (pos_of_natS _)) C.
+
+Definition lup_step {p : positive} {n : nat} (A : mxA (p + p) n.+1)
+  (lup : forall {m : positive} {n : nat}, mxA m n.+1 -> option (mxA m m * mxA m n.+1 * permA n.+1)) :=
+  if lup (usubmx A) is Some (L1, U1, P1) then
+    let B2 := col_perm P1 (dsubmx A) in (* P1^-1 ? *)
+    if @idP (p <= n)%N is ReflectT lt_mn then
+      let U1 := castmx (erefl (p:nat), esym (subnKC (leqW lt_mn))) U1 in
+      let V1 := lsubmx U1 in let B := rsubmx U1 in
+      let V2 := upper_tri_inv V1 in
+      let B2 := castmx (erefl (p:nat), esym (subnKC (leqW lt_mn))) B2 in
+      let C := lsubmx B2 in let D := rsubmx B2 in
+      let C1 := Strassen C V2 in
+      let C1' := castmx (esym (predpK p), esym (predpK p)) C1 in
+      let B := castmx (erefl (p:nat), subSn lt_mn) B in
+      let B' := castmx (esym (predpK p), erefl (n-p).+1) B in
+      let F := Strassen_rectangular_nat C1' B' in
+      let F := castmx (predpK p, erefl (n-p).+1) F in
+      let E := castmx (erefl (p:nat), subSn lt_mn) D - F in
+      if lup E is Some (L2, U2, P2) then
+        let B2 := col_perm P2 B in (* P2^-1 ?*)
+        let P := (P1 * cast_perm (foo lt_mn) (@perm_union p _ 1 P2))%C in
+        let L := castmx (esym (addpp p), esym (addpp p)) (block_mx L1 (0 : mxA p p) C1 L2) in
+        let U := castmx (esym (addpp p), foo lt_mn) (block_mx V1 B2 (0 : mxA p p) U2) in
+        Some (L,U,P)
+      else None
+    else None
+  else None.
+
+Fixpoint lup {m : positive} {n : nat} :=
+  match m return mxA m n.+1 -> option (mxA m m * mxA m n.+1 * permA n.+1) with
+  | xH => fun A =>
+    if f A is Some i then
+      let U := xcol 0%C i A in
+      let P := tperm 0%C i in
+      Some (1, U, P)
+    else None
+  | xO p => fun A =>
+    let A := castmx (addpp p, erefl _) A in
+    lup_step A (@lup)
+  | xI p => fun A =>
+    let A := castmx (add1pp p, erefl n.+1) A in
+    let A1 := usubmx A in let A2 := dsubmx A in
+    if f A1 is Some i then
+      let U1 := xcol 0%C i A1 in
+      let P1 := tperm 0%C i in
+      let v1 := fun_of_matrix U1 0%C 0%C in
+      let B := rsubmx (U1 : mxA _ (1 + n)) in
+      let B2 := col_perm P1 A2 : mxA _ (1+ n) in (* P1^-1? *)
+      let C := lsubmx B2 in let D := rsubmx B2 in
+      let C1 := v1^-1 *: C in
+      let E := D - C1 *m B in
+      if lup_step E lup is Some (L2,U2,P2) then None
+      else None
+    else None
+end.
+
 
 End fast_triangular_generic.
 
