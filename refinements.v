@@ -671,6 +671,21 @@ Class fun_of A I B :=
 
 Class scalar A B := scalar_op : forall {n : nat}, A -> B n n.
 
+Class tperm_class A S :=
+  tperm : A -> A -> S.
+
+Class xrow_class I B :=
+  xrow : forall (m n : nat), I m -> I m -> B m n -> B m n.
+
+Class xcol_class I B :=
+  xcol : forall (m n : nat), I n -> I n -> B m n -> B m n.
+
+Class row_perm_class S B :=
+  row_perm : forall (m n : nat), S m -> B m n -> B m n.
+
+Class col_perm_class S B :=
+  col_perm : forall (m n : nat), S n -> B m n -> B m n.
+
 Class spec_of (A B : Type) := spec : A -> B.
 (* Class implem_of A B := implem : A -> B. *)
 Definition spec_id {A : Type} : spec_of A A := id.
