@@ -803,7 +803,7 @@ Global Instance refines_xcolseqmx m n :
         (@xcol _ m n) (@xcolseqmx _ _).
 Proof.
 apply param_abstr2 => i i' ri j j' rj.
-move: ri rj; rewrite {1 2}paramE => [[<-] [<-]] {i' j'}.
+move: ri rj; rewrite {1 2}paramE => [<- <-] {i' j'}.
 apply param_abstr => x a rxa; rewrite paramE.
 apply/refines_seqmxP=> [|k Hk|k l].
 + by rewrite size_map sizeE.
