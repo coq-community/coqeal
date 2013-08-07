@@ -119,7 +119,7 @@ Proof. by rewrite paramE. Qed.
 Local Instance refines_embedq :
   param (Logic.eq ==> Rrat) intr (cast : int -> Q _).
 Proof. 
-rewrite paramE => n ? [<-].
+rewrite paramE => n ? <-.
 by rewrite /refines /Rrat /ofun_hrel /cast /embedQ /= /Qint_to_rat /= mulr1.
 Qed.
 
