@@ -1,8 +1,6 @@
-Require Import BigQ.
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
-Require Import mxalgebra perm zmodp matrix ssrint refinements cperm seqmatrix.
-Require Import boolF2 bigQrat.
+Require Import mxalgebra perm zmodp matrix ssrint refinements funperm seqmatrix.
 
 Section generic_Gaussian_elim.
 
@@ -46,12 +44,12 @@ Fixpoint cormen_lup {m n} :=
     let k := odflt (ord0 _) (f _ _ A) in
     let A1 : mxA (1 + _) (1 + _) := xrow (ord0 _) k A in
     let P1 : permA (1 + _) := tperm (ord0 _) k in
-    let Schur := hmul_op ((getmxA A k (ord0 _))^-1 *: dlsub_op A1) (ursub_op A1) in
-    let: (P2, L2, U2) := cormen_lup (hsub_op (drsub_op A1) Schur) in
+    let Schur := hmul_op ((getmxA A k (ord0 _))^-1 *: dlsubmx A1) (ursubmx A1) in
+    let: (P2, L2, U2) := cormen_lup (hsub_op (drsubmx A1) Schur) in
     let P := perm_comp (lift0_perm P2) P1 in
-    let pA1 := row_perm P2 (dlsub_op A1) in
-    let L := block_op (scalar_mx 1%N 1%C) (const_mx _ _ 0%C) ((getmxA A k (ord0 _))^-1 *: pA1) L2 in
-    let U := block_op (ulsub_op A1) (ursub_op A1) (const_mx _ _ 0%C) U2 in
+    let pA1 := row_perm P2 (dlsubmx A1) in
+    let L := block_mx (scalar_mx 1%N 1%C) (const_mx _ _ 0%C) ((getmxA A k (ord0 _))^-1 *: pA1) L2 in
+    let U := block_mx (ulsubmx A1) (ursubmx A1) (const_mx _ _ 0%C) U2 in
     (P, L, U)
   | _, _ => fun A => (perm1, scalar_mx _ 1%C, A)
   end.
@@ -75,28 +73,28 @@ Instance : forall m n, scale F 'M[F]_(m,n) := fun m n => (@GRing.scale _ _).
 Instance : hadd (matrix F) := @addmx F.
 Instance : hsub (matrix F) := (fun _ _ M N => M - N).
 Instance : hmul (matrix F) := @mulmx F.
-Instance : hcast (matrix F) := @castmx F.
-Instance : ulsub (matrix F) := @ulsubmx F.
-Instance : ursub (matrix F) := @ursubmx F.
-Instance : dlsub (matrix F) := @dlsubmx F.
-Instance : drsub (matrix F) := @drsubmx F.
-Instance : block (matrix F) := @block_mx F.
+Instance : hcast (matrix F) := @matrix.castmx F.
+Instance : ulsub (matrix F) := @matrix.ulsubmx F.
+Instance : ursub (matrix F) := @matrix.ursubmx F.
+Instance : dlsub (matrix F) := @matrix.dlsubmx F.
+Instance : drsub (matrix F) := @matrix.drsubmx F.
+Instance : block (matrix F) := @matrix.block_mx F.
 
 Definition f : forall m n, 'M[F]_(m.+1,n.+1) -> option 'I_(1 + m) :=
   fun m n A => [pick k | A k 0 != 0].
 
-Definition cormen_lupF {m n} (M : 'M_(m.+1,n.+1)) := cormen_lup F (matrix F) ordinal (fun n => 'S_n) f (@xrow F) (fun n => tperm) (fun n => @perm_mul _) lift0_perm (@fun_of_matrix F) (fun n => perm_one _) (@scalar_mx _) (@const_mx _) (@row_perm _) (@ord0) M.
+Definition cormen_lupF {m n} (M : 'M_(m.+1,n.+1)) := cormen_lup F (matrix F) ordinal (fun n => 'S_n) f (@matrix.xrow F) (fun n => perm.tperm) (fun n => @perm_mul _) lift0_perm (@matrix.fun_of_matrix F) (fun n => perm_one _) (@scalar_mx _) (@const_mx _) (@matrix.row_perm _) (@ord0) M.
 
 Lemma cormen_lup_correct n (A : 'M_n.+1) :
-  let: (P, L, U) := cormen_lupF A in row_perm P A = L * U.
+  let: (P, L, U) := cormen_lupF A in matrix.row_perm P A = L * U.
 Proof.
 elim: n => [|n IHn] /= in A *; first by rewrite row_perm1 mul1r.
 simpC.
 (* Why do we have to do this ? *)
 rewrite /hsub_op /hsub_instance_0.
-rewrite /block_op /block_instance_0.
+rewrite /block_mx /block_instance_0.
 (*********)
-set k := odflt _ _; set A1 : 'M_(1 + _) := xrow _ _ _.
+set k := odflt _ _; set A1 : 'M_(1 + _) := matrix.xrow _ _ _.
 set A' := _ - _; move/(_ A'): IHn; case: cormen_lupF => [[P' L' U']] /= IHn.
 (* glueing code *)
 rewrite row_permM !row_permE.
@@ -107,11 +105,11 @@ rewrite -!mulmxE -xrowE -/A1 /= -[n.+2]/(1 + n.+1)%N -{1}(submxK A1).
 rewrite !mulmx_block !mul0mx !mulmx0 !add0r !addr0 !mul1mx -{L' U'}[L' *m _]IHn.
 rewrite row_permE /scale_op /scale_instance_0.
 rewrite -scalemxAl !scalemxAr -!mulmxA addrC -mulrDr {A'}subrK.
-congr (block_mx _ _ (_ *m _) _).
+congr (matrix.block_mx _ _ (_ *m _) _).
 rewrite [_ *: _]mx11_scalar !mxE lshift0 tpermL {}/A1 {}/k.
 rewrite /f.
 case: pickP => /= [k nzAk0 | no_k]; first by rewrite mulVf ?mulmx1.
-rewrite (_ : dlsubmx _ = 0) ?mul0mx //; apply/colP=> i.
+rewrite (_ : matrix.dlsubmx _ = 0) ?mul0mx //; apply/colP=> i.
 by rewrite !mxE lshift0 (elimNf eqP (no_k _)).
 Qed.
 
@@ -162,7 +160,7 @@ Fixpoint find_pivot_seqmx j (r : seqmatrix A) {struct r} : option nat :=
     if (head 0 x == 0)%C then find_pivot_seqmx j.+1 r' else Some j
   else None.
 
-Definition cormen_lup_seqmx (m n : nat) (M : seqmatrix A) := cormen_lup A (hseqmatrix A) (fun _ => nat) (fun n => nat -> nat) (fun _ _ => find_pivot_seqmx 0) (fun _ _ => @xrowseqmx A) (fun _ => ctperm) (fun _ => cperm_comp) (fun _ => lift0_cperm) (fun _ _ A i j => nth 0%C (nth [::] A i) j) (fun n => id) (fun n => scalar_seqmx n) (fun m n => const_seqmx m n) (fun m _ => row_perm_seqmx m) (fun _ => 0%N) (m := m) (n := n) M.
+Definition cormen_lup_seqmx (m n : nat) (M : seqmatrix A) := cormen_lup A (fun _ _ => seqmatrix A) (fun _ => nat) (fun n => nat -> nat) (fun _ _ => find_pivot_seqmx 0) (fun _ _ => @xrowseqmx A) (fun _ => ctperm) (fun _ => cperm_comp) (fun _ => lift0_cperm) (fun _ _ A i j => nth 0%C (nth [::] A i) j) (fun n => id) (fun n => scalar_seqmx n) (fun m n => const_seqmx m n) (fun m _ => row_perm_seqmx m) (fun _ => 0%N) (m := m) (n := n) M.
 
 (*
 Fixpoint cormen_lup_seqmx m n :=
@@ -185,6 +183,35 @@ Fixpoint cormen_lup_seqmx m n :=
 
 End Gaussian_elim_seqmx.
 
+Require Import Int31 intmodp.
+
+Section bench_modular.
+
+Open Scope int31_scope.
+
+Definition test : seqmatrix int :=
+[::[::690;556;422;654;425;281;168;498;599;950];
+[::310;847;143;689;803;759;756;495;683;887];
+[::208;266;777;214;448;111;262;275;155;198];
+[::391;971;366;980;433;321;941;290;831;717];
+[::117;312;978;612;270;812;571;980;501;432];
+[::548;929;906;192;246;966;516;461;956;816];
+[::742;295;642;315;209;815;849;438;558;821];
+[::616;425;889;412;173;881;994;641;128;389];
+[::252;838;677;255;709;909;726;735;33;729];
+[::109;396;461;863;240;397;409;120;998;990]].
+
+Definition res := cormen_lup_seqmx int 9 9 test.
+
+Eval native_compute in ignore res.
+
+Definition res_test := eq_seqmx (m := 10%nat) (n := 10%nat) (row_perm_seqmx 10 res.1.1 test) (mulseqmx (m := 10%nat) (n := 10%nat) (p := 10%nat) res.1.2 res.2).
+
+Eval native_compute in res_test.
+
+End bench_modular.
+
+(*
 Section bench.
 
 Local Open Scope bigQ_scope.
@@ -456,3 +483,4 @@ Definition M1 :=
   [::2%:Q;1%:Q;1%:Q]].
 
 Eval compute in gaussseqmx _ 3 3 M1.*)
+*)
