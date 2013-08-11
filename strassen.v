@@ -8,6 +8,10 @@ Require Import perm zmodp matrix refinements.
 (** This file describes a formally verified implementation of Strassen's
 algorithm (Winograd's variant). *)
 
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
 Instance Zops (R : ringType) (n : nat) : @Ring_ops 'M[R]_n 0%R
   (scalar_mx 1) (@addmx R _ _) mulmx (fun M N => addmx M (oppmx N)) (@oppmx R _ _) eq.
 
@@ -59,6 +63,9 @@ Qed.
 
 Import Refinements.Op.
 
+Open Scope computable_scope.
+Open Scope hetero_computable_scope.
+
 Variable mxA : nat -> nat -> Type.
 
 Context `{!hadd mxA, !hsub mxA, !hmul mxA, !hcast mxA}.
@@ -74,29 +81,32 @@ Definition Strassen_step {p : positive} (A B : mxA (p + p) (p + p))
   let B12 := ursubmx B in
   let B21 := dlsubmx B in
   let B22 := drsubmx B in
-  let X := hsub_op A11 A21 in
-  let Y := hsub_op B22 B12 in
+  let X := A11 - A21 in
+  let Y := B22 - B12 in
   let C21 := f X Y in
-  let X := hadd_op A21 A22 in
-  let Y := hsub_op B12 B11 in
+  let X := A21 + A22 in
+  let Y := B12 - B11 in
   let C22 := f X Y in
-  let X := hsub_op X A11 in
-  let Y := hsub_op B22 Y in
+  let X := X - A11 in
+  let Y := B22 - Y in
   let C12 := f X Y in
-  let X := hsub_op A12 X in
+  let X := A12 - X in
   let C11 := f X B22 in
   let X := f A11 B11 in
-  let C12 := hadd_op X C12 in
-  let C21 := hadd_op C12 C21 in
-  let C12 := hadd_op C12 C22 in
-  let C22 := hadd_op C21 C22 in
-  let C12 := hadd_op C12 C11 in
-  let Y := hsub_op Y B21 in
+  let C12 := X + C12 in
+  let C21 := C12 + C21 in
+  let C12 := C12 + C22 in
+  let C22 := C21 + C22 in
+  let C12 := C12 + C11 in
+  let Y := Y - B21 in
   let C11 := f A22 Y in
-  let C21 := hsub_op C21 C11 in
+  let C21 := C21 - C11 in
   let C11 := f A12 B21 in
-  let C11 := hadd_op X C11 in
+  let C11 := X + C11 in
   block_mx C11 C12 C21 C22.
+
+Close Scope computable_scope.
+Close Scope hetero_computable_scope.
 
 Definition Strassen_xO {p : positive} Strassen_p :=
   fun A B =>
@@ -248,7 +258,7 @@ Proof.
 rewrite /Strassen /Strassen_xI /Strassen_xO; eapply get_param.
 rewrite -[X in getparam X]/((fun p : positive =>
          @RmxA p p ==> @RmxA p p ==> @RmxA p p)%rel p).
-by apply (param_elim_positive (fun _ => _) (fun _ => _)); tc.
+by apply (@param_elim_positive (fun _ => _) (fun _ => _)); tc.
 Qed.
 
 End strassen_param.
@@ -269,7 +279,8 @@ Variable mxA : nat -> nat -> Type.
 
 Context `{!hadd mxA, !hsub mxA, !hmul mxA, !hcast mxA}.
 Context `{!ulsub mxA, !ursub mxA, !dlsub mxA, !drsub mxA, !block mxA}.
-Context `{!usub mxA, !dsub mxA, !lsub mxA, !rsub mxA, !row mxA, !col mxA}.
+Context `{!usub mxA, !dsub mxA, !lsub mxA, !rsub mxA}.
+Context `{!row_mx_class mxA, !col_mx_class mxA}.
 
 Definition Strassen_rectangular_step {m n p : positive}
   (A : mxA (m + m) (n + n)) (B : mxA (n + n) (p + p))
@@ -282,28 +293,28 @@ Definition Strassen_rectangular_step {m n p : positive}
   let B12 := ursubmx B in
   let B21 := dlsubmx B in
   let B22 := drsubmx B in
-  let X := hsub_op A11 A21 in
-  let Y := hsub_op B22 B12 in
+  let X := A11 - A21 in
+  let Y := B22 - B12 in
   let C21 := f X Y in
-  let X := hadd_op A21 A22 in
-  let Y := hsub_op B12 B11 in
+  let X := A21 + A22 in
+  let Y := B12 - B11 in
   let C22 := f X Y in
-  let X := hsub_op X A11 in
-  let Y := hsub_op B22 Y in
+  let X := X - A11 in
+  let Y := B22 - Y in
   let C12 := f X Y in
-  let X := hsub_op A12 X in
+  let X := A12 - X in
   let C11 := f X B22 in
   let X := f A11 B11 in
-  let C12 := hadd_op X C12 in
-  let C21 := hadd_op C12 C21 in
-  let C12 := hadd_op C12 C22 in
-  let C22 := hadd_op C21 C22 in
-  let C12 := hadd_op C12 C11 in
-  let Y := hsub_op Y B21 in
+  let C12 := X + C12 in
+  let C21 := C12 + C21 in
+  let C12 := C12 + C22 in
+  let C22 := C21 + C22 in
+  let C12 := C12 + C11 in
+  let Y := Y - B21 in
   let C11 := f A22 Y in
-  let C21 := hsub_op C21 C11 in
+  let C21 := C21 - C11 in
   let C11 := f A12 B21 in
-  let C11 := hadd_op X C11 in
+  let C11 := X - C11 in
   block_mx C11 C12 C21 C22.
 
 Fixpoint Strassen_rectangular {m n p : positive} :=
