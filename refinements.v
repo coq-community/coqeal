@@ -561,6 +561,33 @@ Proof. by rewrite paramE; move => [] _ <- ??? ???. Qed.
 
 Hint Extern 1 (getparam _ _ _) => eapply param_if: typeclass_instances.
 
+Section param_option.
+Context {A B : Type} (rAB : A -> B -> Prop).
+
+Fixpoint ohrel sa sb : Prop :=
+  match sa, sb with
+    | None,   None   => True
+    | Some a, Some b => rAB a b
+    | _,      _      => False
+  end.
+
+Global Instance param_None : getparam ohrel None None.
+Proof. by rewrite paramE. Qed.
+
+Lemma param_Some : (rAB ==> ohrel)%rel some some.
+Proof. by []. Qed.
+
+End param_option.
+
+Arguments param_Some {_ _ _ _ _ _}.
+
+(*
+This hint is too aggressively applied
+
+Hint Extern 1 (getparam _ _ _) =>
+  eapply param_Some : typeclass_instances.
+*)
+
 Module Refinements.
 
 Module Op.
@@ -659,12 +686,20 @@ Class ulsub B := ulsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> 
 Class ursub B := ursubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n2.
 Class dlsub B := dlsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n1.
 Class drsub B := drsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
-Class row B := row_mx : forall (m n1 n2 : nat),
+Class row_mx_class B := row_mx : forall (m n1 n2 : nat),
   B m n1 -> B m n2 -> B m (n1 + n2).
-Class col B := col_mx : forall (m1 m2 n : nat),
+Class col_mx_class B := col_mx : forall (m1 m2 n : nat),
   B m1 n -> B m2 n -> B (m1 + m2) n.
 Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
   B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
+
+Class row_class I B := row : forall (m n : nat), I m -> B m n -> B 1 n.
+
+Class col_class I B := col : forall (m n : nat), I n -> B m n -> B m 1.
+
+Class row'_class I B := row' : forall (m n : nat), I m -> B m n -> B (predn m) n.
+
+Class col'_class I B := col' : forall (m n : nat), I n -> B m n -> B m (predn n).
 
 Class fun_of A I B :=
   fun_of_matrix : forall (m n : nat), B m n -> I m -> I n -> A.
@@ -733,6 +768,7 @@ Notation "x == y" := (heq_op x y)    : hetero_computable_scope.
 Notation "a %:M"  := (scalar_op a)   : hetero_computable_scope.
 Notation "*m%C"   := hmul_op.
 Notation "x *m y" := (hmul_op x y)   : hetero_computable_scope.
+Notation "x '.(' i ',' j ')'" := (fun_of_matrix x i j) (at level 10) : computable_scope.
 
 Ltac simpC :=
   do ?[ rewrite -[0%C]/0%R | rewrite -[1%C]/1%R
