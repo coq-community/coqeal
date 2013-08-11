@@ -31,7 +31,7 @@ Context `{forall m, zero (ordA (1 + m))}.
 Context `{row_class ordA mxA, row'_class ordA mxA, !hmul mxA, rsub mxA}.
 Context `{!hsub mxA, forall m n, scale A (mxA m n), lsub mxA}.
 
-Variable find_pivot : forall m n, mxA m n -> option (ordA m).
+Variable find_pivot : forall m n, mxA m n.+1 -> option (ordA m).
 
 Fixpoint rank_elim {m n : nat} : mxA m n -> nat :=
   match n return mxA m n -> nat with
@@ -108,15 +108,16 @@ Proof.
 by apply/matrixP=> i j; rewrite !mxE ord1 lshift0 lift_perm_id.
 Qed.
 
-Definition find_pivot m n :=
-  if n is O return 'M[F]_(m,n) -> option 'I_m then fun _ => None
-  else fun M => [pick k | M k 0 != 0].
+Variable find_pivot : forall m n, 'M[F]_(m,n.+1) -> option 'I_m.
+
+Hypothesis find_pivotP : forall m n (M : 'M_(m, n.+1)),
+  pick_spec [pred k | M k 0 != 0] (find_pivot M).
 
 Lemma rank_elimP m n (M : 'M[F]_(m,n)) : rank_elim find_pivot M = \rank M.
 Proof.
 elim: n m M => [m M|n IHn m]; first by rewrite thinmx0 mxrank0.
 rewrite -[n.+1]/(1 + n)%N => M /=.
-have [|nz_Mk0] /= := pickP; last first.
+have [|nz_Mk0] /= := find_pivotP; last first.
   rewrite -{2}[M]hsubmxK.
   have->: lsubmx M = 0.
     apply/matrixP => i j; rewrite !mxE ord1 lshift0.
@@ -141,6 +142,8 @@ Qed.
 
 End rank_correctness.
 
+Arguments rank_elim A mxA ordA {_ _ _ _ _ _ _ _ _ _} _ m n _.
+
 Section rank_param.
 
 Import Refinements.Op.
@@ -149,18 +152,19 @@ Local Open Scope ring_scope.
 
 Variable F : fieldType.
 
-Context (mxC : nat -> nat -> Type) (ordC : nat -> Type)
-        (RmxA : forall {m n}, 'M[F]_(m, n) -> mxC m n -> Prop)
-        (RordC : forall m, 'I_m -> ordC m -> Prop).
+Context (mxA : nat -> nat -> Type) (ordA : nat -> Type)
+        (RmxA : forall {m n}, 'M[F]_(m, n) -> mxA m n -> Prop)
+        (RordA : forall m, 'I_m -> ordA m -> Prop).
 
 Arguments RmxA {m n} _ _.
-Arguments RordC {m} _ _.
+Arguments RordA {m} _ _.
 
-Context `{!hadd mxC, !hsub mxC, !hmul mxC, !lsub mxC, !rsub mxC}.
-Context `{row_class ordC mxC, row'_class ordC mxC, fun_of F ordC mxC}.
-Context `{forall m, zero (ordC (1 + m))}.
-Context `{find_pivotC : forall m n : nat, mxC m n -> option (ordC m)}.
-Context `{forall m n : nat, scale F (mxC m n)}.
+Context `{!hadd mxA, !hsub mxA, !hmul mxA, !lsub mxA, !rsub mxA}.
+Context `{row_class ordA mxA, row'_class ordA mxA, fun_of F ordA mxA}.
+Context `{forall m, zero (ordA (1 + m))}.
+Context `{find_pivotC : forall m n : nat, mxA m n.+1 -> option (ordA m)}.
+
+Context `{forall m n : nat, scale F (mxA m n)}.
 
 Instance : zero F := 0%R.
 Instance : inv F := GRing.inv.
@@ -181,6 +185,17 @@ Instance : block (matrix F) := @matrix.block_mx F.
 Instance : row_class ordinal (matrix F) := (@matrix.row F).
 Instance : row'_class ordinal (matrix F) := (@matrix.row' F).
 
+Fixpoint find_pivot_rec k {m n} (M : 'M[F]_(m.+1,n.+1)) :=
+  if k is k'.+1 return option 'I_m.+1 then
+    if M (inord (m - k)) 0 != 0 then Some (inord (m - k))
+    else find_pivot_rec k' M
+  else None.
+
+Definition find_pivot m n :=
+  if m is m'.+1 return 'M_(m,n.+1) -> option 'I_m then
+    find_pivot_rec m
+  else fun _ => None.
+
 Context `{forall m n, param (RmxA ==> RmxA ==> RmxA) +%R
   (@hadd_op _ _ _ m n)}.
 Context `{forall m n, param (RmxA ==> RmxA ==> RmxA) (@hsub_op _ _ _ m n)
@@ -192,21 +207,16 @@ Context `{forall m n m', param (RmxA ==> RmxA)
 Context `{forall m n m', param (RmxA ==> RmxA)
   (@matrix.rsubmx F m n m') (@rsubmx _ _ m n m')}.
 
-(*
-Context `{find_pivotP : forall m n (M : mxC m n),
-  pick_spec [pred k | fun_of_matrix M k 0 != 0] (find_pivotC M)}.
-*)
-
-Context `{forall m n, param (RmxA ==> RordC ==> RordC ==> Logic.eq)
+Context `{forall m n, param (RmxA ==> RordA ==> RordA ==> Logic.eq)
   (@matrix.fun_of_matrix F m n) (@fun_of_matrix _ _ _ _ m n)}.
 
-Context `{forall m n, param (RmxA ==> ohrel RordC)
-  (@find_pivot F m n) (@find_pivotC m n)}.
+Context `{forall m n, param (RmxA ==> ohrel RordA)
+  (@find_pivot m n) (@find_pivotC m n)}.
 
-Context `{forall m n, param (RordC ==> RmxA ==> RmxA)
+Context `{forall m n, param (RordA ==> RmxA ==> RmxA)
   (@matrix.row F m n) (@row _ _ _ m n)}.
 
-Context `{forall m n, param (RordC ==> RmxA ==> RmxA)
+Context `{forall m n, param (RordA ==> RmxA ==> RmxA)
   (@matrix.row' F m n) (@row' _ _ _ m n)}.
 
 Context `{forall m n, param (Logic.eq ==> @RmxA m n ==> RmxA)
@@ -215,7 +225,7 @@ Context `{forall m n, param (Logic.eq ==> @RmxA m n ==> RmxA)
 Context `{!param (Logic.eq ==> Logic.eq)
   (@GRing.inv _) (@inv_op _ _)}.
 
-Context `{forall m, param (@RordC (1 + m)) 0%R 0%C}.
+Context `{forall m, param (@RordA (1 + m)) 0%R 0%C}.
 
 Instance param_addn : param (Logic.eq ==> Logic.eq ==> Logic.eq) addn addn.
 by rewrite paramE => * ? ? -> ? ? ->.
@@ -228,19 +238,19 @@ Hint Extern 1 (getparam _ _ _) =>
 
 Global Instance param_rank_elim m n :
    param (RmxA ==> Logic.eq)%rel
-         (@rank_elim F (matrix F) _ _ _ _ _ _ _ _ _ _ _ (@find_pivot F) m n)
-         (@rank_elim F mxC _ _ _ _ _ _ _ _ _ _ _ find_pivotC m n).
+         (rank_elim F (matrix F) ordinal find_pivot m n)
+         (rank_elim F mxA ordA find_pivotC m n).
 Proof.
 elim: n m => [|n IHn] m; first exact: get_param.
 rewrite /=.
 eapply param_abstr=> x a param_xa.
-move: (H10 m n.+1).
+move: (H10 m n).
 move: (param_xa) => ?.
 rewrite 2!paramE in param_xa *.
 move/(_ x a param_xa) => /=.
-case: pickP => [??|].
+case: (find_pivot x) => [?|].
 case: (find_pivotC a) => pa //=.
-rewrite -[RordC]paramE => RordCxpa.
+rewrite -[RordA]paramE => RordAxpa.
 eapply param_apply.
   eapply param_apply; first exact param_addn.
   exact: param_eq.
@@ -284,7 +294,7 @@ eapply param_apply.
 by tc.
 by tc.
 
-case: (find_pivotC a) => // _ _.
+case: (find_pivotC a) => // _.
 eapply param_apply.
 by tc.
 eapply param_apply.
