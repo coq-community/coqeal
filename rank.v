@@ -302,6 +302,8 @@ by tc.
 by tc.
 Qed.
 
+End rank_param.
+
 (*
 Notation "n %:F2" := (n%R : 'F_2) (at level 2, left associativity, format "n %:F2").
 
