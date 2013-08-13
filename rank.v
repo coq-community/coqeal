@@ -136,7 +136,7 @@ have hD : row_full D.
 rewrite -(eqmxMfull xM hD) -[xM]submxK mulmx_block !mul1mx !mul0mx !addr0.
 rewrite scaleNr mulNmx [ulsubmx xM]mx11_scalar !mxE !lshift0 lift_perm_id.
 rewrite mul_mx_scalar scalerA divrr ?unitfE // scale1r addNr rank_block0dl //.
-rewrite {3}/xM /drsubmx /dlsubmx. -row'_row_perm addrC /ursubmx -row_row_perm.
+rewrite {3}/xM /drsubmx /dlsubmx -row'_row_perm addrC /ursubmx -row_row_perm.
 by rewrite mulNmx.
 Qed.
 
