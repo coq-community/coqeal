@@ -1,6 +1,6 @@
 -R . CoqEAL
-# ssrcomplements.v
-# mxstructure.v
+ssrcomplements.v
+mxstructure.v
 # dvdring.v
 # bareiss.v
 binnat.v
@@ -16,14 +16,16 @@ seqpoly.v
 hpoly.v
 pos.v
 seqmatrix.v
+intmodp.v
 # boolF2.v
-# funperm.v
-# rank.v
+funperm.v
+rank.v
+gauss.v
 strassen.v
-
 binint_test.v
 seqmatrix_test.v
 # strassen_test.v
 
-OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
+#OTHERFLAGS = "-I $(SSRSRC) -I $(SSRLIB)"
+OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect"
 COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"
