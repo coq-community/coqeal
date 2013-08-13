@@ -11,47 +11,44 @@ Import Refinements.Op.
 Variable mxA : nat -> nat -> Type.
 Variable ordA : nat -> Type.
 Variable permA : nat -> Type.
-Variable f : forall m n, mxA m.+1 n.+1 -> option (ordA (1 + m)).
-
-Variable xrow : forall m n, ordA m -> ordA m -> mxA m n -> mxA m n.
-Variable tperm : forall n, ordA n -> ordA n -> permA n.
-Variable perm_comp : forall n, permA n -> permA n -> permA n.
-Variable lift0_perm : forall n, permA n -> permA n.+1.
-Variable getmxA : forall m n, mxA m n -> ordA m -> ordA n -> A.
-Variable perm1 : forall n, permA n.
-Variable scalar_mx : forall n, A -> mxA n n.
-Variable const_mx : forall m n, A -> mxA m n.
-Variable row_perm : forall m n, permA m -> mxA m n -> mxA m n.
-Variable ord0 : forall n, ordA n.+1.
+Variable find_pivot : forall m n, mxA m.+1 n.+1 -> option (ordA (1 + m)).
 
 Context `{zero A, one A, inv A, forall m n, scale A (mxA m n)}.
 Context `{!hadd mxA, !hsub mxA, !hmul mxA, !hcast mxA}.
 Context `{!ulsub mxA, !ursub mxA, !dlsub mxA, !drsub mxA, !block mxA}.
 
-Arguments xrow {m n} _ _ _.
-Arguments tperm {n} _ _.
-Arguments perm_comp {n} _ _.
-Arguments lift0_perm {n} _.
-Arguments getmxA {m n} _ _ _.
-Arguments perm1 {n}.
-Arguments row_perm {m n} _ _.
+Context `{forall m, zero (ordA (1 + m))}.
+Context `{forall m, zero (ordA m.+1)}.
+Context `{xrow_class ordA mxA, row_perm_class permA mxA}.
+Context `{forall n, tperm_class (ordA n) (permA n)}.
+Context `{fun_of A ordA mxA, scalar_mx_class A mxA, lift0_perm_class permA}.
+Context `{forall n, mul (permA n)}.
+Context `{forall n, one (permA n)}.
+Context `{const_mx_class A mxA}.
 
+Arguments find_pivot {m n} _.
+
+Open Scope hetero_computable_scope.
 Open Scope computable_scope.
 
+Notation "''M_' ( m , n )" := (mxA m n) : type_scope.
+Notation "''M_' n" := (mxA n n) : type_scope.
+Notation "''S_' n" := (permA n) : type_scope.
+
 Fixpoint cormen_lup {m n} :=
-  match m, n return mxA m.+1 n.+1 -> permA m.+1 * mxA m.+1 m.+1 * mxA m.+1 n.+1 with
-  | _.+1, _.+1 => fun A =>
-    let k := odflt (ord0 _) (f _ _ A) in
-    let A1 : mxA (1 + _) (1 + _) := xrow (ord0 _) k A in
-    let P1 : permA (1 + _) := tperm (ord0 _) k in
-    let Schur := hmul_op ((getmxA A k (ord0 _))^-1 *: dlsubmx A1) (ursubmx A1) in
-    let: (P2, L2, U2) := cormen_lup (hsub_op (drsubmx A1) Schur) in
-    let P := perm_comp (lift0_perm P2) P1 in
+  match m, n return 'M_(m.+1,n.+1) -> 'S_m.+1 * 'M_(m.+1,m.+1) * 'M_(m.+1,n.+1) with
+  | p.+1, _.+1 => fun (A : 'M_(1 + (1 + p), 1 + _)) =>
+    let k := odflt 0 (find_pivot A) in
+    let A1 : 'M_(1 + _, 1 + _) := xrow 0 k A in
+    let P1 : 'S_(1 + (1 + p)) := tperm 0 k in
+    let Schur := ((fun_of_matrix A k 0)^-1 *: dlsubmx A1) *m ursubmx A1 in
+    let: (P2, L2, U2) := cormen_lup (drsubmx A1 - Schur)%HC in
+    let P := (lift0_perm P2) * P1 in
     let pA1 := row_perm P2 (dlsubmx A1) in
-    let L := block_mx (scalar_mx 1%N 1%C) (const_mx _ _ 0%C) ((getmxA A k (ord0 _))^-1 *: pA1) L2 in
-    let U := block_mx (ulsubmx A1) (ursubmx A1) (const_mx _ _ 0%C) U2 in
+    let L := block_mx 1%:M (const_mx 0) ((fun_of_matrix A k 0)^-1 *: pA1) L2 in
+    let U := block_mx (ulsubmx A1) (ursubmx A1) (const_mx 0) U2 in
     (P, L, U)
-  | _, _ => fun A => (perm1, scalar_mx _ 1%C, A)
+  | _, _ => fun A => (1, 1%:M, A)
   end.
 
 End generic_Gaussian_elim.
@@ -79,17 +76,31 @@ Instance : ursub (matrix F) := @matrix.ursubmx F.
 Instance : dlsub (matrix F) := @matrix.dlsubmx F.
 Instance : drsub (matrix F) := @matrix.drsubmx F.
 Instance : block (matrix F) := @matrix.block_mx F.
+Instance : xrow_class ordinal (matrix F) := @matrix.xrow F.
+Instance : forall n, tperm_class 'I_n 'S_n :=
+  fun n => perm.tperm : 'I_n -> 'I_n -> 'S_n.
+Instance : forall n, mul 'S_n := fun n => @perm_mul _.
+Instance : lift0_perm_class (fun n => 'S_n) := @matrix.lift0_perm.
+Instance : fun_of F ordinal (matrix F) := @matrix.fun_of_matrix F.
+Instance : forall n, one 'S_n := fun n => 1%g.
+Instance : scalar_mx_class F (matrix F) := @matrix.scalar_mx F.
+Instance : const_mx_class F (matrix F) := @matrix.const_mx F.
+Instance : row_perm_class (fun n => 'S_n) (matrix F) := @matrix.row_perm F.
+Instance : forall n, zero 'I_(1 + n) := fun n => 0%R.
+Instance : forall n, zero 'I_n.+1 := fun n => 0%R.
 
 Definition f : forall m n, 'M[F]_(m.+1,n.+1) -> option 'I_(1 + m) :=
   fun m n A => [pick k | A k 0 != 0].
 
-Definition cormen_lupF {m n} (M : 'M_(m.+1,n.+1)) := cormen_lup F (matrix F) ordinal (fun n => 'S_n) f (@matrix.xrow F) (fun n => perm.tperm) (fun n => @perm_mul _) lift0_perm (@matrix.fun_of_matrix F) (fun n => perm_one _) (@scalar_mx _) (@const_mx _) (@matrix.row_perm _) (@ord0) M.
+Definition cormen_lupF {m n} (M : 'M_(m.+1,n.+1)) :=
+  cormen_lup F (matrix F) ordinal (fun n => 'S_n) f M.
 
 Lemma cormen_lup_correct n (A : 'M_n.+1) :
   let: (P, L, U) := cormen_lupF A in matrix.row_perm P A = L * U.
 Proof.
 elim: n => [|n IHn] /= in A *; first by rewrite row_perm1 mul1r.
 simpC.
+rewrite /row_perm /row_perm_class_instance_0.
 (* Why do we have to do this ? *)
 rewrite /hsub_op /hsub_instance_0.
 rewrite /block_mx /block_instance_0.
@@ -104,6 +115,7 @@ rewrite /lift0_mx.
 rewrite -!mulmxE -xrowE -/A1 /= -[n.+2]/(1 + n.+1)%N -{1}(submxK A1).
 rewrite !mulmx_block !mul0mx !mulmx0 !add0r !addr0 !mul1mx -{L' U'}[L' *m _]IHn.
 rewrite row_permE /scale_op /scale_instance_0.
+rewrite /inv_op /inv_instance_0.
 rewrite -scalemxAl !scalemxAr -!mulmxA addrC -mulrDr {A'}subrK.
 congr (matrix.block_mx _ _ (_ *m _) _).
 rewrite [_ *: _]mx11_scalar !mxE lshift0 tpermL {}/A1 {}/k.
@@ -160,7 +172,39 @@ Fixpoint find_pivot_seqmx j (r : seqmatrix A) {struct r} : option nat :=
     if (head 0 x == 0)%C then find_pivot_seqmx j.+1 r' else Some j
   else None.
 
-Definition cormen_lup_seqmx (m n : nat) (M : seqmatrix A) := cormen_lup A (fun _ _ => seqmatrix A) (fun _ => nat) (fun n => nat -> nat) (fun _ _ => find_pivot_seqmx 0) (fun _ _ => @xrowseqmx A) (fun _ => ctperm) (fun _ => cperm_comp) (fun _ => lift0_cperm) (fun _ _ A i j => nth 0%C (nth [::] A i) j) (fun n => id) (fun n => scalar_seqmx n) (fun m n => const_seqmx m n) (fun m _ => row_perm_seqmx m) (fun _ => 0%N) (m := m) (n := n) M.
+Definition hseqmatrix := fun _ _ : nat => seqmatrix A.
+Definition natord := fun _ : nat => nat.
+
+Instance : forall n, zero (natord n) := fun _ => 0.
+
+Instance : xrow_class natord hseqmatrix :=
+  fun _ _ => @xrowseqmx A.
+
+Instance : row_perm_class (fun _ => funperm) hseqmatrix :=
+  fun m n => @row_perm_seqmx A m.
+
+Instance : forall n, tperm_class (natord n) funperm :=
+  fun n => ctperm.
+
+Instance : fun_of A natord hseqmatrix :=
+  fun _ _ M i j => nth 0%C (nth [::] M i) j.
+
+Instance : scalar_mx_class A hseqmatrix :=
+  @scalar_seqmx A _.
+
+Instance : lift0_perm_class (fun _ => funperm) :=
+  fun _ => lift0_cperm.
+
+Instance : forall n : nat, mul funperm :=
+  fun _ => cperm_comp.
+
+Instance : forall n : nat, one funperm :=
+  fun _ => id.
+
+Instance : const_mx_class A hseqmatrix :=
+  @const_seqmx A.
+
+Definition cormen_lup_seqmx (m n : nat) (M : seqmatrix A) := cormen_lup A (m := m) (n := n) (fun _ _ => seqmatrix A) (fun _ => nat) (fun _ => funperm) (fun _ _ => find_pivot_seqmx 0) M.
 
 (*
 Fixpoint cormen_lup_seqmx m n :=

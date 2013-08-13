@@ -76,8 +76,8 @@ Instance : Op.block (matrix F) := @matrix.block_mx F.
 Instance : Op.row_class ordinal (matrix F) := (@row F).
 Instance : Op.row'_class ordinal (matrix F) := (@row' F).
 
-Lemma rank_row0mx (n m:nat) (M: 'M[F]_(n,m)) :
-  \rank (row_mx (0: 'cV[F]_n) M) = \rank M.
+Lemma rank_row0mx (m n p : nat) (M : 'M[F]_(m,n)) :
+  \rank (row_mx (0: 'M[F]_(m,p)) M) = \rank M.
 Proof. by rewrite -mxrank_tr tr_row_mx trmx0 -addsmxE adds0mx mxrank_tr. Qed.
 
 Lemma rank_block0dl m n a Aur (Adr : 'M[F]_(m,n)) :
@@ -97,7 +97,7 @@ by move=> i _; rewrite !mxE; case: splitP=> // l _; rewrite mxE mulr0.
 Qed.
 
 Lemma row'_row_perm m n (M : 'M[F]_(1 + m, n)) k :
-  row' k M = @dsubmx _ 1 _ _ (row_perm (lift_perm 0 k 1%g) M).
+  row' k M = dsubmx (row_perm (lift_perm 0 k 1%g) M : 'M_(1 + m, n)).
 Proof.
 by apply/matrixP=> i j; rewrite !mxE rshift1 lift_perm_lift perm1.
 Qed.
@@ -136,7 +136,7 @@ have hD : row_full D.
 rewrite -(eqmxMfull xM hD) -[xM]submxK mulmx_block !mul1mx !mul0mx !addr0.
 rewrite scaleNr mulNmx [ulsubmx xM]mx11_scalar !mxE !lshift0 lift_perm_id.
 rewrite mul_mx_scalar scalerA divrr ?unitfE // scale1r addNr rank_block0dl //.
-rewrite {3}/xM /drsubmx /dlsubmx -row'_row_perm addrC /ursubmx -row_row_perm.
+rewrite {3}/xM /drsubmx /dlsubmx. -row'_row_perm addrC /ursubmx -row_row_perm.
 by rewrite mulNmx.
 Qed.
 
