@@ -693,6 +693,9 @@ Class col_mx_class B := col_mx : forall (m1 m2 n : nat),
 Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
   B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
 
+Class const_mx_class A B :=
+  const_mx : forall {m n : nat}, A -> B m n.
+
 Class row_class I B := row : forall (m n : nat), I m -> B m n -> B 1 n.
 
 Class col_class I B := col : forall (m n : nat), I n -> B m n -> B m 1.
@@ -704,10 +707,13 @@ Class col'_class I B := col' : forall (m n : nat), I n -> B m n -> B m (predn n)
 Class fun_of A I B :=
   fun_of_matrix : forall (m n : nat), B m n -> I m -> I n -> A.
 
-Class scalar A B := scalar_op : forall {n : nat}, A -> B n n.
+Class scalar_mx_class A B := scalar_mx : forall {n : nat}, A -> B n n.
 
 Class tperm_class A S :=
   tperm : A -> A -> S.
+
+Class lift0_perm_class S :=
+  lift0_perm : forall (n : nat), S n -> S n.+1.
 
 Class xrow_class I B :=
   xrow : forall (m n : nat), I m -> I m -> B m n -> B m n.
@@ -765,10 +771,12 @@ Notation "+%HC"    := hadd_op.
 Notation "x + y"  := (hadd_op x y)   : hetero_computable_scope.
 Notation "x - y"  := (hsub_op x y)   : hetero_computable_scope.
 Notation "x == y" := (heq_op x y)    : hetero_computable_scope.
-Notation "a %:M"  := (scalar_op a)   : hetero_computable_scope.
+Notation "a %:M"  := (scalar_mx a)   : hetero_computable_scope.
 Notation "*m%C"   := hmul_op.
 Notation "x *m y" := (hmul_op x y)   : hetero_computable_scope.
 Notation "x '.(' i ',' j ')'" := (fun_of_matrix x i j) (at level 10) : computable_scope.
+
+(* TODO: fold patterns for unapplied op *)
 
 Ltac simpC :=
   do ?[ rewrite -[0%C]/0%R | rewrite -[1%C]/1%R
@@ -806,7 +814,13 @@ Ltac simpC :=
       | rewrite -[row_mx _ _]/(matrix.row_mx _ _)
       | rewrite -[col_mx _ _]/(matrix.col_mx _ _)
       | rewrite -[block_mx _ _ _ _]/(matrix.block_mx _ _ _ _)
-      | rewrite -[fun_of_matrix _]/(matrix.fun_of_matrix _)].
+      | rewrite -[fun_of_matrix _]/(matrix.fun_of_matrix _)
+      | rewrite -[const_mx _]/(matrix.const_mx _)
+      | rewrite -[scalar_mx _]/(matrix.scalar_mx _)
+      | rewrite -[tperm _ _]/(perm.tperm _ _)
+      | rewrite -[lift0_perm _]/(matrix.lift0_perm _)
+      | rewrite -[row_perm _ _]/(matrix.row_perm _ _)
+      | rewrite -[xrow _ _ _]/(matrix.xrow _ _ _)].
 
 (* Opacity of ssr symbols *)
 Typeclasses Opaque eqtype.eq_op.
