@@ -1,7 +1,7 @@
 -R . CoqEAL
 ssrcomplements.v
 mxstructure.v
-# dvdring.v
+dvdring.v
 # bareiss.v
 binnat.v
 binint.v
@@ -22,6 +22,8 @@ funperm.v
 rank.v
 gauss.v
 strassen.v
+# smith.v 
+
 binint_test.v
 seqmatrix_test.v
 # strassen_test.v
