@@ -8,8 +8,8 @@ binint.v
 # binint_direct.v
 # invmx.v
 karatsuba.v
-# minor.v
-# binetcauchy.v
+minor.v
+binetcauchy.v
 refinements.v
 rational.v
 seqpoly.v
@@ -22,7 +22,7 @@ funperm.v
 rank.v
 gauss.v
 strassen.v
-# smith.v 
+smith.v 
 
 binint_test.v
 seqmatrix_test.v
