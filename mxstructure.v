@@ -1,6 +1,8 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
+Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg fintype perm poly mxpoly finfun tuple.
 Require Import matrix bigop zmodp polydiv ssrcomplements.
+
+Require Import dvdring.
 
 (**  This file contains three parts about different structures of matrices.
 
@@ -559,6 +561,17 @@ rewrite mul0r nth_default ?mul0rn // size_take; case:ltnP=> // le_s_r.
 exact: (leq_trans le_s_r).
 Qed.
 
+Lemma diag_mx_seq0 m n (s : seq R) : all (eq_op^~ 0) s ->
+  diag_mx_seq m n s = 0.
+Proof.
+elim: s m n=> [m n _|a s ih m n] /=; first by rewrite diag_mx_seq_nil.
+case/andP=> /eqP -> hA.
+case: m n=> [n|m [|n]]; [by apply/matrixP=> [[]]|by apply/matrixP=> i []|].
+rewrite diag_mx_seq_cons ih //.
+by apply/matrixP=> i j; rewrite !mxE split1; case: unliftP=> /= [k _|_];
+   rewrite !mxE split1; case: unliftP=> /= [l _|_]; rewrite mxE.
+Qed.
+
 End diag_mx_seq.
 
 Section diag_mx_seq2.
@@ -595,6 +608,23 @@ Section diag_mx_seq_comRingType.
 Variable R : comRingType.
 Local Open Scope ring_scope.
 Import GRing.Theory.
+
+(* Why is this not in the ssr libraries? *)
+Lemma tr_copid_mx m r : (copid_mx r)^T = @copid_mx R m r.
+Proof.
+apply/matrixP=> i j; rewrite !mxE eq_sym.
+case: eqP=> [->|/eqP hij] //=; rewrite eq_sym.
+by have -> : (i == j :> nat) = false by apply/eqP/eqP.
+Qed.
+
+Lemma mul_copid_mx_diag m n r s :
+  minn (minn m n) (size s) <= r ->
+  @copid_mx R n r *m diag_mx_seq n m s = 0.
+Proof.
+move=> le_s_r.
+rewrite -[_ *m _]trmxK trmx_mul tr_diag_mx_seq tr_copid_mx.
+by rewrite mul_diag_mx_copid // trmx0. 
+Qed.
 
 Lemma det_diag_mx_seq_truncated m (s : seq R) :
   \det (diag_mx_seq m m s) = (\prod_(i <- take m s) i) *+ (m <= size s).
@@ -646,3 +676,22 @@ by case/andP.
 Qed.
 
 End diag_mx_idomain.
+
+Section diag_mx_dvdring.
+
+Variable R : dvdRingType.
+
+Local Open Scope ring_scope.
+
+Lemma diag_mx_seq_filter0 m n (s : seq R) : sorted %|%R s ->
+  diag_mx_seq m n [seq x <- s | x != 0] = diag_mx_seq m n s.
+Proof.
+elim: s m n=> // a s ih m n h_sorted.
+have h_s /= := (subseq_sorted (@dvdr_trans R) (subseq_cons s a) h_sorted).
+move: h_sorted; have [-> hs |an0 _] /= := eqP.
+  by rewrite ih // !diag_mx_seq0 //= ?eqxx /=; apply/sorted_dvd0r.
+case: m n=> [n|m [|n]]; [by apply/matrixP=> [[]]|by apply/matrixP=> i []|].
+by rewrite !diag_mx_seq_cons ih.
+Qed.
+
+End diag_mx_dvdring.

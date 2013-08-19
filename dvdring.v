@@ -328,6 +328,11 @@ Proof. by move=> a; apply/dvdrP; exists a; rewrite mulr1. Qed.
 
 Hint Resolve dvd1r.
 
+Lemma sorted_dvd0r (s : seq R) : sorted %|%R (0 :: s) -> all (eq_op^~ 0) s.
+Proof.
+move/(order_path_min dvdr_trans)/(all_nthP 0)=> hi.
+by apply/(all_nthP 0) => i his; rewrite -dvd0r; apply: hi.
+Qed.
 
 (** Properties of eqd *)
 
