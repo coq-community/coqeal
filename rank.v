@@ -4,7 +4,7 @@ Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype fingroup perm.
 Require Import matrix bigop zmodp mxalgebra.
 
-Require Import refinements (* seqmatrix *) ssrcomplements.
+Require Import refinements seqmatrix ssrcomplements.
 
 Import GRing.Theory.
 
@@ -96,8 +96,8 @@ rewrite /block_mx -addsmxE mxrank_disjoint_sum.
 by move=> i _; rewrite !mxE; case: splitP=> // l _; rewrite mxE mulr0.
 Qed.
 
-Lemma row'_row_perm m n (M : 'M[F]_(1 + m, n)) k :
-  row' k M = dsubmx (row_perm (lift_perm 0 k 1%g) M : 'M_(1 + m, n)).
+Lemma row'_row_perm m n M k :
+  row' k M = dsubmx (row_perm (lift_perm 0 k 1%g) M : 'M[F]_(1 + m, n)).
 Proof.
 by apply/matrixP=> i j; rewrite !mxE rshift1 lift_perm_lift perm1.
 Qed.
@@ -303,6 +303,19 @@ by tc.
 Qed.
 
 End rank_param.
+
+Require Import Int31 Int31Native intmodp.
+
+Section rank_seqmx.
+
+Fixpoint find_pivot_seqmx j (r : seqmatrix int) {struct r} : option nat :=
+  if r is x::r' then
+    if (head 0 x == 0)%C then find_pivot_seqmx j.+1 r' else Some j
+  else None.
+
+Definition elim_rank_seqmx := rank_elim int (fun _ _ => seqmatrix int) (fun _ => nat) (fun _ _ => find_pivot_seqmx 0).
+
+End rank_seqmx.
 
 (*
 Notation "n %:F2" := (n%R : 'F_2) (at level 2, left associativity, format "n %:F2").
