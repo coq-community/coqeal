@@ -1,4 +1,4 @@
-Require Import Ncring Ncring_tac.
+Require Import PArith.
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
 Require Import perm zmodp matrix mxalgebra refinements mxstructure seqmatrix strassen.
@@ -174,8 +174,8 @@ Context `{forall n, zero (ordA n.+1)}.
 Context `{inv A}.
 Context `{!hzero mxA, !hone mxA, !hadd mxA, !hopp mxA, !hsub mxA, !hmul mxA}.
 Context `{!ulsub mxA, !ursub mxA, !dlsub mxA, !drsub mxA, !block mxA}.
-Context `{!lsub mxA, !rsub mxA, !usub mxA, !dsub mxA, !row mxA}.
-Context `{!fun_of A ordA mxA, !scalar A mxA, !hcast mxA}.
+Context `{!lsub mxA, !rsub mxA, !usub mxA, !dsub mxA, !row_mx_class mxA}.
+Context `{!fun_of A ordA mxA, !scalar_mx_class A mxA, !hcast mxA}.
 
 (* The type annotation in the last branch is required to prevent typechecking *)
 (* from diverging... *)
@@ -215,7 +215,7 @@ Context `{xcol_class ordA mxA}.
 Context `{forall n, tperm_class (ordA n) (permA n)}.
 Context `{col_perm_class permA mxA}.
 Context `{forall n, mul (permA n)}.
-Context `{col mxA, forall m n, scale A (mxA m n)}.
+Context `{col_mx_class mxA, forall m n, scale A (mxA m n)}.
 Variable perm_union : forall m n : nat, permA m -> permA n -> permA (m + n).
 Variable cast_perm : forall m n : nat, m = n -> permA m -> permA n.
 
@@ -262,6 +262,7 @@ Definition lup_step {p : positive} {n : nat} (A : mxA (p + p) n.+1)
     else None
   else None.
 
+(*
 Fixpoint lup {m : positive} {n : nat} :=
   match m return mxA m n.+1 -> option (mxA m m * mxA m n.+1 * permA n.+1) with
   | xH => fun A =>
@@ -289,6 +290,7 @@ Fixpoint lup {m : positive} {n : nat} :=
       else None
     else None
 end.
+*)
 
 
 End fast_triangular_generic.
@@ -312,8 +314,8 @@ Instance : Refinements.Op.drsub (matrix F) := @matrix.drsubmx F.
 Instance : Refinements.Op.block (matrix F) := @matrix.block_mx F.
 Instance : Refinements.Op.lsub (matrix F) := @matrix.lsubmx F.
 Instance : Refinements.Op.rsub (matrix F) := @matrix.rsubmx F.
-Instance : Refinements.Op.row (matrix F) := @matrix.row_mx F.
-Instance : Refinements.Op.scalar F (matrix F) := @matrix.scalar_mx F.
+Instance : Refinements.Op.row_mx_class (matrix F) := @matrix.row_mx F.
+Instance : Refinements.Op.scalar_mx_class F (matrix F) := @matrix.scalar_mx F.
 Instance : Refinements.Op.fun_of F (@ordinal) (matrix F) := (@matrix.fun_of_matrix F).
 
 Ltac simpC2 :=
@@ -410,8 +412,18 @@ Qed.
 
 End fast_triangular_correctness.
 
+Variable A : Type.
+
+Import Refinements.Op.
+
+Context `{zero A, one A, add A, sub A, opp A, mul A, inv A, eq A}.
+
+Definition upper_tri_inv_seqmx n (M : seqmatrix A) :=
+  upper_tri_inv (A := A) (ordA := fun _ => nat) (mxA := fun _ _ => seqmatrix A) (n := n) M.
+
 End fast_triangular.
 
+(*
 Section Bunch_Hopcroft.
 
 Local Open Scope nat_scope.
@@ -574,3 +586,4 @@ by rewrite ord1 mxE; have := (eq_M0 j) => /= /negbFE /eqP.
 Qed.
 
 End Bunch_Hopcroft_correctness.
+*)
