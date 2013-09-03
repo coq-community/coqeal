@@ -227,6 +227,7 @@ Fixpoint cormen_lup_seqmx m n :=
 
 End Gaussian_elim_seqmx.
 
+(*
 Require Import Int31 intmodp.
 
 Section bench_modular.
@@ -254,6 +255,7 @@ Definition res_test := eq_seqmx (m := 10%nat) (n := 10%nat) (row_perm_seqmx 10 r
 Eval native_compute in res_test.
 
 End bench_modular.
+*)
 
 (*
 Section bench.
