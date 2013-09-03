@@ -133,6 +133,7 @@ Variable A : Type.
 
 Definition seqmatrix := seq (seq A).
 
+Notation ord := (fun _ : nat => nat).
 Notation hseqmatrix := (fun (_ _ : nat) => seqmatrix).
 
 Definition ord_enum_eq n : seq 'I_n := pmap (insub_eq _) (iota 0 n).
@@ -158,62 +159,75 @@ Definition const_seqmx m n (x : A) := nseq m (nseq n x).
 
 Section seqmx_block.
 
-Variables m m1 m2 n n1 n2 : nat.
+Global Instance usubseqmx : usub hseqmatrix :=
+  fun m1 m2 n (M : seqmatrix) => take m1 M.
 
-Definition usubseqmx (M : seqmatrix) :=
-  take m1 M.
+Global Instance dsubseqmx : dsub hseqmatrix :=
+  fun m1 m2 n (M : seqmatrix) => drop m1 M.
 
-Definition dsubseqmx (M : seqmatrix) :=
-  drop m1 M.
+Global Instance lsubseqmx : lsub hseqmatrix :=
+  fun m n1 n2 (M : seqmatrix) => map (take n1) M.
 
-Definition lsubseqmx (M : seqmatrix) :=
-  map (take n1) M.
+Global Instance rsubseqmx : rsub hseqmatrix :=
+  fun m n1 n2 (M : seqmatrix) => map (drop n1) M.
 
-Definition rsubseqmx (M : seqmatrix) :=
-  map (drop n1) M.
+Global Instance ulsubseqmx : ulsub hseqmatrix :=
+  fun m1 m2 n1 n2 (M : hseqmatrix (m1 + m2)%N (n1 + n2)%N) =>
+    lsubseqmx (usubseqmx M).
 
-Definition ulsubseqmx (M : seqmatrix) :=
-  lsubseqmx (usubseqmx M).
+Global Instance ursubseqmx : ursub hseqmatrix :=
+  fun m1 m2 n1 n2 (M : hseqmatrix (m1 + m2)%N (n1 + n2)%N) =>
+    rsubseqmx (usubseqmx M).
 
-Definition ursubseqmx (M : seqmatrix) :=
-  rsubseqmx (usubseqmx M).
-
-Definition dlsubseqmx (M : seqmatrix) :=
+Global Instance dlsubseqmx : dlsub hseqmatrix :=
+  fun m1 m2 n1 n2 (M : hseqmatrix (m1 + m2)%N (n1 + n2)%N) =>
   lsubseqmx (dsubseqmx M).
 
-Definition drsubseqmx (M : seqmatrix) :=
+Global Instance drsubseqmx : drsub hseqmatrix :=
+  fun m1 m2 n1 n2 (M : hseqmatrix (m1 + m2)%N (n1 + n2)%N) =>
   rsubseqmx (dsubseqmx M).
 
-Definition row_seqmx (M N : seqmatrix) : seqmatrix :=
-  zipwith cat M N.
+Global Instance row_seqmx : row_mx_class hseqmatrix :=
+  fun m n1 n2 (M N : seqmatrix) => zipwith cat M N.
 
-Definition col_seqmx (M N : seqmatrix) : seqmatrix :=
-  M ++ N.
+Global Instance col_seqmx : col_mx_class hseqmatrix :=
+  fun m1 m2 n (M N : seqmatrix) => M ++ N.
 
-Definition block_seqmx Aul Aur Adl Adr : seqmatrix :=
+Global Instance block_seqmx : block hseqmatrix :=
+  fun m1 m2 n1 n2 Aul Aur Adl Adr =>
   col_seqmx (row_seqmx Aul Aur) (row_seqmx Adl Adr).
 
 End seqmx_block.
 
-Global Instance hulsubseqmx : ulsub hseqmatrix :=
-  fun m1 m2 n1 n2 => ulsubseqmx m1 n1.
-Global Instance hursubseqmx : ursub hseqmatrix :=
-  fun m1 m2 n1 n2 => ursubseqmx m1 n1.
-Global Instance hdlsubseqmx : dlsub hseqmatrix :=
-  fun m1 m2 n1 n2 => dlsubseqmx m1 n1.
-Global Instance hdrsubseqmx : drsub hseqmatrix :=
-  fun m1 m2 n1 n2 => drsubseqmx m1 n1.
-
-Global Instance hblock_seqmx : block hseqmatrix :=
-  fun _ _ _ _ Aul Aur Adl Adr => block_seqmx Aul Aur Adl Adr.
-
 Global Instance castseqmx : hcast hseqmatrix := fun _ _ _ _ _ M => M.
+
+Section indices_ops.
+Import Refinements.Op.
+
+Global Instance zero_ord m : zero (ord m) := 0%N.
+
+End indices_ops.
 
 (* Definition of operations, using an abstract base type and operations *)
 
 Section seqmx_ops.
 Import Refinements.Op.
 Context `{zero A, opp A, add A, sub A, mul A, eq A}.
+
+Global Instance fun_of_seqmx : fun_of A ord hseqmatrix :=
+  fun _ _ M i j => nth 0%C (nth [::] M i) j.
+
+Global Instance rowseqmx : row_class ord hseqmatrix :=
+  fun _ _ i M => [:: nth [::] M i].
+
+Fixpoint row'seqmx_rec (m n : nat) (i : ord m) (M : hseqmatrix m n) :=
+  if M is x :: xs then
+    if i is i'.+1 then @row'seqmx_rec m n i' xs
+    else xs
+  else [::].
+
+Global Instance row'seqmx : row'_class ord hseqmatrix :=
+  row'seqmx_rec.
 
 Global Instance oppseqmx : @hopp nat hseqmatrix :=
    fun _ _ => map_seqmx -%C.
@@ -251,8 +265,8 @@ Global Instance mulseqmx : @hmul nat hseqmatrix :=
 Global Instance scaleseqmx : scale A seqmatrix :=
   fun x M => map_seqmx (mul_op x) M.
 
-Global Instance scalar_seqmx (n : nat) : cast_class A seqmatrix :=
-  fun x => @mkseqmx_ord n n (fun i j => if i == j then x else 0%C).
+Global Instance scalar_seqmx : scalar_mx_class A hseqmatrix :=
+  fun n x => @mkseqmx_ord n n (fun i j => if i == j then x else 0%C).
 
 Definition swap (T : Type) m1 m2 (x : T) (s : seq T) :=
   let r := set_nth x s m1 (nth x s m2) in
@@ -525,7 +539,7 @@ Section seqmx_block.
 Variables m m1 m2 n n1 n2 : nat.
 
 Global Instance refines_usubseqmx :
-  param (Rseqmx ==> Rseqmx) (@usubmx A m1 m2 n) (usubseqmx m1).
+  param (Rseqmx ==> Rseqmx) (@usubmx A m1 m2 n) (@usubseqmx A m1 m2 n).
 Proof.
 rewrite paramE /usubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 + rewrite size_take sizeE; case:m2=> [|p] ; first by rewrite addn0 ltnn.
@@ -535,7 +549,7 @@ by rewrite nth_take // mxE -{2}refines_nth.
 Qed.
 
 Global Instance refines_dsubseqmx :
-  param (Rseqmx ==> Rseqmx) (@dsubmx A m1 m2 n) (dsubseqmx m1).
+  param (Rseqmx ==> Rseqmx) (@dsubmx A m1 m2 n) (@dsubseqmx A m1 m2 n).
 Proof.
 rewrite paramE /dsubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 + by rewrite size_drop sizeE addKn.
@@ -544,7 +558,7 @@ by rewrite nth_drop // mxE -{2}refines_nth.
 Qed.
 
 Global Instance refines_lsubseqmx :
-  param (Rseqmx ==> Rseqmx) (@lsubmx A m n1 n2) (lsubseqmx n1).
+  param (Rseqmx ==> Rseqmx) (@lsubmx A m n1 n2) (@lsubseqmx A m n1 n2).
 Proof.
 rewrite paramE /lsubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 + by rewrite size_map sizeE.
@@ -556,7 +570,7 @@ by rewrite nth_take // mxE -{2}refines_nth.
 Qed.
 
 Global Instance refines_rsubseqmx :
-  param (Rseqmx ==> Rseqmx) (@rsubmx A m n1 n2) (rsubseqmx n1).
+  param (Rseqmx ==> Rseqmx) (@rsubmx A m n1 n2) (@rsubseqmx A m n1 n2).
 Proof.
 rewrite paramE /rsubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 + by rewrite size_map sizeE.
@@ -578,35 +592,35 @@ Section seqmx_block2.
 Variables m m1 m2 n n1 n2 : nat.
 
 Global Instance refines_ulsubseqmx :
-  param (Rseqmx ==> Rseqmx) (@ulsubmx A m1 m2 n1 n2) (ulsubseqmx m1 n1).
+  param (Rseqmx ==> Rseqmx) (@ulsubmx A m1 m2 n1 n2) (@ulsubseqmx A m1 m2 n1 n2).
 Proof.
 rewrite /ulsubmx /ulsubseqmx /= paramE => x a ref_xa.
 by rewrite -[Rseqmx]paramE; tc.
 Qed.
 
 Global Instance refines_ursubseqmx :
-  param (Rseqmx ==> Rseqmx) (@ursubmx A m1 m2 n1 n2) (ursubseqmx m1 n1).
+  param (Rseqmx ==> Rseqmx) (@ursubmx A m1 m2 n1 n2) (@ursubseqmx A m1 m2 n1 n2).
 Proof.
 rewrite /ursubmx /ursubseqmx /= paramE => x a ref_xa.
 by rewrite -[Rseqmx]paramE; tc.
 Qed.
 
 Global Instance refines_dlsubseqmx :
-  param (Rseqmx ==> Rseqmx) (@dlsubmx A m1 m2 n1 n2) (dlsubseqmx m1 n1).
+  param (Rseqmx ==> Rseqmx) (@dlsubmx A m1 m2 n1 n2) (@dlsubseqmx A m1 m2 n1 n2).
 Proof.
 rewrite /dlsubmx /dlsubseqmx /= paramE => x a ref_xa.
 by rewrite -[Rseqmx]paramE; tc.
 Qed.
 
 Global Instance refines_drsubseqmx :
-  param (Rseqmx ==> Rseqmx) (@drsubmx A m1 m2 n1 n2) (drsubseqmx m1 n1).
+  param (Rseqmx ==> Rseqmx) (@drsubmx A m1 m2 n1 n2) (@drsubseqmx A m1 m2 n1 n2).
 Proof.
 rewrite /drsubmx /drsubseqmx /= paramE => x a ref_xa.
 by rewrite -[Rseqmx]paramE; tc.
 Qed.
 
 Global Instance refines_row_seqmx :
-  param (Rseqmx ==> Rseqmx ==> Rseqmx) (@row_mx A m n1 n2) (@row_seqmx A).
+  param (Rseqmx ==> Rseqmx ==> Rseqmx) (@row_mx A m n1 n2) (@row_seqmx A m n1 n2).
 Proof.
 rewrite paramE => x a ref_xa y b ref_yb.
 apply/refines_seqmxP=> [|i Hi|i j].
@@ -617,7 +631,7 @@ by rewrite !sizeE // mxE; case: splitP => j' ->; rewrite ?addKn refines_nth.
 Qed.
 
 Global Instance refines_col_seqmx :
-  param (Rseqmx ==> Rseqmx ==> Rseqmx) (@col_mx A m1 m2 n) (@col_seqmx A).
+  param (Rseqmx ==> Rseqmx ==> Rseqmx) (@col_mx A m1 m2 n) (@col_seqmx A m1 m2 n).
 Proof.
 rewrite paramE => x a ref_xa y b ref_yb.
 apply/refines_seqmxP=> [|i Hi|i j].
@@ -639,7 +653,7 @@ Variables m1 m2 n1 n2 : nat.
 
 Global Instance refines_block_seqmx :
   param (Rseqmx ==> Rseqmx ==> Rseqmx ==> Rseqmx ==> Rseqmx)
-    (@block_mx A m1 m2 n1 n2) (@block_seqmx A).
+    (@block_mx A m1 m2 n1 n2) (@block_seqmx A m1 m2 n1 n2).
 Proof.
 rewrite paramE => ? ? ref_ul ? ? ref_ur ? ? ref_dl ? ? ref_dr.
 rewrite /block_mx /block_seqmx.
