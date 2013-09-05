@@ -342,6 +342,20 @@ Fixpoint Smith {m n} : 'M_(m,n) -> 'M_(m) * seq R * 'M_(n) :=
   | _, _ => fun A => (1%:M, [::], 1%:M)
   end.
 
+(*****************************)
+Lemma size_Smith m n (A :'M_(m,n)) : 
+  let: (_, d, _) := Smith A in (size d <= minn m n)%N.
+Proof.
+elim: m n A=>[n|m Ih n]; first by rewrite min0n.
+case: n=>[|n A /=]; first by rewrite minn0.
+case: pickP=> [[x1 x2] Hx|//].
+case: (improve_pivot _ _); case => a b c /=.
+case H: (Smith _)=>[[i j] k].
+rewrite /= size_map minnSS ltnS.
+by rewrite -/(let: (_,j,_) := (i,j,k) in (size j <= minn m n)%N) -H Ih.
+Qed.
+(*****************************)
+
 (* Smith_spec is parametrized by R so that it can be used for PIDs as well *)
 CoInductive Smith_spec {R : dvdRingType} {m n} M 
   : 'M[R]_m * seq R * 'M[R]_n -> Type :=
