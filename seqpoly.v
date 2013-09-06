@@ -292,16 +292,20 @@ have [hlt|hleq] := ltnP i (size s); first by rewrite (nth_map 0%C).
 by rewrite !nth_default ?mulr0 ?size_mkseq ?size_map.
 Qed.
 
+Definition shiftp n (p : {poly R}) := p * 'X^n.
+
 (* shifting = * 'X^n *)
 Local Instance param_seqpoly_shift : param (Logic.eq ==> Rseqpoly ==> Rseqpoly) 
-  (fun n p => p * 'X^n) (fun n => shift n).
+  shiftp (@shift _ _).
+(* Local Instance param_seqpoly_shift : param (Logic.eq ==> Rseqpoly ==> Rseqpoly)  *)
+(*   (fun n p => p * 'X^n) (fun n => shift n). *)
 Proof.
 rewrite paramE => /= m n -> {m} p s ps.
 by apply/polyP => i /=; rewrite [p]RpolyE coefMXn !coef_Poly nth_ncons.
 Qed.
 
 Local Instance param_seqpoly_cons : param (Logic.eq ==> Rseqpoly ==> Rseqpoly) 
-  (fun a p => p * 'X + a%:P) (fun a s => a :: s).
+  (@cons_poly R) (@cons R).
 Proof.
 rewrite paramE => /= b a -> {b} p s ps.
 by apply/polyP => i /=; rewrite [p]RpolyE cons_poly_def.
@@ -379,17 +383,24 @@ have [->|_] //= := (altP eqP).
 by apply/polyP=> i /=; rewrite cons_poly_def mul0r add0r.
 Qed.
 
-(* TODO: Fix this proof! *)
+Local Instance param_eq_xx T (a : T) : param Logic.eq a a.
+Proof. by rewrite paramE. Qed.
+
+(* This also solves param_seqpoly_mul *)
+(* Lemma foo T T' RT (x y : T) (z : T') : x = y -> param RT y z -> RT x z. *)
+(* Proof. by rewrite paramE => ->. Qed. *)
+(* by apply: foo. *)
+
 (* multiplication *)
-(* Local Instance param_seqpoly_mul : param (Rseqpoly ==> Rseqpoly ==> Rseqpoly) *%R *%C. *)
-(* Proof. *)
-(* rewrite paramE => /= p sp rp q sq rq. *)
-(* elim: sp => [|a sp ihp] in p rp *; first by rewrite [p]RpolyE mul0r. *)
-(* (* What to do here? *) *)
-(* admit. *)
-(* (* move: rp => /param_poly_cons [[sp' a' /= [-> -> rp']]]; apply/refinesP. *) *)
-(* (* by rewrite mulrDl addrC mul_polyC addr0 -mulrA !(commr_polyX, mulrA). *) *)
-(*  Qed. *)
+Local Instance param_seqpoly_mul : param (Rseqpoly ==> Rseqpoly ==> Rseqpoly) *%R *%C.
+Proof.
+apply param_abstr2 => /= p sp rp q sq rq.
+elim: sp => [|a sp ihp] in p rp *; first by rewrite paramE [p]RpolyE mul0r.
+move: rp; rewrite !paramE => /param_poly_cons [[sp' a' /= [-> -> rp']]]. 
+rewrite mulrDl addrC mul_polyC -mulrA !(commr_polyX,mulrA) -mulrA.
+rewrite /mul_op /= -commr_polyX -[0 :: _]/(shift 1%N _) -[_ * 'X]/(shiftp 1 _).
+exact: paramP.
+Qed.
 
 (* equality *)
 Local Instance param_seqpoly_eq : param (Rseqpoly ==> Rseqpoly ==> Logic.eq) 
@@ -505,25 +516,21 @@ Global Instance param_scale_seqpoly :
   param (rAC ==> RseqpolyC ==> RseqpolyC) *:%R *:%C.
 Proof. exact: param_trans. Qed.
 
-(* Global Instance param_shift_seqpoly : param (Logic.eq ==> RseqpolyC ==> RseqpolyC)  *)
-(*   (fun n p => p * 'X^n) (fun n => shift n). *)
-(* Proof. admit. Qed. *)
-(* (* Proof. exact: param_trans. Qed. *) *)
+Global Instance param_shift_seqpoly : param (Logic.eq ==> RseqpolyC ==> RseqpolyC)
+  (fun n p => p * 'X^n) (fun n => shift n).
+Proof. exact: param_trans. Qed.
 
-(* Global Instance param_size_seqpoly : param (RseqpolyC ==> Logic.eq)  *)
+(* Global Instance param_size_seqpoly : param (RseqpolyC ==> Logic.eq) *)
 (*   (fun (p : {poly R}) => size p) (fun s => size_seqpoly s). *)
-(* Proof. admit. Qed. *)
-(* (* Proof. exact: param_trans. Qed. *) *)
+(* Proof. exact: param_trans. Qed. *)
 
-(* Global Instance param_lead_coef_seqpoly :  *)
+(* Global Instance param_lead_coef_seqpoly : *)
 (*   param (RseqpolyC ==> rAC) lead_coef (fun p => lead_coef_seqpoly p). *)
-(* Proof. admit. Qed. *)
-(* (* Proof. exact: param_trans. Qed. *) *)
+(* Proof. exact: param_trans. Qed. *)
 
-(* Global Instance param_polyC_seqpoly :  *)
+(* Global Instance param_polyC_seqpoly : *)
 (*   param (rAC ==> RseqpolyC) (fun a => a%:P) (fun a => cast a)%C. *)
-(* Proof. admit. Qed. *)
-(* (* Proof. exact: param_trans. Qed. *) *)
+(* Proof. exact: param_trans. Qed. *)
 
 (* Global Instance param_mul_seqpoly :  *)
 (*   param (RseqpolyC ==> RseqpolyC ==> RseqpolyC) *%R *%C. *)
