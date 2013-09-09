@@ -479,7 +479,7 @@ Lemma invmx_block n1 n2  (Aul : 'M[R]_n1.+1) (Adr : 'M[R]_n2.+1) :
   (block_mx Aul 0 0 Adr)^-1 = block_mx Aul^-1 0 0 Adr^-1.
 Proof.
 move=> blk_unit. 
-have := blk_unit. (* (block_mx Aul 0 0 Adr) \is a GRing.unit by []. *)
+have := blk_unit. 
 rewrite unitmxE det_ublock unitrM.
 case/andP; rewrite -!unitmxE => HAul HAur.
 have blkKV: block_mx Aul 0 0 Adr *  block_mx Aul^-1 0 0 Adr^-1 = 1.
@@ -493,7 +493,7 @@ End matrix_comUnitRingType.
 Section matrix_fieldType.
 
 Variable F : fieldType.
-Search _ horner_mx.
+
 (* mx_poly *)
 Lemma horner_mx_dvdp n (p q : {poly F}) (A : 'M_n.+1) :
   (dvdp p q) -> horner_mx A p = 0 -> horner_mx A q = 0.
