@@ -160,6 +160,9 @@ Arguments getparam {A B} R%rel_scope m n.
 Lemma paramE A B (R : A -> B -> Prop) : (param R = R) * (getparam R = R).
 Proof. by rewrite /param /getparam !unlock. Qed.
 
+Lemma param_eq T (x y : T) : param eq x y -> x = y.
+Proof. by rewrite paramE. Qed.
+
 Global Instance param_sub_proper {A B} :
    Proper (sub_hrel ==> eq ==> eq ==> impl) (@param A B).
 Proof. by move=> R S RS x _ <- y _ <-; move: x y; rewrite !paramE. Qed.
@@ -181,8 +184,8 @@ Proof. by rewrite paramE. Qed.
 Global Hint Extern 0 (getparam _ _ _)
   => now eapply @getparam_eq : typeclass_instances.
 
-Lemma param_eq A (a : A) : param eq a a.
-Proof. by rewrite paramE. Qed.
+(* Lemma param_eq A (a : A) : param eq a a. *)
+(* Proof. by rewrite paramE. Qed. *)
 
 Global Instance param_apply 
    A B (R : A -> B -> Prop) C D (R' : C -> D -> Prop) :
@@ -385,32 +388,42 @@ Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
 Definition prod_hrel : A * B -> A' * B' -> Prop :=
   fun x y => rA x.1 y.1 /\ rB x.2 y.2.
 
-Lemma param_pair : 
+Lemma getparam_pair : 
   (getparam rA ==> getparam rB ==> getparam prod_hrel)%rel
     (@pair A B) (@pair A' B').
 Proof. by rewrite !paramE. Qed.
 
-Lemma param_fst :
+Lemma getparam_fst :
   (getparam prod_hrel ==> getparam rA)%rel (@fst _ _) (@fst _ _).
 Proof. by rewrite !paramE => [??] [??]. Qed.
 
-Lemma param_snd :
+Lemma getparam_snd :
   (getparam prod_hrel ==> getparam rB)%rel (@snd _ _) (@snd _ _).
 Proof. by rewrite !paramE => [??] [??]. Qed.
+
+Global Instance param_pair : 
+  param (rA ==> rB ==> prod_hrel)%rel (@pair _ _) (@pair _ _).
+Proof. by rewrite paramE. Qed.
+
+Global Instance param_fst : param (prod_hrel ==> rA)%rel (@fst _ _) (@fst _ _).
+Proof. by rewrite !paramE=> [??] [??]. Qed.
+
+Global Instance param_snd : param (prod_hrel ==> rB)%rel (@snd _ _) (@snd _ _).
+Proof. by rewrite !paramE=> [??] [??]. Qed.
 
 End prod.
 Arguments prod_hrel {_ _ _ _} rA%rel rB%rel _ _.
 Notation "X * Y" := (prod_hrel X Y) : rel_scope.
 
-Arguments param_pair {_ _ _ _ _ _ _ _ _ _ _ _}.
-Arguments param_fst {_ _ _ _ _ _ _ _ _}.
-Arguments param_snd {_ _ _ _ _ _ _ _ _}.
+Arguments getparam_pair {_ _ _ _ _ _ _ _ _ _ _ _}.
+Arguments getparam_fst {_ _ _ _ _ _ _ _ _}.
+Arguments getparam_snd {_ _ _ _ _ _ _ _ _}.
 Hint Extern 1 (getparam _ _ _) =>
-  eapply param_pair : typeclass_instances.
+  eapply getparam_pair : typeclass_instances.
 Hint Extern 1 (getparam _ _ _) =>
-  eapply param_fst : typeclass_instances.
+  eapply getparam_fst : typeclass_instances.
 Hint Extern 1 (getparam _ _ _) =>
-  eapply param_snd : typeclass_instances.
+  eapply getparam_snd : typeclass_instances.
 
 Section sum.
 Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
