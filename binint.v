@@ -25,7 +25,7 @@ Import GRing.Theory Num.Theory Refinements.
 (******************************************************************************)
 (** PART I: Defining generic datastructures and programming with them         *)
 (******************************************************************************)
-Section generic_operations.
+Section binint_op.
 Variable N P : Type.
 
 Import Op AlgOp.
@@ -97,12 +97,12 @@ Global Instance specZ : spec_of Z int :=
              | Zneg n => - (val (spec n))%:Z
            end)%R.
 
-End generic_operations.
+End binint_op.
 
 (******************************************************************************)
 (** PART II: Proving correctness properties of the previously defined objects *)
 (******************************************************************************)
-Section Z_theory.
+Section binint_theory.
 
 Notation Znp := (Z nat pos).
 
@@ -218,7 +218,7 @@ Proof. by rewrite paramE => a a' ra; rewrite [spec _]RintE. Qed.
 (*************************************************************************)
 (* PART III: Parametricity part                                          *)
 (*************************************************************************)
-Section Z_parametricity.
+Section binint_parametricity.
 
 Section Zrefinement.
 Variables N N' P P' : Type.
@@ -261,7 +261,7 @@ eapply param_Zneg: typeclass_instances.
 Hint Extern 1 (getparam _ _ _) =>
 eapply param_Zpos: typeclass_instances.
 
-Section Zrefinement_nat_pos.
+Section binint_nat_pos.
 Variables N P : Type.
 Variables (Rnat : nat -> N -> Prop) (Rpos : pos -> P -> Prop).
 
@@ -311,12 +311,10 @@ Global Instance param_mulZ :
   param (RZNP ==> RZNP ==> RZNP) *%R *%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_oppZ :
-  param (RZNP ==> RZNP) -%R -%C.
+Global Instance param_oppZ : param (RZNP ==> RZNP) -%R -%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_subZ :
-  param (RZNP ==> RZNP ==> RZNP) AlgOp.subr Op.sub_op.
+Global Instance param_subZ : param (RZNP ==> RZNP ==> RZNP) subr sub_op.
 Proof. exact: param_trans. Qed.
 
 Global Instance param_compZ :
@@ -336,6 +334,6 @@ Global Instance param_specZ' :
   param (RZNP ==> Logic.eq) spec_id spec.
 Proof. exact: param_trans. Qed.
 
-End Zrefinement_nat_pos.
-End Z_parametricity.
-End Z_theory.
+End binint_nat_pos.
+End binint_parametricity.
+End binint_theory.

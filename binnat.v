@@ -132,7 +132,7 @@ Section binnat.
 
 Definition Rnat : nat -> N -> Prop := fun_hrel nat_of_bin.
 
-Local Instance : refinement Rpos.
+(* Local Instance : refinement Rpos. *)
 
 Lemma RnatE (n : nat) (x : N) : param Rnat n x -> n = x. 
 Proof. by rewrite paramE; case. Qed.

@@ -36,8 +36,8 @@ Qed.
 
 Definition Rfunperm {n} := ofun_hrel (perm_of_funperm n).
 
-Global Instance refinement_perm_funperm n :
-  refinement _ := Refinement (@Rfunperm n).
+(* Global Instance refinement_perm_funperm n : *)
+(*   refinement _ := Refinement (@Rfunperm n). *)
 
 Definition ctperm (i j k : nat) :=
   if i == k then j else if j == k then i else k.
