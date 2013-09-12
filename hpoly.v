@@ -284,7 +284,7 @@ Qed.
 Definition Rhpoly : {poly A} -> hpoly A -> Prop := fun_hrel to_poly.
 
 (* This is OK here, but not everywhere *)
-Local Instance param_eqA (x : A) : param Logic.eq x x.
+Local Instance param_eq_refl A (x : A) : param Logic.eq x x | 999.
 Proof. by rewrite paramE. Qed.
 
 Lemma RhpolyE p q : param Rhpoly p q -> p = to_poly q.
@@ -418,7 +418,7 @@ Instance refines_hpoly_eq : param (Rhpoly ==> Rhpoly ==> Logic.eq)
   (fun p q => p == q) (fun hp hq => hp == hq)%C.
 Proof.
 apply param_abstr2 => p hp h1 q hq h2.
-by rewrite /eq_op /eq_hpoly paramE -[eq0_hpoly _]RboolE subr_eq0.
+by rewrite /eq_op /eq_hpoly paramE -[eq0_hpoly _]param_eq subr_eq0.
 Qed.
 
 Instance refines_size_hpoly : param (Rhpoly ==> Logic.eq)
@@ -427,7 +427,7 @@ Proof.
 apply param_abstr => /= p hp h1; rewrite [p]RhpolyE paramE {p h1}.
 elim: hp => [a|a n p ih] /=; first by rewrite size_polyC; simpC; case: eqP.
 rewrite /cast /cast_pos_nat /=; case: (sval n) (svalP n) => // m _.
-rewrite size_MXnaddC ih -[eq0_hpoly _]RboolE.
+rewrite size_MXnaddC ih -[eq0_hpoly _]param_eq.
 by case: ifP=> //= _; simpC; rewrite size_polyC; case: ifP.
 Qed.
 

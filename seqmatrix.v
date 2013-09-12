@@ -766,7 +766,7 @@ Local Instance add_A : Op.add A := +%R.
 Local Instance sub_A : Op.sub A := (fun x y => x - y)%R.
 
 (* This helps automation a bit *)
-Local Instance param_eq_refl T (x : T) : param eq x x.
+Local Instance param_eq_refl T (x : T) : param eq x x | 999.
 Proof. by rewrite paramE. Qed.
 
 Local Instance param_fun_eq A B (f f' : A -> B) :

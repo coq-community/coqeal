@@ -217,7 +217,7 @@ Global Instance refines_nat_lt :
   param (Rnat ==> Rnat ==> Logic.eq) ltn lt_op.
 Proof.
 apply param_abstr2 => x x' rx y y' ry; rewrite paramE /Rnat /fun_hrel.
-by rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge [y <= x]RboolE.
+by rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge [y <= x]param_eq.
 (* Cyril: this was wrong to do it like that, we should come back and fix *)
 Qed.
 
@@ -254,6 +254,6 @@ Proof. rewrite [X in X = _]RnatE; compute; reflexivity. Qed.
 
 Lemma test' : 10000%num * 10000%num * (99999999%num + 1) =
              10000000000000000%num.
-Proof. by apply/eqP; rewrite [_ == _]RboolE. Qed.
+Proof. by apply/eqP; rewrite [_ == _]param_eq. Qed.
 
 End test.

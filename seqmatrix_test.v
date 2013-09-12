@@ -18,6 +18,6 @@ Goal (M + N + M + N + M + N + N + M + N) *m
  P *m M + P *m N + P *m N + P *m M + P *m N).
 Proof.
 apply/eqP.
-rewrite [_ == _]RboolE.
+rewrite [_ == _]param_eq.
 by compute.
 Qed.

@@ -184,9 +184,6 @@ Proof. by rewrite paramE. Qed.
 Global Hint Extern 0 (getparam _ _ _)
   => now eapply @getparam_eq : typeclass_instances.
 
-(* Lemma param_eq A (a : A) : param eq a a. *)
-(* Proof. by rewrite paramE. Qed. *)
-
 Global Instance param_apply 
    A B (R : A -> B -> Prop) C D (R' : C -> D -> Prop) :
    forall (c : A -> C) (d : B -> D), param (R ==> R') c d ->
@@ -294,9 +291,6 @@ Proof. by rewrite -[X in (X ==> R3)%rel]comp_eql; apply: composable_imply. Qed.
 Lemma paramR A B (R : A -> B -> Prop) (a : A) (b : B)
   (rab : param R a b) : R a b.
 Proof. by rewrite paramE in rab. Qed.
-
-Lemma RboolE (b b' : bool) : param Logic.eq b b' -> b = b'. 
-Proof. by rewrite paramE. Qed.
 
 (* Hint Extern 0 (refines _ _) => eapply paramR : typeclass_instances. *)
 
@@ -572,11 +566,19 @@ Arguments getparam_map {_ _ _ _ _ _ _ _ _ _ _ _}.
 Hint Extern 1 (getparam _ _ _) =>
   eapply getparam_map : typeclass_instances.
 
+Section bool.
+
 Definition bool_if {A} (c : bool) (a b : A) : A := if c then a else b.
 
 Lemma getparam_if {A A'} (R : A -> A' -> Prop) :
   (param eq ==> getparam R ==> getparam R ==> getparam R)%rel bool_if bool_if.
 Proof. by rewrite paramE; move => [] _ <- ??? ???. Qed.
+
+Global Instance param_if {A A'} (R : A -> A' -> Prop) :
+  param (eq ==> R ==> R ==> R)%rel bool_if bool_if.
+Proof. by rewrite paramE; move => [] _ <- ??? ???. Qed.
+
+End bool.
 
 Hint Extern 1 (getparam _ _ _) => eapply getparam_if: typeclass_instances.
 

@@ -321,7 +321,7 @@ Global Instance param_compZ :
   param (RZNP ==> RZNP ==> Logic.eq) eqtype.eq_op (@Op.eq_op Z _).
 Proof. exact: param_trans. Qed.
 
-Local Instance param_eq A (x : A) : param Logic.eq x x.
+Local Instance param_eq_refl A (x : A) : param Logic.eq x x | 999.
 Proof. by rewrite paramE. Qed.
 Local Instance param_fun_eq1 A B (f : A -> B) :
   param (Logic.eq ==> Logic.eq) f f.

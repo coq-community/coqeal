@@ -188,7 +188,8 @@ Qed.
 End Strassen_correctness.
 
 Section strassen_param.
-Existing Instance param_eq.
+Local Instance param_eq_refl T (x : T) : param eq x x | 999.
+Proof. by rewrite paramE. Qed.
 Import Refinements.Op.
 
 Local Coercion nat_of_pos : positive >-> nat.

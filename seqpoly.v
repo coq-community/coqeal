@@ -384,9 +384,7 @@ by rewrite -cons_poly_def horner_cons (ih _ rp').
 Qed.
 
 (* pseudo-division *)
-
-(* Is this ok here? *)
-Local Instance param_eqn (n : nat) : param Logic.eq n n | 999.
+Local Instance param_eq_refl A (n : A) : param Logic.eq n n | 999.
 Proof. by rewrite paramE. Qed.
 
 Instance param_edivp_rec_seqpoly :
@@ -398,7 +396,7 @@ rewrite paramE=> q sq hsq n m <- {m} p sp hsp r sr hsr m m' <- {m'} /=.
 apply paramP; elim: m => [|m ih] /= in n p sp hsp q sq hsq r sr hsr *;
 rewrite -![size_seqpoly _]param_eq -!sizepE -mul_polyC
         -[_ * 'X^_]/(shiftp (sizep r - sizep q) _) -[_ - _]/(subrp _ _).
-  by case: ifP=> // _; rewrite paramE; do ?split; apply: paramP.
+  by case: ifP=> // _; rewrite paramE; apply: paramP.
 case: ifP=> // _; first by rewrite paramE.
 by apply: ih=> //; apply: paramP.
 Qed.

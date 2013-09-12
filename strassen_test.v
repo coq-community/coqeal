@@ -53,7 +53,7 @@ evar (y : bool).
 have : (param Logic.eq x y).
   do ?[eapply param_apply; tc].
   eapply refines_Strassen with (RmxA := @Rseqmx _); tc.
-move/RboolE ->.
+move/param_eq ->.
 by compute.
 Qed.
 

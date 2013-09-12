@@ -25,11 +25,11 @@ Open Scope ring_scope.
 
 Lemma test : 10000%num%:Z * 10000%num%:Z =
              100000000%num%:Z :> int.
-Proof. by apply/eqP; rewrite [(_ == _)]RboolE. Qed.
+Proof. by apply/eqP; rewrite [(_ == _)]param_eq. Qed.
 
 Lemma test' : 10000%num%:Z * 10000%num%:Z * (99999999%num%:Z + 1) =
              10000000000000000%num%:Z :> int.
-Proof. by apply/eqP; rewrite [(_ == _)]RboolE. Qed.
+Proof. by apply/eqP; rewrite [(_ == _)]param_eq. Qed.
 
 Lemma test'' : 10000%num%:Z * 10000%num%:Z * (99999999%num%:Z + 1) =
              10000000000000000%num%:Z :> int.
