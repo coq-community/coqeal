@@ -19,15 +19,15 @@ Import Refinements.Op.
 
 Definition posS (n : nat) : pos := exist _ n.+1 isT.
 
-Local Instance pos1    : one pos := posS 0.
-Local Instance add_pos : add pos := fun m n => insubd pos1 (val m + val n).
-Local Instance sub_pos : sub pos := fun m n => insubd pos1 (val m - val n).
-Local Instance mul_pos : mul pos := fun m n => insubd pos1 (val m * val n).
-Local Instance leq_pos : leq pos := fun m n => val m <= val n.
-Local Instance lt_pos  : lt pos  := fun m n => val m < val n.
-Local Instance eq_pos  : eq pos  := eqtype.eq_op.
+Instance pos1    : one pos := posS 0.
+Instance add_pos : add pos := fun m n => insubd pos1 (val m + val n).
+Instance sub_pos : sub pos := fun m n => insubd pos1 (val m - val n).
+Instance mul_pos : mul pos := fun m n => insubd pos1 (val m * val n).
+Instance leq_pos : leq pos := fun m n => val m <= val n.
+Instance lt_pos  : lt pos  := fun m n => val m < val n.
+Instance eq_pos  : eq pos  := eqtype.eq_op.
 
-Local Instance cast_pos_nat : cast_class pos nat := val.
-Local Instance cast_nat_pos : cast_class nat pos := insubd 1%C.
+Instance cast_pos_nat : cast_class pos nat := val.
+Instance cast_nat_pos : cast_class nat pos := insubd 1%C.
 
 End pos.

@@ -228,13 +228,12 @@ Context `{!param (Logic.eq ==> Logic.eq)
 Context `{forall m, param (@RordA (1 + m)) 0%R 0%C}.
 
 Instance param_addn : param (Logic.eq ==> Logic.eq ==> Logic.eq) addn addn.
-by rewrite paramE => * ? ? -> ? ? ->.
-Qed.
+Proof. by rewrite paramE => * ? ? -> ? ? ->. Qed.
 
-Typeclasses eauto := debug.
+(* Typeclasses eauto := debug. *)
 
-Hint Extern 1 (getparam _ _ _) =>
-  eapply param_Some : typeclass_instances.
+Local Instance param_eq_refl A (n : A) : param Logic.eq n n | 999.
+Proof. by rewrite paramE. Qed.
 
 Global Instance param_rank_elim m n :
    param (RmxA ==> Logic.eq)%rel
@@ -253,7 +252,7 @@ case: (find_pivotC a) => pa //=.
 rewrite -[RordA]paramE => RordAxpa.
 eapply param_apply.
   eapply param_apply; first exact param_addn.
-  exact: param_eq.
+  tc.
 eapply param_apply.
 by tc.
 eapply param_apply.
@@ -304,18 +303,18 @@ Qed.
 
 End rank_param.
 
-Require Import Int31 Int31Native intmodp.
+(* Require Import Int31 Int31Native intmodp. *)
 
-Section rank_seqmx.
+(* Section rank_seqmx. *)
 
-Fixpoint find_pivot_seqmx j (r : seqmatrix int) {struct r} : option nat :=
-  if r is x::r' then
-    if (head 0 x == 0)%C then find_pivot_seqmx j.+1 r' else Some j
-  else None.
+(* Fixpoint find_pivot_seqmx j (r : seqmatrix int) {struct r} : option nat := *)
+(*   if r is x::r' then *)
+(*     if (head 0 x == 0)%C then find_pivot_seqmx j.+1 r' else Some j *)
+(*   else None. *)
 
-Definition elim_rank_seqmx := rank_elim int (fun _ _ => seqmatrix int) (fun _ => nat) (fun _ _ => find_pivot_seqmx 0).
+(* Definition elim_rank_seqmx := rank_elim int (fun _ _ => seqmatrix int) (fun _ => nat) (fun _ _ => find_pivot_seqmx 0). *)
 
-End rank_seqmx.
+(* End rank_seqmx. *)
 
 (*
 Notation "n %:F2" := (n%R : 'F_2) (at level 2, left associativity, format "n %:F2").

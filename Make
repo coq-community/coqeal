@@ -16,7 +16,7 @@ seqpoly.v
 hpoly.v
 pos.v
 seqmatrix.v
-intmodp.v
+# intmodp.v
 # boolF2.v
 funperm.v
 rank.v

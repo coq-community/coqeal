@@ -155,37 +155,30 @@ Proof. by rewrite paramE. Qed.
 
 (* Binary operations *)
 Global Instance add_N : add N := N.add.
-Global Instance refines_nat_add :
-  param (Rnat ==> Rnat ==> Rnat) addn +%C. 
+Global Instance refines_nat_add : param (Rnat ==> Rnat ==> Rnat) addn +%C. 
 Proof.
 rewrite paramE => _ x <- _ y <-.
 by rewrite /Rnat /fun_hrel nat_of_add_bin.
 Qed.
 
-Definition succN (n : N) : N := unfold (1 + n)%C.
+Definition succN (n : N) : N := (1 + n)%C.
 Global Instance refines_natS : param (Rnat ==> Rnat) S succN.
-Proof.
-rewrite !paramE => m n rmn; rewrite -add1n.
-by rewrite /succN /unfold; apply: paramP.
-Qed.
+Proof. by rewrite !paramE => m n rmn; rewrite -add1n /succN; apply: paramP. Qed.
 
 Lemma nat_of_binK : forall x, N.of_nat (nat_of_bin x) = x.
 Proof.
-case => //= p; apply: Nnat.N2Nat.inj.
-by rewrite Nnat.Nat2N.id /= to_natE.
+by case => //= p; apply: Nnat.N2Nat.inj; rewrite Nnat.Nat2N.id /= to_natE.
 Qed.
 
 Global Instance sub_N : sub N := N.sub.
-Global Instance refines_nat_sub :
-  param (Rnat ==> Rnat ==> Rnat) subn sub_op.
+Global Instance refines_nat_sub : param (Rnat ==> Rnat ==> Rnat) subn sub_op.
 Proof.
 rewrite paramE => _ x <- _ y <-.
 by apply: Nnat.Nat2N.inj; rewrite Nnat.Nat2N.inj_sub !nat_of_binK.
 Qed.
 
 Global Instance mul_N : mul N := N.mul.
-Global Instance refines_nat_mul :
-  param (Rnat ==> Rnat ==> Rnat) muln mul_op.
+Global Instance refines_nat_mul : param (Rnat ==> Rnat ==> Rnat) muln mul_op.
 Proof.
 rewrite paramE => _ x <- _ y <-; rewrite /Rnat /fun_hrel /=.
 by rewrite nat_of_mul_bin.

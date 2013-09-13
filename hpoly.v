@@ -220,32 +220,32 @@ Section hpoly_theory.
 
 Variable A : comRingType.
 
-Local Instance zeroA : zero A := 0%R.
-Local Instance oneA  : one A  := 1%R.
-Local Instance addA  : add A  := +%R.
-Local Instance oppA  : opp A  := -%R.
-Local Instance subA  : sub A  := subr.
-Local Instance mulA  : mul A  := *%R.
-Local Instance eqA   : eq A   := eqtype.eq_op.
+Instance zeroA : zero A := 0%R.
+Instance oneA  : one A  := 1%R.
+Instance addA  : add A  := +%R.
+Instance oppA  : opp A  := -%R.
+Instance subA  : sub A  := subr.
+Instance mulA  : mul A  := *%R.
+Instance eqA   : eq A   := eqtype.eq_op.
 
-Local Instance one_pos : one pos := posS 0.
-Local Instance add_pos : add pos :=
+Instance one_pos : one pos := posS 0.
+Instance add_pos : add pos :=
   fun m n => insubd (posS 0) (val m + val n)%N.
-Local Instance sub_pos : sub pos :=
+Instance sub_pos : sub pos :=
   fun m n => insubd (posS 0) (val m - val n)%N.
-Local Instance mul_pos : mul pos :=
+Instance mul_pos : mul pos :=
   fun m n => insubd (posS 0) (val m * val n)%N.
-Local Instance eq_pos  : eq pos := eqtype.eq_op.
-Local Instance lt_pos  : lt pos  := fun m n => val m < val n.
+Instance eq_pos  : eq pos := eqtype.eq_op.
+Instance lt_pos  : lt pos  := fun m n => val m < val n.
 
-Local Instance zero_nat : zero nat := 0%N.
-Local Instance eq_nat   : eq nat   := eqtype.eq_op.
-Local Instance lt_nat   : lt nat   := ltn.
-Local Instance add_nat  : add nat  := addn.
-Local Instance sub_nat  : sub nat  := subn.
+Instance zero_nat : zero nat := 0%N.
+Instance eq_nat   : eq nat   := eqtype.eq_op.
+Instance lt_nat   : lt nat   := ltn.
+Instance add_nat  : add nat  := addn.
+Instance sub_nat  : sub nat  := subn.
 
-Local Instance cast_pos_nat : cast_class pos nat := val.
-Local Instance cast_nat_pos : cast_class nat pos := insubd 1%C.
+Instance cast_pos_nat : cast_class pos nat := val.
+Instance cast_nat_pos : cast_class nat pos := insubd 1%C.
 
 Fixpoint to_poly (p : hpoly A) := match p with
   | Pc c => c%:P 
@@ -257,7 +257,7 @@ Fixpoint to_poly (p : hpoly A) := match p with
 Definition to_hpoly : {poly A} -> hpoly A := fun p => from_seq (polyseq p).
 
 (* This instance has to be declared here in order not to make form_seq confused *)
-Local Instance one_nat  : one nat  := 1%N.
+Instance one_nat  : one nat  := 1%N.
 
 Lemma to_hpolyK : cancel to_hpoly to_poly.
 Proof.
@@ -284,7 +284,7 @@ Qed.
 Definition Rhpoly : {poly A} -> hpoly A -> Prop := fun_hrel to_poly.
 
 (* This is OK here, but not everywhere *)
-Local Instance param_eq_refl A (x : A) : param Logic.eq x x | 999.
+Instance param_eq_refl A (x : A) : param Logic.eq x x | 999.
 Proof. by rewrite paramE. Qed.
 
 Lemma RhpolyE p q : param Rhpoly p q -> p = to_poly q.

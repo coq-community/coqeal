@@ -31,41 +31,23 @@ Definition Q := (Z * Z)%type.
 
 (* Definition of operators on Q Z *)
 Section Q_ops.
+
+Local Open Scope computable_scope.
 Context `{zero Z, one Z, add Z, opp Z, mul Z, eq Z}.
 
-(* Zero *)
-Global Instance zeroQ : zero Q := unfold (0, 1)%C.
-
-(* One *)
-Global Instance oneQ : one Q := unfold (1, 1)%C.
-
-(* Add *)
-Global Instance addQ : add Q :=
-  fun x y => unfold (x.1 * y.2 + y.1 * x.2, x.2 * y.2)%C.
-
-(* Mul *)
-Global Instance mulQ : mul Q := 
-  fun x y => unfold (x.1 * y.1, x.2 * y.2)%C.
-
-(* Opp *)
-Global Instance oppQ : opp Q := fun x => unfold (- x.1, x.2)%C.
-
-(* Comp *)
-Global Instance eqQ : eq Q :=
-  fun x y => unfold (x.1 * y.2 == x.2 * y.1)%C.
-
-(* Inv *)
-Global Instance invQ : inv Q :=
-  fun x => (if (x.1 == 0)%C then 0%C else (x.2, x.1)%C).
-
-(* Subtraction *)
-Global Instance subQ : sub Q := fun x y => unfold (x + - y)%C.
-
-(* Division *)
-Global Instance divQ : div Q := fun x y => unfold (x * y^-1)%C.
+Global Instance zeroQ : zero Q := (0, 1).
+Global Instance oneQ  : one Q  := (1, 1).
+Global Instance addQ  : add Q  := fun x y => (x.1 * y.2 + y.1 * x.2, x.2 * y.2).
+Global Instance mulQ  : mul Q  := fun x y => (x.1 * y.1, x.2 * y.2).
+Global Instance oppQ  : opp Q  := fun x   => (- x.1, x.2).
+Global Instance eqQ   : eq Q   := fun x y => (x.1 * y.2 == x.2 * y.1).
+Global Instance invQ : inv Q   := fun x   => 
+  if (x.1 == 0)%C then 0 else (x.2, x.1).
+Global Instance subQ : sub Q   := fun x y => (x + - y).
+Global Instance divQ : div Q   := fun x y => (x * y^-1).
 
 (* Embedding from Z to Q *)
-Global Instance embedQ : cast_class Z Q := fun x => unfold (x, 1)%C.
+Global Instance embedQ : cast_class Z Q := fun x => (x, 1).
 
 End Q_ops.
 End Q.
@@ -115,8 +97,7 @@ Proof. by rewrite paramE. Qed.
 Instance refines_oneq : param Rrat 1 1%C.
 Proof. by rewrite paramE. Qed.
 
-Instance refines_embedq :
-  param (Logic.eq ==> Rrat) intr (cast : int -> Q _).
+Instance refines_embedq : param (Logic.eq ==> Rrat) intr cast.
 Proof. by rewrite paramE => n ? <-; congr Some; rewrite mulr1. Qed.
 
 Instance refines_addq : param (Rrat ==> Rrat ==> Rrat) +%R +%C.
@@ -139,7 +120,7 @@ rewrite /Rrat /ofun_hrel /Qint_to_rat mulf_neq0 ?dom_refines //=.
 by rewrite [x]RratE [y]RratE mulrACA -invfM ?(rmorphD, rmorphM).
 Qed.
 
-Instance refines_invq : param (Rrat ==> Rrat) GRing.inv (@inv_op Qint _).
+Instance refines_invq : param (Rrat ==> Rrat) GRing.inv inv_op.
 Proof.
 apply param_abstr => x a rx; rewrite paramE.
 rewrite /Rrat /ofun_hrel /= /Qint_to_rat /= /inv_op /invQ.
@@ -148,8 +129,7 @@ have [-> /=|a1_neq0 /=] := altP (a.1 =P 0); first by rewrite !mul0r ?invr0.
 by rewrite a1_neq0 invfM invrK mulrC.
 Qed.
 
-Instance refines_compq :
-  param (Rrat ==> Rrat ==> Logic.eq) eqtype.eq_op (@eq_op Qint _).
+Instance refines_compq : param (Rrat ==> Rrat ==> Logic.eq) eqtype.eq_op eq_op.
 Proof.
 apply param_abstr2  => x a rx y b ry; rewrite paramE /= /eq_op /eqQ.
 rewrite [x]RratE [y]RratE /= -[(_ == _)%C]/(_ == _).
@@ -184,45 +164,37 @@ Context `{!param (rintC ==> rintC ==> rintC) subr sub_op}.
 Context `{!param (rintC ==> rintC ==> rintC) *%R *%C}.
 Context `{!param (rintC ==> rintC ==> Logic.eq) eqtype.eq_op eq_op}.
 
-Global Instance param_zeroQ  : param RratA (0 : rat) (0%C : Q).
+Global Instance param_zeroQ : param RratA (0 : rat) (0%C : Q).
 Proof. exact: param_trans. Qed.
 
 Global Instance param_oneQ  : param RratA (1 : rat) (1%C : Q).
 Proof. exact: param_trans. Qed.
 
-Global Instance param_embedQ :
-    param (rintC ==> RratA) intr (cast: C -> Q).
+Global Instance param_embedQ : param (rintC ==> RratA) intr (cast: C -> Q).
 Proof. exact: param_trans. Qed.
 
-Global Instance param_addQ :
-  param (RratA ==> RratA ==> RratA) +%R (+%C : Q -> Q -> Q).
+Global Instance param_addQ : param (RratA ==> RratA ==> RratA) +%R +%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_mulQ :
-  param (RratA ==> RratA ==> RratA) *%R ( *%C : Q -> Q -> Q).
+Global Instance param_mulQ : param (RratA ==> RratA ==> RratA) *%R *%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_oppQ :
-  param (RratA ==> RratA) -%R (-%C : Q -> Q).
+Global Instance param_oppQ : param (RratA ==> RratA) -%R -%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_invQ :
-  param (RratA ==> RratA) GRing.inv (@inv_op Q _).
+Global Instance param_invQ : param (RratA ==> RratA) GRing.inv inv_op.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_subQ :
-  param (RratA ==> RratA ==> RratA) AlgOp.subr (@sub_op Q _).
-Proof. by rewrite /AlgOp.subr /sub_op /subQ /unfold; apply: get_param. Qed.
+Global Instance param_subQ : param (RratA ==> RratA ==> RratA) AlgOp.subr sub_op.
+Proof. by rewrite /AlgOp.subr /sub_op /subQ; apply: get_param. Qed.
 
-Global Instance param_divq :
-  param (RratA ==> RratA ==> RratA) AlgOp.divr (@div_op Q _).
-Proof. rewrite /AlgOp.divr /div_op /divQ /unfold; exact: get_param. Qed.
+Global Instance param_divq : param (RratA ==> RratA ==> RratA) AlgOp.divr div_op.
+Proof. by rewrite /AlgOp.divr /div_op /divQ; apply: get_param. Qed.
 
-Global Instance param_eqQ :
-  param (RratA ==> RratA ==> Logic.eq) eqtype.eq_op (@eq_op Q _).
+Global Instance param_eqQ : param (RratA ==> RratA ==> Logic.eq) eqtype.eq_op eq_op.
 Proof.
 eapply param_trans; tc.
-by rewrite /eq_op /eqQ /unfold; tc.
+by rewrite /eq_op /eqQ; tc.
 (* temporary solution *)
 Qed.
 

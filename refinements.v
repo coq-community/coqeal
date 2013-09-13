@@ -9,14 +9,6 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-(* Reserved Notation "\implem_ A" (at level 0, format "\implem_ A"). *)
-(* Reserved Notation "\implem" (at level 0, format "\implem"). *)
-(* Reserved Notation "\spec_ B" (at level 0, format "\spec_ B"). *)
-(* Reserved Notation "\spec" (at level 0, format "\spec"). *)
-(* Reserved Notation "\refines_ r a b"  *)
-(*          (at level 0, format "\refines_ r  a  b", *)
-(*           r at level 0, a at next level). *)
-
 Delimit Scope computable_scope with C.
 Delimit Scope hetero_computable_scope with HC.
 Delimit Scope rel_scope with rel.
@@ -254,16 +246,6 @@ Proof.
 by rewrite !paramE composableE => rABC rab rbc; apply: rABC; exists b.
 Qed.
 
-(* Local Instance refinement_trans A B C *)
-(*   (rab : refinement A B) (rbc : refinement B C) : refinement A C :=  *)
-(*   Refinement (@implem_composeK _ _ _ rab rbc). *)
-
-(* Lemma refines_trans A B C (rab : refinement A B) (rbc : refinement B C) *)
-(*   (a : A) (b : B) (c : C) `{!refines a b, !refines b c} : refines a c. *)
-(* Proof. by do? rewrite /refines /= spec_refines. Qed. *)
-(* (* rac := refinement_trans rab rbc and leaving it implicit in the *) *)
-(* (* conclusion leads to a Bad implicit argument number: 11 *) *)
-
 Lemma composable_rid1 A B (R : A -> B -> Prop): composable eq R R.
 Proof. by rewrite composableE comp_eql. Qed.
 
@@ -321,12 +303,6 @@ Local Open Scope ring_scope.
 
 Import GRing.Theory.
 
-(* This class describe what is a type refinement *)
-(* Class refinement {A B} (R : A -> B -> Prop) := Refinement {}. *)
-
-(* This class describes what is a term refinement *)
-(* Definition refines {A B R} `{refinement A B R} := R. *)
-
 Lemma getparam_abstr
    A   B   (R   : A   -> B   -> Prop)
    A'  B'  (R'  : A'  -> B'  -> Prop) 
@@ -354,27 +330,13 @@ Lemma param_abstr2 A B A' B' A'' B''
         param (R ==> R' ==> R'') f g.
 Proof. by move=> H; do 2![eapply param_abstr => *]; apply: H. Qed.
 
-Definition unfold A := @id A.
-Typeclasses Opaque unfold.
-
-(* buggy *)
-Lemma param_unfold X A
-  (R : X -> A -> Prop) (x : X) (a : A) :
- param R x a -> getparam R (unfold x) (unfold a).
-Proof. by rewrite !paramE. Qed.
-
 End Parametricity.
 
 Global Hint Extern 1 (getparam _ _ _)
  => eapply set_param : typeclass_instances.
 
-(* Global Hint Extern 1000 (getparam _ _ _) *)
-(*  => eapply param_unfold : typeclass_instances. *)
-
 Hint Extern 2 (getparam (_ ==> _) _ _)
  => eapply @getparam_abstr=> ??? : typeclass_instances.
-
-(* Arguments refinement {A B} _%rel. *)
 
 Section prod.
 Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
@@ -601,6 +563,9 @@ Proof. by []. Qed.
 End param_option.
 
 Arguments getparam_some {_ _ _ _ _ _}.
+
+Hint Extern 1 (getparam _ _ _) =>
+  eapply getparam_some : typeclass_instances.
 
 Section param_nat.
 
