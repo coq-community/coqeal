@@ -209,8 +209,6 @@ Proof. by rewrite !paramE. Qed.
 Lemma set_param T T' (R : T -> T' -> Prop) (x : T) (y : T') :
   param R x y -> getparam R x y.
 Proof. by rewrite !paramE. Qed.
-(* Global Hint Extern 999 (getparam refines _ _) *)
-(*  => eapply set_param : typeclass_instances. *)
 
 Fact composable_lock : unit. Proof. exact tt. Qed.
 

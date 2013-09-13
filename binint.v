@@ -135,20 +135,19 @@ Instance cast_nat_pos : cast_class nat pos := insubd 1%C.
 Instance spec_nat : spec_of nat nat := spec_id.
 Instance spec_pos : spec_of pos pos := spec_id.
 
-(* Local Notation refines := refines_step. *)
 Lemma RintE n x : param Rint n x -> n = int_of_Z x.
 Proof. by rewrite paramE. Qed.
 
-Instance refines_int_0 : param Rint (0%R : int) (0%C : Znp).
+Instance Rint_0 : param Rint 0 0%C.
 Proof. by rewrite paramE. Qed.
 
-Instance refines_int_1 : param Rint (1%R : int) (1%C : Znp).
+Instance Rint_1 : param Rint 1 1%C.
 Proof. by rewrite paramE. Qed.
 
-Instance refines_int_Posz : param (Logic.eq ==> Rint) Posz (cast : nat -> Znp).
-Proof. by rewrite paramE=> n n' [<-]. Qed.
+Instance Rint_Posz : param (Logic.eq ==> Rint) Posz cast.
+Proof. by rewrite paramE=> n n' <-. Qed.
 
-Instance refines_int_add : param (Rint ==> Rint ==> Rint) +%R +%C.
+Instance Rint_add : param (Rint ==> Rint ==> Rint) +%R +%C.
 Proof.
 rewrite paramE /Rint /fun_hrel /add_op /= => _ x <- _ y <-.
 case: x y => [x|x] [y|y] //=; rewrite ?(add0r, addr0) //=; simpC.
@@ -159,13 +158,13 @@ case: x y => [x|x] [y|y] //=; rewrite ?(add0r, addr0) //=; simpC.
 by rewrite !insubdK -?topredE /= ?addn_gt0 ?valP // -opprB opprK addrC.
 Qed.
 
-Instance refines_int_opp : param (Rint ==> Rint) -%R -%C.
+Instance Rint_opp : param (Rint ==> Rint) -%R -%C.
 Proof.
 rewrite paramE  /Rint /fun_hrel => _ x <-.
 by case: x => [[]|] //= n; rewrite ?insubdK ?opprK.
 Qed.
 
-Instance refines_int_sub : param (Rint ==> Rint ==> Rint) subr sub_op.
+Instance Rint_sub : param (Rint ==> Rint ==> Rint) subr sub_op.
 Proof.
 rewrite paramE  /Rint /fun_hrel /subr /sub_op => _ x <- _ y <-.
 case: x y => [x|x] [y|y]; rewrite ?opprK //=; simpC.
@@ -177,17 +176,16 @@ have [yx|xy] /= := leqP; first by rewrite addrC subzn.
 by rewrite insubdK // -?topredE /= ?subn_gt0 // -subzn 1?ltnW // opprD opprK.
 Qed.
 
-Instance refines_int_eq :
-  param (Rint ==> Rint ==> Logic.eq) eqtype.eq_op (@eq_op Znp _).
+Instance Rint_eq : param (Rint ==> Rint ==> Logic.eq) eqtype.eq_op eq_op.
 Proof.
 rewrite paramE  /Rint /fun_hrel  /eq_op => _ x <- _ y <-.
 case: x y => [x|x] [y|y] //=; rewrite ?eqr_opp // ?[- _ == _]eq_sym;
 by rewrite gtr_eqF // (@ltr_le_trans _ 0) // ltr_oppl oppr0 [_ < _]valP.
 Qed.
 
-Instance refines_int_mul : param (Rint ==> Rint ==> Rint) *%R *%C.
+Instance Rint_mul : param (Rint ==> Rint ==> Rint) *%R *%C.
 Proof.
-rewrite paramE  /Rint /fun_hrel  /mul_op => _ x <- _ y <-.
+rewrite paramE /Rint /fun_hrel  /mul_op => _ x <- _ y <-.
 case: x y => [x|x] [y|y] //=; simpC; last by rewrite mulrNN.
   have [->|y_neq0 /=] := (altP eqP); first by rewrite mul0r.
   by rewrite mulrN !insubdK -?topredE /= ?muln_gt0 ?valP ?andbT ?lt0n.
@@ -195,10 +193,10 @@ have [->|y_neq0 /=] := (altP eqP); first by rewrite mulr0.
 by rewrite mulNr !insubdK -?topredE /= ?muln_gt0 ?valP ?andbT ?lt0n.
 Qed. 
 
-Instance refines_specZ x : param Rint (spec x) x.
+Instance Rint_specZ x : param Rint (spec x) x.
 Proof. by rewrite !paramE; case: x. Qed.
 
-Instance refines_specZ' :
+Instance Rint_specZ' :
   param (Rint ==> Logic.eq) id spec.
 Proof. by rewrite paramE => a a' ra; rewrite [spec _]RintE. Qed.
 
@@ -279,28 +277,28 @@ Context `{!param (Rnat ==> Logic.eq) spec_id spec,
 
 Local Notation Z := (Z N P).
 
-Global Instance param_zeroZ  : param RZNP 0 0%C.
+Global Instance RZNP_zeroZ  : param RZNP 0 0%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_oneZ  : param RZNP 1 1%C.
+Global Instance RZNP_oneZ  : param RZNP 1 1%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_embedZ : param (Rnat ==> RZNP) Posz cast.
+Global Instance RZNP_embedZ : param (Rnat ==> RZNP) Posz cast.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_addZ : param (RZNP ==> RZNP ==> RZNP) +%R +%C.
+Global Instance RZNP_addZ : param (RZNP ==> RZNP ==> RZNP) +%R +%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_mulZ : param (RZNP ==> RZNP ==> RZNP) *%R *%C.
+Global Instance RZNP_mulZ : param (RZNP ==> RZNP ==> RZNP) *%R *%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_oppZ : param (RZNP ==> RZNP) -%R -%C.
+Global Instance RZNP_oppZ : param (RZNP ==> RZNP) -%R -%C.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_subZ : param (RZNP ==> RZNP ==> RZNP) subr sub_op.
+Global Instance RZNP_subZ : param (RZNP ==> RZNP ==> RZNP) subr sub_op.
 Proof. exact: param_trans. Qed.
 
-Global Instance param_compZ :
+Global Instance RZNP_compZ :
   param (RZNP ==> RZNP ==> Logic.eq) eqtype.eq_op (@Op.eq_op Z _).
 Proof. exact: param_trans. Qed.
 
@@ -313,7 +311,7 @@ Instance param_fun_eq2 A B C (f : A -> B -> C) :
   param (Logic.eq ==> Logic.eq ==> Logic.eq) f f.
 Proof. by rewrite !paramE => x x' -> y y' ->. Qed.
 
-Global Instance param_specZ' : param (RZNP ==> Logic.eq) spec_id spec.
+Global Instance RZNP_specZ' : param (RZNP ==> Logic.eq) spec_id spec.
 Proof. exact: param_trans. Qed.
 
 End binint_nat_pos.

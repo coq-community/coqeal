@@ -327,7 +327,7 @@ Qed.
 Definition Rseqmx {m n} := ofun_hrel (mx_of_seqmx m n).
 
 (* TODO: there should be an equivalent in refinements *)
-Lemma refinesP {m n} {x y : 'M[A]_(m,n)} {a : seqmatrix}
+Lemma RseqmxP {m n} {x y : 'M[A]_(m,n)} {a : seqmatrix}
   `{ref_xa : !param Rseqmx x a} : x = y -> Rseqmx y a.
 Proof.
 by move=> eq_xy; move: ref_xa; rewrite eq_xy paramE.
@@ -393,7 +393,7 @@ rewrite (omap_funoptE (fun ij => x ij.1 ij.2)) => [|g g' eq_gg'|[i j]].
 by rewrite (nth_map [::]) ?eq_sz //= (nth_map (x i j)) ?eq_row_sz ?eq_nth.
 Qed.
 
-Global Instance refines_mkseqmx_ord_tt m n (f : 'I_m -> 'I_n -> A) :
+Global Instance Rseqmx_mkseqmx_ord_tt m n (f : 'I_m -> 'I_n -> A) :
   param Rseqmx (matrix_of_fun tt f) (mkseqmx_ord f).
 Proof.
 rewrite paramE.
@@ -404,7 +404,7 @@ apply/refines_seqmxP=> [|i lt_im|i j].
 by rewrite !mxE (nth_map i) ?sizeE // (nth_map j) ?sizeE // !nth_ord_enum.
 Qed.
 
-Global Instance refines_mkseqmx_ord_mx_key m n (f : 'I_m -> 'I_n -> A) :
+Global Instance Rseqmx_mkseqmx_ord_mx_key m n (f : 'I_m -> 'I_n -> A) :
   param Rseqmx (matrix_of_fun matrix_key f) (mkseqmx_ord f).
 Proof.
 rewrite paramE.
@@ -420,7 +420,7 @@ Definition map_mx_wrapper {A B} (m n : nat) (f : A -> B) (M : 'M_(m,n)) :=
 
 (* We should probably be more parametric here, refining f : R -> R to f : A -> A *)
 (* TODO: I don't know how to state this lemma *)
-Global Instance refines_map_seqmx m n :
+Global Instance Rseqmx_map_seqmx m n :
 param (Logic.eq ==> Rseqmx ==> Rseqmx) (@map_mx_wrapper A A m n)
   (@map_seqmx A).
 Proof.
@@ -435,7 +435,7 @@ Qed.
 Definition zipwithmx m n (f : A -> A -> A) (M N : 'M[A]_(m,n)) :=
   \matrix_(i,j) f (M i j) (N i j).
 
-Global Instance refines_zipwithseqmx m n :
+Global Instance Rseqmx_zipwithseqmx m n :
   param (eq ==> Rseqmx ==> Rseqmx ==> Rseqmx) (@zipwithmx m n) (@zipwithseqmx A).
 Proof.
 rewrite paramE => f ? <- x a ref_xa y b ?.
@@ -473,7 +473,7 @@ by move: lt_k_szip; rewrite sizeE leq_min; case/andP.
 Qed.
 
 (* trseqmx refines the proof-oriented trmx *)
-Global Instance refines_trseqmx m n :
+Global Instance Rseqmx_trseqmx m n :
   param (Rseqmx ==> Rseqmx) (@trmx A m.+1 n) (@trseqmx A).
 Proof.
 rewrite paramE.
@@ -499,7 +499,7 @@ by rewrite size_trseqmx.
 Qed.
 
 (* const_seqmx refines the proof-oriented const_mx *)
-Global Instance refines_const_seqmx m n :
+Global Instance Rseqmx_const_seqmx m n :
   param (eq ==> Rseqmx) (@const_mx A m n) (const_seqmx m n).
 Proof.
 rewrite paramE => x x' <-.
@@ -513,7 +513,7 @@ rewrite /= (omap_funoptE (fun ij => x)) => [|g g' eq_gg'|a].
 by rewrite (nth_map [::]) /= ?(nth_map x) ?(nth_nseq,ltn_ord,size_nseq).
 Qed.
 
-Global Instance refines_xrowseqmx m n :
+Global Instance Rseqmx_xrowseqmx m n :
   param (eq ==> eq ==> Rseqmx ==> Rseqmx) (@xrow A m n) (@xrowseqmx A).
 Proof.
 rewrite paramE => i i' <- j j' <- x a ref_xa.
@@ -538,7 +538,7 @@ Section seqmx_block.
 
 Variables m m1 m2 n n1 n2 : nat.
 
-Global Instance refines_usubseqmx :
+Global Instance Rseqmx_usubseqmx :
   param (Rseqmx ==> Rseqmx) (@usubmx A m1 m2 n) (@usubseqmx A m1 m2 n).
 Proof.
 rewrite paramE /usubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
@@ -548,7 +548,7 @@ rewrite paramE /usubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 by rewrite nth_take // mxE -{2}refines_nth.
 Qed.
 
-Global Instance refines_dsubseqmx :
+Global Instance Rseqmx_dsubseqmx :
   param (Rseqmx ==> Rseqmx) (@dsubmx A m1 m2 n) (@dsubseqmx A m1 m2 n).
 Proof.
 rewrite paramE /dsubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
@@ -557,7 +557,7 @@ rewrite paramE /dsubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 by rewrite nth_drop // mxE -{2}refines_nth.
 Qed.
 
-Global Instance refines_lsubseqmx :
+Global Instance Rseqmx_lsubseqmx :
   param (Rseqmx ==> Rseqmx) (@lsubmx A m n1 n2) (@lsubseqmx A m n1 n2).
 Proof.
 rewrite paramE /lsubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
@@ -569,7 +569,7 @@ rewrite paramE /lsubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
 by rewrite nth_take // mxE -{2}refines_nth.
 Qed.
 
-Global Instance refines_rsubseqmx :
+Global Instance Rseqmx_rsubseqmx :
   param (Rseqmx ==> Rseqmx) (@rsubmx A m n1 n2) (@rsubseqmx A m n1 n2).
 Proof.
 rewrite paramE /rsubseqmx => x a ref_xa; apply/refines_seqmxP=> [|i Hi|i j].
@@ -582,44 +582,44 @@ Qed.
 
 End seqmx_block.
 
-Arguments refines_usubseqmx {m1 m2 n}.
-Arguments refines_dsubseqmx {m1 m2 n}.
-Arguments refines_lsubseqmx {m n1 n2}.
-Arguments refines_rsubseqmx {m n1 n2}.
+Arguments Rseqmx_usubseqmx {m1 m2 n}.
+Arguments Rseqmx_dsubseqmx {m1 m2 n}.
+Arguments Rseqmx_lsubseqmx {m n1 n2}.
+Arguments Rseqmx_rsubseqmx {m n1 n2}.
 
 Section seqmx_block2.
 
 Variables m m1 m2 n n1 n2 : nat.
 
-Global Instance refines_ulsubseqmx :
+Global Instance Rseqmx_ulsubseqmx :
   param (Rseqmx ==> Rseqmx) (@ulsubmx A m1 m2 n1 n2) (@ulsubseqmx A m1 m2 n1 n2).
 Proof.
 rewrite /ulsubmx /ulsubseqmx /= paramE => x a ref_xa.
 by rewrite -[Rseqmx]paramE; tc.
 Qed.
 
-Global Instance refines_ursubseqmx :
+Global Instance Rseqmx_ursubseqmx :
   param (Rseqmx ==> Rseqmx) (@ursubmx A m1 m2 n1 n2) (@ursubseqmx A m1 m2 n1 n2).
 Proof.
 rewrite /ursubmx /ursubseqmx /= paramE => x a ref_xa.
 by rewrite -[Rseqmx]paramE; tc.
 Qed.
 
-Global Instance refines_dlsubseqmx :
+Global Instance Rseqmx_dlsubseqmx :
   param (Rseqmx ==> Rseqmx) (@dlsubmx A m1 m2 n1 n2) (@dlsubseqmx A m1 m2 n1 n2).
 Proof.
 rewrite /dlsubmx /dlsubseqmx /= paramE => x a ref_xa.
 by rewrite -[Rseqmx]paramE; tc.
 Qed.
 
-Global Instance refines_drsubseqmx :
+Global Instance Rseqmx_drsubseqmx :
   param (Rseqmx ==> Rseqmx) (@drsubmx A m1 m2 n1 n2) (@drsubseqmx A m1 m2 n1 n2).
 Proof.
 rewrite /drsubmx /drsubseqmx /= paramE => x a ref_xa.
 by rewrite -[Rseqmx]paramE; tc.
 Qed.
 
-Global Instance refines_row_seqmx :
+Global Instance Rseqmx_row_seqmx :
   param (Rseqmx ==> Rseqmx ==> Rseqmx) (@row_mx A m n1 n2) (@row_seqmx A m n1 n2).
 Proof.
 rewrite paramE => x a ref_xa y b ref_yb.
@@ -630,7 +630,7 @@ rewrite /row_seqmx zipwithE (nth_map ([::],[::])) ?nth_zip ?sizeE //= nth_cat.
 by rewrite !sizeE // mxE; case: splitP => j' ->; rewrite ?addKn refines_nth.
 Qed.
 
-Global Instance refines_col_seqmx :
+Global Instance Rseqmx_col_seqmx :
   param (Rseqmx ==> Rseqmx ==> Rseqmx) (@col_mx A m1 m2 n) (@col_seqmx A m1 m2 n).
 Proof.
 rewrite paramE => x a ref_xa y b ref_yb.
@@ -651,7 +651,7 @@ Section seqmx_block3.
 
 Variables m1 m2 n1 n2 : nat.
 
-Global Instance refines_block_seqmx :
+Global Instance Rseqmx_block_seqmx :
   param (Rseqmx ==> Rseqmx ==> Rseqmx ==> Rseqmx ==> Rseqmx)
     (@block_mx A m1 m2 n1 n2) (@block_seqmx A m1 m2 n1 n2).
 Proof.
@@ -661,7 +661,7 @@ rewrite -[Rseqmx]paramE.
 by tc.
 Qed.
 
-Global Instance refines_cast_seqmx (p : (m1 = m2) * (n1 = n2)) :
+Global Instance Rseqmx_cast_seqmx (p : (m1 = m2) * (n1 = n2)) :
   param (Rseqmx ==> Rseqmx) (castmx p) id | 100.
 Proof. 
 rewrite paramE => ? ?; case: p=> e1 e2.
@@ -691,7 +691,7 @@ elim: s1 s2 => [|x1 s1 IHs] [] //= x2 s2 /eqP eq_sz.
 by rewrite IHs //; apply/eqP.
 Qed.
 
-Global Instance refines_eqseqmx m n :
+Global Instance Rseqmx_eqseqmx m n :
   param (Rseqmx ==> Rseqmx ==> Logic.eq)
         (eqtype.eq_op : 'M[A]_(m,n) -> _ -> _)
         (@Op.heq_op _ (fun _ _ => seqmatrix A) _ m n).
@@ -775,7 +775,7 @@ Proof.
 by rewrite !paramE => <- {f'} x x' <-.
 Qed.
 
-Global Instance refines_oppseqmx m n :
+Global Instance Rseqmx_oppseqmx m n :
   param (Rseqmx ==> Rseqmx) (-%R : 'M[A]_(m,n) -> 'M[A]_(m,n))
         (@Op.hopp_op _ (fun _ _ => seqmatrix A) _ m n).
 Proof.
@@ -787,7 +787,7 @@ rewrite /Op.hopp_op /= /Op.opp_op /opp_A /=.
 by tc.
 Qed.
 
-Global Instance refines_addseqmx m n :
+Global Instance Rseqmx_addseqmx m n :
   param (Rseqmx ==> Rseqmx ==> Rseqmx)
     (+%R : 'M[A]_(m,n) -> 'M[A]_(m,n) -> 'M[A]_(m, n))
     (@Op.hadd_op _ (fun _ _ => seqmatrix A) _ m n).
@@ -798,7 +798,7 @@ rewrite -[Rseqmx]paramE /Op.hadd_op /haddseqmx.
 by tc.
 Qed.
 
-Global Instance refines_subseqmx m n :
+Global Instance Rseqmx_subseqmx m n :
   param (Rseqmx ==> Rseqmx ==> Rseqmx)
     (AlgOp.subr : _ -> _ -> 'M[A]_(m,n))
     (@Op.hsub_op _ (fun _ _ => seqmatrix A) _ m n).
@@ -812,7 +812,7 @@ by tc.
 Qed.
 
 (* We use zero as a default element here, but we could relax the zmodType constraint *)
-Global Instance refines_xcolseqmx m n :
+Global Instance Rseqmx_xcolseqmx m n :
   param (eq ==> eq ==> Rseqmx ==> Rseqmx)
         (@xcol _ m n) (@xcolseqmx _ _).
 Proof.
@@ -846,7 +846,7 @@ Variable (A : ringType).
 Existing Instances zero_A add_A param_eq_refl.
 Local Instance mul_A : Op.mul A := *%R.
 
-Global Instance refines_seqmx0 m n : param Rseqmx (0 : 'M[A]_(m,n)) (seqmx0 m n).
+Global Instance Rseqmx_seqmx0 m n : param Rseqmx (0 : 'M[A]_(m,n)) (seqmx0 m n).
 Proof. 
 by rewrite /seqmx0 /GRing.zero /= /Op.zero_op /zero_A; tc.
 Qed.
@@ -854,7 +854,7 @@ Qed.
 Lemma minSS (p q : nat) : minn p.+1 q.+1 = (minn p q).+1.
 Proof. by rewrite /minn ltnS; case:ifP. Qed.
 
-Global Instance refines_mulseqmx m n p : 
+Global Instance Rseqmx_mulseqmx m n p : 
   param (Rseqmx ==> Rseqmx ==> Rseqmx)
         (mulmx : 'M[A]_(m, n) -> 'M[A]_(n, p) -> _)
         (@Op.hmul_op _ (fun _ _ => seqmatrix A) _ m n p).
@@ -884,7 +884,7 @@ Qed.
 
 Existing Instance param_fun_eq.
 
-Global Instance refines_scaleseqmx m n :
+Global Instance Rseqmx_scaleseqmx m n :
   param (eq ==> Rseqmx ==> Rseqmx)
         (@GRing.scale _ _ : _ -> 'M[A]_(m, n)  -> _)
         (@Op.scale_op A (seqmatrix A) _).
@@ -897,14 +897,14 @@ rewrite mxE (nth_map [::]) ?(nth_map x) ?sizeE //.
 by move: rx; rewrite refines_nth_def paramE => <-.
 Qed.
 
-Global Instance refines_scalar_seqmx n (x : A) :
+Global Instance Rseqmx_scalar_seqmx n (x : A) :
   param Rseqmx (@scalar_mx _ n x) (scalar_seqmx n x).
 Proof.
-rewrite paramE; apply/refinesP/matrixP=> i j; rewrite !mxE.
+rewrite paramE; apply/RseqmxP/matrixP=> i j; rewrite !mxE.
 by have [] := altP (i =P j).
 Qed.
 
-(* Global Instance refines_matrix m n : *)
+(* Global Instance Rseqmx_matrix m n : *)
 (*   param ((refines_id ==> refines_id ==> refines_id) ==> refines) *)
 (*         (@matrix_of_fun A m n matrix_key) (@mkseqmx_ord A m n). *)
 (* Proof. *)
