@@ -1,3 +1,4 @@
+(* Formalization of Sasaki-Murao algorithm - Not ported to CoqEAL 2.0 yet *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path ssralg.
 Require Import fintype perm choice matrix bigop zmodp poly polydiv mxpoly.
 
@@ -73,7 +74,7 @@ End bareiss_def.
 
 Section bareiss_correctness.
 
-(* First some lemmas for an arbitrary comRingType *)
+(* First some general lemmas *)
 Section bareiss_comRingType.
 
 Variable R : comRingType.
@@ -220,6 +221,8 @@ Proof.
 rewrite /bdet bareiss_char_polyE char_poly_det -scaleN1r detZ mulrA -expr2.
 by rewrite sqrr_sign mul1r.
 Qed.
+
+(***** WIP below here **********)
 
 End bareiss_poly.
 End bareiss_correctness.
