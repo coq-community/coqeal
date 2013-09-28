@@ -2,6 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop ssrnum ssrint matrix.
+Require Import dvdring.
 
 (** This file implements the basic theory of refinements *)
 
@@ -622,6 +623,10 @@ Local Notation "x *: y" := (scale_op x y) : computable_scope.
 Class div B := div_op : B -> B -> B.
 Local Notation "x / y" := (div_op x y) : computable_scope.
 
+Class odvd B := odvd_op : B -> B -> option B.
+Local Notation "x %/? y" := (odvd_op x y) 
+  (at level 70, no associativity) : computable_scope.
+
 (* Comparisons *)
 Class eq B := eq_op : B -> B -> bool.
 Local Notation "x == y" := (eq_op x y) : computable_scope.
@@ -644,7 +649,7 @@ Class hzero {I} B := hzero_op : forall {m n : I}, B m n.
 Local Notation "0" := hzero_op : hetero_computable_scope.
 
 Class hone {I} B := hone_op : forall {n : I}, B n n.
-Local Notation "!" := hone_op : hetero_computable_scope.
+Local Notation "1" := hone_op : hetero_computable_scope.
 
 Class hadd {I} B := hadd_op : forall m n : I, B m n -> B m n -> B m n.
 Local Notation "+%HC" := hadd_op.
@@ -655,16 +660,23 @@ Local Notation "-%HC" := hopp_op.
 Local Notation "- x" := (hopp_op x) : hetero_computable_scope.
 
 Class hsub {I} B := hsub_op : forall m n : I, B m n -> B m n -> B m n.
-Local Notation "x - y" := (sub_op x y) : hetero_computable_scope.
+Local Notation "x - y" := (hsub_op x y) : hetero_computable_scope.
 
 Class hinv {I} B := hinv_op : forall m n : I, B m n -> B m n.
 Local Notation "x ^-1" := (hinv_op x) : hetero_computable_scope.
 
 Class hmul {I} B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
+Local Notation "x *m y" := (hmul_op x y) : hetero_computable_scope.
 
 Class heq {I} B := heq_op : forall m n : I, B m n -> B m n -> bool.
 Local Notation "==%HC" := heq_op.
 Local Notation "x == y" := (heq_op x y) : hetero_computable_scope.
+
+Class transpose_class {I} B := transpose_op : forall m n : I, B m n -> B n m.
+Local Notation "A ^T" := (transpose_op A) : hetero_computable_scope.
+
+(* Local Notation "-%HC" := hopp_op. *)
+(* Local Notation "- x" := (hopp_op x) : hetero_computable_scope. *)
 
 Class hcast {I} B := castmx : forall m n m' n' : I,
   (m = m') * (n = n') -> B m n -> B m' n'.
@@ -689,6 +701,9 @@ Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
 Class const_mx_class A B :=
   const_mx : forall {m n : nat}, A -> B m n.
 
+Class map_mx_class A B := 
+  map_mx : (A -> A) -> forall (m n : nat), B m n -> B m n.
+
 Class row_class I B := row : forall (m n : nat), I m -> B m n -> B 1 n.
 
 Class col_class I B := col : forall (m n : nat), I n -> B m n -> B m 1.
@@ -702,8 +717,10 @@ Class fun_of A I B :=
 
 Class scalar_mx_class A B := scalar_mx : forall {n : nat}, A -> B n n.
 
-Class tperm_class A S :=
-  tperm : A -> A -> S.
+(* lift 0 for ordinals *)
+Class lift0_class I := lift0 : forall (n : nat), I n -> I (1 + n)%N.
+
+Class tperm_class A S := tperm : A -> A -> S.
 
 Class lift0_perm_class S :=
   lift0_perm : forall (n : nat), S n -> S n.+1.
@@ -735,39 +752,42 @@ Definition divr {R : unitRingType} (x y : R) := x / y.
 
 Import Refinements.Op.
 
-Notation "0"      := zero_op        : computable_scope.
-Notation "1"      := one_op         : computable_scope.
-Notation "-%C"    := opp_op.
-Notation "- x"    := (opp_op x)     : computable_scope.
-Notation "x ^-1"  := (inv_op x)     : computable_scope.
-Notation "+%C"    := add_op.
-Notation "x + y"  := (add_op x y)   : computable_scope.
-Notation "x - y"  := (sub_op x y)   : computable_scope.
-Notation "x ^ y"  := (exp_op x y)   : computable_scope.
-Notation "*%C"    := mul_op.
-Notation "x * y"  := (mul_op x y)   : computable_scope.
-Notation "*:%C"   := scale_op.
-Notation "x *: y" := (scale_op x y) : computable_scope.
-Notation "x / y"  := (div_op x y)   : computable_scope.
-Notation "x == y" := (eq_op x y)    : computable_scope.
-Notation "x < y " := (lt_op x y)    : computable_scope.
-Notation "x <= y" := (leq_op x y)   : computable_scope.
-Notation "x > y"  := (lt_op y x)  (only parsing) : computable_scope.
-Notation "x >= y" := (leq_op y x) (only parsing) : computable_scope.
-Notation cast := (@cast_op _).
-Notation "x %| y" := (dvd_op x y)   : computable_scope.
-Notation "0"      := hzero_op        : hetero_computable_scope.
-Notation "1"      := hone_op         : hetero_computable_scope.
+Notation "0"       := zero_op        : computable_scope.
+Notation "1"       := one_op         : computable_scope.
+Notation "-%C"     := opp_op.
+Notation "- x"     := (opp_op x)     : computable_scope.
+Notation "x ^-1"   := (inv_op x)     : computable_scope.
+Notation "+%C"     := add_op.
+Notation "x + y"   := (add_op x y)   : computable_scope.
+Notation "x - y"   := (sub_op x y)   : computable_scope.
+Notation "x ^ y"   := (exp_op x y)   : computable_scope.
+Notation "*%C"     := mul_op.
+Notation "x * y"   := (mul_op x y)   : computable_scope.
+Notation "*:%C"    := scale_op.
+Notation "x *: y"  := (scale_op x y) : computable_scope.
+Notation "x / y"   := (div_op x y)   : computable_scope.
+Notation "x == y"  := (eq_op x y)    : computable_scope.
+Notation "x < y "  := (lt_op x y)    : computable_scope.
+Notation "x <= y"  := (leq_op x y)   : computable_scope.
+Notation "x > y"   := (lt_op y x)  (only parsing) : computable_scope.
+Notation "x >= y"  := (leq_op y x) (only parsing) : computable_scope.
+Notation cast      := (@cast_op _).
+Notation "x %| y"  := (dvd_op x y)   : computable_scope.
+Notation "x %/? y" := (odvd_op x y) (at level 70, no associativity) : computable_scope.
+Notation "0"       := hzero_op        : hetero_computable_scope.
+Notation "1"       := hone_op         : hetero_computable_scope.
 Notation "-%HC"    := hopp_op.
-Notation "- x"    := (hopp_op x)     : hetero_computable_scope.
+Notation "- x"     := (hopp_op x)     : hetero_computable_scope.
 Notation "+%HC"    := hadd_op.
-Notation "x + y"  := (hadd_op x y)   : hetero_computable_scope.
-Notation "x - y"  := (hsub_op x y)   : hetero_computable_scope.
-Notation "x == y" := (heq_op x y)    : hetero_computable_scope.
-Notation "a %:M"  := (scalar_mx a)   : hetero_computable_scope.
-Notation "*m%C"   := hmul_op.
-Notation "x *m y" := (hmul_op x y)   : hetero_computable_scope.
+Notation "x + y"   := (hadd_op x y)   : hetero_computable_scope.
+Notation "x - y"   := (hsub_op x y)   : hetero_computable_scope.
+Notation "x *m y"  := (hmul_op x y)   : hetero_computable_scope.
+Notation "x == y"  := (heq_op x y)    : hetero_computable_scope.
+Notation "a %:M"   := (scalar_mx a)   : hetero_computable_scope.
+Notation "*m%C"    := hmul_op.
+Notation "x *m y"  := (hmul_op x y)   : hetero_computable_scope.
 Notation "x '.(' i ',' j ')'" := (fun_of_matrix x i j) (at level 10) : computable_scope.
+Notation "A ^T"    := (transpose_op A) : hetero_computable_scope.
 
 (* TODO: fold patterns for unapplied op *)
 
@@ -782,6 +802,7 @@ Ltac simpC :=
       | rewrite -[(_ * _)%C]/(_ * _)%N
       | rewrite -[(_ *: _)%C]/(_ *: _)%R
       | rewrite -[(_ / _)%C]/(_ / _)%R
+      | rewrite -[(_ %/? _)%C]/(_ %/? _)%R
       | rewrite -[(_ == _)%C]/(_ == _)%bool
       | rewrite -[(_ <= _)%C]/(_ <= _)%R
       | rewrite -[(_ < _)%C]/(_ < _)%R
@@ -793,8 +814,10 @@ Ltac simpC :=
       | rewrite -[hone_op _]/1%R
       | rewrite -[hadd_op _ _]/(addmx _ _)
       | rewrite -[hsub_op _ _]/(fun _ _ => addmx _ (oppmx _))
+      | rewrite -[hmul_op _ _]/(mulmx _ _)
       | rewrite -[heq_op _ _]/(_ == _)%bool
       | rewrite -[hmul_op _ _]/(mulmx _ _)
+      | rewrite -[transpose_op _]/(trmx _)
       | rewrite -[castmx _ _]/(matrix.castmx _ _)
       | rewrite -[usubmx _]/(matrix.usubmx _)
       | rewrite -[dsubmx _]/(matrix.dsubmx _)
@@ -809,9 +832,11 @@ Ltac simpC :=
       | rewrite -[block_mx _ _ _ _]/(matrix.block_mx _ _ _ _)
       | rewrite -[fun_of_matrix _]/(matrix.fun_of_matrix _)
       | rewrite -[const_mx _]/(matrix.const_mx _)
+      | rewrite -[map_mx _ _]/(matrix.map_mx _ _)
       | rewrite -[scalar_mx _]/(matrix.scalar_mx _)
       | rewrite -[tperm _ _]/(perm.tperm _ _)
       | rewrite -[lift0_perm _]/(matrix.lift0_perm _)
+      | rewrite -[lift0 _]/(fintype.lift 0 _)
       | rewrite -[row_perm _ _]/(matrix.row_perm _ _)
       | rewrite -[xrow _ _ _]/(matrix.xrow _ _ _)].
 
@@ -820,11 +845,13 @@ Typeclasses Opaque eqtype.eq_op.
 Typeclasses Opaque addn subn muln expn.
 Typeclasses Opaque GRing.zero GRing.add GRing.opp GRing.natmul.
 Typeclasses Opaque GRing.one GRing.mul GRing.inv GRing.exp GRing.scale.
+Typeclasses Opaque odivr.
 Typeclasses Opaque Num.le Num.lt Num.norm.
 Typeclasses Opaque intmul exprz absz.
 Typeclasses Opaque matrix.usubmx matrix.dsubmx matrix.lsubmx matrix.rsubmx.
 Typeclasses Opaque matrix.ulsubmx matrix.ursubmx matrix.dlsubmx matrix.drsubmx.
 Typeclasses Opaque matrix.row_mx matrix.col_mx matrix.block_mx matrix.castmx.
+Typeclasses Opaque trmx matrix.const_mx matrix.map_mx.
 
 Typeclasses Transparent zero one add opp sub.
 Typeclasses Transparent mul exp inv div scale.
