@@ -601,6 +601,8 @@ Local Notation "- x" := (opp_op x) : computable_scope.
 Class inv B := inv_op : B -> B.
 Local Notation "x ^-1" := (inv_op x) : computable_scope.
 
+Class enorm_of B := enorm_op : B -> nat.
+
 (* Binary operations *)
 Class add B := add_op : B -> B -> B.
 Local Notation "+%C" := add_op.
@@ -666,6 +668,7 @@ Class hinv {I} B := hinv_op : forall m n : I, B m n -> B m n.
 Local Notation "x ^-1" := (hinv_op x) : hetero_computable_scope.
 
 Class hmul {I} B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
+Local Notation "*m%HC" := hmul_op.
 Local Notation "x *m y" := (hmul_op x y) : hetero_computable_scope.
 
 Class heq {I} B := heq_op : forall m n : I, B m n -> B m n -> bool.
@@ -674,9 +677,6 @@ Local Notation "x == y" := (heq_op x y) : hetero_computable_scope.
 
 Class transpose_class {I} B := transpose_op : forall m n : I, B m n -> B n m.
 Local Notation "A ^T" := (transpose_op A) : hetero_computable_scope.
-
-(* Local Notation "-%HC" := hopp_op. *)
-(* Local Notation "- x" := (hopp_op x) : hetero_computable_scope. *)
 
 Class hcast {I} B := castmx : forall m n m' n' : I,
   (m = m') * (n = n') -> B m n -> B m' n'.
@@ -719,6 +719,9 @@ Class scalar_mx_class A B := scalar_mx : forall {n : nat}, A -> B n n.
 
 (* lift 0 for ordinals *)
 Class lift0_class I := lift0 : forall (n : nat), I n -> I (1 + n)%N.
+
+(* lift0_mx *)
+Class lift0mx_class B := lift0_mx : forall (n : nat), B n n -> B (1 + n)%N (1 + n)%N.
 
 Class tperm_class A S := tperm : A -> A -> S.
 
@@ -781,10 +784,9 @@ Notation "- x"     := (hopp_op x)     : hetero_computable_scope.
 Notation "+%HC"    := hadd_op.
 Notation "x + y"   := (hadd_op x y)   : hetero_computable_scope.
 Notation "x - y"   := (hsub_op x y)   : hetero_computable_scope.
-Notation "x *m y"  := (hmul_op x y)   : hetero_computable_scope.
 Notation "x == y"  := (heq_op x y)    : hetero_computable_scope.
 Notation "a %:M"   := (scalar_mx a)   : hetero_computable_scope.
-Notation "*m%C"    := hmul_op.
+Notation "*m%HC"   := hmul_op.
 Notation "x *m y"  := (hmul_op x y)   : hetero_computable_scope.
 Notation "x '.(' i ',' j ')'" := (fun_of_matrix x i j) (at level 10) : computable_scope.
 Notation "A ^T"    := (transpose_op A) : hetero_computable_scope.
@@ -792,7 +794,8 @@ Notation "A ^T"    := (transpose_op A) : hetero_computable_scope.
 (* TODO: fold patterns for unapplied op *)
 
 Ltac simpC :=
-  do ?[ rewrite -[0%C]/0%R | rewrite -[1%C]/1%R
+  do ?[ rewrite -[0%C]/0%R 
+      | rewrite -[1%C]/1%R
       | rewrite -[(_ + _)%C]/(_ + _)%R
       | rewrite -[(_ + _)%C]/(_ + _)%N
       | rewrite -[(- _)%C]/(- _)%R
@@ -808,16 +811,21 @@ Ltac simpC :=
       | rewrite -[(_ < _)%C]/(_ < _)%R
       | rewrite -[(_ <= _)%C]/(_ <= _)%N
       | rewrite -[(_ < _)%C]/(_ < _)%N
+      | rewrite -[enorm_op _]/(enorm _)
       | rewrite -[cast _]/(_%:R)
       | rewrite -[cast _]/(_%:~R)
       | rewrite -[hzero_op _ _]/(const_mx 0)
-      | rewrite -[hone_op _]/1%R
+      | rewrite -[0%HC]/0%R
+      | rewrite -[hone_op _]/1%:M
+      | rewrite -[1%HC]/1%:M
+      | rewrite -[(- _)%HC]/(matrix.oppmx _)
       | rewrite -[hadd_op _ _]/(addmx _ _)
       | rewrite -[hsub_op _ _]/(fun _ _ => addmx _ (oppmx _))
       | rewrite -[hmul_op _ _]/(mulmx _ _)
+      | rewrite -[(_ *m _)%HC]/(_ *m _)%R
       | rewrite -[heq_op _ _]/(_ == _)%bool
-      | rewrite -[hmul_op _ _]/(mulmx _ _)
       | rewrite -[transpose_op _]/(trmx _)
+      | rewrite -[(_ ^T)%HC]/(_ ^T)%R
       | rewrite -[castmx _ _]/(matrix.castmx _ _)
       | rewrite -[usubmx _]/(matrix.usubmx _)
       | rewrite -[dsubmx _]/(matrix.dsubmx _)
@@ -836,22 +844,27 @@ Ltac simpC :=
       | rewrite -[scalar_mx _]/(matrix.scalar_mx _)
       | rewrite -[tperm _ _]/(perm.tperm _ _)
       | rewrite -[lift0_perm _]/(matrix.lift0_perm _)
+      | rewrite -[lift0_mx _]/(matrix.lift0_mx _)
       | rewrite -[lift0 _]/(fintype.lift 0 _)
       | rewrite -[row_perm _ _]/(matrix.row_perm _ _)
-      | rewrite -[xrow _ _ _]/(matrix.xrow _ _ _)].
+      | rewrite -[xrow _ _ _]/(matrix.xrow _ _ _)
+      | rewrite -[xcol _ _ _]/(matrix.xcol _ _ _)].
 
 (* Opacity of ssr symbols *)
 Typeclasses Opaque eqtype.eq_op.
 Typeclasses Opaque addn subn muln expn.
 Typeclasses Opaque GRing.zero GRing.add GRing.opp GRing.natmul.
 Typeclasses Opaque GRing.one GRing.mul GRing.inv GRing.exp GRing.scale.
-Typeclasses Opaque odivr.
+Typeclasses Opaque odivr enorm.
 Typeclasses Opaque Num.le Num.lt Num.norm.
 Typeclasses Opaque intmul exprz absz.
+Typeclasses Opaque addmx oppmx mulmx scalar_mx.
 Typeclasses Opaque matrix.usubmx matrix.dsubmx matrix.lsubmx matrix.rsubmx.
 Typeclasses Opaque matrix.ulsubmx matrix.ursubmx matrix.dlsubmx matrix.drsubmx.
 Typeclasses Opaque matrix.row_mx matrix.col_mx matrix.block_mx matrix.castmx.
-Typeclasses Opaque trmx matrix.const_mx matrix.map_mx.
+Typeclasses Opaque matrix.trmx matrix.const_mx matrix.map_mx matrix.row_perm.
+Typeclasses Opaque matrix.lift0_mx matrix.xrow matrix.xcol.
+Typeclasses Opaque fintype.lift perm.tperm.
 
 Typeclasses Transparent zero one add opp sub.
 Typeclasses Transparent mul exp inv div scale.
