@@ -23,7 +23,7 @@ rank.v
 gauss.v
 strassen.v
 smith.v 
-
+similar.v
 binint_test.v
 seqmatrix_test.v
 # strassen_test.v
