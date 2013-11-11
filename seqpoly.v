@@ -67,7 +67,7 @@ Definition size_seqpoly : seqpoly -> nat :=
   let fix aux p :=
       if p is a :: p then
         let sp := aux p in
-        if sp == 0%N then ~~ (a == 0)%C else sp.+1
+        if sp == 0%N then ~~ (a == 0)%C : nat else sp.+1
       else 0%N in aux.
 
 (* Definition size_seqpoly : seqpoly -> nat := size \o drop_zero. *)
