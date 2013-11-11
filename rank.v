@@ -113,8 +113,10 @@ Variable find_pivot : forall m n, 'M[F]_(m,n.+1) -> option 'I_m.
 Hypothesis find_pivotP : forall m n (M : 'M_(m, n.+1)),
   pick_spec [pred k | M k 0 != 0] (find_pivot M).
 
-Lemma rank_elimP m n (M : 'M[F]_(m,n)) : rank_elim find_pivot M = \rank M.
+Global Instance rank_elimP m n :
+  param (eq ==> eq) (@mxrank F m n) (rank_elim find_pivot).
 Proof.
+rewrite paramE => M M' <- {M'}; symmetry.
 elim: n m M => [m M|n IHn m]; first by rewrite thinmx0 mxrank0.
 rewrite -[n.+1]/(1 + n)%N => M /=.
 have [|nz_Mk0] /= := find_pivotP; last first.
@@ -176,7 +178,7 @@ Instance : fun_of F ordinal (matrix F) :=
 Instance : forall m, zero (ordinal (1 + m)) := fun _ => 0%R.
 
 Instance : hadd (matrix F) := @addmx F.
-Instance : hsub (matrix F) := (fun _ _ M N => M - N).
+Instance : hsub (matrix F) := fun _ _ => AlgOp.subr.
 Instance : hmul (matrix F) := @mulmx F.
 Instance : lsub (matrix F) := @matrix.lsubmx F.
 Instance : rsub (matrix F) := @matrix.rsubmx F.
@@ -228,6 +230,9 @@ Context `{!param (Logic.eq ==> Logic.eq)
 Context `{forall m, param (@RordA (1 + m)) 0%R 0%C}.
 
 Instance param_addn : param (Logic.eq ==> Logic.eq ==> Logic.eq) addn addn.
+Proof. by rewrite paramE => * ? ? -> ? ? ->. Qed.
+
+Instance param_subn : param (Logic.eq ==> Logic.eq ==> Logic.eq) subn subn.
 Proof. by rewrite paramE => * ? ? -> ? ? ->. Qed.
 
 (* Typeclasses eauto := debug. *)
@@ -305,16 +310,79 @@ End rank_param.
 
 (* Require Import Int31 Int31Native intmodp. *)
 
-(* Section rank_seqmx. *)
+Section rank_seqmx.
 
-(* Fixpoint find_pivot_seqmx j (r : seqmatrix int) {struct r} : option nat := *)
-(*   if r is x::r' then *)
-(*     if (head 0 x == 0)%C then find_pivot_seqmx j.+1 r' else Some j *)
-(*   else None. *)
+Variable A : Type.
 
-(* Definition elim_rank_seqmx := rank_elim int (fun _ _ => seqmatrix int) (fun _ => nat) (fun _ _ => find_pivot_seqmx 0). *)
+Import Refinements.Op.
 
-(* End rank_seqmx. *)
+Context `{zero A, one A, eq A, add A, sub A, mul A, inv A}.
+
+Fixpoint find_pivot_seqmx j (r : seqmatrix A) {struct r} : option nat :=
+   if r is x::r' then
+     if (head 0 x == 0)%C then find_pivot_seqmx j.+1 r' else Some j 
+  else None.
+
+Definition rank_elim_seqmx := rank_elim A (fun _ _ => seqmatrix A) (fun _ => nat) (fun _ _ => find_pivot_seqmx 0).
+
+End rank_seqmx.
+
+Arguments rank_elim_seqmx [A] {_ _ _ _ _ _} m n _.
+
+Section rank_seqmx_correctness.
+
+Variable F : fieldType.
+
+Import Refinements.Op.
+
+Instance : zero F := 0%R.
+Instance : one F := 1%R.
+Instance : eq F := eqtype.eq_op.
+Instance : add F := +%R.
+Instance : sub F := AlgOp.subr.
+Instance : mul F := *%R.
+Instance : inv F := GRing.inv.
+
+Lemma find_pivotP m n (M : 'M[F]_(m,n.+1)) :
+ pick_spec (T:=ordinal_finType m) [pred k | M k 0%R != 0%R]
+   (find_pivot M).
+Proof.
+admit.
+Qed.
+
+Instance refines_find_pivot m n :
+param (Rseqmx ==> ohrel (@Rord m)) (find_pivot (F:=F) (n:=n))
+     (find_pivot_seqmx (A:=F) 0).
+Proof.
+rewrite paramE.
+case: m => [x|m x a]; first by case.
+elim: a x => //= a s IHs x rxs.
+admit.
+Qed.
+
+(*
+Instance param_refl (T : Type) (x : T) : param Logic.eq x x.
+Proof. by rewrite paramE. Qed.
+*)
+
+Global Instance refines_rank_elim_seqmx m n :
+  param (Rseqmx ==> Logic.eq) (@mxrank F m n) (rank_elim_seqmx m n).
+Proof.
+rewrite /rank_elim_seqmx.
+Set Typeclasses Debug.
+eapply (param_trans _ (rank_elimP find_pivotP m n)).
+eapply set_param.
+eapply (@param_rank_elim F (fun _ _ => seqmatrix F)); simpC; try by tc.
+by apply Rseqmx_subseqmx.
+rewrite /fun_of_matrix /=.
+apply param_fun_eq.
+by apply param_eq_refl.
+by move=> ?; rewrite paramE.
+Qed.
+
+Print Assumptions refines_rank_elim_seqmx.
+
+End rank_seqmx_correctness.
 
 (*
 Notation "n %:F2" := (n%R : 'F_2) (at level 2, left associativity, format "n %:F2").
