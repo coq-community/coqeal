@@ -222,7 +222,7 @@ Global Instance rowseqmx : row_class ord hseqmatrix :=
 
 Fixpoint row'seqmx_rec (m n : nat) (i : ord m) (M : hseqmatrix m n) :=
   if M is x :: xs then
-    if i is i'.+1 then @row'seqmx_rec m n i' xs
+    if i is i'.+1 then x :: @row'seqmx_rec m n i' xs
     else xs
   else [::].
 
