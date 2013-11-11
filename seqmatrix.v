@@ -215,7 +215,7 @@ Import Refinements.Op.
 Context `{zero A, opp A, add A, sub A, mul A, eq A}.
 
 Global Instance fun_of_seqmx : fun_of A ord hseqmatrix :=
-  fun _ _ M i j => nth 0%C (nth [::] M i) j.
+  fun _ _ M i => nth 0%C (nth [::] M i).
 
 Global Instance rowseqmx : row_class ord hseqmatrix :=
   fun _ _ i M => [:: nth [::] M i].
@@ -285,6 +285,8 @@ End seqmx_ops.
 
 End seqmx.
 
+Arguments fun_of_seqmx [A] {_} m n _ _ _.
+
 (***********************************************************)
 (* PART II: Proving the properties of the previous objects *)
 (***********************************************************)
@@ -325,6 +327,8 @@ by rewrite ?(size_enum_ord, size_map).
 Qed.
 
 Definition Rseqmx {m n} := ofun_hrel (mx_of_seqmx m n).
+
+Definition Rord n (i : 'I_n) j := i = j :> nat.
 
 (* TODO: there should be an equivalent in refinements *)
 Lemma RseqmxP {m n} {x y : 'M[A]_(m,n)} {a : seqmatrix}
@@ -764,6 +768,52 @@ Local Instance zero_A : Op.zero A := 0%R.
 Local Instance opp_A : Op.opp A := -%R.
 Local Instance add_A : Op.add A := +%R.
 Local Instance sub_A : Op.sub A := (fun x y => x - y)%R.
+
+Global Instance Rseqmx_fun_of_seqmx m n :
+  param (Rseqmx ==> @Rord m ==> @Rord n ==> eq) (@fun_of_matrix A m n) (fun_of_seqmx m n).
+Proof.
+rewrite paramE => x a rxa i p <- j q <-.
+rewrite /fun_of_seqmx.
+by rewrite refines_nth_def.
+Qed.
+
+Global Instance Rseqmx_rowseqmx m n :
+  param (@Rord m ==> Rseqmx ==> Rseqmx) (@row A m n) (@rowseqmx A m n).
+Proof.
+rewrite paramE=> i p rip x a rxa.
+rewrite /rowseqmx.
+apply refines_seqmxP=> //.
+case=> //= _.
+rewrite refines_nth_col_size //.
+rewrite refines_row_size.
+by rewrite -rip.
+case. case=> //= ? j.
+rewrite !mxE.
+rewrite -rip.
+by rewrite refines_nth.
+Qed.
+
+(*
+Lemma size_row'seqmx m n (M : seqmatrix A) i :
+  size (@row'seqmx A m n i M) = m.-1.
+Proof.
+elim: i.
+case: M=> //=.
+
+rewrite /row'seqmx /row'seqmx_rec /=.
+Qed.
+
+Lemma size_col_row'seqmx m n (M : seqmatrix A) i j :
+  j < m.-1 -> size (nth [::] (@row'seqmx A m n i M) j) = n.
+Proof.
+elim: M=> //=.
+*)
+
+Global Instance Rseqmx_row'seqmx m n :
+  param (@Rord m ==> Rseqmx ==> Rseqmx) (@row' A m n) (@row'seqmx A m n).
+Proof.
+admit.
+Qed.
 
 (* This helps automation a bit *)
 Local Instance param_eq_refl T (x : T) : param eq x x | 999.
