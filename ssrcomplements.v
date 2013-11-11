@@ -14,6 +14,60 @@ Definitions and theories are gathered according to the file of the
 library which they could be moved to. *)
 
 (********************* seq.v *********************)
+Section Seq.
+
+Variables (T1 T2 T3 : Type) (f : T1 -> T2 -> T3).
+
+Lemma seq2_ind (P : seq T1 -> seq T2 -> Prop) : P [::] [::] ->
+ (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) ->
+  forall s1 s2, size s1 = size s2 -> P s1 s2.
+Proof.
+move=> Pnil Pcons.
+elim=> [|x1 l1 IH1]; case=> // x2 l2 /eqnP /= Hs.
+by apply/Pcons/IH1/eqnP.
+Qed.
+
+End Seq.
+
+(******************** bigop.v ********************)
+Section BigOp.
+
+Import GRing.Theory.
+
+Variable R : comRingType.
+Variable T : eqType.
+
+Open Scope ring_scope.
+
+(*** This lemma is usefull to prove that \mu_x p = count (xpred1 x) s where 
+     s is the sequence of roots of polynomial p ***)
+Lemma prod_seq_count (s : seq T) (F : T -> R) :
+  \prod_(i <- s) F i =
+  \prod_(i <- (undup s)) ((F i) ^+ (count (xpred1 i) s)).
+Proof.
+elim: s=> /= [|a l IHl]; first by rewrite !big_nil.
+rewrite big_cons IHl.
+set r:= if _ then _ else _.
+have ->: \big[*%R/1]_(i <- r) (F i) ^+ ((a == i) + count (eq_op^~ i) l) =
+         \big[*%R/1]_(i <- r) (F i) ^+ (a == i) *
+         \big[*%R/1]_(i <- r) (F i) ^+ (count (eq_op^~ i) l).
+  by rewrite -big_split /=; apply: eq_bigr=> i _; rewrite exprD.
+have ->: \big[*%R/1]_(i <- r) (F i) ^+ (a == i) = F a.
+  rewrite /r; case: ifP=>[|notal].
+    rewrite -mem_undup=> aundl.
+    rewrite (bigD1_seq _ aundl (undup_uniq l)) /= eqxx big1 ?mulr1 //.
+    by move=> i /negbTE neqai; rewrite eq_sym neqai.
+  rewrite big_cons eqxx big1_seq ?mulr1 // => i /= iundl.
+  case eqai: (a == i)=> //.
+  by rewrite (eqP eqai) -mem_undup iundl in notal.
+rewrite /r; case: ifP=> // /negbT notal.
+rewrite big_cons.
+have->: count (xpred1 a) l = 0%N.
+  by apply/eqP; rewrite -leqn0 leqNgt -has_count has_pred1.
+by rewrite mul1r.
+Qed.
+
+End BigOp.
 
 (********************* matrix.v *********************)
 Section Matrix.
@@ -44,6 +98,30 @@ End matrix_raw_type.
 Section matrix_ringType.
 
 Variable R : ringType.
+
+Lemma col_id_mulmx m n (M : 'M[R]_(m,n)) i :
+  M *m col i 1%:M = col i M.
+Proof.
+apply/matrixP=> k l; rewrite !mxE.
+rewrite (bigD1 i) // big1 /= ?addr0 ?mxE ?eqxx ?mulr1 // => j /negbTE neqji.
+by rewrite !mxE neqji mulr0.
+Qed.
+
+Lemma row_id_mulmx m n (M : 'M[R]_(m,n)) i :
+   row i 1%:M *m M = row i M.
+Proof.
+apply/matrixP=> k l; rewrite !mxE.
+rewrite (bigD1 i) // big1 /= ?addr0 ?mxE ?eqxx ?mul1r // => j /negbTE Hj.
+by rewrite !mxE eq_sym Hj mul0r.
+Qed.
+
+Lemma row'_col'_char_poly_mx m i (M : 'M[R]_m) :
+  row' i (col' i (char_poly_mx M)) = char_poly_mx (row' i (col' i M)).
+Proof.
+apply/matrixP=> k l; rewrite !mxE.
+suff ->: (lift i k == lift i l) = (k == l) => //.
+by apply/inj_eq/lift_inj.
+Qed.
 
 Lemma exp_block_mx m n (A: 'M[R]_m.+1) (B : 'M_n.+1) k :
   (block_mx A 0 0 B) ^+ k = block_mx (A ^+ k) 0 0 (B ^+ k).
@@ -88,6 +166,23 @@ Qed.
 End matrix_comUnitRingType.
 
 End Matrix.
+
+Section Poly.
+
+Variable R : idomainType.
+Import GRing.Theory.
+Local Open Scope ring_scope.
+
+Lemma coprimep_factor (a b : R) : (b - a)%R \is a GRing.unit ->
+   coprimep ('X - a%:P) ('X - b%:P).
+Proof.
+move=> Hab; apply/Bezout_coprimepP.
+exists ((b - a)^-1%:P , -(b - a) ^-1%:P).
+rewrite /= !mulrBr !mulNr opprK -!addrA (addrC (- _)) !addrA addrN.
+by rewrite add0r -mulrBr -rmorphB -rmorphM mulVr // eqpxx.
+Qed.
+
+End Poly.
 
 (****************************************************************************)
 (****************************************************************************)
