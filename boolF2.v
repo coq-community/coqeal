@@ -23,13 +23,15 @@ Global Instance eq_bool : eq bool := eqtype.eq_op.
 
 End operations.
 
-(*
 Section definition.
 
 Local Open Scope ring_scope.
 
-Definition bool_of_F2 (x : 'F_2) := x != 0.
+Definition F2_of_bool (x : bool) : 'F_2 := x%:R.
 
+Definition Rbool := fun_hrel F2_of_bool.
+
+(*
 Lemma inj_bool_trans : injective bool_of_F2.
 Proof.
 move=> [x Hx] [y Hy]; move: x y Hx Hy.
@@ -84,6 +86,6 @@ Definition bool_cunitRingMixin := @CUnitRingMixin [unitRingType of 'F_2]
 Canonical Structure bool_cunitRingType :=
   Eval hnf in CUnitRingType 'F_2 bool_cunitRingMixin.
 
-End definition.
-
 *)
+
+End definition.
