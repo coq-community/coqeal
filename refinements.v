@@ -142,11 +142,11 @@ Qed.
 Fact param_key : unit. Proof. done. Qed.
 Fact getparam_key : unit. Proof. done. Qed.
 
-Class param {A B} (R : A -> B -> Prop) (m : A) (n : B) := 
+Class param {A B} (R : A -> B -> Prop) (m : A) (n : B) :=
   param_rel : (locked_with param_key R) m n.
 Arguments param {A B} R%rel_scope m n.
 
-Class getparam {A B} (R : A -> B -> Prop) (m : A) (n : B) := 
+Class getparam {A B} (R : A -> B -> Prop) (m : A) (n : B) :=
   getparam_rel : (locked_with getparam_key R) m n.
 Arguments getparam {A B} R%rel_scope m n.
 
@@ -177,7 +177,7 @@ Proof. by rewrite paramE. Qed.
 Global Hint Extern 0 (getparam _ _ _)
   => now eapply @getparam_eq : typeclass_instances.
 
-Global Instance param_apply 
+Global Instance param_apply
    A B (R : A -> B -> Prop) C D (R' : C -> D -> Prop) :
    forall (c : A -> C) (d : B -> D), param (R ==> R') c d ->
    forall (a : A) (b : B), param R a b ->
@@ -214,7 +214,7 @@ Proof. by rewrite !paramE. Qed.
 Fact composable_lock : unit. Proof. exact tt. Qed.
 
 Class composable {A B C}
- (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop) := 
+ (rAB : A -> B -> Prop) (rBC : B -> C -> Prop) (rAC : A -> C -> Prop) :=
   Composable : locked_with composable_lock (rAB \o rBC <= rAC)%rel.
 Arguments composable {A B C} rAB%rel rBC%rel rAC%rel.
 
@@ -225,7 +225,7 @@ Proof. by rewrite /composable unlock. Qed.
 
 Global Instance composable_sub_proper {A B C} :
    Proper (sub_hrel --> sub_hrel --> sub_hrel ==> impl) (@composable A B C).
-Proof. 
+Proof.
 move => R S RS T U TU V W VW; rewrite !composableE => RTV.
 by setoid_rewrite <- RS; setoid_rewrite <- TU; setoid_rewrite <- VW.
 Qed.
@@ -304,7 +304,7 @@ Import GRing.Theory.
 
 Lemma getparam_abstr
    A   B   (R   : A   -> B   -> Prop)
-   A'  B'  (R'  : A'  -> B'  -> Prop) 
+   A'  B'  (R'  : A'  -> B'  -> Prop)
    (f : A -> A' ) (g : B -> B') :
    (forall (a : A) (b : B), param R a b -> getparam R' (f a) (g b)) ->
 (* ---------------------------------------------------------------------- *)
@@ -320,7 +320,7 @@ Lemma param_abstr A B C D (R : A -> B -> Prop) (R' : C -> D -> Prop)
         param (R ==> R') c d.
 Proof. by rewrite !paramE; apply. Qed.
 
-Lemma param_abstr2 A B A' B' A'' B'' 
+Lemma param_abstr2 A B A' B' A'' B''
       (R : A -> B -> Prop) (R' : A' -> B' -> Prop) (R'' : A'' -> B'' -> Prop)
       (f : A -> A' -> A'' ) (g : B -> B' -> B''):
         (forall (a : A)   (b : B), param R a b ->
@@ -343,7 +343,7 @@ Context {A A' B B' : Type} (rA : A -> A' -> Prop) (rB : B -> B' -> Prop).
 Definition prod_hrel : A * B -> A' * B' -> Prop :=
   fun x y => rA x.1 y.1 /\ rB x.2 y.2.
 
-Lemma getparam_pair : 
+Lemma getparam_pair :
   (getparam rA ==> getparam rB ==> getparam prod_hrel)%rel
     (@pair A B) (@pair A' B').
 Proof. by rewrite !paramE. Qed.
@@ -356,7 +356,7 @@ Lemma getparam_snd :
   (getparam prod_hrel ==> getparam rB)%rel (@snd _ _) (@snd _ _).
 Proof. by rewrite !paramE => [??] [??]. Qed.
 
-Global Instance param_pair : 
+Global Instance param_pair :
   param (rA ==> rB ==> prod_hrel)%rel (@pair _ _) (@pair _ _).
 Proof. by rewrite paramE. Qed.
 
@@ -440,11 +440,11 @@ Fixpoint seq_hrel sa sb : Prop :=
 Global Instance getparam_nil : getparam seq_hrel nil nil.
 Proof. by rewrite paramE. Qed.
 
-Lemma getparam_cons : 
+Lemma getparam_cons :
   (getparam rAB ==> getparam seq_hrel ==> getparam seq_hrel)%rel cons cons.
 Proof. by rewrite !paramE. Qed.
 
-Lemma getparam_rcons : 
+Lemma getparam_rcons :
   (getparam seq_hrel ==> getparam rAB ==> getparam seq_hrel)%rel rcons rcons.
 Proof.
 have H: forall x x' s s', seq_hrel s s' -> rAB x x' -> seq_hrel (rcons s x) (rcons
@@ -455,7 +455,7 @@ by rewrite !paramE => ??????; apply: H.
 Qed.
 
 Lemma getparam_foldr {C D : Type} (rCD : C -> D -> Prop) :
-   (getparam (rAB ==> rCD ==> rCD) ==> getparam rCD ==> 
+   (getparam (rAB ==> rCD ==> rCD) ==> getparam rCD ==>
              getparam seq_hrel ==> getparam rCD)%rel foldr foldr.
 Proof.
 rewrite !paramE => f g rfg c d rcd; elim=> [|x s /= ihs] [|y t] //= [rxy rst].
@@ -463,7 +463,7 @@ by apply: rfg => //; apply: ihs.
 Qed.
 
 Lemma getparam_foldl {C D : Type} (rCD : C -> D -> Prop) :
-   (getparam (rCD ==> rAB ==> rCD) ==> getparam rCD ==> 
+   (getparam (rCD ==> rAB ==> rCD) ==> getparam rCD ==>
              getparam seq_hrel ==> getparam rCD)%rel foldl foldl.
 Proof.
 rewrite !paramE => f g rfg c d rcd s.
@@ -516,7 +516,7 @@ Hint Extern 1 (getparam _ _ _) =>
 Hint Extern 1 (getparam _ _ _) =>
   eapply getparam_nth : typeclass_instances.
 
-Lemma getparam_map A A' (rA : A -> A' -> Prop) B B' (rB : B -> B' -> Prop) : 
+Lemma getparam_map A A' (rA : A -> A' -> Prop) B B' (rB : B -> B' -> Prop) :
   (getparam (rA ==> rB) ==> getparam (seq_hrel rA) ==>
     getparam (seq_hrel rB))%rel map map.
 Proof.
@@ -626,7 +626,7 @@ Class div B := div_op : B -> B -> B.
 Local Notation "x / y" := (div_op x y) : computable_scope.
 
 Class odvd B := odvd_op : B -> B -> option B.
-Local Notation "x %/? y" := (odvd_op x y) 
+Local Notation "x %/? y" := (odvd_op x y)
   (at level 70, no associativity) : computable_scope.
 
 (* Comparisons *)
@@ -701,7 +701,7 @@ Class block B := block_mx : forall (m1 m2 n1 n2 : nat),
 Class const_mx_class A B :=
   const_mx : forall {m n : nat}, A -> B m n.
 
-Class map_mx_class A B := 
+Class map_mx_class A B :=
   map_mx : (A -> A) -> forall (m n : nat), B m n -> B m n.
 
 Class row_class I B := row : forall (m n : nat), I m -> B m n -> B 1 n.
@@ -741,17 +741,16 @@ Class col_perm_class S B :=
   col_perm : forall (m n : nat), S n -> B m n -> B m n.
 
 Class spec_of (A B : Type) := spec : A -> B.
-(* Class implem_of A B := implem : A -> B. *)
 Definition spec_id {A : Type} : spec_of A A := id.
+
+Class implem_of A B := implem : A -> B.
+Definition implem_id {A : Type} : implem_of A A := id.
 
 End Op.
 
 End Refinements.
 
 Local Open Scope ring_scope.
-
-Definition subr {R : zmodType} (x y : R) := x - y.
-Definition divr {R : unitRingType} (x y : R) := x / y.
 
 Import Refinements.Op.
 
@@ -794,7 +793,7 @@ Notation "A ^T"    := (transpose_op A) : hetero_computable_scope.
 (* TODO: fold patterns for unapplied op *)
 
 Ltac simpC :=
-  do ?[ rewrite -[0%C]/0%R 
+  do ?[ rewrite -[0%C]/0%R
       | rewrite -[1%C]/1%R
       | rewrite -[(_ + _)%C]/(_ + _)%R
       | rewrite -[(_ + _)%C]/(_ + _)%N
@@ -869,6 +868,7 @@ Typeclasses Opaque fintype.lift perm.tperm.
 Typeclasses Transparent zero one add opp sub.
 Typeclasses Transparent mul exp inv div scale.
 Typeclasses Transparent eq lt leq cast_class.
+Typeclasses Transparent spec_of implem_of.
 
 Module AlgOp.
 Section AlgOp.

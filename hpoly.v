@@ -15,7 +15,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory Refinements.Op. 
+Import GRing.Theory Refinements.Op AlgOp.
 
 (******************************************************************************)
 (** PART I: Defining generic datastructures and programming with them         *)
