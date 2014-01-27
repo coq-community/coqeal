@@ -28,7 +28,7 @@ Require Import dvdring.
                              element of s.
 
                                                                               *)
-  
+
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -103,7 +103,7 @@ by apply/ltn_addr/(leq_trans (ltn_ord j)).
 Qed.
 
 Lemma upper_triangular_block_mxdr :
-  upper_triangular_mx (block_mx Aul Aur Adl Adr) -> n1 <= m1 -> 
+  upper_triangular_mx (block_mx Aul Aur Adl Adr) -> n1 <= m1 ->
   upper_triangular_mx Adr.
 Proof.
 move=> /upper_triangular_mxP HA Hn1; apply/upper_triangular_mxP=> i j Hij.
@@ -200,7 +200,7 @@ Import GRing.Theory.
 Fixpoint size_sum_rec k (s : seq nat) : nat :=
   if s is x :: l then (k + (size_sum_rec x l).+1)%N else k.
 
-Fixpoint diag_block_mx_rec k (s : seq nat) 
+Fixpoint diag_block_mx_rec k (s : seq nat)
  (F : (forall n, nat -> 'M[R]_n.+1)) :=
   if s is x :: l return 'M_((size_sum_rec k s).+1)
    then block_mx (F k 0%N) 0 0 (diag_block_mx_rec x l (fun n i => F n i.+1))
@@ -208,9 +208,9 @@ Fixpoint diag_block_mx_rec k (s : seq nat)
 
 Definition size_sum s := if s is x :: l then size_sum_rec x l else 0%N.
 
-Definition diag_block_mx s F := 
-  if s is x :: l return 'M_((size_sum s).+1) 
-  then diag_block_mx_rec x l F else 0. 
+Definition diag_block_mx s F :=
+  if s is x :: l return 'M_((size_sum s).+1)
+  then diag_block_mx_rec x l F else 0.
 
 Lemma size_sum_big_cons : forall s x,
   (size_sum (x :: s)).+1 = (\sum_(k <- x :: s) k.+1)%N.
@@ -327,11 +327,11 @@ Variable R : ringType.
 Local Open Scope ring_scope.
 Import GRing.Theory.
 
-Lemma char_diag_block_mx s (F : forall n, nat -> 'M[R]_n.+1) : 
+Lemma char_diag_block_mx s (F : forall n, nat -> 'M[R]_n.+1) :
  s != [::] -> char_poly_mx (diag_block_mx s F) =
   diag_block_mx s (fun n i => char_poly_mx (F n i)).
 Proof.
-case: s=> //= a l _. 
+case: s=> //= a l _.
 elim: l a F=> //= b l IHl a F.
 by rewrite -IHl -char_block_mx.
 Qed.
@@ -447,7 +447,7 @@ rewrite diag_mx_seq_cons IHs1; apply/eqP=> //; rewrite diag_mx_seq_cons.
 by rewrite -row_mx0 -col_mx0 block_mxA castmx_id row_mx0 col_mx0.
 Qed.
 
-Lemma diag_mx_seq_block_mx m m' n n' s : 
+Lemma diag_mx_seq_block_mx m m' n n' s :
   size s <= minn m n ->
   diag_mx_seq (m + m') (n + n') s = block_mx (diag_mx_seq m n s) 0 0 0.
 Proof.
@@ -623,7 +623,7 @@ Lemma mul_copid_mx_diag m n r s :
 Proof.
 move=> le_s_r.
 rewrite -[_ *m _]trmxK trmx_mul tr_diag_mx_seq tr_copid_mx.
-by rewrite mul_diag_mx_copid // trmx0. 
+by rewrite mul_diag_mx_copid // trmx0.
 Qed.
 
 Lemma det_diag_mx_seq_truncated m (s : seq R) :
@@ -673,6 +673,27 @@ have: \det (diag_mx_seq r r (take r s)) = 0.
 rewrite det_diag_mx_seq ?size_take ?lt_r_s //; move/eqP; rewrite prodf_seq_eq0.
 apply/negP; move:neq0_s; rewrite -{1}[s](cat_take_drop r) all_cat all_predC.
 by case/andP.
+Qed.
+
+Lemma mul_diag_mx_seq_eq0 m n p (M : 'M[R]_(m,n)) s :
+  (forall i, i < size s -> s`_i != 0) ->
+  (M *m diag_mx_seq n p s == 0) -> (M *m @pid_mx R n p (size s) == 0).
+Proof.
+move=> s_i_eq0 /eqP /matrixP HM.
+apply/eqP/matrixP=> i j; move: (HM i j); rewrite !mxE.
+have [le_nj|lt_nj] := leqP n j.
+  move=> _; rewrite big1 // => k _.
+  by rewrite mxE ltn_eqF ?mulr0 // (leq_trans _ le_nj).
+rewrite (bigD1 (Ordinal lt_nj)) // !mxE /= eqxx mulr1n.
+rewrite big1 ?addr0; last first.
+  move=> k; rewrite -val_eqE /= => neq_k_j.
+  by rewrite mxE (negPf neq_k_j) mulr0n mulr0.
+rewrite (bigD1 (Ordinal lt_nj)) // !mxE /= eqxx.
+rewrite big1 ?addr0 /=; last first.
+  move=> k; rewrite -val_eqE /= => neq_k_j.
+  by rewrite mxE (negPf neq_k_j) mulr0n mulr0.
+have [small_j|big_j] := ltnP; last by rewrite mulr0.
+by move/eqP; rewrite mulf_eq0 (negPf (s_i_eq0 _ _)) ?orbF //= ?mulr1 => /eqP.
 Qed.
 
 End diag_mx_idomain.
