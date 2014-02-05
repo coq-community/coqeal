@@ -59,8 +59,3 @@ Proof. exact: param_trans. Qed.
 End parametricity.
 End theory.
 
-
-- Naming convention: Lemmas that start with param should be named param_, e.g. 
-
-    Local Instance param_seqpoly0 : param Rseqpoly 0%R 0%C. 
-
