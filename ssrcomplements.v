@@ -13,6 +13,24 @@ we could try to integrate them in Math Components' library.
 Definitions and theories are gathered according to the file of the
 library which they could be moved to. *)
 
+(* Cyril : I should push these in ssr someday *)
+Section extraPP.
+
+Lemma existsPP (T : finType) (P : T -> Prop) (b : pred T) :
+   (forall x, reflect (P x) (b x)) ->
+   reflect (exists x : T, P x) [exists x, b x].
+Proof. by move=> bP; apply: (iffP existsP) => [] [Px /bP]; exists Px. Qed.
+
+Lemma forallPP (T : finType) (P : T -> Prop) (b : pred T) :
+   (forall x, reflect (P x) (b x)) ->
+   reflect (forall x : T, P x) [forall x, b x].
+Proof. by move=> bP; apply: (iffP forallP) => [] hP x; apply/bP. Qed.
+
+End extraPP.
+
+Notation "\forall_ view" := (forallPP (fun _ => view)) (at level 0).
+Notation "\exists_ view" := (existsPP (fun _ => view)) (at level 0).
+
 (********************* seq.v *********************)
 Section Seq.
 
@@ -98,6 +116,25 @@ End matrix_raw_type.
 Section matrix_ringType.
 
 Variable R : ringType.
+
+Lemma mulmx_rsub m n p k (A : 'M[R]_(m, n)) (B : 'M[R]_(n, p + k)) :
+  A *m rsubmx B = (rsubmx (A *m B)).
+Proof.
+by apply/matrixP=> i j; rewrite !mxE; apply: eq_bigr => l //= _; rewrite mxE.
+Qed.
+
+Lemma mulmx_lsub m n p k (A : 'M[R]_(m, n)) (B : 'M[R]_(n, p + k)) :
+  A *m lsubmx B = (lsubmx (A *m B)).
+Proof.
+by apply/matrixP=> i j; rewrite !mxE; apply: eq_bigr => l //= _; rewrite mxE.
+Qed.
+
+Lemma col_0mx m n (M : 'M[R]_(m, n)) : col_mx (0 :'M_(0%N, _)) M = M.
+Proof.
+apply/matrixP=> i j; rewrite !mxE.
+case: splitP => [[] //|k eq_i_k]; congr (M _ _).
+by apply: val_inj; rewrite /= eq_i_k.
+Qed.
 
 Lemma col_id_mulmx m n (M : 'M[R]_(m,n)) i :
   M *m col i 1%:M = col i M.
