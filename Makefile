@@ -14,6 +14,17 @@ all: $(COQMAKEFILE)
 $(COQMAKEFILE) config:
 	$(COQBIN)coq_makefile -f Make  -o $(COQMAKEFILE)
 
+dist:
+	mkdir CoqEAL
+	cp Make.dist CoqEAL/Make
+	cat CoqEAL/Make | egrep -v "^#" | egrep ".v$$" | xargs cp -t CoqEAL
+	cp -t CoqEAL README
+	cp -t CoqEAL INSTALL
+	cp -t CoqEAL LICENSE
+	cp   Makefile.dist    CoqEAL/Makefile
+	tar zcvf CoqEAL.tgz CoqEAL
+	rm -rf CoqEAL
+
 clean: $(COQMAKEFILE)
 	$(COQMAKE) clean
 	$(RM) -rf bin $(COQMAKEFILE)
