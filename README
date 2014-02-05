@@ -1,42 +1,39 @@
                 The Coq Effective Algebra Library - CoqEAL
-=================================================================================
+======================================================================
 
-The content of the different files are:
+Content
+-------
 
-binnat - Proof that the binary naturals of Coq (N) is a refinement of
-         SSReflect unary naturals (nat) together with basic operations.
+refinements  -  Classes  for  refinements and  refines  together  with
+              operational typeclasses for common operations.
 
-binint - The binary integers of Coq (Z) is refinement of SSReflects integers
-         (ssrint). In this file proofs are done using a mix of lemmas from the
-         standard library and the SSReflect library which leads to quite long
-         and complicated proofs.
+binnat - Proof that the binary naturals  of Coq (N) is a refinement of
+         SSReflect   unary   naturals   (nat)  together   with   basic
+         operations.
 
-binint2 - Alternative approach to binint where SSReflect integers (ssrint) are
-          refined to a new type paremetrized by positive numbers (represented
-          by a sigma type) and natural numbers. This means that proofs can be
-          done using only lemmas from the SSReflect library which leads to
-          simpler proofs than in binint, but in order for this to be useful
-          the parametricity part of the library must be depolyed to change the
-          representation of positive numbers and nat to more efficient
-          representations (e.g. N). This last part is not operational yet.
+binint  -  SSReflect integers  (ssrint)  are  refined  to a  new  type
+          paremetrized  by positive  numbers (represented  by a  sigma
+          type) and  natural numbers.  This  means that proofs  can be
+          done  using only  lemmas  from the  SSReflect library  which
+          leads to  simpler proofs  than previous versions  of binint.
+          (e.g. N).
 
-rational - The rational numbers of SSReflect (rat) is refined to pairs of
-           elements refining integers using parametricity of refinements.
-	   The parametricity part is not operational yet (see comments near
-	   the end of the file).
+rational - The rational numbers of SSReflect (rat) is refined to pairs
+           of  elements  refining   integers  using  parametricity  of
+           refinements.
 
-refinements - Classes for refinements and refines together with operational
-              typeclasses for common operations.
-
-seqmatrix - First and incomplete attempt to refine SSReflect matrices
+seqmatrix - First and incomplete  attempt to refine SSReflect matrices
             ('M[R]_(m,n)) to lists of lists (seq (seq R)).
-
-seqpoly - First and incomplete attempt to refine SSReflect polynomials 
+	    (partially working (work in progress))
+	    
+seqpoly - First and incomplete attempt to refine SSReflect polynomials
           ({poly R}) to lists (seq R).
+	  (partially working (work in progress))
 
+... - to be documented.
 
-
-=== Conventions:
+Conventions
+-----------
 
 - Files should follow this pattern (wrt Local and Global instances):
 
@@ -58,4 +55,13 @@ Proof. exact: param_trans. Qed.
 
 End parametricity.
 End theory.
+
+======================================================================
+License
+-------
+This software is distributed under MIT license (see LICENSE file)
+
+Authors
+-------
+Cyril Cohen, Maxime Dénès and Anders Mörtberg
 
