@@ -428,6 +428,14 @@ Lemma char_dblock_mx m n (A : 'M[R]_m) (B : 'M[R]_n) :
   block_mx (char_poly_mx A) 0 0 (char_poly_mx B).
 Proof. by rewrite char_block_mx !oppr0 !map_mx0. Qed.
 
+Lemma conform_mxX m n (A : 'M[R]_m.+1) (B : 'M[R]_n.+1) k : 
+ (conform_mx A B)^+ k = conform_mx (A^+k) (B^+k).
+Proof.
+case: (altP (m =P n))=> mn.
+  by move: A; rewrite mn=> A; rewrite !conform_mx_id.
+by rewrite !nonconform_mx // eq_sym eqSS mn.
+Qed.
+
 (* Lemma about mxvec *)
 Lemma scale_mxvec m n x (M : 'M[R]_(m,n)) : mxvec (x *: M) = x *: mxvec M.
 Proof.

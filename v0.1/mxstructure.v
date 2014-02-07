@@ -324,7 +324,7 @@ Lemma char_diag_block_mx s (F : forall n, nat -> 'M[R]_n.+1) :
 Proof.
 case: s=> //= a l _. 
 elim: l a F=> //= b l IHl a F.
-by rewrite -IHl -char_block_mx.
+by rewrite -IHl -char_dblock_mx.
 Qed.
 
 End diag_block_ringType2.
