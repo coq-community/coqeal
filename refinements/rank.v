@@ -4,7 +4,7 @@ Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype fingroup perm.
 Require Import matrix bigop zmodp mxalgebra.
 
-Require Import refinements seqmatrix ssrcomplements.
+Require Import hrel refinements seqmatrix ssrcomplements.
 
 Import GRing.Theory.
 

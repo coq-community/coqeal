@@ -1,5 +1,5 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq path choice fintype.
-Require Import tuple finfun bigop finset binomial fingroup perm refinements.
+Require Import tuple finfun bigop finset binomial fingroup perm hrel.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

@@ -1,8 +1,9 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-Require Import path choice fintype tuple finset ssralg bigop poly.
-Require Import refinements polydiv.
+Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
+
+Require Import refinements hrel.
 
 (******************************************************************************)
 (** This file implements dense polynomials as lists.                          *)

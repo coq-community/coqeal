@@ -2,7 +2,8 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop ssrint ssrnum rat.
-Require Import refinements pos.
+
+Require Import refinements pos hrel.
 
 (******************************************************************************)
 (* Non-normalized rational numbers refinest SSReflects rational numbers (rat) *)

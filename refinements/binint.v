@@ -2,7 +2,8 @@
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
-Require Import refinements pos.
+
+Require Import hrel refinements pos.
 
 (******************************************************************************)
 (* Attempt to refine SSReflect integers (ssrint) are to a new type            *)

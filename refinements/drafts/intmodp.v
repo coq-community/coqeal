@@ -1,6 +1,9 @@
 Require Import Int31.
+
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq div choice.
-Require Import fintype bigop finset prime fingroup ssralg zmodp finalg refinements.
+Require Import fintype bigop finset prime fingroup ssralg zmodp finalg.
+
+Require Import refinements.
 
 Section operations.
 

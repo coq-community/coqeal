@@ -3,7 +3,9 @@
 Require Import ZArith Ncring Ncring_tac.
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
-Require Import perm zmodp matrix refinements.
+Require Import perm zmodp matrix.
+
+Require Import refinements hrel.
 
 (** This file describes a formally verified implementation of Strassen's
 algorithm (Winograd's variant). *)

@@ -1,8 +1,10 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-Require Import path choice fintype tuple finset fingroup perm ssralg bigop matrix mxalgebra.
-Require Import refinements.
+Require Import path choice fintype tuple finset fingroup perm ssralg.
+Require Import bigop matrix mxalgebra.
+
+Require Import refinements hrel.
 
 (******************************************************************************)
 (* Lists of lists is a refinement of SSReflect matrices                       *) 
