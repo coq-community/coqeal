@@ -15,7 +15,7 @@ $(COQMAKEFILE) config:
 
 dist:
 	mkdir CoqEAL_refinements
-	cp Make CoqEAL_refinements/Make
+	cp Make.dist CoqEAL_refinements/Make
 	cat CoqEAL_refinements/Make | egrep -v "^#" | egrep ".v$$" | xargs cp -t CoqEAL_refinements
 	cp -t CoqEAL_refinements README
 	cp -t CoqEAL_refinements INSTALL
