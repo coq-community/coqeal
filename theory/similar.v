@@ -1,3 +1,5 @@
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 Require Import ssreflect ssrfun ssrbool eqtype fintype finfun ssrnat seq.
 Require Import choice ssralg poly polydiv mxpoly matrix bigop.
 Require Import mxalgebra perm fingroup tuple.

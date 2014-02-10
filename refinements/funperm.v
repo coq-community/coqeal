@@ -1,3 +1,5 @@
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq path choice fintype.
 Require Import tuple finfun bigop finset binomial fingroup perm hrel.
 

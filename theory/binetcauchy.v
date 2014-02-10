@@ -1,3 +1,5 @@
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 (*
     This proof is from:
 

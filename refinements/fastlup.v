@@ -1,7 +1,11 @@
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 Require Import PArith.
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
-Require Import perm zmodp matrix mxalgebra refinements mxstructure seqmatrix strassen.
+Require Import perm zmodp matrix mxalgebra.
+
+Require Import refinements mxstructure seqmatrix strassen.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

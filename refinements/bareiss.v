@@ -1,3 +1,5 @@
+(** This file is part of CoqEAL, the Coq Effective Algebra Library.
+(c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 (* Formalization of Sasaki-Murao algorithm - Not ported to CoqEAL 2.0 yet *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path ssralg.
 Require Import fintype perm choice matrix bigop zmodp poly polydiv mxpoly.

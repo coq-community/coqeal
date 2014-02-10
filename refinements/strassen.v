@@ -1,5 +1,5 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
-(c) Copyright INRIA and University of Gothenburg. *)
+(c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 Require Import ZArith Ncring Ncring_tac.
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice fintype.
 Require Import div finfun bigop prime binomial ssralg finset fingroup finalg.
