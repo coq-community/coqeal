@@ -1,7 +1,6 @@
 -R . CoqEAL_refinements
 binint.v
 binnat.v
-gauss.v
 karatsuba.v
 pos.v
 rational.v
