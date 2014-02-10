@@ -1,0 +1,9 @@
+*.v.d
+*.vo
+*.cmo
+*.cma
+*.cmx
+*.cmi
+*.o
+Makefile.coq
+*~
