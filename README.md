@@ -13,10 +13,11 @@ This archive is split in four parts:
 
 - v0.1, a previous version of the framework, for archiving purpose.
 
-- doc, local tools for generating documentation out of local files.
+- doc, tools for generating documentation out of local documentation.
+
 
 Authors
 =======
 
 Guillaume Cano,  Cyril Cohen,  Maxime Dénès, Anders  Mörtberg and Vincent
-Siles
+Siles.
