@@ -29,7 +29,7 @@ Instance A1 : one A := 1%R.
 Instance mxAD : hadd (matrix A) := (fun m n => +%R).
 Instance mxAB : hsub (matrix A) := (fun _ _ M N => M - N ).
 Instance mxAM : hmul (matrix A) := @mulmx A.
-Instance mxAC : hcast (matrix A) := @castmx A.
+Instance mxAC : hcast (matrix A) := @matrix.castmx A.
 Instance ul : ulsub (matrix A) := @matrix.ulsubmx A.
 Instance ur : ursub (matrix A) := @matrix.ursubmx A.
 Instance dl : dlsub (matrix A) := @matrix.dlsubmx A.
@@ -52,8 +52,8 @@ set (x := Strassen _ _ == _).
 evar (y : bool).
 have : (param Logic.eq x y).
   do ?[eapply param_apply; tc].
-  eapply refines_Strassen with (RmxA := @Rseqmx _); tc.
-move/param_eq ->.
+  eapply param_Strassen with (RmxA := @Rseqmx _); tc.
+move/(@param_eq _ _ _)->.
 by compute.
 Qed.
 
