@@ -20,7 +20,7 @@ dist:
 	cp -t CoqEAL_theory README
 	cp -t CoqEAL_theory INSTALL
 	cp -t CoqEAL_theory LICENSE
-	cp   Makefile.dist    CoqEAL_theory/Makefile
+	cp -t CoqEAL_theory Makefile
 	tar zcvf CoqEAL_theory.tgz CoqEAL_theory
 	rm -rf CoqEAL_theory
 

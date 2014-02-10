@@ -1,14 +1,9 @@
 -R . CoqEAL_refinements
-bareiss.v
-bigQrat.v
 binint.v
 binnat.v
-boolF2.v
 gauss.v
-hpoly.v
 karatsuba.v
 pos.v
-rank.v
 rational.v
 refinements.v
 seqmatrix.v

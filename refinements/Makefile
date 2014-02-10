@@ -20,7 +20,7 @@ dist:
 	cp -t CoqEAL_refinements README
 	cp -t CoqEAL_refinements INSTALL
 	cp -t CoqEAL_refinements LICENSE
-	cp   Makefile.dist    CoqEAL_refinements/Makefile
+	cp -t CoqEAL_refinements Makefile
 	tar zcvf CoqEAL_refinements.tgz CoqEAL_refinements
 	rm -rf CoqEAL_refinements
 
