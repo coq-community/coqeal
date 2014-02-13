@@ -484,22 +484,30 @@ Global Instance RseqpolyC_shift : param (Logic.eq ==> RseqpolyC ==> RseqpolyC)
   (fun n p => p * 'X^n) (fun n => shift n).
 Proof. exact: param_trans. Qed.
 
-(* Global Instance RseqpolyC_size_seqpoly : param (RseqpolyC ==> Logic.eq) *)
-(*   (fun (p : {poly R}) => size p) (fun s => size_seqpoly s). *)
-(* Proof. exact: param_trans. Qed. *)
+Global Instance RseqpolyC_size_seqpoly : param (RseqpolyC ==> Logic.eq)
+  (fun (p : {poly R}) => size p) (fun s => size_seqpoly s).
+Proof. 
+eapply param_trans; tc; rewrite paramE.
+elim=> [[]|a1 l1 ih [|a2 l2 /= [h1 h2]]] //.
+rewrite (ih l2 h2); case: ifP => // _; congr negb.
+exact: param_eq.
+Qed.
 
 (* Global Instance RseqpolyC_lead_coef_seqpoly : *)
-(*   param (RseqpolyC ==> rAC) lead_coef (fun p => lead_coef_seqpoly p). *)
-(* Proof. exact: param_trans. Qed. *)
+(*   param (RseqpolyC ==> rAC) (fun p => lead_coef p) (fun p => lead_coef_seqpoly p). *)
 
 (* Global Instance RseqpolyC_polyC_seqpoly : *)
 (*   param (rAC ==> RseqpolyC) (fun a => a%:P) (fun a => cast a)%C. *)
 (* Proof. exact: param_trans. Qed. *)
 
-(* Global Instance RseqpolyC_mul_seqpoly :  *)
+(* Global Instance RseqpolyC_mul_seqpoly : *)
 (*   param (RseqpolyC ==> RseqpolyC ==> RseqpolyC) *%R *%C. *)
-(* Proof. admit. Qed. *)
-(* (* Proof. exact: param_trans. Qed. *) *)
+(* Proof. *)
+(* eapply param_trans; tc; rewrite paramE. *)
+(* elim=> [[]| a1 l1 ih [|a2 l2 /= [h1 h2]]] //. *)
+(* rewrite /mul_op /=. *)
+(* admit. *)
+(* Qed. *)
 
 (* Global Instance RseqpolyC_eq_seqpoly : param (RseqpolyC ==> RseqpolyC ==> Logic.eq)  *)
 (*   (fun p q => p == q) (fun sp sq => sp == sq)%C. *)
