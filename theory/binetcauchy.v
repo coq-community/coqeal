@@ -40,7 +40,7 @@ Variable A : 'M[R]_(k,l).
 Variable B : 'M[R]_(l,k).
 
 Definition weight (f: {ffun 'I_k -> 'I_l}) (s : 'S_k) :=
-  ((-1) ^+ s) * \prod_(i : 'I_k) ((A i (f i)) * (B (f i) (s i))).
+  ((-1) ^+ s) * \prod_(i : 'I_k) (A i (f i) * B (f i) (s i)).
 
 Lemma split_sumZ_sf (P : Z -> R) (C : pred {ffun 'I_k -> 'I_l}):
   \sum_(fz : Z | C fz.1) (P fz) =
@@ -75,21 +75,13 @@ Qed.
 Definition tilt (i j: 'I_k) (z: 'S_k) := (tperm i j * z)%g.
 
 Lemma tiltK (i j: 'I_k) : involutive (tilt i j).
-Proof.
-move => s.
-apply/permP => x.
-by rewrite !permM tpermK.
-Qed.
+Proof. by move => s; apply/permP => x; rewrite !permM tpermK. Qed.
 
 Lemma tilt_bij (i j: 'I_k) : bijective (tilt i j).
-Proof.
-by apply inv_bij; apply tiltK.
-Qed.
+Proof. by apply inv_bij; apply tiltK. Qed.
 
 Lemma tilt_inj (i j : 'I_k) : injective (tilt i j).
-Proof.
-by apply bij_inj; apply tilt_bij.
-Qed.
+Proof. by apply bij_inj; apply tilt_bij. Qed.
 
 Lemma sign_tilt2 (z: 'S_k) (i j: 'I_k) : i != j ->
   (-1)^+(tilt i j z) = -1* ((-1) ^+ z) :>R.
@@ -108,16 +100,12 @@ Lemma reindex_with_tilt (P: 'S_k -> R) (i j: 'I_k) : i != j ->
  \sum_(z: 'S_k | odd_perm z) (P z + P (tilt i j z)).
 Proof.
 move => hij.
-rewrite (bigID (fun z:'S_k => odd_perm z)) big_split /=.
-congr (_ + _).
-set C := fun z : 'S_k => ~~ (odd_perm z).
-set D := fun z : 'S_k => odd_perm z.
-set D' := fun z : 'S_k => C (tilt i j z).
-have hD : D =1 D'.
-- rewrite /D /D' /C => p.
-  by rewrite sig_tilt.
-rewrite (eq_bigl _ _ hD) /D'.
-by rewrite -(reindex_inj (@tilt_inj i j)) /=.
+rewrite (bigID (fun z:'S_k => odd_perm z)) big_split /=; congr (_ + _).
+set C := fun z => ~~ (odd_perm z).
+set D := fun z => odd_perm z.
+set D' := fun z => C (tilt i j z).
+have hD : D =1 D' by move=> p; rewrite /D /D' /C sig_tilt.
+by rewrite (eq_bigl _ _ hD) /D' -(reindex_inj (@tilt_inj i j)).
 Qed.
 
 Lemma fz_tilt_0 (i j: 'I_k) (f: {ffun 'I_k -> 'I_l}) z:
@@ -127,20 +115,13 @@ rewrite /weight => hij hf.
 rewrite sign_tilt2 // !mulNr mul1r -mulrBr.
 set b1 := \big[*%R/1]_( _ < _ ) _.
 set b2 := \big[*%R/1]_( _ < _ ) _.
-have -> : b1 - b2 = 0; last by rewrite mulr0.
-apply/eqP; rewrite subr_eq0; apply/eqP.
-rewrite /b1 {b1} /b2 {b2}.
-rewrite (bigD1 j) //= (bigD1 i) //=.
-rewrite [X in _ = X](bigD1 j) //= [X in _ = _ * X](bigD1 i) //=.
+suff -> : b1 = b2 by rewrite subrr mulr0.
+rewrite /b1 {b1} /b2 {b2} (bigD1 j) //= (bigD1 i) //=.
+rewrite [RHS](bigD1 j) //= [X in _ = _ * X](bigD1 i) //=.
 rewrite !permM tpermR tpermL hf !mulrA.
 congr (_ * _).
-- rewrite -!mulrA; congr (_ * _).
-  rewrite -[X in X = _]mulrCA -[X in _ = X]mulrCA; congr (_ * _).
-  by rewrite mulrC.
-apply/eq_big => // x /andP [].
-rewrite eq_sym => h1.
-rewrite eq_sym => h2.
-by rewrite permM tpermD.
+  by rewrite -!mulrA; congr (_ * _); rewrite mulrC -mulrA mulrCA.
+by apply/eq_big => // x /andP [h1 h2]; rewrite permM tpermD // eq_sym.
 Qed.
 
 Lemma sum_bad : \sum_(fz : Z | ~~ injectiveb fz.1) (weight fz.1 fz.2) = 0.
@@ -148,8 +129,7 @@ Proof.
 rewrite (split_sumZ_fs _ (fun x => ~~ injectiveb x)).
 apply/big1 => f /injectivePn [x [y hxy hf]] /=.
 rewrite (reindex_with_tilt _ hxy).
-apply/big1 => s _.
-by rewrite fz_tilt_0.
+by apply/big1 => s _; rewrite fz_tilt_0.
 Qed.
 
 Definition strictf (p q: nat) (f: 'I_p -> 'I_q) :=
@@ -157,33 +137,25 @@ Definition strictf (p q: nat) (f: 'I_p -> 'I_q) :=
 
 Lemma inj_strictf (p q : nat) (f: 'I_p -> 'I_q) : strictf f -> injective f.
 Proof.
-move/forallP => hf x y heq.
-move/forallP : (hf x) => hfx.
-move/forallP : (hf y) => hfy.
-case : (ltngtP x y).
-- by rewrite (eqP (hfx y)) heq ltnn.
-- by rewrite (eqP (hfy x)) heq ltnn.
-move => h; by apply/ord_inj.
+move/forallP=> /= hf x y heq.
+move/forallP: (hf x) => /= hfx.
+move/forallP: (hf y) => /= hfy.
+case: (ltngtP x y)=> [||h]; last by apply/ord_inj.
+  by rewrite (eqP (hfx y)) heq ltnn.
+by rewrite (eqP (hfy x)) heq ltnn.
 Qed.
 
 Lemma inj_strictf_ffun (p q : nat) (f: {ffun 'I_p -> 'I_q}) :
  strictf f -> injective f.
-Proof.
-move => h.
-by apply: inj_strictf.
-Qed.
+Proof. by move=> h; apply: inj_strictf. Qed.
 
 Remark trans_ltn : ssrbool.transitive ltn.
 Proof. by move => x y z; apply (@ltn_trans x y z).  Qed.
 
-Lemma sorted_enum : forall n (P: pred 'I_n),
-  sorted ltn (map val (enum P)).
+Lemma sorted_enum  n (P : pred 'I_n): sorted ltn (map val (enum P)).
 Proof.
-move => n P.
 apply (@subseq_sorted _ ltn trans_ltn _ (map val (enum 'I_n))).
-- apply: map_subseq.
-  rewrite {1}/enum_mem enumT.
-  by apply: filter_subseq.
+- by apply: map_subseq; rewrite {1}/enum_mem enumT filter_subseq.
 by rewrite val_enum_ord iota_ltn_sorted.
 Qed.
 
@@ -192,9 +164,7 @@ Lemma path_drop : forall (s: seq nat) (i j d x : nat), path ltn x s ->
 Proof.
 elim => [ | hd tl hi] //= [ | i] j d x /andP [hx hp] hij /=.
 - by apply/andP.
-apply: (hi _ j.-1 _ hd) => //.
-move: hij.
-by case: j.
+by apply: (hi _ j.-1 _ hd) => //; move: hij; case: j.
 Qed.
 
 Lemma path_ordered_nth (i j d d' x : nat) (s: seq nat): path ltn x s ->
@@ -210,16 +180,14 @@ have hin : nth d' (x :: s) j \in (drop i.+1 (x :: s)).
   rewrite -[i.+1]add1n -[(size tl).+1]add1n -[j.+1]add1n !ltn_add2l =>
     h1 h2.
   by apply: hi.
-have := path_drop d hp hij.
-move/(order_path_min trans_ltn).
-move/allP => h.
+move/(order_path_min trans_ltn)/allP: (path_drop d hp hij)=> h.
 by apply: (h _ hin).
 Qed.
 
 Lemma sorted_ordered_nth i j d d' (s: seq nat): sorted ltn s ->
   i < j -> i < size s -> j < size s -> nth d s i < nth d' s j.
 Proof.
-case : s => [ | hd tl] //= /path_ordered_nth => h h1 h2 h3.
+case: s => [ | hd tl] //= /path_ordered_nth => h h1 h2 h3.
 by apply: h.
 Qed.
 
@@ -441,8 +409,8 @@ transitivity (\sum_(phi: 'S_k) \sum_(pi : 'S_k)
 transitivity( \sum_(phi: 'S_k)
          ((-1) ^+ phi * \big[*%R/1]_i A i (g (phi i)) * (
       \big[+%R/0]_pi
-          ((-1) ^+ sigma phi pi * \big[*%R/1]_i B (g i) ((sigma phi pi) i))
-))); last first.
+          ((-1) ^+ sigma phi pi * \big[*%R/1]_i B (g i) ((sigma phi pi) i))))); 
+  last first.
 - apply/eq_big => // phi _.
   by rewrite -big_distrr /=.
 rewrite big_distrl /=.
@@ -610,8 +578,8 @@ by case: hinj.
 Qed.
 
 Lemma BinetCauchy:
-  \det (A *m B) = \sum_(f: {ffun 'I_k -> 'I_l} | strictf f)
-                       ((minor id f A) * (minor f id B)).
+  \det (A *m B) = \sum_(f : {ffun 'I_k -> 'I_l} | strictf f)
+                       (minor id f A * minor f id B).
 Proof.
 pose cond := fun fz : Z => injectiveb fz.1.
 pose ffstrictf := fun (f: {ffun 'I_k -> 'I_l}) => strictf f.
