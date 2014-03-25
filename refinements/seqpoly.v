@@ -183,10 +183,10 @@ Lemma zippolywithE S (f : R -> R -> S) (p q : seqpoly R) :
   zippolywith f p q = mkseq (fun i => f (nth 0 p i) (nth 0 q i))
                             (maxn (size p) (size q)).
 Proof.
-have sz : size (zippolywith f p q) = (maxn (size p) (size q)) => [z|].
+have sz : size (zippolywith f p q) = (maxn (size p) (size q)).
   elim: p q => [|a p ihp] [|b q] //=; do ?by rewrite size_map ?maxn0.
   by rewrite ihp maxnSS.
-case hz: zippolywith sz => [|z s] /(_ zeroR); first by rewrite hz => <-.
+case hz: zippolywith sz => [|z s]; first by move => <-.
 rewrite -hz => {hz} sz.
 apply: (@eq_from_nth _ z); first by rewrite size_mkseq sz.
 move=> i; rewrite sz => hi; rewrite nth_mkseq // => {sz}.

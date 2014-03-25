@@ -101,10 +101,10 @@ Lemma reindex_with_tilt (P: 'S_k -> R) (i j: 'I_k) : i != j ->
 Proof.
 move => hij.
 rewrite (bigID (fun z:'S_k => odd_perm z)) big_split /=; congr (_ + _).
-set C := fun z => ~~ (odd_perm z).
-set D := fun z => odd_perm z.
-set D' := fun z => C (tilt i j z).
-have hD : D =1 D' by move=> p; rewrite /D /D' /C sig_tilt.
+pose C := fun z => ~~ (odd_perm z).
+pose D := fun z => odd_perm z.
+pose D' := fun z => C _ (tilt i j z).
+have hD : D _ =1 D' by move=> p; rewrite /D /D' /C sig_tilt.
 by rewrite (eq_bigl _ _ hD) /D' -(reindex_inj (@tilt_inj i j)).
 Qed.
 

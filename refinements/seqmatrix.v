@@ -487,7 +487,7 @@ move=> x a ref_xa /=.
 rewrite /Rseqmx /ofun_hrel /mx_of_seqmx size_trseqmx eqxx.
 have [_|/(all_nthP [::]) hN] := boolP (all _ _); last first.
   suff: False by []; apply: hN => i.
-  by rewrite size_trseqmx => /size_nth_trseqmx ->.
+  by rewrite size_trseqmx=> hin; rewrite (size_nth_trseqmx hin).
 rewrite (omap_funoptE (fun ij => x ij.2 ij.1)) => [|g g' eq_gg'|[i j]].
 by congr Some; apply/matrixP=> i j; rewrite !mxE.
 by apply/matrixP=> i j; rewrite !mxE eq_gg'.
@@ -928,7 +928,7 @@ have ->: forall s1 s2 (t : A), (foldl2 F t s1 s2) =
   elim=>[s2 t|t1 s1 IHs s2 t].
     by rewrite min0n big_mkord big_ord0 GRing.addr0.
   case:s2=>[|t2 s2]; first by rewrite minn0 big_mkord big_ord0 GRing.addr0.
-  by rewrite /= IHs minSS big_nat_recl /F [(_ + t)%C]addrC addrA.
+  by rewrite /= IHs minSS big_nat_recl // /F [(_ + t)%C]addrC addrA.
 rewrite add0r ?sizeE // big_mkord; apply: eq_bigr=> k _.
 have->: y k j = y^T j k by rewrite mxE.
 by rewrite [x]refines_mxE [y^T]refines_mxE !mxE.
