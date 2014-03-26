@@ -52,16 +52,16 @@ Variable n : nat.
 (* Need d = 2 * n - 1 pairs of points *)
 Let d : nat := n.*2.-1.
 
-Variable points : 'rV[{poly R}]_d.
+Variable points : d.-tuple {poly R}.
 
 (* Vandermonde matrix *)
 Definition vandmx m : 'M[{poly R}]_(m,d) :=
-  \matrix_(i < m,j < d) (points 0 j ^+ i).
+  \matrix_(i < m,j < d) (points`_j ^+ i).
 
 (* Evaluation *)
 Definition evaluate p := poly_rV p *m vandmx (size p).
 
-Lemma evaluateE p : evaluate p = \row_(i < d) p.[points 0 i].
+Lemma evaluateE p : evaluate p = \row_(i < d) p.[points`_i].
 Proof. 
 apply/rowP => i; rewrite !mxE horner_coef /=.
 by apply: eq_big => // j _; rewrite !mxE.
@@ -74,7 +74,7 @@ Definition interpolate (p : 'rV[{poly R}]_d) := rVpoly (p *m invmx (vandmx d)).
 Hypothesis hU : vandmx d \in unitmx.
 
 Lemma interpolateE (p : {poly {poly R}}) : size p <= d -> 
-  interpolate (\row_i p.[points 0 i]) = p.
+  interpolate (\row_i p.[points`_i]) = p.
 Proof.
 rewrite /interpolate => hsp; rewrite -[RHS](poly_rV_K hsp); congr rVpoly.
 apply/(canLR (mulmxK hU))/rowP=> i; rewrite !mxE (horner_coef_wide _ hsp). 
@@ -112,7 +112,7 @@ set ep := evaluate sp; set eq := evaluate sq.
 have hspq : size (sp * sq) <= d.
   rewrite (leq_trans (size_mul_leq _ _)) // /d -!subn1 leq_sub2r // -addnn.
   by apply/leq_add; rewrite size_poly.
-have -> : \row_i toom_rec m (ep 0 i) (eq 0 i) = \row_i (sp * sq).[points 0 i].
+have -> : \row_i toom_rec m (ep 0 i) (eq 0 i) = \row_i (sp * sq).[points`_i].
   by apply/rowP=> i; rewrite mxE ih /ep /eq !evaluateE !mxE hornerM.
 by rewrite (interpolateE hspq) hornerM !recompose_split ?basisE // maxnC basisE.
 Qed.
