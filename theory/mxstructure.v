@@ -563,15 +563,21 @@ rewrite mul0r nth_default ?mul0rn // size_take; case:ltnP=> // le_s_r.
 exact: (leq_trans le_s_r).
 Qed.
 
-Lemma diag_mx_seq0 m n (s : seq R) : all (eq_op^~ 0) s ->
-  diag_mx_seq m n s = 0.
+Lemma diag_mx_seq0 m n s : all (eq_op^~ 0) s -> diag_mx_seq m n s = 0.
 Proof.
 elim: s m n=> [m n _|a s ih m n] /=; first by rewrite diag_mx_seq_nil.
 case/andP=> /eqP -> hA.
 case: m n=> [n|m [|n]]; [by apply/matrixP=> [[]]|by apply/matrixP=> i []|].
-rewrite diag_mx_seq_cons ih //.
-by apply/matrixP=> i j; rewrite !mxE split1; case: unliftP=> /= [k _|_];
-   rewrite !mxE split1; case: unliftP=> /= [l _|_]; rewrite mxE.
+rewrite diag_mx_seq_cons ih //; apply/matrixP=> i j. 
+by do 2!(rewrite !mxE split1; case: unliftP=> * /=); rewrite mxE. 
+Qed.
+
+Lemma diag_mx_seq_eq0 m n s : size s <= minn m n -> diag_mx_seq m n s = 0 -> all (eq_op^~ 0) s.
+Proof.
+rewrite leq_min; case/andP=> hsn hsm.
+move/matrixP=> H; apply/(all_nthP 0)=> i hi; apply/eqP.
+set jn := Ordinal (leq_trans hi hsn); set jm := Ordinal (leq_trans hi hsm).
+by move: (H jn jm); rewrite !mxE eqxx.
 Qed.
 
 End diag_mx_seq.
