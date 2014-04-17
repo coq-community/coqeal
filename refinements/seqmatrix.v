@@ -147,6 +147,10 @@ Definition mkseqmx_ord m n (f : 'I_m -> 'I_n -> A) : seqmatrix :=
 Lemma ord_enum_eqE p : ord_enum_eq p = enum 'I_p.
 Proof. by rewrite enumT unlock; apply:eq_pmap ; exact:insub_eqE. Qed.
 
+Global Instance getparam_ord_enum_eq n :
+  getparam (seq_hrel Logic.eq)%rel (ord_enum_eq n) (ord_enum_eq n).
+Proof. by rewrite paramE; elim: (ord_enum_eq n). Qed.
+
 (* Fake arguments are required because of the type of map_mx *)
 Definition map_seqmx (f : A -> A) (* (m n : nat) *) (M : seqmatrix) : seqmatrix :=
   map (map f) M.
@@ -243,6 +247,7 @@ Global Instance haddseqmx : hadd hseqmatrix :=
 Global Instance hsubseqmx : hsub hseqmatrix :=
   fun _ _ => zipwithseqmx sub_op.
 
+(* Inlining of && should provide lazyness here. *)
 Fixpoint eq_seq T f (s1 s2 : seq T) :=
   match s1, s2 with
   | [::], [::] => true
@@ -399,10 +404,10 @@ rewrite (omap_funoptE (fun ij => x ij.1 ij.2)) => [|g g' eq_gg'|[i j]].
 by rewrite (nth_map [::]) ?eq_sz //= (nth_map (x i j)) ?eq_row_sz ?eq_nth.
 Qed.
 
-Global Instance Rseqmx_mkseqmx_ord_tt m n (f : 'I_m -> 'I_n -> A) :
-  param Rseqmx (matrix_of_fun tt f) (mkseqmx_ord f).
+Global Instance Rseqmx_mkseqmx_ord_tt m n :
+  param (Logic.eq ==> Rseqmx) (matrix_of_fun tt) (@mkseqmx_ord A m n).
 Proof.
-rewrite paramE.
+rewrite paramE => f _ <-.
 apply/refines_seqmxP=> [|i lt_im|i j].
 + by rewrite size_map ord_enum_eqE size_enum_ord.
 + rewrite (nth_map (Ordinal lt_im)) ?ord_enum_eqE ?size_enum_ord // size_map.
@@ -410,10 +415,10 @@ apply/refines_seqmxP=> [|i lt_im|i j].
 by rewrite !mxE (nth_map i) ?sizeE // (nth_map j) ?sizeE // !nth_ord_enum.
 Qed.
 
-Global Instance Rseqmx_mkseqmx_ord_mx_key m n (f : 'I_m -> 'I_n -> A) :
-  param Rseqmx (matrix_of_fun matrix_key f) (mkseqmx_ord f).
+Global Instance Rseqmx_mkseqmx_ord_mx_key m n :
+  param (Logic.eq ==> Rseqmx) (matrix_of_fun matrix_key) (@mkseqmx_ord A m n).
 Proof.
-rewrite paramE.
+rewrite paramE => f ? <-.
 apply/refines_seqmxP=> [|i lt_im|i j].
 + by rewrite size_map ord_enum_eqE size_enum_ord.
 + rewrite (nth_map (Ordinal lt_im)) ?ord_enum_eqE ?size_enum_ord // size_map.
@@ -697,6 +702,16 @@ elim: s1 s2 => [|x1 s1 IHs] [] //= x2 s2 /eqP eq_sz.
 by rewrite IHs //; apply/eqP.
 Qed.
 
+Lemma getparam_eq_seq T U R :
+  ((getparam (R ==> R ==> Logic.eq)) ==> getparam (seq_hrel R) ==> getparam (seq_hrel R) ==> getparam Logic.eq)%rel
+   (@eq_seq T)  (@eq_seq U).
+Proof.
+rewrite !paramE => eq eq' Req.
+elim=> [|a x IHx]; first by case=> // _ [[] | a x' []].
+case=> // a' x' /= [Ra Rx] [[] | b y []] // b' y' /= [Rb Ry].
+by rewrite (Req _ _ Ra _ _ Rb) (IHx _ Rx _ _ Ry).
+Qed.
+
 Global Instance Rseqmx_eqseqmx m n :
   param (Rseqmx ==> Rseqmx ==> Logic.eq)
         (eqtype.eq_op : 'M[A]_(m,n) -> _ -> _)
@@ -725,6 +740,9 @@ by move/(_ (Ordinal lt_im) (Ordinal lt_jn)); rewrite -2!(refines_nth_def _ _ x0)
 Qed.
 
 End seqmx_eqtype_refinement.
+
+Hint Extern 1 (getparam _ _ _) =>
+  eapply getparam_eq_seq : typeclass_instances.
 
 Typeclasses Opaque matrix_of_fun const_mx map_mx.
 
@@ -949,10 +967,11 @@ rewrite mxE (nth_map [::]) ?(nth_map x) ?sizeE //.
 by move: rx; rewrite refines_nth_def paramE => <-.
 Qed.
 
-Global Instance Rseqmx_scalar_seqmx n (x : A) :
-  param Rseqmx (@scalar_mx _ n x) (scalar_seqmx n x).
+Global Instance Rseqmx_scalar_seqmx n :
+  param (Logic.eq ==> Rseqmx) (@scalar_mx A n) (scalar_seqmx n).
 Proof.
-rewrite paramE; apply/RseqmxP/matrixP=> i j; rewrite !mxE.
+rewrite paramE /scalar_seqmx => x ? <-.
+apply/RseqmxP/matrixP=> i j; rewrite !mxE.
 by have [] := altP (i =P j).
 Qed.
 
@@ -980,6 +999,11 @@ Import Refinements.Op.
 Context (A : Type) (C : Type) (rAC : A -> C -> Prop).
 Definition RseqmxA {m n} := (@Rseqmx A m n \o (seq_hrel (seq_hrel rAC)))%rel.
 
+Global Instance RseqmxA_mkseqmx_ord_key m n :
+  param ((Logic.eq ==> Logic.eq ==> rAC) ==> RseqmxA)
+        (matrix_of_fun matrix_key) (@mkseqmx_ord C m n).
+Proof. apply: param_trans. Qed.
+
 Global Instance RseqmxA_map_seqmx m n :
   param ((rAC ==> rAC) ==> RseqmxA ==> RseqmxA)
         (@map_mx_wrapper A A m n) (@map_seqmx C).
@@ -1006,15 +1030,7 @@ Global Instance RseqmxA_eqseqmx m n :
   param (RseqmxA ==> RseqmxA ==> Logic.eq)
         (eqtype.eq_op : 'M[A]_(m, n) -> _ -> bool)
         (@heq_op _ (fun _ _ => seqmatrix C) _ m n).
-Proof.
-Set Typeclasses Debug.
-eapply param_trans.
-tc.
-tc.
-tc.
-rewrite /heq_op /= /heq_seqmx.
-admit. (* We need a parametricity lemma for eq_seq. *)
-Qed.
+Proof. exact: param_trans. Qed.
 
 End seqmx_eqType_parametricity.
 
