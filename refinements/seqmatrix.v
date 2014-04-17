@@ -991,6 +991,33 @@ Proof. exact: param_trans. Qed.
 
 End seqmx_parametricity.
 
+Section seqmx_eqType_parametricity.
+
+Import Refinements.Op.
+
+Context (A : eqType) (C : Type) (rAC : A -> C -> Prop).
+Notation RseqmxA := (RseqmxA rAC).
+
+Context `{eq C}.
+
+Context `{!param (rAC ==> rAC ==> Logic.eq) eqtype.eq_op eq_op}.
+
+Global Instance RseqmxA_eqseqmx m n :
+  param (RseqmxA ==> RseqmxA ==> Logic.eq)
+        (eqtype.eq_op : 'M[A]_(m, n) -> _ -> bool)
+        (@heq_op _ (fun _ _ => seqmatrix C) _ m n).
+Proof.
+Set Typeclasses Debug.
+eapply param_trans.
+tc.
+tc.
+tc.
+rewrite /heq_op /= /heq_seqmx.
+admit. (* We need a parametricity lemma for eq_seq. *)
+Qed.
+
+End seqmx_eqType_parametricity.
+
 Section seqmx_ring_parametricity.
 Import Refinements.Op.
 
