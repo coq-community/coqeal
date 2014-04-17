@@ -23,8 +23,17 @@ erewrite param_eq; last first.
 eapply param_apply.
 eapply param_apply.
 
-(* We does the following pick the instance binnat.eq_N ? *)
+(* Why does Coq pick the instance binnat.eq_N for the argument H of the
+following lemma? *)
 eapply @RseqmxA_eqseqmx.
+
+Undo.
+(* Specifying all the types work but breaks automation... *)
+eapply (@RseqmxA_eqseqmx int_eqType (Z BinNums.N BinNums.positive)).
+eapply param_apply.
+eapply RseqmxA_oppseqmx.
+tc.
+(* We need parametricity for mx_of_fun here *)
 Abort.
 
 Goal (M + N + M + N + M + N + N + M + N) *m
