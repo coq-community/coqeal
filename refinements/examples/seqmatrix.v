@@ -48,8 +48,6 @@ rewrite [_ == _]param_eq.
 by compute.
 Qed.
 
-Set Typeclasses Debug.
-
 Goal (M + N + M + N + M + N + N + M + N) *m
    (M + N + M + N + M + N + N + M + N) = 
 (P *m M + P *m N + P *m M + P *m N + 

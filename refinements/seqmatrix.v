@@ -114,7 +114,7 @@ Arguments omap_funoptE {A B C f} g _ _ _.
 
 Section extra_seq.
 
-Fixpoint foldl2 T1 T2 T3 (f : T3 -> T1 -> T2 -> T3) z (s : seq T1) (t : seq T2) {struct s} :=
+Fixpoint foldl2 {T1 T2 T3} (f : T3 -> T1 -> T2 -> T3) z (s : seq T1) (t : seq T2) {struct s} :=
   if s is x :: s' then
     if t is y :: t' then foldl2 f (f z x y) s' t' else z
   else z.
@@ -993,6 +993,27 @@ Typeclasses Opaque matrix_of_fun const_mx map_mx mulmx.
 (* PART III: Parametricity (coming soon) *)
 (*****************************************)
 
+Section seq_parametricity.
+
+Lemma getparam_foldl2 {A B C D E F : Type} (rAB : A -> B -> Prop)
+  (rCD : C -> D -> Prop) (rEF : E -> F -> Prop) :
+   (getparam (rEF ==> rAB ==> rCD ==> rEF) ==> getparam rEF ==>
+             getparam (seq_hrel rAB) ==>
+             getparam (seq_hrel rCD) ==> getparam rEF)%rel foldl2 foldl2.
+Proof.
+rewrite !paramE => f g rfg a b rab s1.
+elim: s1 a b rab => [|x1 s1 /= IHs] a b rab [|x1' s1'] //.
+  by move=> _ ? ? ?.
+case=> rx1 rs1 [|x2 s2] [|x2' s2'] //= [rx2 rs2].
+by apply: IHs => //; apply: rfg.
+Qed.
+
+End seq_parametricity.
+
+Arguments getparam_foldl2 {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
+Hint Extern 1 (getparam _ _ _) =>
+  eapply getparam_foldl2 : typeclass_instances.
+
 Section seqmx_parametricity.
 Import Refinements.Op.
 
@@ -1052,6 +1073,26 @@ Global Instance RseqmxA_oppseqmx m n :
   param (RseqmxA ==> RseqmxA) (-%R : 'M[A]_(m,n) -> 'M[A]_(m,n))
         (@hopp_op _ (fun _ _ => seqmatrix C) _ m n).
 Proof. exact: param_trans. Qed.
+
+Global Instance RseqmxA_addseqmx m n :
+  param (RseqmxA ==> RseqmxA ==> RseqmxA) (+%R : 'M[A]_(m,n) -> _ -> _)
+        (@hadd_op _ (fun _ _ => seqmatrix C) _ m n).
+Proof. exact: param_trans. Qed.
+
+Global Instance RseqmxA_mulseqmx m n p :
+  param (RseqmxA ==> RseqmxA ==> RseqmxA) (@mulmx A m n p)
+        (@hmul_op _ (fun _ _ => seqmatrix C) _ m n p).
+Proof.
+eapply param_trans.
+by tc.
+by tc.
+eapply getparam_abstr => ???.
+eapply getparam_abstr => ???.
+rewrite /hmul_op /= /mulseqmx.
+case: n => [|n]. (* We need to improve the situation w.r.t. pattern matching *)
+by tc.
+by tc.
+Qed.
 
 End seqmx_ring_parametricity.
 
