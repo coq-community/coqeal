@@ -4,7 +4,10 @@
 *.cmo
 *.cma
 *.cmx
+*.cmxs
 *.cmi
 *.o
+*.native
+*.aux
 Makefile.coq
 *~
