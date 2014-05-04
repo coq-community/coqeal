@@ -35,6 +35,40 @@ Definition F2_of_bool (x : bool) : 'F_2 := x%:R.
 
 Definition Rbool := fun_hrel F2_of_bool.
 
+Global Instance Rbool_zero : param Rbool 0 0%C.
+Proof. by rewrite paramE. Qed.
+
+Global Instance Rbool_one : param Rbool 1 1%C.
+Proof. by rewrite paramE. Qed.
+
+Global Instance Rbool_opp : param (Rbool ==> Rbool) -%R -%C.
+Proof.
+rewrite paramE=> x []; rewrite /Rbool /F2_of_bool /fun_hrel /= => <- //.
+by rewrite GRing.mulr0n GRing.oppr0.
+Qed.
+
+Global Instance Rbool_add : param (Rbool ==> Rbool ==> Rbool) +%R +%C.
+Proof.
+rewrite paramE /Rbool /F2_of_bool /fun_hrel => x [] <- y [] <- //=.
+  by rewrite -GRing.natrD char_Zp.
+by rewrite GRing.add0r.
+Qed.
+
+(* TODO: lemma for sub *)
+
+Global Instance Rbool_mul : param (Rbool ==> Rbool ==> Rbool) *%R *%C.
+Proof.
+rewrite paramE /Rbool /F2_of_bool /fun_hrel => x [] <- y [] <- //=.
++ by rewrite GRing.mulr0.
++ by rewrite GRing.mul0r.
+by rewrite GRing.mul0r.
+Qed.
+
+Global Instance Rbool_inv : param (Rbool ==> Rbool) GRing.inv inv_bool.
+Proof.
+by rewrite paramE=> x []; rewrite /Rbool /F2_of_bool /fun_hrel /= => <- //.
+Qed.
+
 (*
 Lemma inj_bool_trans : injective bool_of_F2.
 Proof.
