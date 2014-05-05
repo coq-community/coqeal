@@ -6,6 +6,8 @@ Require Import bigop matrix mxalgebra.
 
 Require Import refinements hrel.
 
+Require Import pivot rank.
+
 (******************************************************************************)
 (* Lists of lists is a refinement of SSReflect matrices                       *) 
 (*                                                                            *)
@@ -296,6 +298,9 @@ Definition xcolseqmx i j (M : seqmatrix) : seqmatrix :=
 
 Definition row_perm_seqmx m (s : nat -> nat) (M : seqmatrix) : seqmatrix :=
   mkseq (fun i => nth [::] M (s i)) m.
+
+Global Instance find_pivot_seqmx : find_pivot_class A (fun _ => nat)
+    (fun _ _ => seqmatrix) := pivot.find_pivot.
 
 End seqmx_ops.
 
@@ -1117,6 +1122,182 @@ by tc.
 by tc.
 Qed.
 
+Global Instance RseqmxA_scalarseqmx m :
+  param (rAC ==> RseqmxA) (@matrix.scalar_mx A m)
+        (@scalar_mx C _ _ m).
+Proof. exact: param_trans. Qed.
+
 End seqmx_ring_parametricity.
+
+(*
+Section seqmx.
+
+Import Refinements.
+
+Variable A : Type.
+
+Context `{Op.zero A}.
+
+Instance find_pivot_seqmx :
+  Refinements.Op.find_pivot_class A (fun _ => nat)
+    (fun _ _ => seqmatrix A) :=
+  @find_pivot _ _ _ _ _ _ _ _.
+
+End seqmx.
+
+Section correctness.
+
+Import Refinements.
+
+Variable A : Type.
+
+Instance : Op.fun_of A ordinal (matrix A) := (@fun_of_matrix A).
+Instance : Op.dsub (matrix A) := @matrix.dsubmx A.
+
+Instance : forall m, Op.zero (ordinal (1 + m)) := fun _ => 0%R.
+Instance : forall m, Op.zero (ordinal m.+1) := fun _ => 0%R.
+Instance : Op.lift0_class ordinal := fun m i => lift 0%R i.
+
+Lemma find_pivotP m n (M : 'M[A]_(m,n.+1)) P :
+  pick_spec [pred i | P (M i 0%R)] (find_pivot P M).
+Proof.
+admit.
+Qed.
+
+End correctness.
+*)
+
+Section find_pivot_parametricity.
+
+Import Refinements.
+
+Context (A : Type) (C : Type) (rAC : A -> C -> Prop).
+
+Notation RseqmxA := (RseqmxA rAC).
+
+Instance : Op.fun_of A ordinal (matrix A) := (@fun_of_matrix A).
+Instance : Op.dsub (matrix A) := @matrix.dsubmx A.
+
+Instance : forall m, Op.zero (ordinal (1 + m)) := fun _ => 0%R.
+Instance : forall m, Op.zero (ordinal m.+1) := fun _ => 0%R.
+Instance : Op.lift0_class ordinal := fun m i => lift 0%R i.
+
+Instance : Op.find_pivot_class A ordinal (matrix A) :=
+  find_pivot.
+
+Context `{Op.zero C}.
+
+(*
+Context `{forall m, zero (ordA (1 + m))}.
+Context `{forall m, zero (ordA m.+1)}.
+Context `{fun_of A ordA mxA}.
+Context `{lift0_class ordA}.
+Context `{dsub mxA}.
+*)
+
+Notation ord := (fun _ : nat => nat).
+Notation hseqmatrix := (fun (_ _ : nat) => seqmatrix C).
+
+Context `{Op.find_pivot_class C ord hseqmatrix}.
+
+Context `{forall m1 m2 n, param (RseqmxA ==> RseqmxA)
+  (@matrix.dsubmx A m1 m2 n)  (@Op.dsubmx _ _ m1 m2 n)}.
+
+Global Instance RseqmxA_find_pivot m n :
+  param ((rAC ==> Logic.eq) ==> RseqmxA ==> ohrel (@Rord m)) (@Op.find_pivot A _ _ _ m n) (@Op.find_pivot C ord hseqmatrix _ m n).
+Proof.
+(*
+elim: m => [|m IHm]; first exact: get_param.
+rewrite /=.
+eapply get_param.
+eapply getparam_abstr => ? ? ?.
+eapply getparam_abstr => ? ? ?.
+*)
+admit.
+Qed.
+
+End find_pivot_parametricity.
+
+Section seqmx_field_parametricity.
+
+Import Refinements.Op.
+
+Context (A : fieldType) (N : Type) (C : Type) (rAC : A -> C -> Prop) (RN : nat -> N -> Prop).
+Notation RseqmxA := ((* Logic.eq \o*) RseqmxA rAC)%rel.
+Notation Rord := (Logic.eq \o RN)%rel.
+
+Context `{zero N, one N, add N}.
+
+Context `{zero C, one C, opp C, add C, sub C, mul C, eq C, inv C}.
+
+Context `{find_pivot_class C (fun _ => nat) (fun _ _ => seqmatrix C)}.
+
+Instance : Op.zero nat := 0%N.
+Instance : Op.one nat := 1%N.
+Instance : Op.add nat := addn.
+
+Instance : Op.zero A := 0%R.
+Instance : Op.inv A := GRing.inv.
+Instance : Op.eq A := eq_op.
+Instance : forall m n, Op.scale A 'M[A]_(m,n) :=
+  fun m n => (@GRing.scale _ _).
+Instance : Op.fun_of A ordinal (matrix A) := (@matrix.fun_of_matrix A).
+
+Instance : forall m, Op.zero (ordinal (1 + m)) := fun _ => 0%R.
+
+Instance : Op.hadd (matrix A) := @addmx A.
+Instance : Op.hsub (matrix A) := (fun _ _ M N => M - N).
+Instance : Op.hmul (matrix A) := @mulmx A.
+Instance : Op.lsub (matrix A) := @matrix.lsubmx A.
+Instance : Op.rsub (matrix A) := @matrix.rsubmx A.
+Instance : Op.block (matrix A) := @matrix.block_mx A.
+
+Instance : Op.row_class ordinal (matrix A) := (@matrix.row A).
+Instance : Op.row'_class ordinal (matrix A) := (@matrix.row' A).
+
+Instance : forall m, Op.zero (ordinal m.+1) := fun _ => 0%R.
+Instance : Op.lift0_class ordinal := fun _ => lift 0%R.
+Instance : Op.dsub (matrix A) := fun _ _ _ => matrix.dsubmx.
+
+Instance : Op.find_pivot_class A ordinal (matrix A) :=
+  pivot.find_pivot.
+
+Context `{!param rAC 0%R 0%C, !param rAC 1%R 1%C}.
+Context `{!param (rAC ==> rAC) -%R -%C}.
+Context `{!param (rAC ==> rAC ==> rAC) +%R +%C}.
+Context `{!param (rAC ==> rAC ==> rAC) subr sub_op}.
+Context `{!param (rAC ==> rAC ==> rAC) *%R *%C}.
+Context `{!param (rAC ==> rAC ==> Logic.eq) eqtype.eq_op eq_op}.
+
+Global Instance RseqmxA_rank_elim m n :
+  param (RseqmxA ==> RN) (rank_elim A _ _ _ m n)
+        (rank_elim C N (fun _ _ => seqmatrix C) (fun _ => nat) m n).
+Proof.
+Set Typeclasses Debug.
+admit.
+(*
+eapply param_trans.
+eapply composable_imply.
+exact: composable_rid1.
+eapply (@param_rank_elim A (fun _ _ => seqmatrix A) nat ordinal (@Rseqmx A)).
+
+
+by rewrite paramE.
+
+
+eapply param_trans.
+by tc.
+apply: rank_elimP.
+elim: n => [|n IHn].
+rewrite /rank_elim /=.
+eapply getparam_abstr => ???.
+
+
+admit.
+*)
+Qed.
+
+
+End seqmx_field_parametricity.
 
 End seqmx2.

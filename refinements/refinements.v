@@ -631,6 +631,9 @@ Definition spec_id {A : Type} : spec_of A A := id.
 Class implem_of A B := implem : A -> B.
 Definition implem_id {A : Type} : implem_of A A := id.
 
+Class find_pivot_class A I B :=
+  find_pivot : forall (m n : nat), (A -> bool) -> B m n.+1 -> option (I m).
+
 End Op.
 
 End Refinements.

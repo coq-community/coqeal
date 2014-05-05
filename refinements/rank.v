@@ -4,7 +4,7 @@ Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import ssralg fintype fingroup perm.
 Require Import matrix bigop zmodp mxalgebra.
 
-Require Import hrel refinements seqmatrix ssrcomplements.
+Require Import hrel refinements ssrcomplements pivot.
 
 Import GRing.Theory.
 
@@ -20,6 +20,7 @@ Local Open Scope hetero_computable_scope.
 Local Open Scope computable_scope.
 
 Variable A : Type.
+Variable N : Type.
 Variable mxA : nat -> nat -> Type.
 Variable ordA : nat -> Type.
 
@@ -31,23 +32,27 @@ Context `{forall m, zero (ordA (1 + m))}.
 Context `{row_class ordA mxA, row'_class ordA mxA, !hmul mxA, rsub mxA}.
 Context `{!hsub mxA, forall m n, scale A (mxA m n), lsub mxA}.
 
-Variable find_pivot : forall m n, mxA m n.+1 -> option (ordA m).
+Context `{zero N, add N, one N}.
 
-Fixpoint rank_elim {m n : nat} : mxA m n -> nat :=
-  match n return mxA m n -> nat with
+Context `{find_pivot_class A ordA mxA}.
+
+Fixpoint rank_elim {m n : nat} : mxA m n -> N :=
+  match n return mxA m n -> N with
   | p.+1 => fun (M : mxA m (1 + p)) =>
-    if find_pivot M is Some k then
+    if find_pivot (fun a => ~~ (eq_op a 0)) M is Some k then
       let a := fun_of_matrix M k 0 in
       let u := rsubmx (row k M) in
       let R := row' k M in
       let v := a^-1 *: lsubmx R in
       let R := (rsubmx R - v *m u)%HC in
-      (1 + rank_elim R)%N
+      1 + rank_elim R
     else rank_elim (rsubmx M)
-  | _ => fun _ => 0%N
+  | _ => fun _ => 0
   end.
 
 End FieldRank.
+
+Arguments rank_elim {A N mxA ordA _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ m n} M.
 
 Section rank_correctness.
 
@@ -58,8 +63,13 @@ Local Open Scope ring_scope.
 
 Variable F : fieldType.
 
+Instance : Op.zero nat := 0%N.
+Instance : Op.one nat := 1%N.
+Instance : Op.add nat := addn.
+
 Instance : Op.zero F := 0%R.
 Instance : Op.inv F := GRing.inv.
+Instance : Op.eq F := eq_op.
 Instance : forall m n, Op.scale F 'M[F]_(m,n) :=
   fun m n => (@GRing.scale _ _).
 Instance : Op.fun_of F ordinal (matrix F) := (@fun_of_matrix F).
@@ -75,6 +85,13 @@ Instance : Op.block (matrix F) := @matrix.block_mx F.
 
 Instance : Op.row_class ordinal (matrix F) := (@row F).
 Instance : Op.row'_class ordinal (matrix F) := (@row' F).
+
+Instance : forall m, Op.zero (ordinal m.+1) := fun _ => 0%R.
+Instance : Op.lift0_class ordinal := fun _ => lift 0%R.
+Instance : Op.dsub (matrix F) := fun _ _ _ => dsubmx.
+
+Instance : Op.find_pivot_class F ordinal (matrix F) :=
+  find_pivot.
 
 Lemma rank_row0mx (m n p : nat) (M : 'M[F]_(m,n)) :
   \rank (row_mx (0: 'M[F]_(m,p)) M) = \rank M.
@@ -108,13 +125,15 @@ Proof.
 by apply/matrixP=> i j; rewrite !mxE ord1 lshift0 lift_perm_id.
 Qed.
 
-Variable find_pivot : forall m n, 'M[F]_(m,n.+1) -> option 'I_m.
+(*
+Axiom find_pivot_mx : forall m n, (F -> bool) -> 'M[F]_(m,n.+1) -> option 'I_m.
+*)
 
-Hypothesis find_pivotP : forall m n (M : 'M_(m, n.+1)),
-  pick_spec [pred k | M k 0 != 0] (find_pivot M).
+Axiom find_pivotP : forall m n (M : 'M_(m, n.+1)),
+  pick_spec [pred k | M k 0 != 0] (Op.find_pivot (fun a => ~~ eq_op a 0) M).
 
 Global Instance rank_elimP m n :
-  param (eq ==> eq) (@mxrank F m n) (rank_elim find_pivot).
+  param (eq ==> eq) (@mxrank F m n) rank_elim.
 Proof.
 rewrite paramE => M M' <- {M'}; symmetry.
 elim: n m M => [m M|n IHn m]; first by rewrite thinmx0 mxrank0.
@@ -144,7 +163,7 @@ Qed.
 
 End rank_correctness.
 
-Arguments rank_elim A mxA ordA {_ _ _ _ _ _ _ _ _ _} _ m n _.
+Arguments rank_elim A N mxA ordA {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _} m n _.
 
 Section rank_param.
 
@@ -154,22 +173,34 @@ Local Open Scope ring_scope.
 
 Variable F : fieldType.
 
-Context (mxA : nat -> nat -> Type) (ordA : nat -> Type)
+Context (mxA : nat -> nat -> Type) (NA : Type) (ordA : nat -> Type)
         (RmxA : forall {m n}, 'M[F]_(m, n) -> mxA m n -> Prop)
+        (RNA : nat -> NA -> Prop)
         (RordA : forall m, 'I_m -> ordA m -> Prop).
 
 Arguments RmxA {m n} _ _.
 Arguments RordA {m} _ _.
 
+Context `{zero NA, one NA, add NA}.
+
 Context `{!hadd mxA, !hsub mxA, !hmul mxA, !lsub mxA, !rsub mxA}.
 Context `{row_class ordA mxA, row'_class ordA mxA, fun_of F ordA mxA}.
 Context `{forall m, zero (ordA (1 + m))}.
+(*
 Context `{find_pivotC : forall m n : nat, mxA m n.+1 -> option (ordA m)}.
+*)
 
 Context `{forall m n : nat, scale F (mxA m n)}.
 
+Context `{find_pivot_class F ordA mxA}.
+
+Instance : zero nat := 0%N.
+Instance : one nat := 1%N.
+Instance : add nat := addn.
+
 Instance : zero F := 0%R.
 Instance : inv F := GRing.inv.
+Instance : eq F := eqtype.eq_op.
 Instance : forall m n, scale F 'M[F]_(m,n) :=
   fun m n => (@GRing.scale _ _).
 Instance : fun_of F ordinal (matrix F) :=
@@ -187,16 +218,29 @@ Instance : block (matrix F) := @matrix.block_mx F.
 Instance : row_class ordinal (matrix F) := (@matrix.row F).
 Instance : row'_class ordinal (matrix F) := (@matrix.row' F).
 
-Fixpoint find_pivot_rec k {m n} (M : 'M[F]_(m.+1,n.+1)) :=
+Instance : forall m, zero (ordinal m.+1) := fun _ => 0%R.
+Instance : lift0_class ordinal := fun _ => lift 0%R.
+Instance : dsub (matrix F) := fun _ _ _ => matrix.dsubmx.
+
+(*
+Fixpoint find_pivot_mx_rec k {m n} (M : 'M[F]_(m.+1,n.+1)) :=
   if k is k'.+1 return option 'I_m.+1 then
     if M (inord (m - k)) 0 != 0 then Some (inord (m - k))
-    else find_pivot_rec k' M
+    else find_pivot_mx_rec k' M
   else None.
 
-Definition find_pivot m n :=
+Definition find_pivot_mx m n :=
   if m is m'.+1 return 'M_(m,n.+1) -> option 'I_m then
-    find_pivot_rec m
+    find_pivot_mx_rec m
   else fun _ => None.
+*)
+
+Instance : find_pivot_class F ordinal (matrix F) :=
+  pivot.find_pivot.
+
+Context `{!param RNA 0%N 0%C}.
+Context `{!param RNA 1%N 1%C}.
+Context `{!param (RNA ==> RNA ==> RNA) addn +%C}.
 
 Context `{forall m n, param (RmxA ==> RmxA ==> RmxA) +%R
   (@hadd_op _ _ _ m n)}.
@@ -212,8 +256,7 @@ Context `{forall m n m', param (RmxA ==> RmxA)
 Context `{forall m n, param (RmxA ==> RordA ==> RordA ==> Logic.eq)
   (@matrix.fun_of_matrix F m n) (@fun_of_matrix _ _ _ _ m n)}.
 
-Context `{forall m n, param (RmxA ==> ohrel RordA)
-  (@find_pivot m n) (@find_pivotC m n)}.
+Context `{forall m n, param ((Logic.eq ==> Logic.eq) ==> RmxA ==> ohrel (@RordA m)) (@find_pivot F _ _ _ m n) (@find_pivot _ _ _ _ m n)}.
 
 Context `{forall m n, param (RordA ==> RmxA ==> RmxA)
   (@matrix.row F m n) (@row _ _ _ m n)}.
@@ -241,53 +284,55 @@ Local Instance param_eq_refl A (n : A) : param Logic.eq n n | 999.
 Proof. by rewrite paramE. Qed.
 
 Global Instance param_rank_elim m n :
-   param (RmxA ==> Logic.eq)%rel
-         (rank_elim F (matrix F) ordinal find_pivot m n)
-         (rank_elim F mxA ordA find_pivotC m n).
+   param (RmxA ==> RNA)%rel
+         (rank_elim F nat (matrix F) ordinal m n)
+         (rank_elim F NA mxA ordA m n).
 Proof.
 elim: n m => [|n IHn] m; first exact: get_param.
 rewrite /=.
 eapply param_abstr=> x a param_xa.
-move: (H10 m n).
+
+set P := (fun a0 : F => ~~ (a0 == 0)).
+move: (H14 m n).
 move: (param_xa) => ?.
 rewrite 2!paramE in param_xa *.
-move/(_ x a param_xa) => /=.
-case: (find_pivot x) => [?|].
-case: (find_pivotC a) => pa //=.
+have HP : (Logic.eq ==> Logic.eq)%rel P P.
+  by move=> P1 P2 ->.
+move/(_ P P HP x a param_xa) => /=.
+case: (find_pivot P x) => [?|].
+case: (find_pivot P a) => pa //=.
 rewrite -[RordA]paramE => RordAxpa.
 eapply param_apply.
-  eapply param_apply; first exact param_addn.
-  tc.
+by tc.
 eapply param_apply.
 by tc.
 eapply param_apply.
 eapply param_apply.
-by eapply H5.
+by tc.
 eapply param_apply.
-by eapply H8.
+by tc.
 eapply param_apply.
-eapply param_apply.
-by eapply H12.
 by tc.
 by tc.
 eapply param_apply.
 eapply param_apply.
-by eapply H6.
+by tc.
 eapply param_apply.
 eapply param_apply.
-by eapply H13.
+by tc.
 
 eapply param_apply.
-by eapply param0.
+by tc.
 eapply param_apply.
 eapply param_apply.
 eapply param_apply.
-by eapply H9.
-exact: get_param.
-exact: get_param.
-exact: get_param.
+by tc.
+by tc.
+by tc.
+by tc.
+
 eapply param_apply.
-by eapply H7.
+by tc.
 eapply param_apply.
 by tc.
 by tc.
@@ -298,7 +343,7 @@ eapply param_apply.
 by tc.
 by tc.
 
-case: (find_pivotC a) => // _.
+case: (find_pivot P a) => // _.
 eapply param_apply.
 by tc.
 eapply param_apply.
@@ -310,6 +355,7 @@ End rank_param.
 
 (* Require Import Int31 Int31Native intmodp. *)
 
+(*
 Section rank_seqmx.
 
 Variable A : Type.
@@ -383,6 +429,7 @@ Qed.
 Print Assumptions refines_rank_elim_seqmx.
 
 End rank_seqmx_correctness.
+*)
 
 (*
 Notation "n %:F2" := (n%R : 'F_2) (at level 2, left associativity, format "n %:F2").
