@@ -16,3 +16,5 @@ seqmatrix.v
 seqpoly.v
 smith.v
 strassen.v
+funperm.v
+pivot.v
