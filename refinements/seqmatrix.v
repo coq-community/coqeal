@@ -142,6 +142,9 @@ Notation hseqmatrix := (fun (_ _ : nat) => seqmatrix).
 
 Definition ord_enum_eq n : seq 'I_n := pmap (insub_eq _) (iota 0 n).
 
+Definition mkseqmx m n (f : nat -> nat -> A) : seqmatrix :=
+  [seq [seq f i j | j <- iota 0 n] | i <- iota 0 m].
+
 Definition mkseqmx_ord m n (f : 'I_m -> 'I_n -> A) : seqmatrix :=
   let enum_n := ord_enum_eq n in
   map (fun i => map (f i) enum_n) (ord_enum_eq m).
@@ -343,7 +346,7 @@ Qed.
 
 Definition Rseqmx {A m n} := ofun_hrel (@mx_of_seqmx A m n).
 
-Definition Rord n (i : 'I_n) j := i = j :> nat.
+Definition Rord {n} (i : 'I_n) j := i = j :> nat.
 
 (* TODO: there should be an equivalent in refinements *)
 Lemma RseqmxP {A m n} {x y : 'M[A]_(m,n)} {a : seqmatrix A}
@@ -446,6 +449,18 @@ rewrite (omap_funoptE (fun ij => x ij.1 ij.2)) => [|g g' eq_gg'|[i j]].
 + by congr Some; apply/matrixP=> i j; rewrite !mxE.
 + by apply/matrixP=> i j; rewrite !mxE.
 by rewrite (nth_map [::]) ?eq_sz //= (nth_map (x i j)) ?eq_row_sz ?eq_nth.
+Qed.
+
+Instance Rseqmx_mkseqmx_tt A m n :
+  param ((@Rord m ==> @Rord n ==> Logic.eq) ==> Rseqmx) (matrix_of_fun matrix_key) (@mkseqmx A m n).
+Proof.
+admit.
+Qed.
+
+Instance Rseqmx_mkseqmx_mx_key A m n :
+  param ((@Rord m ==> @Rord n ==> Logic.eq) ==> Rseqmx) (matrix_of_fun matrix_key) (@mkseqmx A m n).
+Proof.
+admit.
 Qed.
 
 Instance Rseqmx_mkseqmx_ord_tt A m n :
@@ -1036,10 +1051,16 @@ Hint Extern 1 (getparam _ _ _) =>
 Section seqmx_parametricity.
 Import Refinements.Op.
 
-Context (A : Type) (C : Type) (rAC : A -> C -> Prop).
+Context (A : Type) (N : Type) (C : Type) (rAC : A -> C -> Prop) (RN : nat -> N -> Prop).
 Definition RseqmxA {m n} := (@Rseqmx A m n \o (seq_hrel (seq_hrel rAC)))%rel.
+Definition RordN {m} := (@Rord m \o RN)%rel.
 
-Global Instance RseqmxA_mkseqmx_ord_key m n :
+Global Instance RseqmxA_mkseqmx_mx_key m n :
+  param ((@Rord m ==> @Rord n ==> rAC) ==> RseqmxA)
+        (matrix_of_fun matrix_key) (@mkseqmx C m n).
+Proof. admit. Qed.
+
+Global Instance RseqmxA_mkseqmx_ord_mx_key m n :
   param ((Logic.eq ==> Logic.eq ==> rAC) ==> RseqmxA)
         (matrix_of_fun matrix_key) (@mkseqmx_ord C m n).
 Proof. apply: param_trans. Qed.
@@ -1224,7 +1245,6 @@ Import Refinements.Op.
 
 Context (A : fieldType) (N : Type) (C : Type) (rAC : A -> C -> Prop) (RN : nat -> N -> Prop).
 Notation RseqmxA := ((* Logic.eq \o*) RseqmxA rAC)%rel.
-Notation Rord := (Logic.eq \o RN)%rel.
 
 Context `{zero N, one N, add N}.
 
