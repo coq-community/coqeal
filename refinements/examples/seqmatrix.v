@@ -39,6 +39,8 @@ Proof.
 by rewrite paramE => ? ? ?; apply: paramR.
 Qed.
 
+Set Typeclasses Debug.
+
 (* A sucessful attempt *)
 Goal - P = - P.
 Proof.
@@ -55,5 +57,47 @@ Goal (M + N + M + N + M + N + N + M + N) *m
 Proof.
 apply/eqP.
 rewrite [_ == _]param_eq.
+by compute.
+Qed.
+
+(* Let's try with non-constant matrices, defined by lists *)
+Definition Qseq := [:: [:: 4%num%:Z; 2%num%:Z; 2%num%:Z]; [:: 2%num%:Z; 8%num%:Z; 2%num%:Z]].
+Definition Q := \matrix_(i < 2, j < 3) nth 0 (nth [::] Qseq i) j.
+
+(*
+Definition Q := @mx_of_seqmx_val int 0 2 3 Qseq.
+*)
+
+Goal - Q = - Q.
+Proof.
+rewrite /Q /Qseq.
+apply/eqP.
+erewrite param_eq; last first.
+eapply param_apply.
+eapply param_apply.
+by tc.
+eapply param_apply.
+by tc.
+eapply param_apply.
+eapply RseqmxA_mkseqmx_mx_key.
+
+eapply get_param. (* This is needed to synthetize the list *)
+eapply getparam_abstr => ? ? ?.
+eapply getparam_abstr => ? ? ?.
+eapply getparam_nth.
+by tc.
+eapply getparam_nth.
+by tc.
+by tc.
+
+
+by tc.
+eapply param_apply.
+by tc.
+eapply param_apply.
+by tc.
+eapply get_param.
+by tc.
+(* At this point, unary numbers have disappeared. *)
 by compute.
 Qed.
