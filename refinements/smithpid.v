@@ -109,11 +109,11 @@ Qed.
 (* We need to generalize and use an equality for the correctness proof of
 improve_pivot_rec to go through (otherwise we cannot do an induction on the
 accessibility proof) *)
-Lemma sdvd_Bezout_step (m n : nat) a (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
- a = M 0 0 -> ~~ (a %| M (lift 0 k) 0) ->
- (Bezout_step a (M (lift 0 k) 0) M k) 0 0 %<| a.
+Lemma sdvd_Bezout_step (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
+ ~~ (M 0 0 %| M (lift 0 k) 0) ->
+ (Bezout_step (M 0 0) (M (lift 0 k) 0) M k) 0 0 %<| M 0 0.
 Proof.
-move=> -> H; rewrite /sdvdr (eqd_dvd (Bezout_step_mx00 _) (eqdd _)) dvdr_gcdl.
+move=> H; rewrite /sdvdr (eqd_dvd (Bezout_step_mx00 _) (eqdd _)) dvdr_gcdl.
 rewrite (eqd_dvd (eqdd _ ) (Bezout_step_mx00 _)).
 by apply/negP=> H'; rewrite (dvdr_trans H' (dvdr_gcdr _ _)) in H.
 Qed.
@@ -157,14 +157,12 @@ Hypothesis find2P : forall m n (A : 'M[A]_(1 + m,1 + n)) a,
   pick_spec [pred ij | ~~(a %| A ij.1 (lift 0 ij.2))] (find2 A a).
 
 (* This lemma is used in the termination proof of improve_pivot_rec *)
-Lemma sdvd_Bezout_step2 m n a ij u' vA (M : 'M[A]_(1 + m, 1 + n)) :
-  a = M 0 0 ->
-  let B : 'M_(1 + m, 1 + n) := block_mx a%:M vA (const_mx a) (u' *m vA + drsubmx M) in
+Lemma sdvd_Bezout_step2 m n ij u' vA (M : 'M[A]_(1 + m, 1 + n)) :
+  let B : 'M_(1 + m, 1 + n) := block_mx (M 0 0)%:M vA (const_mx (M 0 0)) (u' *m vA + drsubmx M) in
   let C := xrow 0 ij.1 B in
-  ~~ (a %| B ij.1 (lift 0 ij.2)) ->
-  (Bezout_step (C 0 0) (C 0 (lift 0 ij.2)) C^T ij.2)^T 0 0 %<| a.
+  ~~ (M 0 0 %| B ij.1 (lift 0 ij.2)) ->
+  (Bezout_step (C 0 0) (C 0 (lift 0 ij.2)) C^T ij.2)^T 0 0 %<| M 0 0.
 Proof.
-move=> ->.
 set B := block_mx _ _ _ _ => /=.
 set C := xrow _ _ _.
 have ->: M 0 0 = C^T 0 0.
@@ -176,29 +174,29 @@ rewrite -[C]trmxK [C^T^T^T]trmxK ![C^T^T _ _]mxE sdvd_Bezout_step //.
 by rewrite {2}/C [_ (lift _ _) _]mxE [matrix.xrow _ _ _ _ _]mxE tpermL.
 Qed.
 
-Fixpoint improve_pivot_rec {m n} a (L : 'M[A]_(1 + m)) (M : 'M[A]_(1 + m, 1 + n))
-         (R : 'M[A]_(1 + n)) (eq_a : a = M 0 0) (k : Acc (@sdvdr A) a) :
+Fixpoint improve_pivot_rec {m n} (L : 'M[A]_(1 + m)) (M : 'M[A]_(1 + m, 1 + n))
+         (R : 'M[A]_(1 + n)) (k : Acc (@sdvdr A) (M 0 0)) :
          'M[A]_(1 + m) * 'M[A]_(1 + m, 1 + n) * 'M[A]_(1 + n) :=
     match k with Acc_intro IHa =>
     (* let a := M 0 0 in *)
-      if find1P M a is Pick i Hi then
+      if find1P M (M 0 0) is Pick i Hi then
         let Ai0 := M (lift 0 i) 0 in 
-        let L := Bezout_step a Ai0 L i in 
-        let A : 'M_(1 + m, 1 + n) := Bezout_step a Ai0 M i in
-        @improve_pivot_rec m n _ L A R (erefl _) (IHa _ (sdvd_Bezout_step eq_a Hi))
+        let L := Bezout_step (M 0 0) Ai0 L i in 
+        let A : 'M_(1 + m, 1 + n) := Bezout_step (M 0 0) Ai0 M i in
+        @improve_pivot_rec m n L A R (IHa _ (sdvd_Bezout_step Hi))
       else
       let u  := dlsubmx M in let vA := ursubmx M in let vL := usubmx L in
-      let u' := map_mx (fun x => 1 - odflt 0 (x %/? a)) u in
+      let u' := map_mx (fun x => 1 - odflt 0 (x %/? M 0 0)) u in
       let L  := col_mx (usubmx L) (u' *m vL + dsubmx L) in
-      let A  := block_mx a%:M vA
-                         (const_mx a) (u' *m vA + drsubmx M) in
-      if find2P A a is Pick ij Hij then
+      let A  := block_mx (M 0 0)%:M vA
+                         (const_mx (M 0 0)) (u' *m vA + drsubmx M) in
+      if find2P A (M 0 0) is Pick ij Hij then
         let A := xrow 0 ij.1 A in let L := xrow 0 ij.1 L in
         let a := fun_of_matrix A 0 0 in 
         let A0ij := fun_of_matrix A 0 (lift 0 ij.2) in 
         let R := (Bezout_step a A0ij (R^T) ij.2)^T in
         let A := (Bezout_step a A0ij (A^T) ij.2)^T in
-        @improve_pivot_rec m n _ L A R (erefl _) (IHa _ (sdvd_Bezout_step2 eq_a Hij))
+        @improve_pivot_rec m n L A R (IHa _ (sdvd_Bezout_step2 Hij))
       else (L, A, R)
     end.
 
@@ -206,7 +204,7 @@ Variable find_pivot :
   forall m n, 'M[A]_(1 + m,1 + n) -> option ('I_(1 + m) * 'I_(1 + n)).
 
 Definition improve_pivot m n (M : 'M[A]_(1 + m, 1 + n)) :=
-  improve_pivot_rec 1 1 (erefl _) (sdvdr_wf (M 0 0)).
+  improve_pivot_rec 1 1 (sdvdr_wf (M 0 0)).
 
 Fixpoint Smith {m n} : 'M[A]_(m,n) -> 'M[A]_(m) * seq A * 'M[A]_(n) :=
   match m, n return 'M[A]_(m, n) -> 'M[A]_(m) * seq A * 'M[A]_(n) with
@@ -246,26 +244,29 @@ Definition unitmxEE := (unitmx_mul, unitmx_tr, unit_Bezout_mx, unitmx_perm).
 Scheme Acc_rect_dep := Induction for Acc Sort Type.
 
 Lemma improve_pivot_recP : 
-  forall m n a (L : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) R (eq_a : a = M 0 0) (k : Acc (@sdvdr A) a),
+  forall m n (L : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) R (k : Acc (@sdvdr A) (M 0 0)),
    M 0 0 != 0 ->
    L \in unitmx -> R \in unitmx ->
-    improve_pivot_rec_spec L M R (improve_pivot_rec L R eq_a k).
+    improve_pivot_rec_spec L M R (improve_pivot_rec L R k).
 Proof.
-move=> m n a L M R eq_a k.
-elim/Acc_rect_dep: k M L R eq_a => a' Acc_a' IHa' M L R eq_a nzM00 unitL unitR /=.
-(*
-elim=> [m n L M R0|k IHk m n L M R0 Hk nzM00 unitL unitR /=].
-  by rewrite leqn0 => /eqP /enorm_eq0 ->; rewrite eqxx.
-*)
+move=> m n L M R k.
+rewrite -/(ecast a (Acc (fun x y : A => x %<| y) a) (erefl (M 0 0)) k).
+move: (erefl _) => eq_M00; move: eq_M00 k.
+move: {1 3 5}(fun_of_matrix M 0 0) => a eq_a k.
+elim/Acc_rect_dep: k M L R eq_a => a' Acc_a' IHa' M L R eq_a' nzM00 unitL unitR /=.
+move: (eq_a') Acc_a' IHa'.
+rewrite eq_a' => {eq_a'}eq_a' Acc_a' IHa'; rewrite {eq_a'}[eq_a']eq_axiomK /=.
 case: find1P=> [i Hi|Hi].
-  have [|||L' A' R' HA' ? ? Hdiv HL' HR'] // := IHa'; do ?constructor => //.
-(*  + by rewrite -ltnS (leq_trans (ltn_enorm nzM00 (sdvd_Bezout_step Hi)) Hk). *)
-  + by rewrite eq_a -eqdr0 (congr_eqd (Bezout_step_mx00 M) (eqdd _)) eqdr0 gcdr_eq0
+set L0 := Bezout_step _ _ L _; set M0 := Bezout_step _ _ M _.
+have /(_ erefl) [|||L' A' R' HA' ? ? Hdiv HL' HR'] // :=
+  IHa' (M0 0 0) (sdvd_Bezout_step Hi) M0 L0 R.
+  + by rewrite -eqdr0 (congr_eqd (Bezout_step_mx00 M) (eqdd _)) eqdr0 gcdr_eq0
                (negbTE nzM00).
-  + by rewrite Bezout_stepE !unitmxEE.
-  + rewrite -HA' !Bezout_stepE invrM ?unit_Bezout_mx // !mulmxA.
-    by congr (_ *m _ *m _); rewrite -mulmxA mulVmx ?unit_Bezout_mx // mulmx1.
-  + rewrite eq_a (eqd_dvd (eqdd _) (Bezout_step_mx00 _)) in Hdiv.
+  + by rewrite /L0 Bezout_stepE !unitmxEE.
+  + constructor=> //.
+      rewrite -HA' /L0 /M0 !Bezout_stepE invrM ?unit_Bezout_mx // !mulmxA.
+      by congr (_ *m _ *m _); rewrite -mulmxA mulVmx ?unit_Bezout_mx // mulmx1.
+  + rewrite (eqd_dvd (eqdd _) (Bezout_step_mx00 _)) in Hdiv.
     exact: (dvdr_trans Hdiv (dvdr_gcdl _ _)).
 set P := map_mx _ _.
 have Hblock : (matrix.block_mx 1 0 P 1%:M) *m M = 
@@ -275,7 +276,7 @@ have Hblock : (matrix.block_mx 1 0 P 1%:M) *m M =
           [matrix.ulsubmx M]mx11_scalar 2!mxE !lshift0.
   congr matrix.block_mx; rewrite mul_mx_scalar.
   apply/matrixP=> p q; rewrite ord1 !mxE lshift0 mulrBr mulr1 !rshift1; simpC.
-  case: odivrP=> [d ->|]; first by rewrite eq_a mulrC subrK.
+  case: odivrP=> [d ->|]; first by rewrite mulrC subrK.
   by case/dvdrP:(negbFE (Hi p))=> x -> /(_ x); rewrite eqxx.
 have unit_block : matrix.block_mx 1 0 P 1%:M \in unitmx
   by rewrite unitmxE (det_lblock 1 P) !det1 mul1r unitr1.
@@ -285,19 +286,21 @@ have HblockL : (matrix.block_mx 1 0 P 1%:M) *m L =
 case: find2P=> [[i j]|Hij] /=; simpC.
   set B := matrix.block_mx _ _ _ _; set C := matrix.xrow _ _ B => Hij.
   have HMA: M 0 0 = C^T 0 0.
-    rewrite /C /B -{2}(lshift0 n 0) !mxE tpermL.
+    rewrite /C /B -{4}(lshift0 n 0) !mxE tpermL.
     by case: splitP=> [i' _|i' Hi']; rewrite ?ord1 row_mxEl mxE ?eqxx.
   rewrite HMA in nzM00.
-  case: IHa' => [|||L' A' R' HA' ? ? Hdiv HL' HR']; do ?constructor=> //.
-(*  + rewrite -ltnS mxE (leq_trans _ Hk) ?(ltn_enorm nzM00) ?sdvd_Bezout_step //.
-    by rewrite {2}/A [_ (lift _ _) _]mxE [matrix.xrow _ _ _ _ _]mxE tpermL. *)
-  + rewrite -[C]trmxK [C^T^T^T]trmxK ![C^T^T _ _]mxE.
-by rewrite mxE -eqdr0 (congr_eqd (Bezout_step_mx00 _) (eqdd _)) eqdr0
+set L0 := xrow _ _ _; set R0 := (Bezout_step _ _ R^T _)^T.
+set M0 := (Bezout_step _ _ C^T _)^T; set dvd_prf := sdvd_Bezout_step2 _.
+have /(_ erefl) [|||L' A' R' HA' ? ? Hdiv HL' HR'] // :=
+  IHa' (M0 0 0) dvd_prf M0 L0 R0.
+  + rewrite /M0 -[C]trmxK [C^T^T^T]trmxK ![C^T^T _ _]mxE.
+    by rewrite mxE -eqdr0 (congr_eqd (Bezout_step_mx00 _) (eqdd _)) eqdr0
                gcdr_eq0 (negbTE nzM00).
-  + by rewrite xrowE -HblockL !unitmxEE unit_block.
-  + by rewrite !Bezout_stepE !unitmxEE.
-  + rewrite -HA' -[C]trmxK [C^T^T^T]trmxK ![C^T^T _ _]mxE.
-    rewrite ![(C^T) 0 _]mxE /C /B eq_a -Hblock -HblockL !xrowE.
+  + by rewrite /L0 xrowE -HblockL !unitmxEE unit_block.
+  + by rewrite /R0 !Bezout_stepE !unitmxEE.
+  + constructor=> //.
+  + rewrite -HA' /L0 /M0 /R0 -[C]trmxK [C^T^T^T]trmxK ![C^T^T _ _]mxE.
+    rewrite ![(C^T) 0 _]mxE /C /B -Hblock -HblockL !xrowE.
     rewrite !Bezout_stepE !trmx_mul !trmxK !invrM //.
     - rewrite !mulmxA -[_ / _ *m _]mulmxA mulVmx ?unitmx_perm // mulmx1.
       rewrite -[_ / _ *m _]mulmxA mulVmx // mulmx1 -[_ *m _^T *m _]mulmxA.
@@ -305,20 +308,20 @@ by rewrite mxE -eqdr0 (congr_eqd (Bezout_step_mx00 _) (eqdd _)) eqdr0
     - by rewrite unitmx_tr unit_Bezout_mx.
     - by rewrite unitmx_perm.
     by rewrite !unitmxEE unit_block.
-  rewrite -[C]trmxK [C^T^T^T]trmxK ![C^T^T _ _]mxE in Hdiv.
+  rewrite /M0 -[C]trmxK [C^T^T^T]trmxK ![C^T^T _ _]mxE in Hdiv.
   rewrite (dvdr_trans Hdiv) // mxE (eqd_dvd (Bezout_step_mx00 _) (eqdd _)) HMA.
   exact: dvdr_gcdl.
-constructor=> //; first by rewrite eq_a -HblockL -Hblock invrM // mulmxA mulmxKV.
+constructor=> //; first by rewrite -HblockL -Hblock invrM // mulmxA mulmxKV.
 + rewrite -[m.+1]/(1 + m)%N -[n.+1]/(1 + n)%N => i j.
-  rewrite eq_a -{3}(lshift0 m 0) -{3}(lshift0 n 0) block_mxEul mxE eqxx !mxE.
+  rewrite -{3}(lshift0 m 0) -{3}(lshift0 n 0) block_mxEul mxE eqxx !mxE.
 (* Why do we have to specify all these arguments? *)
   case: splitP=> i' Hi'; rewrite mxE; case: splitP=> j' Hj'; rewrite ?mxE ?ord1 //.
-    by move: (negbFE (Hij (lshift m 0,j'))); rewrite eq_a -rshift1 block_mxEur !mxE.
-  by move: (negbFE (Hij (lift 0 i',j'))); rewrite eq_a -!rshift1 block_mxEdr !mxE.
+    by move: (negbFE (Hij (lshift m 0,j'))); rewrite -rshift1 block_mxEur !mxE.
+  by move: (negbFE (Hij (lift 0 i',j'))); rewrite -!rshift1 block_mxEdr !mxE.
 + rewrite -[m.+1]/(1 + m)%N => i.
-  rewrite eq_a -{5}(lshift0 m 0) -{3 6}(lshift0 n 0) (block_mxEul (M 0 0)%:M _) !mxE.
+  rewrite -{5}(lshift0 m 0) -{3 6}(lshift0 n 0) (block_mxEul (M 0 0)%:M _) !mxE.
   by case: splitP=> i' _; rewrite row_mxEl !mxE ?ord1.
-+ rewrite eq_a -{3}(lshift0 m 0) -{3}(lshift0 n 0).
++ rewrite -{3}(lshift0 m 0) -{3}(lshift0 n 0).
   by rewrite (block_mxEul (M 0 0)%:M (matrix.ursubmx M)) mxE dvdrr.
 by rewrite -HblockL unitmx_mul unitmxE (det_lblock 1 P) !det1 mulr1 unitr1.
 Qed.
@@ -336,7 +339,7 @@ Lemma improve_pivotP m n (M : 'M_(1 + m, 1 + n)) :
   M 0 0 != 0 -> improve_pivot_spec M (improve_pivot M).
 Proof.
 move=> ?; rewrite /improve_pivot.
-have := (@improve_pivot_recP _ _ _ 1%:M M 1%:M (erefl _) (sdvdr_wf _)).
+have := (@improve_pivot_recP _ _ 1%:M M 1%:M (sdvdr_wf _)).
 case; rewrite ?unitmx1 // !invr1 mul1mx mulmx1 => ? ? ? eqM ? ? ? ? ?.
 by constructor=> //; rewrite eqM !mulmxA mulmxV // mul1mx mulmxKV.
 Qed.
