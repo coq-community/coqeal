@@ -178,12 +178,11 @@ Fixpoint improve_pivot_rec {m n} (L : 'M[A]_(1 + m)) (M : 'M[A]_(1 + m, 1 + n))
          (R : 'M[A]_(1 + n)) (k : Acc (@sdvdr A) (M 0 0)) :
          'M[A]_(1 + m) * 'M[A]_(1 + m, 1 + n) * 'M[A]_(1 + n) :=
     match k with Acc_intro IHa =>
-    (* let a := M 0 0 in *)
       if find1P M (M 0 0) is Pick i Hi then
-        let Ai0 := M (lift 0 i) 0 in 
-        let L := Bezout_step (M 0 0) Ai0 L i in 
+        let Ai0 := M (lift 0 i) 0 in
+        let L := Bezout_step (M 0 0) Ai0 L i in
         let A : 'M_(1 + m, 1 + n) := Bezout_step (M 0 0) Ai0 M i in
-        @improve_pivot_rec m n L A R (IHa _ (sdvd_Bezout_step Hi))
+        improve_pivot_rec L R (IHa _ (sdvd_Bezout_step Hi))
       else
       let u  := dlsubmx M in let vA := ursubmx M in let vL := usubmx L in
       let u' := map_mx (fun x => 1 - odflt 0 (x %/? M 0 0)) u in
@@ -192,11 +191,11 @@ Fixpoint improve_pivot_rec {m n} (L : 'M[A]_(1 + m)) (M : 'M[A]_(1 + m, 1 + n))
                          (const_mx (M 0 0)) (u' *m vA + drsubmx M) in
       if find2P A (M 0 0) is Pick ij Hij then
         let A := xrow 0 ij.1 A in let L := xrow 0 ij.1 L in
-        let a := fun_of_matrix A 0 0 in 
-        let A0ij := fun_of_matrix A 0 (lift 0 ij.2) in 
+        let a := fun_of_matrix A 0 0 in
+        let A0ij := fun_of_matrix A 0 (lift 0 ij.2) in
         let R := (Bezout_step a A0ij (R^T) ij.2)^T in
         let A := (Bezout_step a A0ij (A^T) ij.2)^T in
-        @improve_pivot_rec m n L A R (IHa _ (sdvd_Bezout_step2 Hij))
+        improve_pivot_rec L R (IHa _ (sdvd_Bezout_step2 Hij))
       else (L, A, R)
     end.
 

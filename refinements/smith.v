@@ -175,7 +175,7 @@ Context `{forall n, zero (ordA (1 + n)), lift0_class ordA}.
 Context `{fun_of A ordA mxA, cast_class A (mxA 1 1), const_mx_class A mxA}.
 Context `{map_mx_class A mxA, lift0mx_class mxA}.
 
-Fixpoint improve_pivot_rec k {m n} : 
+Fixpoint improve_pivot_rec k {m n} :
   'M[A]_(1 + m) -> 'M[A]_(1 + m, 1 + n) -> 'M[A]_(1 + n) ->
   'M[A]_(1 + m) * 'M[A]_(1 + m, 1 + n) * 'M[A]_(1 + n) :=
   match k with
@@ -183,8 +183,8 @@ Fixpoint improve_pivot_rec k {m n} :
   | p.+1 => fun L A R =>
       let a := fun_of_matrix A 0 0 in
       if find1 A a is Some i then
-        let Ai0 := fun_of_matrix A (lift0 i) 0 in 
-        let L := Bezout_step a Ai0 L i in 
+        let Ai0 := fun_of_matrix A (lift0 i) 0 in
+        let L := Bezout_step a Ai0 L i in
         let A := Bezout_step a Ai0 A i in
         improve_pivot_rec p L A R
       else
@@ -195,8 +195,8 @@ Fixpoint improve_pivot_rec k {m n} :
                          (const_mx a) (u' *m vA + drsubmx A)%HC in
       if find2 A a is Some ij then
         let A := xrow 0 ij.1 A in let L := xrow 0 ij.1 L in
-        let a := fun_of_matrix A 0 0 in 
-        let A0ij := fun_of_matrix A 0 (lift0 ij.2) in 
+        let a := fun_of_matrix A 0 0 in
+        let A0ij := fun_of_matrix A 0 (lift0 ij.2) in
         let R := (Bezout_step a A0ij (transpose_op R) ij.2)^T in
         let A := (Bezout_step a A0ij (transpose_op A) ij.2)^T in
         improve_pivot_rec p L A R
