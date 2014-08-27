@@ -605,7 +605,7 @@ Hint Resolve eqdd.
 (*   (at level 40, left associativity, format "x  %|d  y"). *)
 
 
-Module GcdRing.
+Module GcdDomain.
 
 Record mixin_of (R : dvdRingType) : Type := Mixin {
   gcd : R -> R -> R;
@@ -667,19 +667,19 @@ Coercion idomainType : type >-> GRing.IntegralDomain.type.
 Canonical Structure idomainType.
 Coercion dvdRingType : type >-> DvdRing.type.
 Canonical Structure dvdRingType.
-Notation gcdRingType := type.
-Notation GcdRingType T m := (@pack T _ m _ _ id _ id).
-Notation GcdRingMixin := Mixin.
-Notation "[ 'gcdRingType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
-  (at level 0, format "[ 'gcdRingType'  'of'  T  'for'  cT ]") : form_scope.
-Notation "[ 'gcdRingType' 'of' T ]" := (@clone T _ _ id)
-  (at level 0, format "[ 'gcdRingType'  'of'  T ]") : form_scope.
+Notation gcdDomainType := type.
+Notation GcdDomainType T m := (@pack T _ m _ _ id _ id).
+Notation GcdDomainMixin := Mixin.
+Notation "[ 'gcdDomainType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
+  (at level 0, format "[ 'gcdDomainType'  'of'  T  'for'  cT ]") : form_scope.
+Notation "[ 'gcdDomainType' 'of' T ]" := (@clone T _ _ id)
+  (at level 0, format "[ 'gcdDomainType'  'of'  T ]") : form_scope.
 End Exports.
 
-End GcdRing.
-Export GcdRing.Exports.
+End GcdDomain.
+Export GcdDomain.Exports.
 
-Definition gcdr R := GcdRing.gcd (GcdRing.class R).
+Definition gcdr R := GcdDomain.gcd (GcdDomain.class R).
 
 Definition lcmr R a b := nosimpl
   (if (a == 0) || (b == 0) then 0 else odflt 0 ((a * b) %/? (@gcdr R a b))).
@@ -687,13 +687,13 @@ Definition lcmr R a b := nosimpl
 Definition gcdsr R := foldr (@gcdr R) 0.
 Definition lcmsr R := foldr (@lcmr R) 1.
 
-(* Definition gcdqr (R : gcdRingType) (a b : {R %/ %=R}) : {R %/ %=R} := *)
+(* Definition gcdqr (R : gcdDomainType) (a b : {R %/ %=R}) : {R %/ %=R} := *)
 (*   (\pi (gcdr (repr a) (repr b))). *)
 
 
-Section GCDRingTheory.
+Section GCDDomainTheory.
 
-Variable R : gcdRingType.
+Variable R : gcdDomainType.
 
 Implicit Types a b : R.
 
@@ -1211,14 +1211,14 @@ by case=> k; apply: dvdr_trans; apply: big_dvdr_gcdr.
 Qed.
 (****)
 
-End GCDRingTheory.
+End GCDDomainTheory.
 
-Module BezoutRing.
+Module BezoutDomain.
 
-CoInductive bezout_spec (R : gcdRingType) (a b : R) : R * R -> Type:=
+CoInductive bezout_spec (R : gcdDomainType) (a b : R) : R * R -> Type:=
   BezoutSpec x y of gcdr a b %= x * a + y * b : bezout_spec a b (x, y).
 
-Record mixin_of (R : gcdRingType) : Type := Mixin {
+Record mixin_of (R : gcdDomainType) : Type := Mixin {
   bezout : R -> R -> (R * R);
    _ : forall a b, bezout_spec a b (bezout a b)
 }.
@@ -1226,10 +1226,10 @@ Record mixin_of (R : gcdRingType) : Type := Mixin {
 Section ClassDef.
 
 Record class_of (R : Type) : Type := Class {
-  base  : GcdRing.class_of R;
-  mixin : mixin_of (GcdRing.Pack base R)
+  base  : GcdDomain.class_of R;
+  mixin : mixin_of (GcdDomain.Pack base R)
 }.
-Local Coercion base : class_of >-> GcdRing.class_of.
+Local Coercion base : class_of >-> GcdDomain.class_of.
 
 Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
 Local Coercion sort : type >-> Sortclass.
@@ -1238,8 +1238,8 @@ Variable (T : Type) (cT : type).
 Definition class := let: Pack _ c _ := cT return class_of cT in c.
 Definition clone c of phant_id class c := @Pack T c T.
 
-Definition pack b0 (m0 : mixin_of (@GcdRing.Pack T b0 T)) :=
-  fun bT b & phant_id (GcdRing.class bT) b =>
+Definition pack b0 (m0 : mixin_of (@GcdDomain.Pack T b0 T)) :=
+  fun bT b & phant_id (GcdDomain.class bT) b =>
   fun    m & phant_id m m0 => Pack (@Class T b m) T.
 
 Definition eqType := Equality.Pack class cT.
@@ -1251,12 +1251,12 @@ Definition unitRingType := GRing.UnitRing.Pack class cT.
 Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
 Definition idomainType := GRing.IntegralDomain.Pack class cT.
 Definition dvdRingType := DvdRing.Pack class cT.
-Definition gcdRingType := GcdRing.Pack class cT.
+Definition gcdDomainType := GcdDomain.Pack class cT.
 
 End ClassDef.
 
 Module Exports.
-Coercion base : class_of >-> GcdRing.class_of.
+Coercion base : class_of >-> GcdDomain.class_of.
 Coercion mixin : class_of >-> mixin_of.
 Coercion sort : type >-> Sortclass.
 Bind Scope ring_scope with sort.
@@ -1278,32 +1278,32 @@ Coercion idomainType : type >-> GRing.IntegralDomain.type.
 Canonical Structure idomainType.
 Coercion dvdRingType : type >-> DvdRing.type.
 Canonical Structure dvdRingType.
-Coercion gcdRingType : type >-> GcdRing.type.
-Canonical Structure gcdRingType.
-Notation bezoutRingType := type.
-Notation BezoutRingType T m := (@pack T _ m _ _ id _ id).
-Notation BezoutRingMixin := Mixin.
-Notation "[ 'bezoutRingType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
-  (at level 0, format "[ 'bezoutRingType'  'of'  T  'for'  cT ]") : form_scope.
-Notation "[ 'bezoutRingType' 'of' T ]" := (@clone T _ _ id)
-  (at level 0, format "[ 'bezoutRingType'  'of'  T ]") : form_scope.
+Coercion gcdDomainType : type >-> GcdDomain.type.
+Canonical Structure gcdDomainType.
+Notation bezoutDomainType := type.
+Notation BezoutDomainType T m := (@pack T _ m _ _ id _ id).
+Notation BezoutDomainMixin := Mixin.
+Notation "[ 'bezoutDomainType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
+  (at level 0, format "[ 'bezoutDomainType'  'of'  T  'for'  cT ]") : form_scope.
+Notation "[ 'bezoutDomainType' 'of' T ]" := (@clone T _ _ id)
+  (at level 0, format "[ 'bezoutDomainType'  'of'  T ]") : form_scope.
 End Exports.
 
-End BezoutRing.
-Export BezoutRing.Exports.
+End BezoutDomain.
+Export BezoutDomain.Exports.
 
-Definition bezout R := BezoutRing.bezout (BezoutRing.class R).
+Definition bezout R := BezoutDomain.bezout (BezoutDomain.class R).
 
-Section BezoutRingTheory.
+Section BezoutDomainTheory.
 
-Variable R : bezoutRingType.
+Variable R : bezoutDomainType.
 
 Implicit Types a b : R.
 
-(* Lemma bezout_gcdPlr : forall a b, GCDRing.gcdP a b (bezout a b).1. *)
+(* Lemma bezout_gcdPlr : forall a b, GCDDomain.gcdP a b (bezout a b).1. *)
 (* Proof. by case: R => [? [? []]]. Qed. *)
 
-Lemma bezoutP : forall a b, BezoutRing.bezout_spec a b (bezout a b).
+Lemma bezoutP : forall a b, BezoutDomain.bezout_spec a b (bezout a b).
 Proof. by case: R=> [? [? []]]. Qed.
 
 
@@ -1499,38 +1499,38 @@ Qed.
 (* Qed. *)
 (*****************************************************************************)
 
-End BezoutRingTheory.
+End BezoutDomainTheory.
 
 (* Section Mixins. *)
 
 (* Variable R : GRing.IntegralDomain.type. *)
 (* Variable bezout : R -> R -> (R * ((R * R)) * (R * R)). *)
-(* Hypothesis bezout_axiom1 : forall a b, GCDRing.gcdP a b (bezout a b).1. *)
+(* Hypothesis bezout_axiom1 : forall a b, GCDDomain.gcdP a b (bezout a b).1. *)
 (* Hypothesis bezout_axiom2 : forall a b, bezoutP a b (bezout a b). *)
 
 (* Definition gcd a b := (bezout a b).1. *)
 (* (* ((bezout a b).1,((bezout a b).2.1.1,(bezout a b).2.1.2)). *) *)
 
-(* Lemma bezoutGcdP : forall a b, GCDRing.gcdP a b (gcd a b). *)
+(* Lemma bezoutGcdP : forall a b, GCDDomain.gcdP a b (gcd a b). *)
 (* Proof. exact: bezout_axiom1. Qed. *)
 
-(* Lemma bezoutGcdMax : forall a b g' x y, GCDRing.gcdP a b (g',(x,y)) -> *)
+(* Lemma bezoutGcdMax : forall a b g' x y, GCDDomain.gcdP a b (g',(x,y)) -> *)
 (*   exists z, g' * z = (gcd a b).1. *)
 (* Proof. *)
-(* rewrite /GCDRing.gcdP /gcd=> a b g' x' y' /= g'P. *)
+(* rewrite /GCDDomain.gcdP /gcd=> a b g' x' y' /= g'P. *)
 (* case hbez: (bezout _ _)=> [[g [x y]] [u v]] /=. *)
 (* exists (x' * u + y' * v). *)
 (* move: (bezout_axiom1 a b) (bezout_axiom2 a b). *)
-(* rewrite hbez /GCDRing.gcdP /bezoutP /= -!g'P => hgxy. *)
+(* rewrite hbez /GCDDomain.gcdP /bezoutP /= -!g'P => hgxy. *)
 (* rewrite mulr_addr !mulrA -!hgxy -!mulrA -mulr_addr. *)
 (* by move->; rewrite mulr1. *)
 (* Qed. *)
 
-(* Definition GcdMixin := GcdRingMixin bezoutGcdP bezoutGcdMax. *)
+(* Definition GcdMixin := GcdDomainMixin bezoutGcdP bezoutGcdMax. *)
 
 (* End Mixins. *)
 
-Module PrincipalRing.
+Module PID.
 
 Record mixin_of (R : dvdRingType) : Type := Mixin {
   _ : well_founded (@sdvdr R)
@@ -1539,10 +1539,10 @@ Record mixin_of (R : dvdRingType) : Type := Mixin {
 Section ClassDef.
 
 Record class_of (R : Type) : Type := Class {
-  base  : BezoutRing.class_of R;
+  base  : BezoutDomain.class_of R;
   mixin : mixin_of (DvdRing.Pack base R)
 }.
-Local Coercion base : class_of >-> BezoutRing.class_of.
+Local Coercion base : class_of >-> BezoutDomain.class_of.
 
 Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
 Local Coercion sort : type >-> Sortclass.
@@ -1552,7 +1552,7 @@ Definition class := let: Pack _ c _ := cT return class_of cT in c.
 Definition clone c of phant_id class c := @Pack T c T.
 
 Definition pack b0 (m0 : mixin_of (@DvdRing.Pack T b0 T)) :=
-  fun bT b & phant_id (BezoutRing.class bT) b =>
+  fun bT b & phant_id (BezoutDomain.class bT) b =>
   fun    m & phant_id m m0 => Pack (@Class T b m) T.
 
 Definition eqType := Equality.Pack class cT.
@@ -1564,13 +1564,13 @@ Definition unitRingType := GRing.UnitRing.Pack class cT.
 Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
 Definition idomainType := GRing.IntegralDomain.Pack class cT.
 Definition dvdRingType := DvdRing.Pack class cT.
-Definition gcdRingType := GcdRing.Pack class cT.
-Definition bezoutRingType := BezoutRing.Pack class cT.
+Definition gcdDomainType := GcdDomain.Pack class cT.
+Definition bezoutDomainType := BezoutDomain.Pack class cT.
 
 End ClassDef.
 
 Module Exports.
-Coercion base : class_of >-> BezoutRing.class_of.
+Coercion base : class_of >-> BezoutDomain.class_of.
 Coercion mixin : class_of >-> mixin_of.
 Coercion sort : type >-> Sortclass.
 Bind Scope ring_scope with sort.
@@ -1592,24 +1592,24 @@ Coercion idomainType : type >-> GRing.IntegralDomain.type.
 Canonical Structure idomainType.
 Coercion dvdRingType : type >-> DvdRing.type.
 Canonical Structure dvdRingType.
-Coercion gcdRingType : type >-> GcdRing.type.
-Canonical Structure gcdRingType.
-Coercion bezoutRingType : type >-> BezoutRing.type.
-Canonical Structure bezoutRingType.
-Notation priRingType := type.
-Notation PriRingType T m := (@pack T _ m _ _ id _ id).
-Notation PriRingMixin := Mixin.
-Notation "[ 'priRingType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
-  (at level 0, format "[ 'priRingType'  'of'  T  'for'  cT ]") : form_scope.
-Notation "[ 'priRingType' 'of' T ]" := (@clone T _ _ id)
-  (at level 0, format "[ 'priRingType'  'of'  T ]") : form_scope.
+Coercion gcdDomainType : type >-> GcdDomain.type.
+Canonical Structure gcdDomainType.
+Coercion bezoutDomainType : type >-> BezoutDomain.type.
+Canonical Structure bezoutDomainType.
+Notation pidType := type.
+Notation PIDType T m := (@pack T _ m _ _ id _ id).
+Notation PIDMixin := Mixin.
+Notation "[ 'pidType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
+  (at level 0, format "[ 'pidType'  'of'  T  'for'  cT ]") : form_scope.
+Notation "[ 'pidType' 'of' T ]" := (@clone T _ _ id)
+  (at level 0, format "[ 'pidType'  'of'  T ]") : form_scope.
 End Exports.
-End PrincipalRing.
-Export PrincipalRing.Exports.
+End PID.
+Export PID.Exports.
 
-Section PrincipalRingTheory.
+Section PIDTheory.
 
-Variable R : priRingType.
+Variable R : pidType.
 
 Implicit Types a b : R.
 
@@ -1618,9 +1618,9 @@ Definition sdvdr_rect := (well_founded_induction_type (sdvdr_wf)).
 Definition sdvdr_rec := (well_founded_induction (sdvdr_wf)).
 Definition sdvdr_ind := (well_founded_ind (sdvdr_wf)).
 
-End PrincipalRingTheory.
+End PIDTheory.
 
-Module EuclideanRing.
+Module EuclideanDomain.
 
 CoInductive edivr_spec (R : ringType)
   (g : R -> nat) (a b : R) : R * R -> Type :=
@@ -1729,7 +1729,7 @@ constructor=> x hx; move/(ltn_norm a0):(hx)=> hn; apply ihn.
 by apply: contra a0; move/eqP=> x0; move/sdvdrW:hx; rewrite x0 dvd0r.
 Qed.
 
-Definition EuclidPrincipal := PriRingMixin sdvdr_wf.
+Definition EuclidPID := PIDMixin sdvdr_wf.
 
 Lemma mod_eq0 : forall a b, (a %% b == 0) = (b %| a).
 Proof.
@@ -1859,11 +1859,11 @@ case b0: (b == 0).
 by move=> nb; rewrite ihk // -ltnS (leq_trans (mod_spec _ _)) ?b0.
 Qed.
 
-Definition EuclidGCD := GcdRingMixin GCDP.
-Definition EuclidGcd := GcdRingMixin gcdP.
+Definition EuclidGCD := GcdDomainMixin GCDP.
+Definition EuclidGcd := GcdDomainMixin gcdP.
 
-Hypothesis gcdM : GcdRing.mixin_of [dvdRingType of R].
-Canonical Structure R_gcdRing := GcdRingType R gcdM.
+Hypothesis gcdM : GcdDomain.mixin_of [dvdRingType of R].
+Canonical Structure R_gcdDomain := GcdDomainType R gcdM.
 
 Fixpoint egcd_rec (a b : R) n {struct n} : R * R :=
   if n is n'.+1 then
@@ -1902,14 +1902,14 @@ move/eqP; rewrite addrC -subr_eq; move/eqP=>->.
 by rewrite b0 /= => nrb; apply; rewrite -ltnS (leq_trans nrb).
 Qed.
 
-Lemma egcdP : forall a b, BezoutRing.bezout_spec a b (egcd a b).
+Lemma egcdP : forall a b, BezoutDomain.bezout_spec a b (egcd a b).
 Proof.
 rewrite /egcd=> a b.
 case H: egcd_rec=> [x y]; constructor.
 by move: (@egcd_recP _ a b (leqnn _)); rewrite H.
 Qed.
 
-Definition EuclidBezout := BezoutRingMixin egcdP.
+Definition EuclidBezout := BezoutDomainMixin egcdP.
 
 End Mixins.
 
@@ -1935,21 +1935,21 @@ Definition EuclidGCDMixin R cR (m0 : mixin_of cR) :=
 Definition EuclidBezoutMixin R cR (m0 : mixin_of cR) :=
   fun biT bi  & phant_id (GRing.IntegralDomain.class biT) bi =>
   fun bdT bd  & phant_id (DvdRing.class bdT : DvdRing.mixin_of _) bd =>
-  fun bgT bg  & phant_id (GcdRing.class bgT : GcdRing.mixin_of _) bg =>
+  fun bgT bg  & phant_id (GcdDomain.class bgT : GcdDomain.mixin_of _) bg =>
   fun     m & phant_id m0 m => @Mixins.EuclidBezout R bi m bd bg.
 
-Definition EuclidPriMixin R cR (m0 : mixin_of cR) :=
+Definition EuclidPIDMixin R cR (m0 : mixin_of cR) :=
   fun biT bi  & phant_id (GRing.IntegralDomain.class biT) bi =>
   fun bdT bd  & phant_id (DvdRing.class bdT : DvdRing.mixin_of _) bd =>
-  fun     m & phant_id m0 m => @Mixins.EuclidPrincipal R bi m bd.
+  fun     m & phant_id m0 m => @Mixins.EuclidPID R bi m bd.
 
 Section ClassDef.
 
 Record class_of (R : Type) : Type := Class {
-  base  : PrincipalRing.class_of R;
+  base  : PID.class_of R;
   mixin : mixin_of (GRing.Ring.Pack base R)
 }.
-Local Coercion base : class_of >-> PrincipalRing.class_of.
+Local Coercion base : class_of >-> PID.class_of.
 
 Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
 Local Coercion sort : type >-> Sortclass.
@@ -1959,7 +1959,7 @@ Definition class := let: Pack _ c _ := cT return class_of cT in c.
 Definition clone c of phant_id class c := @Pack T c T.
 
 Definition pack b0 (m0 : mixin_of (@GRing.Ring.Pack T b0 T)) :=
-  fun bT b & phant_id (PrincipalRing.class bT) b =>
+  fun bT b & phant_id (PID.class bT) b =>
   fun    m & phant_id m m0 => Pack (@Class T b m) T.
 
 Definition eqType := Equality.Pack class cT.
@@ -1971,14 +1971,14 @@ Definition unitRingType := GRing.UnitRing.Pack class cT.
 Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
 Definition idomainType := GRing.IntegralDomain.Pack class cT.
 Definition dvdRingType := DvdRing.Pack class cT.
-Definition gcdRingType := GcdRing.Pack class cT.
-Definition bezoutRingType := BezoutRing.Pack class cT.
-Definition priRingType := PrincipalRing.Pack class cT.
+Definition gcdDomainType := GcdDomain.Pack class cT.
+Definition bezoutDomainType := BezoutDomain.Pack class cT.
+Definition pidType := PID.Pack class cT.
 
 End ClassDef.
 
 Module Exports.
-Coercion base : class_of >-> PrincipalRing.class_of.
+Coercion base : class_of >-> PID.class_of.
 Coercion mixin : class_of >-> mixin_of.
 Coercion sort : type >-> Sortclass.
 Bind Scope ring_scope with sort.
@@ -2000,53 +2000,53 @@ Coercion idomainType : type >-> GRing.IntegralDomain.type.
 Canonical Structure idomainType.
 Coercion dvdRingType : type >-> DvdRing.type.
 Canonical Structure dvdRingType.
-Coercion gcdRingType : type >-> GcdRing.type.
-Canonical Structure gcdRingType.
-Coercion bezoutRingType : type >-> BezoutRing.type.
-Canonical Structure bezoutRingType.
-Coercion priRingType : type >-> PrincipalRing.type.
-Canonical Structure priRingType.
-Notation euclidRingType := type.
-Notation EuclidRingType T m := (@pack T _ m _ _ id _ id).
-Notation EuclidRingMixin := Mixin.
-Notation "[ 'euclidRingType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
-  (at level 0, format "[ 'euclidRingType'  'of'  T  'for'  cT ]") : form_scope.
-Notation "[ 'euclidRingType' 'of' T ]" := (@clone T _ _ id)
-  (at level 0, format "[ 'euclidRingType'  'of'  T ]") : form_scope.
+Coercion gcdDomainType : type >-> GcdDomain.type.
+Canonical Structure gcdDomainType.
+Coercion bezoutDomainType : type >-> BezoutDomain.type.
+Canonical Structure bezoutDomainType.
+Coercion pidType : type >-> PID.type.
+Canonical Structure pidType.
+Notation euclidDomainType := type.
+Notation EuclidDomainType T m := (@pack T _ m _ _ id _ id).
+Notation EuclidDomainMixin := Mixin.
+Notation "[ 'euclidDomainType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
+  (at level 0, format "[ 'euclidDomainType'  'of'  T  'for'  cT ]") : form_scope.
+Notation "[ 'euclidDomainType' 'of' T ]" := (@clone T _ _ id)
+  (at level 0, format "[ 'euclidDomainType'  'of'  T ]") : form_scope.
 Notation EuclidDvdMixin T m := (@EuclidDvdMixin T _ m _ _ id _ id).
 Notation EuclidGcdMixin T m := (@EuclidGcdMixin T _ m _ _ id _ _ id _ id).
 Notation EuclidGCDMixin T m := (@EuclidGCDMixin T _ m _ _ id _ _ id _ id).
 Notation EuclidBezoutMixin T m :=
   (@EuclidBezoutMixin T _ m _ _ id _ _ id _ _ id _ id).
-Notation EuclidPriMixin T m := (@EuclidPriMixin T _ m _ _ id _ _ id _ id).
+Notation EuclidPIDMixin T m := (@EuclidPIDMixin T _ m _ _ id _ _ id _ id).
 End Exports.
-End EuclideanRing.
-Export EuclideanRing.Exports.
+End EuclideanDomain.
+Export EuclideanDomain.Exports.
 
-Definition edivr (R : euclidRingType) :=
-  EuclideanRing.ediv (EuclideanRing.class R).
-Definition enorm (R : euclidRingType) :=
-  EuclideanRing.enorm (EuclideanRing.class R).
-
-
-Definition GCD (R : euclidRingType) :=
-    EuclideanRing.Mixins.GCD (EuclideanRing.class R).
-Definition ACC_GCD (R : euclidRingType) :=
-    @EuclideanRing.Mixins.acc_gcd _ (EuclideanRing.class R).
+Definition edivr (R : euclidDomainType) :=
+  EuclideanDomain.ediv (EuclideanDomain.class R).
+Definition enorm (R : euclidDomainType) :=
+  EuclideanDomain.enorm (EuclideanDomain.class R).
 
 
-Definition divr (R : euclidRingType) (m d : R) := (edivr m d).1.
+Definition GCD (R : euclidDomainType) :=
+    EuclideanDomain.Mixins.GCD (EuclideanDomain.class R).
+Definition ACC_GCD (R : euclidDomainType) :=
+    @EuclideanDomain.Mixins.acc_gcd _ (EuclideanDomain.class R).
+
+
+Definition divr (R : euclidDomainType) (m d : R) := (edivr m d).1.
 Notation "m %/ d" := (divr m d) : ring_scope.
-Definition modr (R : euclidRingType) (m d : R) := (edivr m d).2.
+Definition modr (R : euclidDomainType) (m d : R) := (edivr m d).2.
 Notation "m %% d" := (modr m d) : ring_scope.
 Notation "m = n %[mod d ]" := (m %% d = n %% d) : ring_scope.
 Notation "m == n %[mod d ]" := (m %% d == n %% d) : ring_scope.
 Notation "m <> n %[mod d ]" := (m %% d <> n %% d) : ring_scope.
 Notation "m != n %[mod d ]" := (m %% d != n %% d) : ring_scope.
 
-Section EuclideanRingTheory.
+Section EuclideanDomainTheory.
 
-Variable R : euclidRingType.
+Variable R : euclidDomainType.
 
 Implicit Types a b : R.
 
@@ -2055,38 +2055,38 @@ Proof. by case: R=> [? [? []]]. Qed.
 
 (* Lemma enorm0 : enorm (0 : R) = 0%N. Proof. by case: R=> [? [? []]]. Qed. *)
 
-Lemma edivrP : forall a b, EuclideanRing.edivr_spec (@enorm _) a b (edivr a b).
+Lemma edivrP : forall a b, EuclideanDomain.edivr_spec (@enorm _) a b (edivr a b).
 Proof. by case: R=> [? [? []]]. Qed.
 
 Lemma enorm0_lt : forall a, a != 0 -> enorm (0 : R) < enorm a.
-Proof. exact: EuclideanRing.Mixins.norm0_lt. Qed.
+Proof. exact: EuclideanDomain.Mixins.norm0_lt. Qed.
 
 Lemma leq_enorm : forall a b, b != 0 -> a %| b -> enorm a <= enorm b.
-Proof. exact: EuclideanRing.Mixins.leq_norm. Qed.
+Proof. exact: EuclideanDomain.Mixins.leq_norm. Qed.
 
 Lemma ltn_enorm : forall a b, b != 0 -> a %<| b -> enorm a < enorm b.
-Proof. exact: EuclideanRing.Mixins.ltn_norm. Qed.
+Proof. exact: EuclideanDomain.Mixins.ltn_norm. Qed.
 
 Lemma modr_eq0 : forall a b, (a %% b == 0) = (b %| a).
-Proof. exact: EuclideanRing.Mixins.mod_eq0. Qed.
+Proof. exact: EuclideanDomain.Mixins.mod_eq0. Qed.
 
 Lemma enorm_eq0 : forall a, enorm a = 0%N -> a = 0.
-Proof. exact: EuclideanRing.Mixins.norm_eq0. Qed.
+Proof. exact: EuclideanDomain.Mixins.norm_eq0. Qed.
 
 Lemma modr_spec: forall a b, b != 0 -> enorm (a %% b) < (enorm b).
-Proof. exact: EuclideanRing.Mixins.mod_spec. Qed.
+Proof. exact: EuclideanDomain.Mixins.mod_spec. Qed.
 
 Lemma modr0 : forall a, a %% 0 = a.
-Proof. exact: EuclideanRing.Mixins.modr0. Qed.
+Proof. exact: EuclideanDomain.Mixins.modr0. Qed.
 
 Lemma mod0r : forall a, 0 %% a = 0.
 Proof.
-apply: EuclideanRing.Mixins.mod0r;
+apply: EuclideanDomain.Mixins.mod0r;
 exact: (DvdRing.class [dvdRingType of R]).
 Qed.
 
 Lemma dvdr_mod : forall a b g, (g %| a) && (g %| b) = (g %| b) && (g %| a %% b).
-Proof. exact: EuclideanRing.Mixins.dvd_mod. Qed.
+Proof. exact: EuclideanDomain.Mixins.dvd_mod. Qed.
 
 (****)
 Lemma divr_mulKr a b : b != 0 -> (b * a) %/ b = a.
@@ -2106,4 +2106,4 @@ by rewrite mulrC; apply: divr_mulKr.
 Qed.
 (****)
 
-End EuclideanRingTheory.
+End EuclideanDomainTheory.

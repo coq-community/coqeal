@@ -17,12 +17,12 @@ Local Open Scope ring_scope.
 (* Preliminary section on Bezout matrices *)
 Section Bezout_mx.
 
-Variable R : bezoutRingType. 
+Variable R : bezoutDomainType.
 
 (*****************
   if the following Bezout identity holds: u * a1 + v * b1 = 1,
   Bezout_mx a b n k represents the following matrix (dots are zeros):
-    
+
           (kth column)
   / u .... v ..... \
   | . 1 .......... |
@@ -151,7 +151,7 @@ Local Open Scope computable_scope.
 Variable mxA : nat -> nat -> Type.
 Variable ordA : nat -> Type.
 
-Notation "''M[A]_' ( m , n )" := (mxA m n) 
+Notation "''M[A]_' ( m , n )" := (mxA m n)
   (at level 8, format "''M[A]_' ( m ,  n )").
 Notation "''M[A]_' ( n )" := (mxA n n) (at level 8, only parsing).
 Notation "''I_' n" := (ordA n) : type_scope.
@@ -163,7 +163,7 @@ Variable find2 :
 Variable find_pivot :
   forall m n, 'M[A]_(1 + m,1 + n) -> option ('I_(1 + m) * 'I_(1 + n)).
 
-Variable Bezout_step : 
+Variable Bezout_step :
   A -> A -> forall m n, 'M[A]_(1+m,1+n) -> 'I_m -> 'M[A]_(m.+1,1+n).
 
 Context `{zero A, one A, sub A, mul A, odvd A, enorm_of A}.
@@ -232,7 +232,7 @@ Section smith_theory.
 
 Import Refinements.Op.
 
-Variable E : euclidRingType.
+Variable E : euclidDomainType.
 
 Local Notation "''M_' ( m , n )" := 'M[E]_(m, n) : type_scope.
 Local Notation "''M_' ( n )" := 'M[E]_(n, n) : type_scope.
@@ -303,7 +303,7 @@ Definition unitmxEE := (unitmx_mul, unitmx_tr, unit_Bezout_mx, unitmx_perm).
 
 Definition improve_pivot_recR := improve_pivot_rec find1 find2 (@Bezout_step E).
 
-Lemma improve_pivot_recP : 
+Lemma improve_pivot_recP :
   forall k m n (L : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) R,
   (enorm (M 0%R 0%R) <= k)%N -> M 0 0 != 0 ->
    L \in unitmx -> R \in unitmx ->
@@ -322,7 +322,7 @@ case: find1P=> [i Hi|Hi].
   + rewrite (eqd_dvd (eqdd _) (Bezout_step_mx00 _)) in Hdiv.
     exact: (dvdr_trans Hdiv (dvdr_gcdl _ _)).
 set P := map_mx _ _.
-have Hblock : (matrix.block_mx 1 0 P 1%:M) *m M = 
+have Hblock : (matrix.block_mx 1 0 P 1%:M) *m M =
                matrix.block_mx (M 0 0)%:M (matrix.ursubmx M)
               (matrix.const_mx (M 0 0)) (P *m matrix.ursubmx M + matrix.drsubmx M).
   rewrite -{1}[M]submxK mulmx_block !mul0mx !mul1mx !addr0
@@ -402,7 +402,7 @@ CoInductive Smith_spec {R : dvdRingType} {m n} M
                        & L0 \in unitmx
                        & R0 \in unitmx : @Smith_spec R _ _ M (L0, d, R0).
 
-Lemma SmithP : forall (m n : nat) (M : 'M_(m,n)), 
+Lemma SmithP : forall (m n : nat) (M : 'M_(m,n)),
   Smith_spec M (Smith find1 find2 find_pivot (@Bezout_step E) M).
 Proof.
 elim=> [n M|m IHn]; first constructor; rewrite ?unitmx1 //.
