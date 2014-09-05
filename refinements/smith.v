@@ -179,28 +179,28 @@ Fixpoint improve_pivot_rec k {m n} :
   'M[A]_(1 + m) -> 'M[A]_(1 + m, 1 + n) -> 'M[A]_(1 + n) ->
   'M[A]_(1 + m) * 'M[A]_(1 + m, 1 + n) * 'M[A]_(1 + n) :=
   match k with
-  | 0 => fun L A R => (L,A,R)
-  | p.+1 => fun L A R =>
-      let a := fun_of_matrix A 0 0 in
-      if find1 A a is Some i then
-        let Ai0 := fun_of_matrix A (lift0 i) 0 in
-        let L := Bezout_step a Ai0 L i in
-        let A := Bezout_step a Ai0 A i in
-        improve_pivot_rec p L A R
+  | 0 => fun P M Q => (P,M,Q)
+  | p.+1 => fun P M Q =>
+      let a := fun_of_matrix M 0 0 in
+      if find1 M a is Some i then
+        let Mi0 := fun_of_matrix M (lift0 i) 0 in
+        let P := Bezout_step a Mi0 P i in
+        let M := Bezout_step a Mi0 M i in
+        improve_pivot_rec p P M Q
       else
-      let u  := dlsubmx A in let vA := ursubmx A in let vL := usubmx L in
+      let u  := dlsubmx M in let vM := ursubmx M in let vP := usubmx P in
       let u' := map_mx (fun x => 1 - odflt 0 (x %/? a)) u in
-      let L  := col_mx (usubmx L) (u' *m vL + dsubmx L)%HC in
-      let A  := block_mx (cast_op a) vA
-                         (const_mx a) (u' *m vA + drsubmx A)%HC in
-      if find2 A a is Some ij then
-        let A := xrow 0 ij.1 A in let L := xrow 0 ij.1 L in
-        let a := fun_of_matrix A 0 0 in
-        let A0ij := fun_of_matrix A 0 (lift0 ij.2) in
-        let R := (Bezout_step a A0ij (transpose_op R) ij.2)^T in
-        let A := (Bezout_step a A0ij (transpose_op A) ij.2)^T in
-        improve_pivot_rec p L A R
-      else (L, A, R)
+      let P  := col_mx (usubmx P) (u' *m vP + dsubmx P)%HC in
+      let M  := block_mx (cast_op a) vM
+                         (const_mx a) (u' *m vM + drsubmx M)%HC in
+      if find2 M a is Some ij then
+        let M := xrow 0 ij.1 M in let P := xrow 0 ij.1 P in
+        let a := fun_of_matrix M 0 0 in
+        let M0ij := fun_of_matrix M 0 (lift0 ij.2) in
+        let Q := (Bezout_step a M0ij Q^T ij.2)^T in
+        let M := (Bezout_step a M0ij M^T ij.2)^T in
+        improve_pivot_rec p P M Q
+      else (P, M, Q)
   end.
 
 Definition improve_pivot k m n (M : 'M[A]_(1 + m, 1 + n)) :=
@@ -209,21 +209,21 @@ Definition improve_pivot k m n (M : 'M[A]_(1 + m, 1 + n)) :=
 (* TODO: Why is this so slow?? *)
 Fixpoint Smith {m n} : 'M[A]_(m,n) -> 'M[A]_(m) * seq A * 'M[A]_(n) :=
   match m, n return 'M[A]_(m, n) -> 'M[A]_(m) * seq A * 'M[A]_(n) with
-  | _.+1, _.+1 => fun A : 'M[A]_(1 + _, 1 + _) =>
-      if find_pivot A is Some (i, j) then
-      let a := fun_of_matrix A i j in let A := xrow i 0 (xcol j 0 A) in
+  | _.+1, _.+1 => fun M : 'M[A]_(1 + _, 1 + _) =>
+      if find_pivot M is Some (i, j) then
+      let a := fun_of_matrix M i j in let M := xrow i 0 (xcol j 0 M) in
       (* this is where Euclidean norm eases termination argument *)
-      let: (L,A,R) := improve_pivot (enorm_op a) A in
-      let a  := fun_of_matrix A 0 0 in
-      let u  := dlsubmx A in let v := ursubmx A in
+      let: (P,M,Q) := improve_pivot (enorm_op a) M in
+      let a  := fun_of_matrix M 0 0 in
+      let u  := dlsubmx M in let v := ursubmx M in
       let v' := map_mx (fun x => odflt 0 (x %/? a)) v in
-      let A  := ((drsubmx A) - (const_mx 1%C *m v))%HC in
-      let: (L', d, R') := Smith (map_mx (fun x => odflt 0 (x %/? a)) A) in
-      ((lift0_mx L' *m block_mx 1 0 (- const_mx 1%C) 1 *m (xcol i 0 L)%C)%HC,
+      let M  := ((drsubmx M) - (const_mx 1%C *m v))%HC in
+      let: (P', d, Q') := Smith (map_mx (fun x => odflt 0 (x %/? a)) M) in
+      ((lift0_mx P' *m block_mx 1 0 (- const_mx 1%C) 1 *m (xcol i 0 P)%C)%HC,
        a :: [seq x * a | x <- d],
-       ((xrow j 0 R)%C *m block_mx 1 (- v') 0 1 *m lift0_mx R')%HC)
+       ((xrow j 0 Q)%C *m block_mx 1 (- v') 0 1 *m lift0_mx Q')%HC)
     else (1%HC, [::], 1%HC)
-  | _, _ => fun A => (1%HC, [::], 1%HC)
+  | _, _ => fun M => (1%HC, [::], 1%HC)
   end.
 
 End smith_def.
@@ -287,14 +287,14 @@ Instance : const_mx_class E (matrix E) := @matrix.const_mx E.
 Instance : map_mx_class E (matrix E) := @matrix.map_mx E E.
 Instance : lift0mx_class (matrix E) := @matrix.lift0_mx E.
 
-CoInductive improve_pivot_rec_spec m n L M R :
+CoInductive improve_pivot_rec_spec m n P M Q :
   'M_(1 + m) * 'M_(1 + m,1 + n) * 'M_(1 + n) -> Type :=
-  ImprovePivotRecSpec L' A R' of L^-1 *m M *m R^-1 = L'^-1 *m A *m R'^-1
-  & (forall i j, A 0 0 %| A i j)
-  & (forall i, A i 0 = A 0 0)
-  & A 0 0 %| M 0 0
-  & L' \in unitmx & R' \in unitmx
-  : improve_pivot_rec_spec L M R (L',A,R').
+  ImprovePivotQecSpec P' M' Q' of P^-1 *m M *m Q^-1 = P'^-1 *m M' *m Q'^-1
+  & (forall i j, M' 0 0 %| M' i j)
+  & (forall i, M' i 0 = M' 0 0)
+  & M' 0 0 %| M 0 0
+  & P' \in unitmx & Q' \in unitmx
+  : improve_pivot_rec_spec P M Q (P',M',Q').
 
 Lemma unitrmxE k (M : 'M_k.+1) : (M \is a GRing.unit) = (M \in unitmx).
 Proof. by []. Qed.
@@ -304,10 +304,10 @@ Definition unitmxEE := (unitmx_mul, unitmx_tr, unit_Bezout_mx, unitmx_perm).
 Definition improve_pivot_recR := improve_pivot_rec find1 find2 (@Bezout_step E).
 
 Lemma improve_pivot_recP :
-  forall k m n (L : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) R,
+  forall k m n (P : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) Q,
   (enorm (M 0%R 0%R) <= k)%N -> M 0 0 != 0 ->
-   L \in unitmx -> R \in unitmx ->
-    improve_pivot_rec_spec L M R (improve_pivot_recR k L M R).
+   P \in unitmx -> Q \in unitmx ->
+    improve_pivot_rec_spec P M Q (improve_pivot_recR k P M Q).
 Proof.
 elim=> [m n L M R0|k IHk m n L M R0 Hk nzM00 unitL unitR /=].
   by rewrite leqn0 => /eqP /enorm_eq0 ->; rewrite eqxx.
