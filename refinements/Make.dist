@@ -9,3 +9,5 @@ seqmatrix.v
 seqpoly.v
 smith.v
 strassen.v
+pivot.v
+rank.v
