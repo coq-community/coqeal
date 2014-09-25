@@ -47,6 +47,21 @@ Qed.
 
 End Seq.
 
+Section Seqeqtype.
+
+Variable T : eqType.
+Variable leT : rel T.
+
+Hypothesis leT_tr : transitive leT.
+
+Lemma sorted_take (s : seq T) m : sorted leT s -> sorted leT (take m s).
+Proof.
+move=> H; apply: subseq_sorted=> //. 
+by elim: s {H} m => // a l ih [] //=; rewrite eqxx.
+Qed.
+
+End Seqeqtype.
+
 (******************** bigop.v ********************)
 Section BigOp.
 

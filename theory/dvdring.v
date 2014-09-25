@@ -334,6 +334,16 @@ move/(order_path_min dvdr_trans)/(all_nthP 0)=> hi.
 by apply/(all_nthP 0) => i his; rewrite -dvd0r; apply: hi.
 Qed.
 
+Lemma sorted_cons (a : R) s : sorted %|%R s -> a %| s`_0 -> sorted %|%R (a :: s).
+Proof. by elim: s a=> //= a s ih a'; rewrite /nth => -> ->. Qed.
+
+Lemma sorted_nth0 (s : seq R) : sorted %|%R s -> forall i, s`_0 %| s`_i.
+Proof.
+case: s=> [_|a s hi] [|i] /=; do? by rewrite /= dvdrr.
+have [his|hsi] := (ltnP i (size s)); last by rewrite nth_default // dvdr0.
+by move/(order_path_min dvdr_trans)/(all_nthP 0): hi => ->.
+Qed.
+
 (** Properties of eqd *)
 
 Lemma eqd_def : forall a b, a %= b = (a %| b) && (b %| a).
@@ -591,6 +601,71 @@ rewrite (bigD1 i) //= -unitd1 unitrM unitd1 in Hb.
 by case/andP: Hb.
 Qed.
 (****)
+
+(*** Matrix *)
+Lemma dvdr_mulmxr m n p x (M : 'M[R]_(m,n)) (N : 'M[R]_(n,p)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (M *m N) i j.
+Proof.
+by move=> hM i j; rewrite !mxE; apply: big_dvdr=> k; rewrite dvdr_mulr ?hM.
+Qed.
+
+Lemma dvdr_mulmxl m n p x (M : 'M[R]_(m,n)) (N : 'M[R]_(p,m)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (N *m M) i j.
+Proof.
+by move=> hM i j; rewrite !mxE; apply: big_dvdr=> k; rewrite dvdr_mull ?hM.
+Qed.
+
+Lemma dvdr_usubmx m0 m1 n0 n1 x (M : 'M[R]_(m0 + m1,n0 + n1)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (usubmx M) i j.
+Proof. by move=> hM i j; rewrite !mxE. Qed.
+
+Lemma dvdr_dsubmx m0 m1 n0 n1 x (M : 'M[R]_(m0 + m1,n0 + n1)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (dsubmx M) i j.
+Proof. by move=> hM i j; rewrite !mxE. Qed.
+
+Lemma dvdr_rsubmx m0 m1 n0 n1 x (M : 'M[R]_(m0 + m1,n0 + n1)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (rsubmx M) i j.
+Proof. by move=> hM i j; rewrite !mxE. Qed.
+
+Lemma dvdr_lsubmx m0 n0 n1 x (M : 'M[R]_(m0,n0 + n1)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (lsubmx M) i j.
+Proof. by move=> hM i j; rewrite !mxE. Qed.
+
+Lemma dvdr_ulsubmx m0 m1 n0 n1 x (M : 'M[R]_(m0 + m1,n0 + n1)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (ulsubmx M) i j.
+Proof. by move=> hM i j; rewrite !mxE. Qed.
+
+Lemma dvdr_ursubmx m0 m1 n0 n1 x (M : 'M[R]_(m0 + m1,n0 + n1)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (ursubmx M) i j.
+Proof. by move=> hM i j; rewrite !mxE. Qed.
+
+Lemma dvdr_dlsubmx m0 m1 n0 n1 x (M : 'M[R]_(m0 + m1,n0 + n1)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (dlsubmx M) i j.
+Proof. by move=> hM i j; rewrite !mxE. Qed.
+
+Lemma dvdr_drsubmx m0 m1 n0 n1 x (M : 'M[R]_(m0 + m1,n0 + n1)) :
+  (forall i j, x %| M i j) -> forall i j, x %| (drsubmx M) i j.
+Proof. by move=> hM i j; rewrite !mxE. Qed.
+
+(* TODO: Prove other direction *)
+Lemma dvdr_col_mx m n p x (M : 'M[R]_(m,n)) (N : 'M[R]_(p,n)) :
+  ((forall i j, x %| M i j) /\ (forall i j, x %| N i j)) ->
+  (forall i j, x %| (col_mx M N) i j).
+Proof.
+case=> h1 h2 i j; rewrite !mxE; case: splitP=> k _.
+  exact: (h1 k j).
+exact: (h2 k j).
+Qed.
+
+(* TODO: Prove other direction *)
+Lemma dvdr_row_mx m n p x (M : 'M[R]_(m,n)) (N : 'M[R]_(m,p)) :
+  ((forall i j, x %| M i j) /\ (forall i j, x %| N i j)) ->
+  (forall i j, x %| (row_mx M N) i j).
+Proof.
+case=> h1 h2 i j; rewrite !mxE; case: splitP=> k _.
+  exact: (h1 i k).
+exact: (h2 i k).
+Qed.
 
 End DvdRingTheory.
 
@@ -1341,8 +1416,6 @@ case: odivrP=> //= b1 Hb _.
 by  move: ha; rewrite /dvdr; case: odivrP.
 Qed.
 
-
-
 (* Proof that any finitely generated ideal is principal *)
 (* This could use gcdsr if it would be expressed using bigops... *)
 Fixpoint principal_gen n : 'cV[R]_n -> R := match n with
@@ -1354,7 +1427,6 @@ Fixpoint principal_gen n : 'cV[R]_n -> R := match n with
 end.
 
 (* Fixpoint principal_gen n (r : 'rV[R]_n) : R := \big[(fun x y => (egcdr x y).1.1.1.1) /0]_(i < n) (r 0 i). *)
-
 
 Lemma principal_gen_dvd : forall n (I : 'cV[R]_n) i, principal_gen I %| I i 0.
 Proof.
