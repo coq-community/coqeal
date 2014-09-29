@@ -578,6 +578,15 @@ set jn := Ordinal (leq_trans hi hsn); set jm := Ordinal (leq_trans hi hsm).
 by move: (H jn jm); rewrite !mxE eqxx.
 Qed.
 
+Lemma diag_mx_seq_scale m n s (d : R) :
+  d *: diag_mx_seq m n s = diag_mx_seq m n [seq d * x | x <- s].
+Proof.
+apply/matrixP=> i j; rewrite !mxE.
+case: (i == j :> nat); last by rewrite !mulr0n mulr0.
+have [hi|hl] := (ltnP i (size s)); first by rewrite (@nth_map _ 0).
+by rewrite ?nth_default ?mulr0 // size_map.
+Qed.
+
 End diag_mx_seq.
 
 Section diag_mx_seq2.
