@@ -193,12 +193,12 @@ Fixpoint improve_pivot_rec k {m n} :
       let P  := col_mx (usubmx P) (u' *m vP + dsubmx P)%HC in
       let M  := block_mx (cast_op a) vM
                          (const_mx a) (u' *m vM + drsubmx M)%HC in
-      if find2 M a is Some ij then
-        let M := xrow 0 ij.1 M in let P := xrow 0 ij.1 P in
+      if find2 M a is Some (i,j) then
+        let M := xrow 0 i M in let P := xrow 0 i P in
         let a := fun_of_matrix M 0 0 in
-        let M0ij := fun_of_matrix M 0 (lift0 ij.2) in
-        let Q := (Bezout_step a M0ij Q^T ij.2)^T in
-        let M := (Bezout_step a M0ij M^T ij.2)^T in
+        let M0ij := fun_of_matrix M 0 (lift0 j) in
+        let Q := (Bezout_step a M0ij Q^T j)^T in
+        let M := (Bezout_step a M0ij M^T j)^T in
         improve_pivot_rec p P M Q
       else (P, M, Q)
   end.
@@ -398,7 +398,7 @@ Qed.
 CoInductive Smith_spec {R : dvdRingType} {m n} M
   : 'M[R]_m * seq R * 'M[R]_n -> Type :=
     SmithSpec L0 d R0 of L0 *m M *m R0 = diag_mx_seq m n d
-                       & sorted (@dvdr R) d
+                       & sorted %|%R d
                        & L0 \in unitmx
                        & R0 \in unitmx : @Smith_spec R _ _ M (L0, d, R0).
 

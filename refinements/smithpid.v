@@ -157,11 +157,11 @@ Hypothesis find2P : forall m n (M : 'M[R]_(1 + m,1 + n)) a,
   pick_spec [pred ij | ~~(a %| M ij.1 (lift 0 ij.2))] (find2 M a).
 
 (* This lemma is used in the termination proof of improve_pivot_rec *)
-Lemma sdvd_Bezout_step2 m n ij u' vM (M : 'M[R]_(1 + m, 1 + n)) :
+Lemma sdvd_Bezout_step2 m n i j u' vM (M : 'M[R]_(1 + m, 1 + n)) :
   let B : 'M_(1 + m, 1 + n) := block_mx (M 0 0)%:M vM (const_mx (M 0 0)) (u' *m vM + drsubmx M) in
-  let C := xrow 0 ij.1 B in
-  ~~ (M 0 0 %| B ij.1 (lift 0 ij.2)) ->
-  (Bezout_step (C 0 0) (C 0 (lift 0 ij.2)) C^T ij.2)^T 0 0 %<| M 0 0.
+  let C := xrow 0 i B in
+  ~~ (M 0 0 %| B i (lift 0 j)) ->
+  (Bezout_step (C 0 0) (C 0 (lift 0 j)) C^T j)^T 0 0 %<| M 0 0.
 Proof.
 set B := block_mx _ _ _ _ => /=.
 set C := xrow _ _ _.
@@ -190,12 +190,12 @@ Fixpoint improve_pivot_rec {m n} (P : 'M[R]_(1 + m)) (M : 'M[R]_(1 + m, 1 + n))
         let P  := col_mx (usubmx P) (u' *m vP + dsubmx P) in
         let A  := block_mx (M 0 0)%:M vM
                            (const_mx (M 0 0)) (u' *m vM + drsubmx M) in
-        if find2P A (M 0 0) is Pick ij Hij then
-          let A := xrow 0 ij.1 A in
-          let P := xrow 0 ij.1 P in
+        if find2P A (M 0 0) is Pick (i,j) Hij then
+          let A := xrow 0 i A in
+          let P := xrow 0 i P in
           let a := A 0 0 in
-          let A0ij := A 0 (lift 0 ij.2) in
-          let Q := (Bezout_step a A0ij (Q^T) ij.2)^T in
+          let A0j := A 0 (lift 0 j) in
+          let Q := (Bezout_step a A0j Q^T j)^T in
           improve_pivot_rec P Q (IHa _ (sdvd_Bezout_step2 Hij))
         else (P, A, Q)
     end.
