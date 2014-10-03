@@ -8,6 +8,7 @@ refinements.v
 seqmatrix.v
 seqpoly.v
 smith.v
+smithpid.v
 strassen.v
 pivot.v
 rank.v

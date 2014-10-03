@@ -15,6 +15,7 @@ refinements.v
 seqmatrix.v
 seqpoly.v
 smith.v
+smithpid.v
 strassen.v
 funperm.v
 pivot.v

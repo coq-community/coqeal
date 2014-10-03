@@ -1461,84 +1461,112 @@ move: (H x).
 by rewrite Hx eqxx.
 Qed.
 
-(*****************************************************************************)
-(* OLD VERSION FOR ROW VECTORS *)
-(* Proof that any finitely generated ideal is principal *)
-(* This could use gcdsr if it would be expressed using bigops... *)
-(* Fixpoint principal_gen n : 'rV[R]_n -> R := match n with *)
-(*   | 0 => fun _ => 0 *)
-(*   | S p => fun (I : 'rV[R]_(1 + p)) => *)
-(*            let x := I 0 0 in *)
-(*            let y := principal_gen (rsubmx I) in *)
-(*            let: (g,_,_,_,_) := egcdr x y in g *)
-(* end. *)
+(* Bezout matrices *)
+Section Bezout_mx.
 
-(* (* Fixpoint principal_gen n (r : 'rV[R]_n) : R := \big[(fun x y => (egcdr x y).1.1.1.1) /0]_(i < n) (r 0 i). *) *)
+(*****************
+  if the following Bezout identity holds: u * a1 + v * b1 = 1,
+  Bezout_mx a b n k represents the following matrix (dots are zeros):
+
+          (kth column)
+  / u .... v ..... \
+  | . 1 .......... |
+  | ....1......... |
+  | -b1 .. a1 .... | (kth row)
+  | ..........1... |
+  \ .............1 /
 
 
-(* Lemma principal_gen_dvd : forall n (I : 'rV[R]_n) i, principal_gen I %| I 0 i. *)
-(* Proof. *)
-(* elim => [I i| n ih]; first by rewrite thinmx0 /= !mxE dvdrr. *)
-(* rewrite [n.+1]/(1 + n)%nat => I i. *)
-(* rewrite -[I]hsubmxK !mxE. *)
-(* case: splitP => j hj /=. *)
-(*   rewrite !ord1 !mxE /=. *)
-(*   case: splitP => // j' _. *)
-(*   rewrite ord1 mxE lshift0. *)
-(*   case: egcdrP => g u v a b _. *)
-(*   rewrite eqd_def; case/andP => h _ _ _. *)
-(*   exact: (dvdr_trans h (dvdr_gcdl _ _)). *)
-(* case: egcdrP => g u v a b _. *)
-(* rewrite eqd_def row_mxKr; case/andP => h _ _ _. *)
-(* apply/(dvdr_trans (dvdr_trans h (dvdr_gcdr _ _))). *)
-(* by rewrite ih. *)
-(* Qed. *)
+  (determinant is +/-1)
+******************)
 
-(* Definition principal n (I : 'rV[R]_n) : 'M[R]_1 := (principal_gen I)%:M. *)
+Definition combine_mx (a b c d : R) (m : nat) (k : 'I_m) :=
+  let k' := lift 0 k in
+  let d := \row_j (a *+ (j == 0) + d *+ (j == k') + ((j != 0) && (j != k'))%:R) in
+  diag_mx d + c *: delta_mx k' 0 + b *: delta_mx 0 k'.
 
-(* (* (x) \subset (x1...xn) iff exists (v1...vn) such that (x1...xn)(v1...vn)^T = (x) *) *)
-(* Fixpoint principal_w1 n : 'rV[R]_n -> 'cV[R]_n := match n with *)
-(*   | 0 => fun _ => 0 *)
-(*   | S p => fun (I : 'rV[R]_(1 + p)) => *)
-(*            let g := principal_gen (rsubmx I) in *)
-(*            let us := principal_w1 (rsubmx I) in *)
-(*            let: (g',u,v,a1,b1) := egcdr (I 0 0) g in *)
-(*            col_mx u%:M (v *: us) *)
-(* end. *)
+Definition combine_step (a b c d : R) (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :=
+  let k' := lift 0 k in
+  let r0 := a *: row 0 M + b *: row k' M in
+  let rk := c *: row 0 M + d *: row k' M in
+  \matrix_i (r0 *+ (i == 0) + rk *+ (i == k') + row i M *+ ((i != 0) && (i != k'))).
 
-(* Lemma principal_w1_correct : forall n (I : 'rV[R]_n), *)
-(*   I *m principal_w1 I = principal I. *)
-(* Proof. *)
-(* elim => [I | n ih]; first by rewrite thinmx0 mulmx0 /principal rmorph0. *)
-(* rewrite [n.+1]/(1 + n)%nat => I. *)
-(* rewrite -[I]hsubmxK /principal /= row_mxKr {-1}hsubmxK. *)
-(* case: egcdrP => g u v a1 b1 hbezout _ h1 h2 /=. *)
-(* rewrite [row_mx (lsubmx I) _ *m _]mul_row_col -scalemxAr ih /principal h2. *)
-(* have -> : lsubmx I = (I 0 0)%:M. *)
-(*   apply/matrixP => i j. *)
-(*    by rewrite !mxE !ord1 eqxx /= mulr1n lshift0. *)
-(* rewrite h1 -scalar_mxM mulrC mulrA !scalar_mxM -mul_scalar_mx mulmxA. *)
-(* by rewrite -mulmxDl -!scalar_mxM -rmorphD hbezout mul1mx. *)
-(* Qed. *)
+Definition Bezout_mx (a b : R) (m : nat) (k : 'I_m) :=
+  let:(_,u,v,a1,b1) := egcdr a b in combine_mx u v (-b1) a1 k.
 
-(* (* (x1...xn) \subset (x) iff exists (w1...wn) such that (x)(w1...wn) = (x1...xn) *) *)
-(* Definition principal_w2 n (I : 'rV[R]_n) : 'rV[R]_n := *)
-(*   let g := principal_gen I in *)
-(*   map_mx (fun x => odflt 0 (x %/? g)) I. *)
+Definition Bezout_step (a b : R) (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :=
+  let:(_,u,v,a1,b1) := egcdr a b in combine_step u v (-b1) a1 M k.
 
-(* Lemma principal_w2_correct : forall n (I : 'rV[R]_n), *)
-(*   principal I *m principal_w2 I = I. *)
-(* Proof. *)
-(* move=> n I. *)
-(* rewrite mul_scalar_mx. *)
-(* apply/matrixP => i j; rewrite !mxE !ord1 /= {i}. *)
-(* case: n I j => [I j | n I j]; first by rewrite !thinmx0 /= mul0r !mxE. *)
-(* case: odivrP => [ x -> | H]; first by rewrite mulrC. *)
-(* case/dvdrP: (principal_gen_dvd I j)=> x Hx. *)
-(* move: (H x). *)
-(* by rewrite Hx eqxx. *)
-(* Qed. *)
-(*****************************************************************************)
+Lemma combine_stepE (a b c d : R) (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
+  combine_step a b c d M k = combine_mx a b c d k *m M.
+Proof.
+apply/matrixP=> i j; have [g u v a' b' _ _ _ _] := egcdrP a b.
+rewrite !mxE (bigD1 ord0) // !mxE (bigD1 (lift 0 k)) // !mxE /=.
+case H: (i == 0).
+  rewrite big1=> [|l /andP [/negbTE H1 /negbTE H2]].
+    by rewrite (eqP H) !eqxx !mulr1n !mxE !mulr0 !addr0 mulr0n add0r mulr1.
+  by rewrite !mxE (eqP H) (eq_sym 0 l) H1 H2 mulr0n !mulr0 !add0r mul0r.
+case H': (i == lift 0 k).
+  rewrite big1=> [|l /andP [/negbTE H1 /negbTE H2]].
+    by rewrite (eqP H') !(eqxx,mulr1n,mxE,mulr0,addr0,mulr1,mulr0n,add0r).
+  by rewrite !mxE (eqP H') !(eq_sym _ l) eqxx H1 H2 mulr0n !mulr0 !add0r mul0r.
+rewrite (bigD1 i); last by rewrite H H'.
+rewrite !mxE big1=> [/=|l /andP [/andP [/negbTE H1 /negbTE H2] /negbTE H3]].
+  by rewrite H H' eqxx !(mulr0n,mulr0,mulr1n,addr0,mul0r,add0r,mul1r).
+by rewrite !mxE H H' H1 H2 (eq_sym i l) H3 mulr0n !mulr0 !addr0 mul0r.
+Qed.
+
+Lemma combine_mx_inv (a b c d : R) m (k : 'I_m) :
+  a * d - b * c = 1 ->
+  combine_mx a b c d k *m combine_mx d (-b) (-c) a k = 1%:M.
+Proof.
+move=> H; rewrite -combine_stepE; apply/matrixP=> i j; rewrite !mxE.
+case Hi: (i == 0).
+  rewrite !mxE (eqP Hi) !eqxx !mulr0 mxE !addr0 (eq_sym 0 j).
+  case Hj: (j == 0); first by rewrite (eqP Hj) mulr1 !mulr0 addr0 sub0r mulrN.
+  rewrite !mulr0 !add0r addr0 (eq_sym _ j).
+  case: (j == lift 0 k); last by rewrite !mulr0 add0r.
+  by rewrite mulr1 mulr1n mulrN mulrC addNr.
+case Hj: (j == 0).
+  rewrite !mxE (eqP Hj) Hi add0r.
+  case Hk: (i == _); last by rewrite !mxE Hi Hk eqxx !add0r !mulr0 addr0.
+  by rewrite !mxE !eqxx !mulr0 mulr1 !addr0 !add0r mulrN addrC mulrC addNr.
+case Hk: (i == _); last by rewrite !mxE Hi Hj Hk !mulr0 !add0r !addr0.
+rewrite !mxE (eq_sym 0 j) Hj (eqP Hk) !(eqxx,mulr0,addr0,add0r) (eq_sym _ j).
+case: (j == lift 0 k); last by rewrite !mulr0 addr0.
+by rewrite !mulr1 addrC mulrN (mulrC c) (mulrC d).
+Qed.
+
+Lemma Bezout_stepE a b (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
+  Bezout_step a b M k = Bezout_mx a b k *m M.
+Proof.
+rewrite /Bezout_step /Bezout_mx; have [g u v a' b' _ _ _ _] := egcdrP.
+by rewrite combine_stepE.
+Qed.
+
+Lemma Bezout_step_mx00 m n (M : 'M_(1 + m,1 + n)) {k : 'I_m} :
+ (Bezout_step (M 0 0) (M (lift 0 k) 0) M k) 0 0 %= gcdr (M 0 0) (M (lift 0 k) 0).
+rewrite /Bezout_step; have [g u v a' b' Bezout_a'b' gcd_g H1 H2] := egcdrP.
+by rewrite !mxE !addr0 {1}H1 {1}H2 !mulrA -mulrDl Bezout_a'b' mul1r.
+Qed.
+
+Lemma sdvd_Bezout_step (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
+ ~~ (M 0 0 %| M (lift 0 k) 0) ->
+ (Bezout_step (M 0 0) (M (lift 0 k) 0) M k) 0 0 %<| M 0 0.
+Proof.
+move=> H; rewrite /sdvdr (eqd_dvd (Bezout_step_mx00 _) (eqdd _)) dvdr_gcdl.
+rewrite (eqd_dvd (eqdd _ ) (Bezout_step_mx00 _)).
+by apply/negP=> H'; rewrite (dvdr_trans H' (dvdr_gcdr _ _)) in H.
+Qed.
+
+Lemma unit_Bezout_mx m a b (k : 'I_m) : Bezout_mx a b k \in unitmx.
+Proof.
+rewrite /Bezout_mx; case:egcdrP=> g a1 b1 u v Huv Hg Ha1 Hb1.
+have H: a1 * u - b1 * -v = 1; first by rewrite mulrN opprK.
+by case: (mulmx1_unit (combine_mx_inv k H)).
+Qed.
+
+End Bezout_mx.
 
 End BezoutDomainTheory.
 
@@ -2128,7 +2156,6 @@ Qed.
 Lemma dvdr_mod : forall a b g, (g %| a) && (g %| b) = (g %| b) && (g %| a %% b).
 Proof. exact: EuclideanDomain.Mixins.dvd_mod. Qed.
 
-(****)
 Lemma divr_mulKr a b : b != 0 -> (b * a) %/ b = a.
 Proof.
 move=> H.
@@ -2144,6 +2171,5 @@ Lemma divr_mulKl a b : b != 0 -> (a * b) %/ b = a.
 Proof.
 by rewrite mulrC; apply: divr_mulKr.
 Qed.
-(****)
 
 End EuclideanDomainTheory.

@@ -4,7 +4,7 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg ssrint ssrnum fintype.
 Require Import dvdring matrix mxalgebra bigop zmodp perm mxstructure.
-Require Import refinements seqmatrix.
+Require Import refinements seqmatrix edr.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -13,115 +13,6 @@ Unset Printing Implicit Defensive.
 Import GRing.Theory AlgOp.
 
 Local Open Scope ring_scope.
-
-(* Preliminary section on Bezout matrices *)
-Section Bezout_mx.
-
-Variable R : bezoutDomainType.
-
-(*****************
-  if the following Bezout identity holds: u * a1 + v * b1 = 1,
-  Bezout_mx a b n k represents the following matrix (dots are zeros):
-
-          (kth column)
-  / u .... v ..... \
-  | . 1 .......... |
-  | ....1......... |
-  | -b1 .. a1 .... | (kth row)
-  | ..........1... |
-  \ .............1 /
-
-
-  (determinant is +/-1)
-******************)
-
-Definition combine_mx (a b c d : R) (m : nat) (k : 'I_m) :=
-  let k' := lift 0 k in
-  let d := \row_j (a *+ (j == 0) + d *+ (j == k') + ((j != 0) && (j != k'))%:R) in
-  diag_mx d + c *: delta_mx k' 0 + b *: delta_mx 0 k'.
-
-Definition combine_step (a b c d : R) (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :=
-  let k' := lift 0 k in
-  let r0 := a *: row 0 M + b *: row k' M in
-  let rk := c *: row 0 M + d *: row k' M in
-  \matrix_i (r0 *+ (i == 0) + rk *+ (i == k') + row i M *+ ((i != 0) && (i != k'))).
-
-Definition Bezout_mx (a b : R) (m : nat) (k : 'I_m) :=
-  let:(_,u,v,a1,b1) := egcdr a b in combine_mx u v (-b1) a1 k.
-
-Definition Bezout_step (a b : R) (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :=
-  let:(_,u,v,a1,b1) := egcdr a b in combine_step u v (-b1) a1 M k.
-
-Lemma combine_stepE (a b c d : R) (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
-  combine_step a b c d M k = combine_mx a b c d k *m M.
-Proof.
-apply/matrixP=> i j; have [g u v a' b' _ _ _ _] := egcdrP a b.
-rewrite !mxE (bigD1 ord0) // !mxE (bigD1 (lift 0 k)) // !mxE /=.
-case H: (i == 0).
-  rewrite big1=> [|l /andP [/negbTE H1 /negbTE H2]].
-    by rewrite (eqP H) !eqxx !mulr1n !mxE !mulr0 !addr0 mulr0n add0r mulr1.
-  by rewrite !mxE (eqP H) (eq_sym 0 l) H1 H2 mulr0n !mulr0 !add0r mul0r.
-case H': (i == lift 0 k).
-  rewrite big1=> [|l /andP [/negbTE H1 /negbTE H2]].
-    by rewrite (eqP H') !(eqxx,mulr1n,mxE,mulr0,addr0,mulr1,mulr0n,add0r).
-  by rewrite !mxE (eqP H') !(eq_sym _ l) eqxx H1 H2 mulr0n !mulr0 !add0r mul0r.
-rewrite (bigD1 i); last by rewrite H H'.
-rewrite !mxE big1=> [/=|l /andP [/andP [/negbTE H1 /negbTE H2] /negbTE H3]].
-  by rewrite H H' eqxx !(mulr0n,mulr0,mulr1n,addr0,mul0r,add0r,mul1r).
-by rewrite !mxE H H' H1 H2 (eq_sym i l) H3 mulr0n !mulr0 !addr0 mul0r.
-Qed.
-
-Lemma combine_mx_inv (a b c d : R) m (k : 'I_m) :
-  a * d - b * c = 1 ->
-  combine_mx a b c d k *m combine_mx d (-b) (-c) a k = 1%:M.
-Proof.
-move=> H; rewrite -combine_stepE; apply/matrixP=> i j; rewrite !mxE.
-case Hi: (i == 0).
-  rewrite !mxE (eqP Hi) !eqxx !mulr0 mxE !addr0 (eq_sym 0 j).
-  case Hj: (j == 0); first by rewrite (eqP Hj) mulr1 !mulr0 addr0 sub0r mulrN.
-  rewrite !mulr0 !add0r addr0 (eq_sym _ j).
-  case: (j == lift 0 k); last by rewrite !mulr0 add0r.
-  by rewrite mulr1 mulr1n mulrN mulrC addNr.
-case Hj: (j == 0).
-  rewrite !mxE (eqP Hj) Hi add0r.
-  case Hk: (i == _); last by rewrite !mxE Hi Hk eqxx !add0r !mulr0 addr0.
-  by rewrite !mxE !eqxx !mulr0 mulr1 !addr0 !add0r mulrN addrC mulrC addNr.
-case Hk: (i == _); last by rewrite !mxE Hi Hj Hk !mulr0 !add0r !addr0.
-rewrite !mxE (eq_sym 0 j) Hj (eqP Hk) !(eqxx,mulr0,addr0,add0r) (eq_sym _ j).
-case: (j == lift 0 k); last by rewrite !mulr0 addr0.
-by rewrite !mulr1 addrC mulrN (mulrC c) (mulrC d).
-Qed.
-
-Lemma Bezout_stepE a b (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
-  Bezout_step a b M k = Bezout_mx a b k *m M.
-Proof.
-rewrite /Bezout_step /Bezout_mx; have [g u v a' b' _ _ _ _] := egcdrP.
-by rewrite combine_stepE.
-Qed.
-
-Lemma Bezout_step_mx00 m n (M : 'M_(1 + m,1 + n)) {k : 'I_m} :
- (Bezout_step (M 0 0) (M (lift 0 k) 0) M k) 0 0 %= gcdr (M 0 0) (M (lift 0 k) 0).
-rewrite /Bezout_step; have [g u v a' b' Bezout_a'b' gcd_g H1 H2] := egcdrP.
-by rewrite !mxE !addr0 {1}H1 {1}H2 !mulrA -mulrDl Bezout_a'b' mul1r.
-Qed.
-
-Lemma sdvd_Bezout_step (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
- ~~ (M 0 0 %| M (lift 0 k) 0) ->
- (Bezout_step (M 0 0) (M (lift 0 k) 0) M k) 0 0 %<| M 0 0.
-Proof.
-move=> H; rewrite /sdvdr (eqd_dvd (Bezout_step_mx00 _) (eqdd _)) dvdr_gcdl.
-rewrite (eqd_dvd (eqdd _ ) (Bezout_step_mx00 _)).
-by apply/negP=> H'; rewrite (dvdr_trans H' (dvdr_gcdr _ _)) in H.
-Qed.
-
-Lemma unit_Bezout_mx m a b (k : 'I_m) : Bezout_mx a b k \in unitmx.
-Proof.
-rewrite /Bezout_mx; case:egcdrP=> g a1 b1 u v Huv Hg Ha1 Hb1.
-have H: a1 * u - b1 * -v = 1; first by rewrite mulrN opprK.
-by case: (mulmx1_unit (combine_mx_inv k H)).
-Qed.
-
-End Bezout_mx.
 
 Section smith_def.
 
@@ -394,16 +285,8 @@ rewrite !invr1 mul1mx mulmx1 => ? ? ? eqM ? ? ? ? ?.
 by constructor=> //; rewrite eqM !mulmxA mulmxV // mul1mx mulmxKV.
 Qed.
 
-(* Smith_spec is parametrized by R so that it can be used for PIDs as well *)
-CoInductive Smith_spec {R : dvdRingType} {m n} M
-  : 'M[R]_m * seq R * 'M[R]_n -> Type :=
-    SmithSpec L0 d R0 of L0 *m M *m R0 = diag_mx_seq m n d
-                       & sorted %|%R d
-                       & L0 \in unitmx
-                       & R0 \in unitmx : @Smith_spec R _ _ M (L0, d, R0).
-
 Lemma SmithP : forall (m n : nat) (M : 'M_(m,n)),
-  Smith_spec M (Smith find1 find2 find_pivot (@Bezout_step E) M).
+  smith_spec M (Smith find1 find2 find_pivot (@Bezout_step E) M).
 Proof.
 elim=> [n M|m IHn]; first constructor; rewrite ?unitmx1 //.
   rewrite [M]flatmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
@@ -477,6 +360,9 @@ case H: (Smith _)=>[[i j] k].
 rewrite /= size_map minnSS ltnS.
 by rewrite -/(let: (_,j,_) := (i,j,k) in (size j <= minn m' n')%N) -H Ih.
 Qed.
+
+Definition euclidEDRMixin := EDR.Mixin SmithP.
+Canonical euclidEDRType   := Eval hnf in EDRType E euclidEDRMixin.
 
 Section smith_param.
 (* TODO: Write this *)
