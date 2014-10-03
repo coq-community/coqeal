@@ -594,35 +594,35 @@ Variable R : bezoutDomainType.
 
 Implicit Types a b u : R.
 
-Hypothesis krull1 : forall a b u, exists m v, a %| u ^+ m * (1 - u * v).
+Hypothesis krull1 : forall a u, exists m v, a %| u ^+ m * (1 - u * v).
 
 Lemma krull1_factor a b :
-  exists n, exists a1 a2, [&& 0 < n, a == a1 * a2, coprimer a1 b & a2 %| b ^+ n].
+  exists n b1 b2, [&& 0 < n, b == b1 * b2, coprimer b1 a & b2 %| a ^+ n].
 Proof.
-wlog suff: / exists n, exists a1 a2,
-             [&& 0 < n, a %= a1 * a2, coprimer a1 b & a2 %| b ^+ n].
-  move=> [n [a1 [a2 /and4P [Hn Ha Ha1 Ha2]]]].
-  have [a2_eq0|a2_neq0] := eqVneq a2 0.
-    exists n, a1, a2; move: Hn Ha Ha1 Ha2.
-    by rewrite a2_eq0 mulr0 eqdr0 => -> -> -> ->.
-  have : a2 %| a by rewrite (eqd_dvdr _ Ha) dvdr_mull.
-  case: dvdrP Ha => [[a1' ->]|//]; rewrite eqd_mul2r // => eq_a1'.
-  exists n, a1', a2; rewrite !eqxx Hn Ha2 /coprimer andbT /=.
-  by rewrite (eqd_ltrans (eqd_gcd eq_a1' (eqdd _))).
+wlog suff: / exists n b1 b2,
+             [&& 0 < n, b %= b1 * b2, coprimer b1 a & b2 %| a ^+ n].
+  move=> [n [b1 [b2 /and4P [Hn Hb Hb1 Hb2]]]].
+  have [b2_eq0|b2_neq0] := eqVneq b2 0.
+    exists n, b1, b2; move: Hn Hb Hb1 Hb2.
+    by rewrite b2_eq0 mulr0 eqdr0 => -> -> -> ->.
+  have : b2 %| b by rewrite (eqd_dvdr _ Hb) dvdr_mull.
+  case: dvdrP Hb => [[b1' ->]|//]; rewrite eqd_mul2r // => eq_b1'.
+  exists n, b1', b2; rewrite !eqxx Hn Hb2 /coprimer andbT /=.
+  by rewrite (eqd_ltrans (eqd_gcd eq_b1' (eqdd _))).
 have kidem x : exists d (s : R) k,
-  [&& 0 < d, a %| s ^+ 2 - s, a %| x ^+ d - (x ^+ d) * s
-                               & a %| s - k * x ^+ d].
-  have [m [y]] := krull1 a b x.
+  [&& 0 < d, b %| s ^+ 2 - s, b %| x ^+ d - (x ^+ d) * s
+                               & b %| s - k * x ^+ d].
+  have [m [y]] := krull1 b x.
   have [-> Hy|m_gt0 Hy] := posnP m.
     exists 1%N, 1, y; rewrite !expr1n mulr1 expr1 !subrr dvdr0 /=.
     by move: Hy; rewrite expr0 mul1r mulrC.
   set s := (x * y) ^+ m; exists m, s, (y ^+ m).
-  have xsn n : a %| x ^+ m * (x * y) ^+ n - x ^+ m.
+  have xsn n : b %| x ^+ m * (x * y) ^+ n - x ^+ m.
     elim: n => [|n ihn]; first by rewrite mulr1 subrr dvdr0.
     rewrite -[X in X - _](addrNK (x ^+ m * (x * y) ^+ n)) -addrA dvdr_add //.
     rewrite exprS mulrA -mulrBl dvdr_mulr //.
     by rewrite -dvdrN opprB -[X in X - _]mulr1 -mulrBr.
-  have s_idem n : a %| s * (x * y) ^+ n - s.
+  have s_idem n : b %| s * (x * y) ^+ n - s.
     elim: n => [|n ihn]; first by rewrite mulr1 subrr dvdr0.
     rewrite -[X in X - _](addrNK (s * (x * y) ^+ n)) -addrA dvdr_add //.
     rewrite exprS mulrA -mulrBl dvdr_mulr //.
@@ -630,81 +630,68 @@ have kidem x : exists d (s : R) k,
     by rewrite -dvdrN opprB -{1}[x ^+ m]mulr1 -mulrA -mulrBr.
   rewrite m_gt0 (s_idem m) /= -opprB dvdrN (xsn m) /=.
   by rewrite mulrC -exprMn subrr dvdr0.
-have [d [s [k /and4P [d_gt0 s_idem bds skb]]]] := kidem b.
-set a1 := gcdr a (1 - s); set a2 := gcdr a s; exists d, a1, a2.
-have dvd_a2_bd: a2 %| b ^+ d.
-  rewrite -[b ^+ d](addrNK (b ^+ d * s)) dvdr_add ?andbT //=; last 2 first.
+have [d [s [k /and4P [d_gt0 s_idem ads ska]]]] := kidem a.
+set b1 := gcdr b (1 - s); set b2 := gcdr b s; exists d, b1, b2.
+have dvd_b2_bd: b2 %| a ^+ d.
+  rewrite -[a ^+ d](addrNK (a ^+ d * s)) dvdr_add ?andbT //=; last 2 first.
     by rewrite (dvdr_trans (dvdr_gcdl _ _)) //.
   by rewrite dvdr_mull // dvdr_gcdr.
-have eq_a : a %= a1 * a2.
-  rewrite eqd_def /a1 /a2.
-  rewrite -[a as X in _ %| X](addrNK (a * s)).
-  rewrite -[X in X - a * s]mulr1 -mulrBr dvdr_add ?andbT //=; last 2 first.
+have eq_b : b %= b1 * b2.
+  rewrite eqd_def /b1 /b2.
+  rewrite -[b as X in _ %| X](addrNK (b * s)).
+  rewrite -[X in X - b * s]mulr1 -mulrBr dvdr_add ?andbT //=; last 2 first.
     by rewrite mulrC dvdr_mul // (dvdr_gcdl, dvdr_gcdr).
   by rewrite dvdr_mul // (dvdr_gcdl, dvdr_gcdr).
-  have [[x y gas] [x' y' gas']] := (bezoutP a s, bezoutP a (1 - s)).
-  rewrite (eqd_dvdr _ (eqd_mulr _ gas')) (eqd_dvdr _ (eqd_mull _ gas)).
+  have [[x y gbs] [x' y' gbs']] := (bezoutP b s, bezoutP b (1 - s)).
+  rewrite (eqd_dvdr _ (eqd_mulr _ gbs')) (eqd_dvdr _ (eqd_mull _ gbs)).
   rewrite [1 - s]lock !(mulrDr, mulrDl) -!lock !addrA dvdr_add //=.
-    by rewrite ![_ * a * _](mulrAC, mulrA) !mulrA -!mulrDl dvdr_mull.
+    by rewrite ![_ * b * _](mulrAC, mulrA) !mulrA -!mulrDl dvdr_mull.
   by rewrite mulrCA -mulrA dvdr_mull // dvdr_mull // mulrBl mul1r -opprB dvdrN.
-rewrite dvd_a2_bd eq_a d_gt0 andbT //=.
-have: coprimer a1 a2.
+rewrite dvd_b2_bd eq_b d_gt0 andbT //=.
+have: coprimer b1 b2.
   apply: gcdr_def; rewrite ?dvd1r //= => p ps' ps.
   rewrite -[1](addrNK s) dvdr_add //.
     by rewrite (dvdr_trans ps') ?dvdr_gcdr.
   by rewrite (dvdr_trans ps) ?dvdr_gcdr.
-have a2_eq : gcdr a s %= gcdr a (b ^+ d).
+have b2_eq : gcdr b s %= gcdr b (a ^+ d).
   rewrite eqd_def !dvdr_gcd !dvdr_gcdl /=.
-  rewrite -[b ^+ d as X in _ %| X](addrNK ((b ^+ d) * s)).
+  rewrite -[a ^+ d as X in _ %| X](addrNK ((a ^+ d) * s)).
   rewrite dvdr_add //=; last 2 first.
     by rewrite (dvdr_trans (dvdr_gcdl _ _)).
     by rewrite dvdr_mull ?dvdr_gcdr.
-  rewrite -[s as X in _ %| X](addrNK (k * (b ^+ d))) dvdr_add //.
+  rewrite -[s as X in _ %| X](addrNK (k * (a ^+ d))) dvdr_add //.
     by rewrite (dvdr_trans (dvdr_gcdl _ _)).
   by rewrite dvdr_mull ?dvdr_gcdr.
-rewrite /a2 /coprimer (eqd_ltrans (eqd_gcd (eqdd _) a2_eq)).
+rewrite /b2 /coprimer (eqd_ltrans (eqd_gcd (eqdd _) b2_eq)).
 rewrite (eqd_ltrans (gcdrA _ _ _)).
-have ga1a: gcdr a1 a %= a1.
+have gb1b: gcdr b1 b %= b1.
   rewrite eqd_def dvdr_gcdl dvdr_gcd dvdrr /=.
-  by rewrite (eqd_dvdr _ eq_a) dvdr_mulr.
-rewrite (eqd_ltrans (eqd_gcd ga1a (eqdd _))).
+  by rewrite (eqd_dvdr _ eq_b) dvdr_mulr.
+rewrite (eqd_ltrans (eqd_gcd gb1b (eqdd _))).
 apply: coprimer_dvdr.
 by rewrite -[d]prednK // exprS dvdr_mulr.
 Qed.
 
-Lemma factor_adequate b a1 a2 n :
-  0 < n -> coprimer a1 b -> a2 %| b ^+ n ->
-  forall d, d %| a2 -> coprimer d b -> d %= 1.
+Lemma krull1_adequate a b : { r : R & adequate_spec a b r }.
 Proof.
-move=> n_gt0 ca1b dvd_a2_bn /= d dvd_a2_d; rewrite -(@coprimer_pexpr _ n) //.
-by apply: dvdr_coprime; apply: dvdr_trans dvd_a2_bn.
-Qed.
-
-Lemma krull1_adequate a b : { r : R & adequate_spec b a r }.
-Proof.
-have [|aneq0] := eqVneq a 0.
-  by exists 0; constructor.
+have [] := eqVneq b 0; first by exists 0; constructor.
 move: (krull1_factor a b) => factored.
 have /sigW : (exists (x : nat * (R * R)),
-      [&& 0 < x.1, a == x.2.1 * x.2.2, coprimer x.2.1 b & x.2.2 %| b ^+ x.1]).
-  by case: factored => n [a1 [a2]]; exists (n,(a1,a2)).
-case=> /= [[n [a1 a2]]] /= /and4P [mgt0 /eqP adef ca1b dvda2bn].
-exists a1.
-rewrite adef in aneq0 *.
-constructor => //=; first by rewrite dvdr_mulr.
-move=> d.
-rewrite mulrC dvdr_mul2l; last by apply: contraNneq aneq0 => ->; rewrite mul0r.
-move=> dvdda2.
-apply: contra.
-rewrite unitd1.
-exact: (@factor_adequate _ a1 _ n) dvdda2.
+      [&& 0 < x.1, b == x.2.1 * x.2.2, coprimer x.2.1 a & x.2.2 %| a ^+ x.1]).
+  by case: factored => n [b1 [b2]]; exists (n,(b1,b2)).
+case=> /= [[n [b1 b2]]] /= /and4P [ngt0 /eqP -> ca1b dvda2bn aneq0].
+exists b1; constructor => /= [|||d] //; first by rewrite dvdr_mulr.
+rewrite mulrC dvdr_mul2l ?unitd1 => [dvdda2|].
+  apply: contra; rewrite -(@coprimer_pexpr _ n) //.
+  apply: dvdr_coprime; exact: (dvdr_trans dvdda2 dvda2bn).
+by apply: contraNneq aneq0 => ->; rewrite mul0r.
 Qed.
 
-Definition krull1_gdco a b := projT1 (krull1_adequate b a).
+Definition krull1_gdco a b := projT1 (krull1_adequate a b).
 
 Lemma krull1_gdcoP a b : gdco_spec a b (krull1_gdco a b).
 Proof.
-rewrite /krull1_gdco; case: (krull1_adequate b a)=> r hr /=.
+rewrite /krull1_gdco; case: (krull1_adequate a b)=> r hr /=.
 exact: adequate_gdco.
 Qed.
 
