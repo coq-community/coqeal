@@ -715,9 +715,9 @@ Lemma pid_gdco a b : {r : R & gdco_spec a b r}.
 Proof.
 have [->|b_neq0] := eqVneq b 0; first by exists 0; constructor.
 elim: (sdvdr_wf b) => {b} b _ ihp in b_neq0 *.
-have [cba|ncba] := boolP (coprimer b a).
-  by exists b; constructor; rewrite ?cpa ?orbT.
-have := dvdr_gcdl b a; case: dvdrP => // [/choice.sig_eqW /= [r b_eq _]].
+have [cba|ncba] := boolP (coprimer a b).
+  by exists b; constructor; rewrite ?cpa ?orbT // coprimer_sym.
+have := dvdr_gcdr a b; case: dvdrP => // [/choice.sig_eqW /= [r b_eq _]].
 have := b_neq0; rewrite b_eq mulf_eq0 negb_or => /andP [r_neq0 g_neq0].
 have [||r' r_gdco] // := ihp r.
   by rewrite sdvdr_def b_eq dvdr_mulr //= dvdr_mull_l.
@@ -725,8 +725,8 @@ case: r_gdco r_neq0 => [->|/= {r'} r' _ dvdr'r cr'q r'P r_neq0].
   by rewrite eqxx.
 exists r'; constructor; rewrite ?dvdr_mulr // -?b_eq //=.
 move=> d dp cdq; apply: r'P => //.
-rewrite -(@euclid _ (gcdr b a)) -?b_eq //.
-exact: coprimer_dvdr (dvdr_gcdr _ _) _.
+rewrite -(@euclid _ (gcdr a b)) -?b_eq //.
+exact: coprimer_dvdr (dvdr_gcdl _ _) _.
 Qed.
 
 Definition pid_smith := gdco_smith (fun a b => projT1 (pid_gdco a b)).
