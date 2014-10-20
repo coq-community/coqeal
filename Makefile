@@ -7,8 +7,8 @@ coq:: Makefile.coq
 Makefile.coq: Makefile $(MODULES)
 	$(COQBIN)/coq_makefile -f Make.cfg -o Makefile.coq
 
-test:: coq
-	$(COQBIN)/coqide -I src test-suite/test1.v
+test:: 
+	$(COQBIN)/coqide -I src test-suite/*.v 
 
 clean:: Makefile.coq
 	$(MAKE) -f Makefile.coq clean
