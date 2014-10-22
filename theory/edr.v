@@ -108,15 +108,17 @@ Variable R : edrType.
 Lemma smithP : forall m n (M : 'M[R]_(m,n)), smith_spec M (smith M).
 Proof. by case: R=> [? [? []]]. Qed.
 
+Definition smith_seq m n (M : 'M[R]_(m,n)) := (smith M).1.2.
+
 (* EDRs are gcd domains *)
-Definition gcd_edr a b : R := (smith (row_mx a%:M b%:M : 'rV_2)).1.2`_0.
+Definition gcd_edr a b : R := (smith_seq (row_mx a%:M b%:M : 'rV_2))`_0.
 
 Arguments nth : simpl never.
 
 Lemma gcd_edrP a b g :
   (g %| gcd_edr a b)%R = (g %| a)%R && (g %| b)%R.
 Proof.
-rewrite /gcd_edr; case: smithP => /= P d Q heq _ Punitmx Qunitmx.
+rewrite /gcd_edr /smith_seq; case: smithP => /= P d Q heq _ Punitmx Qunitmx.
 apply/idP/andP => [gd0|[gdvda gdvdb]].
   suff Hij : forall i j, g %| (row_mx a%:M b%:M : 'rV_2) i j.
     move: (Hij 0 (@lshift 1 1 0)) (Hij 0 (rshift 1 0)).
@@ -142,7 +144,7 @@ Definition bezout_edr a b : R * R :=
 
 Lemma bezout_edrP a b : BezoutDomain.bezout_spec a b (bezout_edr a b).
 Proof.
-have := erefl (gcd_edr a b); rewrite {-1}/gcd_edr.
+have := erefl (gcd_edr a b); rewrite {-1}/gcd_edr /smith_seq.
 rewrite /bezout_edr; case: smithP => /= P d Q heq hsorted Punitmx Qunitmx hg.
 constructor; rewrite /gcdr /= hg.
 move/matrixP: (heq) => /(_ 0 0).
@@ -171,7 +173,7 @@ Definition col_ebase := invmx (smith M).1.1.
 Definition row_ebase := invmx (smith M).2.
 
 (* Filter out all trailing zeroes *)
-Definition diag      := [seq x <- take (minn m n) (smith M).1.2 | x != 0 ].
+Definition diag      := [seq x <- take (minn m n) (smith_seq M) | x != 0 ].
 Definition diag_mx   := diag_mx_seq m n diag.
 
 (* Note: The matrix rank is NOT the module rank! *)
@@ -185,7 +187,7 @@ End defs.
 Lemma mulmx_ebase m n (M : 'M_(m, n)) :
   col_ebase M *m diag_mx M *m row_ebase M = M.
 Proof.
-rewrite /col_ebase /diag_mx /row_ebase /diag.
+rewrite /col_ebase /diag_mx /row_ebase /diag /smith_seq.
 case: smithP => /= L0 d R0 h1 h2 L0unit R0unit.
 rewrite diag_mx_seq_filter0 ?(sorted_take (@dvdr_trans R)) // diag_mx_seq_take_min.
 by rewrite -h1 !mulmxA mulVmx // mul1mx -mulmxA mulmxV ?mulmx1.
@@ -206,7 +208,7 @@ Proof. by rewrite /col_ebase unitmx_inv; case: smithP. Qed.
 Lemma mulmx_diag_mx m n (M : 'M_(m, n)) :
   diag_mx M = invmx (col_ebase M) *m M *m invmx (row_ebase M).
 Proof.
-rewrite /col_ebase /diag_mx /row_ebase /diag !invmxK.
+rewrite /col_ebase /diag_mx /row_ebase /diag /smith_seq !invmxK.
 case: smithP=> L0 d R0 h1 h2 _ _.
 rewrite diag_mx_seq_filter0; last exact: (sorted_take (@dvdr_trans R)).
 by rewrite diag_mx_seq_take_min.
@@ -220,7 +222,7 @@ Qed.
 
 Lemma diag0 m n : diag (0 : 'M[R]_(m,n)) = [::].
 Proof.
-rewrite /diag; case: smithP=> /= P d Q.
+rewrite /diag /smith_seq; case: smithP=> /= P d Q.
 rewrite mulmx0 mul0mx => /esym h0 _ _ _.
 have H : all (eq_op^~ 0) (take (minn m n) d).
   apply: (@diag_mx_seq_eq0 _ m n); first by rewrite size_take; case: leqP.
@@ -234,7 +236,7 @@ Proof. by rewrite /mxrank diag0. Qed.
 Lemma mxrank_leq_col_row : forall m n (M : 'M_(m, n)), mxrank M <= minn m n.
 Proof.
 case => [|m] [|n] //= M; rewrite ?(thinmx0,flatmx0,mxrank0,leq0n) //.
-rewrite /mxrank size_filter; case: smithP => /= P d Q _ _ _ _.
+rewrite /mxrank size_filter /smith_seq /=; case: smithP => /= P d Q _ _ _ _.
 by apply/(leq_trans (count_size _ _)); rewrite size_take; case: leqP.
 Qed.
 
@@ -482,8 +484,6 @@ Qed.
 End Preunicity.
 
 Section Unicity.
-
-Let smith_seq m n (M : 'M[R]_(m,n)) := (smith M).1.2.
 
 Lemma Smith_unicity m n (M : 'M[R]_(m,n)) (d : seq R) :
   sorted %|%R d -> equivalent M (diag_mx_seq m n d) ->
