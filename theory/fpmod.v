@@ -14,6 +14,7 @@ Import Prenex Implicits.
 Local Open Scope ring_scope.
 Local Open Scope mxpresentation_scope.
 
+Reserved Notation "{ 'fpmod' T }" (at level 0, format "{ 'fpmod' T }").
 Reserved Notation "''Mor' ( M , N )" (at level 8, format "''Mor' ( M ,  N )").
 Reserved Notation "''Mono' ( M , N )" (at level 8, format "''Mono' ( M ,  N )").
 Reserved Notation "''Epi' ( M , N )" (at level 8, format "''Epi' ( M ,  N )").
@@ -29,27 +30,31 @@ Section morphismDef.
 Variable R : coherentRingType.
 
 (** Module *)
-Record fpmodule := FPModule {
+Record fpmod := FPmod {
   nbrel : nat;
   nbgen : nat;
   pres  : 'M[R]_(nbrel, nbgen)
 }.
 
+Definition fpmod_of of phant R := fpmod.
+(* Identity Coercion type_fpmod_of : fpmod_of >-> fpmod. *) (* Is this necessary? *)
+
 (** Morphisms *)
-Record morphism_of (M N : fpmodule) :=
+Record morphism_of (M N : fpmod) :=
   Morphism { matrix_of_morphism : 'M[R]_(nbgen M,nbgen N);
              _ : (pres N %| pres M *m matrix_of_morphism)%MP }.
 
 End morphismDef.
 
+Notation "{ 'fpmod' T }" := (fpmod_of (Phant T)).
 Coercion matrix_of_morphism : morphism_of >-> matrix.
 Notation "M %:m" := (M : 'M__) (at level 2, format "M %:m").
 Notation "''Mor' ( M , N )" := (morphism_of M N) : type_scope.
 Notation "M %:mor" := (M : 'Mor(_,_)) (at level 2, format "M %:mor").
 Notation "''End' ( M )" := (morphism_of M M) : type_scope.
 
-Definition source R (M N : fpmodule R) (phi : 'Mor(M, N)) := M.
-Definition target R (M N : fpmodule R) (phi : 'Mor(M, N)) := N.
+Definition source (R : coherentRingType) (M N : {fpmod R}) (phi : 'Mor(M, N)) := M.
+Definition target (R : coherentRingType) (M N : {fpmod R}) (phi : 'Mor(M, N)) := N.
 
 Section morphismTheory.
 
@@ -57,7 +62,7 @@ Variable R : coherentRingType.
 Local Open Scope mxpresentation_scope.
 
 Section equality.
-Variables (M N : fpmodule R).
+Variables (M N : {fpmod R}).
 Definition eqmor (phi psi : 'Mor(M,N)) := pres N %| phi%:m - psi%:m.
 
 Lemma eqmor_refl : reflexive eqmor.
@@ -87,7 +92,7 @@ End equality.
 
 Section general.
 
-Variables (M N K : fpmodule R).
+Variables (M N K : {fpmod R}).
 
 (* reexporting dvdmx_morphism *)
 Lemma dvdmx_morphism (phi : 'Mor(M, N)) : (pres N %| pres M *m phi).
@@ -97,12 +102,12 @@ Proof. by case: phi. Qed.
 Lemma morphism1_subproof x (X : 'M_(x, _)) : X %| pres N -> X %| pres N *m 1%:M.
 Proof. by rewrite mulmx1. Qed.
 
-Definition Morphism1 x (X : 'M_(x, nbgen N)) (dvdXN : X %| pres N) : 'Mor(N, FPModule X) :=
-  @Morphism _ _ (FPModule X) _ (@morphism1_subproof x X dvdXN).
+Definition Morphism1 x (X : 'M_(x, nbgen N)) (dvdXN : X %| pres N) : 'Mor(N, FPmod X) :=
+  @Morphism _ _ (FPmod X) _ (@morphism1_subproof x X dvdXN).
 
 Variables (n : nat) (X : 'M[R]_(n, nbgen M)).
 
-Definition source_of_mx := FPModule ((pres M).-ker X).
+Definition source_of_mx := FPmod ((pres M).-ker X).
 
 Lemma mor_of_mx_proof : pres M %| pres source_of_mx *m X.
 Proof. by rewrite -dvd_ker. Qed.
@@ -113,7 +118,7 @@ End general.
 
 Section zmodType.
 
-Variables (M N : fpmodule R).
+Variables (M N : {fpmod R}).
 
 Canonical morphism_subType := Eval hnf in
   [subType for (@matrix_of_morphism _ _ _) by (@morphism_of_rect _ M N)].
@@ -164,7 +169,7 @@ Section category.
 
 Section defs.
 
-Variables (M N K : fpmodule R).
+Variables (M N K : {fpmod R}).
 
 (** Identity endomorphism *)
 Definition idm : 'End(M) := Morphism (morphism1_subproof (dvdmx_refl _)).
@@ -185,7 +190,7 @@ Infix "**" := mulmor : mxpresentation_scope.
 Infix "%=" := eqmor : mxpresentation_scope.
 
 Section theory.
-Variables (M N P Q : fpmodule R).
+Variables (M N P Q : {fpmod R}).
 
 Lemma mul1mor (phi : 'Mor(M,P)) : idm ** phi = phi.
 Proof. by apply: val_inj; rewrite /= mul1mx. Qed.
@@ -249,7 +254,7 @@ Hint Resolve eqmorxx.
 
 Section KernelAndCo.
 Variable R : coherentRingType.
-Variables (M N : fpmodule R) (phi : 'Mor(M,N)).
+Variables (M N : {fpmod R}) (phi : 'Mor(M,N)).
 
 (** Kernel
 
@@ -272,7 +277,7 @@ Definition kernel : 'Mor(kermod,_) := mor_of_mx ((pres N).-ker phi).
 Definition injm := kernel %= 0.
 
 (** Quotienting is just matrix stacking *)
-Definition quot_by : fpmodule R := FPModule (col_mx (pres N) phi).
+Definition quot_by : {fpmod R} := FPmod (col_mx (pres N) phi).
 
 Lemma dvd_quot_mx x (X : 'M_(x, _)) : pres N %| X -> pres quot_by %| X.
 Proof. by move=> dvdNX; apply/dvd_col_mxP; exists 0; rewrite mul0mx subr0. Qed.
@@ -311,13 +316,13 @@ End KernelAndCo.
 Section morphismProperties.
 
 Variable R : coherentRingType.
-Variables (M N : fpmodule R) (phi : 'Mor(M, N)).
+Variables (M N : {fpmod R}) (phi : 'Mor(M, N)).
 
 Definition is_mono :=
-  forall (P : fpmodule R) (psi : 'Mor(P, M)), psi ** phi %= 0 -> psi %= 0.
+  forall (P : {fpmod R}) (psi : 'Mor(P, M)), psi ** phi %= 0 -> psi %= 0.
 
 Definition is_epi  :=
-  forall (P : fpmodule R) (psi : 'Mor(N, P)), phi ** psi %= 0 -> psi %= 0.
+  forall (P : {fpmod R}) (psi : 'Mor(N, P)), phi ** psi %= 0 -> psi %= 0.
 
 (* A morphism is an isomorphism if it is both injective and surjective *)
 Lemma monoP : reflect is_mono (kernel phi %= 0).
@@ -378,7 +383,7 @@ End morphismProperties.
 Section MonoEpi.
 
 Variable R : coherentRingType.
-Variables (M N : fpmodule R).
+Variables (M N : {fpmod R}).
 
 Record monomorphism_of := Monomorphism  {
   morphism_of_mono :> 'Mor(M, N);
@@ -461,7 +466,7 @@ Section MonoTheory.
 Variable (R : coherentRingType).
 
 Section Mono1.
-Variables (M N : fpmodule R).
+Variables (M N : {fpmod R}).
 
 Lemma kernel_eq0 (phi : 'Mono(M,N)) : kernel phi %= 0.
 Proof. by case: phi. Qed.
@@ -471,7 +476,7 @@ Lemma mono (phi : 'Mono(M,N)) : is_mono phi.
 Proof. exact/monoP. Qed.
 Hint Resolve mono.
 
-Lemma mulmono_eq0 (L : fpmodule R) (phi : 'Mono(M,N)) (Y : 'Mor(L, M)) :
+Lemma mulmono_eq0 (L : {fpmod R}) (phi : 'Mono(M,N)) (Y : 'Mor(L, M)) :
   (Y ** phi %= 0) = (Y %= 0).
 Proof.
 apply/idP/idP; first by move/mono.
@@ -486,7 +491,7 @@ Proof. by apply/monoP=> P psi; rewrite /= /eqmor !subr0 -dvd_ker. Qed.
 Canonical mono_of_mx := Monomorphism mor_of_mx_inj.
 End Mono1.
 
-Lemma left_mono (M N L : fpmodule R) (phi : 'Mor(M,N)) (psi : 'Mor(N,L)) :
+Lemma left_mono (M N L : {fpmod R}) (phi : 'Mor(M,N)) (psi : 'Mor(N,L)) :
   is_mono (phi ** psi) -> is_mono phi.
 Proof.
 by move=> mmono K kapa /(eqmorMr psi); rewrite mul0mor -mulmorA => /mmono.
@@ -501,7 +506,7 @@ Section EpiTheory.
 Variable (R : coherentRingType).
 
 Section Epi1.
-Variables (M N : fpmodule R).
+Variables (M N : {fpmod R}).
 
 Lemma coker_eq0 (phi : 'Epi(M,N)) : coker phi %= 0.
 Proof. by case: phi. Qed.
@@ -510,7 +515,7 @@ Hint Resolve coker_eq0.
 Lemma epi (phi : 'Epi(M,N)) : is_epi phi.
 Proof. exact/epiP. Qed.
 
-Lemma mulepi_eq0 (L : fpmodule R) (phi : 'Epi(M,N)) (Y : 'Mor(N, L)) :
+Lemma mulepi_eq0 (L : {fpmod R}) (phi : 'Epi(M,N)) (Y : 'Mor(N, L)) :
   (phi ** Y %= 0) = (Y %= 0).
 Proof.
 apply/idP/idP; first by move/epi.
@@ -518,7 +523,7 @@ by move=> /eqmorMl /eqmor_ltrans ->; rewrite mulmor0.
 Qed.
 End Epi1.
 
-Lemma right_epi (M N L : fpmodule R) (phi : 'Mor(M,N)) (psi : 'Mor(N,L)) :
+Lemma right_epi (M N L : {fpmod R}) (phi : 'Mor(M,N)) (psi : 'Mor(N,L)) :
   is_epi (phi ** psi) -> is_epi psi.
 Proof.
 by move=> mepi K kapa /(eqmorMl phi); rewrite mulmor0 mulmorA => /mepi.
@@ -530,7 +535,7 @@ Hint Resolve coker_eq0.
 Hint Resolve epi.
 
 Section IsoTheory.
-Variable (R : coherentRingType) (M N : fpmodule R).
+Variable (R : coherentRingType) (M N : {fpmod R}).
 
 Fact iso_kernel_eq0 (phi : 'Iso(M,N)) : kernel phi %= 0.
 Proof. by case: phi => /= ? /andP[]. Qed.
@@ -564,38 +569,38 @@ Local Open Scope mxpresentation_scope.
 Variable R : coherentRingType.
 
 (* Kernel is mono *)
-Fact kernelK (M N : fpmodule R) (phi : 'Mor(M,N)) : kernel (kernel phi) %= 0.
+Fact kernelK (M N : {fpmod R}) (phi : 'Mor(M,N)) : kernel (kernel phi) %= 0.
 Proof. by rewrite kernel_eq0. Qed.
 
-Canonical mono_of_kernel (M N : fpmodule R) (phi : 'Mor(M,N)) :=
+Canonical mono_of_kernel (M N : {fpmod R}) (phi : 'Mor(M,N)) :=
   Monomorphism (kernelK phi).
 
 (* cokernel is epi *)
-Lemma cokerK (M N : fpmodule R) (phi : 'Mor(M,N)) : coker (coker phi) %= 0.
+Lemma cokerK (M N : {fpmod R}) (phi : 'Mor(M,N)) : coker (coker phi) %= 0.
 Proof. by rewrite /eqmor subr0 dvd_col_mxl. Qed.
 
-Canonical epi_of_coker (M N : fpmodule R) (phi : 'Mor(M,N)) :=
+Canonical epi_of_coker (M N : {fpmod R}) (phi : 'Mor(M,N)) :=
   Epimorphism (cokerK phi).
 
 (* The identity morphism is an isomorphism *)
-Lemma isomorphisms_idm (M : fpmodule R) : isomorphisms (@idm _ M) idm.
+Lemma isomorphisms_idm (M : {fpmod R}) : isomorphisms (@idm _ M) idm.
 Proof. by apply/andP; split; rewrite mulmor1. Qed.
 
-Lemma mulmor11 (M : fpmodule R) : (@idm _ M) ** idm %= idm.
+Lemma mulmor11 (M : {fpmod R}) : (@idm _ M) ** idm %= idm.
 Proof. by rewrite mul1mor. Qed.
 
-Canonical idm_iso (M : fpmodule R) :=
+Canonical idm_iso (M : {fpmod R}) :=
   iso_of_kc (rinv_inj (mulmor11 M)) (linv_surj (mulmor11 M)).
 
 (** Kernel universal property *)
-Definition is_kernel (M N K : fpmodule R) (phi : 'Mor(M,N))
+Definition is_kernel (M N K : {fpmod R}) (phi : 'Mor(M,N))
   (k : 'Mor(K,M)) :=
   ((k ** phi %= 0) *
   forall L (psi : 'Mor(L,M)),
     reflect (exists Y, Y ** k %= psi) (psi ** phi %= 0))%type.
 
 (** Our kernel construction has the universal property *)
-Lemma kernelP (M N : fpmodule R) (phi : 'Mor(M,N)) :
+Lemma kernelP (M N : {fpmod R}) (phi : 'Mor(M,N)) :
   is_kernel phi (kernel phi).
 Proof.
 split; first by rewrite mulkmor.
@@ -609,7 +614,7 @@ by exists (Morphism Ymor); rewrite Yeq subrr.
 Qed.
 
 (** Any monomorphism is a kernel of its cokernel *)
-Lemma mono_ker (M N : fpmodule R) (phi : 'Mono(M,N)) :
+Lemma mono_ker (M N : {fpmod R}) (phi : 'Mono(M,N)) :
   is_kernel (coker phi) phi.
 Proof.
 split; first by rewrite mulmorc.
@@ -626,19 +631,19 @@ by rewrite dvdmxMl // -dvdmxN opprB.
 Qed.
 
 (* Quotienting by a morphism may allow you to factor it out *)
-Lemma lift_subproof (M N L : fpmodule R)
+Lemma lift_subproof (M N L : {fpmod R})
   (phi : 'Mor(M,N)) (psi : 'Mor(N,L)) :
   phi ** psi %= 0 -> pres L %| pres (quot_by phi) *m psi.
 Proof. by rewrite /eqmor subr0 /= mul_col_mx dvd_mx_col dvdmx_morphism. Qed.
 
 (* Lifting a morphism psi wrt a quotient by phi *)
-Definition lift (M N L : fpmodule R)
+Definition lift (M N L : {fpmod R})
   (phi : 'Mor(M,N)) (psi : 'Mor(N,L)) : 'Mor(quot_by phi,L) :=
   if (phi ** psi %= 0) =P true is ReflectT P
   then Morphism (lift_subproof P) else 0.
 
 (* We can factor a morphism psi by its lifting *)
-Lemma mul_lift (M N L : fpmodule R) (phi : 'Mor(M,N)) (psi : 'Mor(N,L)) :
+Lemma mul_lift (M N L : {fpmod R}) (phi : 'Mor(M,N)) (psi : 'Mor(N,L)) :
   phi ** psi %= 0 -> coker phi ** lift phi psi %= psi.
 Proof.
 rewrite /lift; case: eqP => //= p _.
@@ -646,7 +651,7 @@ by rewrite /eqmor /= mul1mx subrr.
 Qed.
 
 (* The lifting of an epi is an epi *)
-Lemma lift_epi (M N L : fpmodule R) (phi : 'Mor(M,N)) (psi : 'Epi(N,L)) :
+Lemma lift_epi (M N L : {fpmod R}) (phi : 'Mor(M,N)) (psi : 'Epi(N,L)) :
   phi ** psi %= 0 -> is_epi (lift phi psi).
 Proof.
 move=> /mul_lift psiP K kapa; rewrite eqmor_sym in psiP.
@@ -655,12 +660,12 @@ apply: right_epi (coker phi) _ _.
 exact: (@eqmor_epi _ _ _ psi).
 Qed.
 
-Lemma mul_klift (M N : fpmodule R) (psi : 'Mor(M,N)) :
+Lemma mul_klift (M N : {fpmod R}) (psi : 'Mor(M,N)) :
   coker (kernel psi) ** lift (kernel psi) psi %= psi.
 Proof. by rewrite mul_lift // mulkmor. Qed.
 
 (* The lifting of phi to the quotient of its kernel is a monomorphism *)
-Lemma lift_mono (M N : fpmodule R) (psi : 'Mor(M,N)) :
+Lemma lift_mono (M N : {fpmod R}) (psi : 'Mor(M,N)) :
   is_mono (lift (kernel psi) psi).
 Proof.
 apply/monoP; rewrite /eqmor subr0 /=.
@@ -669,14 +674,14 @@ by case: eqP (mulkmor psi).
 Qed.
 
 (** Universal property of the cokernel *)
-Definition is_coker (M N C : fpmodule R) (phi : 'Mor(M,N))
+Definition is_coker (M N C : {fpmod R}) (phi : 'Mor(M,N))
   (c : 'Mor(N,C)) :=
   ((phi ** c %= 0) *
   forall L (psi : 'Mor(N,L)),
     reflect (exists Y, c ** Y %= psi) (phi ** psi %= 0))%type.
 
 (** Our coker construction satisfies the universal property of cokernels *)
-Lemma cokerP (M N : fpmodule R) (phi : 'Mor(M,N)) : is_coker phi (coker phi).
+Lemma cokerP (M N : {fpmod R}) (phi : 'Mor(M,N)) : is_coker phi (coker phi).
 Proof.
 split; first by rewrite mulmorc.
 move=> L X; apply: (iffP idP) => [phiX|[Y]]; last first.
@@ -686,7 +691,7 @@ by exists (lift phi X); rewrite mul_lift.
 Qed.
 
 (* Factorisation lemma *)
-Lemma factor_proof (M N P : fpmodule R) (phi : 'Mono(N,P)) (psi : 'Mor(M,P)) :
+Lemma factor_proof (M N P : {fpmod R}) (phi : 'Mono(N,P)) (psi : 'Mor(M,P)) :
   reflect (exists kapa, kapa ** phi %= psi) (psi ** coker phi %= 0).
 Proof.
 apply: (iffP idP) => [|[c]]; last first.
@@ -702,7 +707,7 @@ by rewrite mulmxDr dvdmxD ?dvdmx_morphism // dvdmxMl // -dvdmxN opprB.
 Qed.
 
 (* extraction of the factor *)
-Definition factor (M N P : fpmodule R)
+Definition factor (M N P : {fpmod R})
   (phi : 'Mor(N,P)) (psi : 'Mor(M,P)) : 'Mor(M,N) :=
   if (kernel phi %= 0) =P true is ReflectT phi_inj
   then if factor_proof (Monomorphism phi_inj) psi is ReflectT P
@@ -710,7 +715,7 @@ Definition factor (M N P : fpmodule R)
   else 0.
 
 (* property of the factor *)
-Lemma factorP (M N P : fpmodule R) (phi : 'Mono(N,P)) (psi : 'Mor(M,P)) :
+Lemma factorP (M N P : {fpmod R}) (phi : 'Mono(N,P)) (psi : 'Mor(M,P)) :
   psi ** coker phi %= 0 -> factor phi psi ** phi %= psi.
 Proof.
 have := kernel_eq0 phi; rewrite /factor.
@@ -721,7 +726,7 @@ Qed.
 Notation "phi %/ psi" := (quot_by (factor phi psi)).
 
 (** Every epimorphism is a cokernel of its kernel *)
-Lemma epi_coker (M N : fpmodule R) (phi : 'Epi(M,N)) :
+Lemma epi_coker (M N : {fpmod R}) (phi : 'Epi(M,N)) :
   is_coker (kernel phi) phi.
 Proof.
 split; first by rewrite mulkmor.
@@ -743,9 +748,9 @@ Qed.
 (** Introduction of direct sum, which play the role of the kernel *)
 (* and the cokernel *)
 Section dsum.
-Variables (M N : fpmodule R).
+Variables (M N : {fpmod R}).
 
-Definition dsum := FPModule (block_mx (pres M) 0 0 (pres N)).
+Definition dsum := FPmod (block_mx (pres M) 0 0 (pres N)).
 
 Fact proj1_proof : pres M %| pres dsum *m (col_mx 1%:M 0).
 Proof.
@@ -815,7 +820,7 @@ Proof. by apply: val_inj; rewrite /= mul_row_col mulmx0 mul1mx addr0. Qed.
 Lemma inj2_proj2 : inj2 ** proj2 = idm.
 Proof. by apply: val_inj; rewrite /= mul_row_col mulmx0 mul1mx add0r. Qed.
 
-Lemma dsum_is_product (P : fpmodule R) (p1 : 'Mor(P,M)) (p2 : 'Mor(P,N)) :
+Lemma dsum_is_product (P : {fpmod R}) (p1 : 'Mor(P,M)) (p2 : 'Mor(P,N)) :
   exists phi : 'Mor(P,dsum), p1 = phi ** proj1 /\ p2 = phi ** proj2.
 Proof.
 exists (p1 ** inj1 + p2 ** inj2).
@@ -823,7 +828,7 @@ rewrite !mulmorDl -!mulmorA inj1_proj1 inj1_proj2 inj2_proj1 inj2_proj2.
 by rewrite !mulmor1 !mulmor0 addr0 add0r.
 Qed.
 
-Lemma dsum_is_coproduct (P : fpmodule R) (i1 : 'Mor(M,P)) (i2 : 'Mor(N,P)) :
+Lemma dsum_is_coproduct (P : {fpmod R}) (i1 : 'Mor(M,P)) (i2 : 'Mor(N,P)) :
   exists phi : 'Mor(dsum,P), i1 = inj1 ** phi /\ i2 = inj2 ** phi.
 Proof.
 exists (proj1 ** i1 + proj2 ** i2).
@@ -835,7 +840,7 @@ End dsum.
 
 Section homology.
 
-Variables (M N P : fpmodule R).
+Variables (M N P : {fpmod R}).
 Variables (phi : 'Mor(M, N)) (psi : 'Mor(N, P)).
 
 Hypothesis mul_phi_psi : phi ** psi %= 0.
@@ -882,9 +887,9 @@ Local Open Scope mxpresentation_scope.
 
 Variable R : edrType.
 
-Variable M : fpmodule [coherentRingType of R].
+Variable M : {fpmod R}.
 
-Let D := FPModule (diag_mx (pres M)).
+Let D := FPmod (diag_mx (pres M)).
 Let P := (smith (pres M)).1.1.
 Let Q := (smith (pres M)).2.
 
