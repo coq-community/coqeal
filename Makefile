@@ -2,13 +2,20 @@ COQBIN := ../coq/bin/
 .PHONY: coq clean
 
 coq:: Makefile.coq
-	COQBIN=$(COQBIN) $(MAKE) -f Makefile.coq
+	COQBIN=$(COQBIN) COQDEP=$(COQBIN)coqdep $(MAKE) -f Makefile.coq
 
 Makefile.coq: Makefile $(MODULES)
-	$(COQBIN)/coq_makefile -f Make.cfg -o Makefile.coq
+	echo "src/abstraction.cmo : src/relations.cmo src/parametricity.cmo\nsrc/abstraction.cmx : src/relations.cmx src/parametricity.cmx" > src/abstraction.ml4.d
+	$(COQBIN)coq_makefile -f Make.cfg -o Makefile.coq
 
 test:: 
-	$(COQBIN)/coqide -I src test-suite/*.v 
+	$(COQBIN)coqide -I src test-suite/*.v 
+
+test1: 
+	$(COQBIN)coqc -I src test-suite/test1.v 
+
+test2: 
+	$(COQBIN)coqc -I src test-suite/test_eq.v 
 
 clean:: Makefile.coq
 	$(MAKE) -f Makefile.coq clean
