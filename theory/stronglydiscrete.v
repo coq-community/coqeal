@@ -411,8 +411,11 @@ Lemma trmx_eq0 (V : zmodType) (m n : nat) (A : 'M[V]_(m, n)) :
    (A^T == 0) = (A == 0).
 Proof. by rewrite -trmx0 (inj_eq (can_inj (@trmxK _ _ _))). Qed.
 
-Lemma mulid0 m n (I: 'cV[R]_m) : I *i (0: 'cV[R]_n) = 0.
+Lemma mulid0 m n (I : 'cV[R]_m) : I *i (0 : 'cV[R]_n) = 0.
 Proof. by rewrite /mulid trmx0 mulmx0 mxvec0 trmx0. Qed.
+
+Lemma mul0id m n (I : 'cV[R]_n) : (0 : 'cV[R]_m) *i I = 0.
+Proof. by rewrite /mulid mul0mx mxvec0 trmx0. Qed.
 
 Lemma subid_mulC m n (I : 'cV[R]_m) (J : 'cV[R]_n) : (I *i J <= J *i I)%IS.
 Proof. by rewrite (subid_trans (subid_tr_mxvec _)) // trmx_mul trmxK. Qed.
