@@ -1,11 +1,9 @@
 Require Import List.
 
-(*
 Declare ML Module "relations".
 Declare ML Module "parametricity".
-Declare ML Module "abstraction". *)
+Declare ML Module "abstraction". 
 
-Require Import test_eq.
 
 (** Inductive **)
 Translate Inductive nat.
@@ -20,7 +18,7 @@ Translate Inductive nat Arity 10.
 
 Translate Inductive False.
 Translate Inductive or.
-
+Translate Inductive eq.
 Translate In.
 Next Obligation.
 destruct l; reflexivity.

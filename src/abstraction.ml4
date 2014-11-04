@@ -84,11 +84,13 @@ let translate_inductive_command arity c name =
   print_string "ear_map ="; Pp.msg_info (Evd.pr_evar_map None sigma);
   let mut_body = fst (Inductive.lookup_mind_specif env ind) in
   let translation_entry = Parametricity.translate_mind_body arity evd env mut_ind mut_body in 
+  let size = Declarations.(Array.length mut_body.mind_packets) in 
   print_string "ear_map ="; Pp.msg_info (Evd.pr_evar_map None !evd);
   let _, kn_R = Declare.declare_mind Declare.UserVerbose translation_entry in
   let mut_ind_R = Global.mind_of_delta_kn kn_R in 
-  Relations.add_inductive arity mut_ind mut_ind_R
-
+  for k = 0 to size-1 do
+    Relations.add_inductive arity (mut_ind, k) (mut_ind_R,k)
+  done
 
 VERNAC COMMAND EXTEND TranslateInductive CLASSIFIED AS SIDEFF
 | [ "Translate" "Inductive" constr(c)  ] ->

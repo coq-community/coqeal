@@ -414,14 +414,11 @@ and translate_constant order evd env cst : constr =
 and translate_variable order evd env v : constr =
   Constr.mkConst (Relations.get_variable order v)
 
-and translate_mutual_inductive order env (ind_name : mutual_inductive) =
+and translate_inductive order env (ind_name : inductive) =
   Relations.get_inductive order ind_name
 
-and translate_inductive order env (mut_ind, i) = 
-  (translate_mutual_inductive order env mut_ind, i)
-
-and translate_constructor order env ((mut_ind, k), i) : constr = 
-  mkConstruct ((translate_mutual_inductive order env mut_ind, k), i)
+and translate_constructor order env (ind, i) : constr = 
+  mkConstruct (translate_inductive order env ind, i)
 
 and translate_case_info order env ci = 
   { 
