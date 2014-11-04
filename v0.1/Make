@@ -18,8 +18,15 @@ smith.v
 invmx.v
 minor.v
 binetcauchy.v
+stronglydiscrete.v
+coherent.v
+prufer.v
+cstronglydiscrete.v
+ccoherent.v
+cprufer.v
 #examples/ex_cseqpoly.v
 #examples/ex_karatsuba.v
 #examples/ex_strassen.v
 #examples/ex_Q.v
 #examples/ex_Z.v
+#examples/ex_coherentZ.v
