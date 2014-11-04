@@ -1,4 +1,3 @@
--R . CoqEAL
 ssrcomplements.v
 cssralg.v
 dvdring.v
@@ -24,5 +23,3 @@ binetcauchy.v
 #examples/ex_strassen.v
 #examples/ex_Q.v
 #examples/ex_Z.v
-OTHERFLAGS = "-I $(SSRSRC) -R $(SSRLIB) Ssreflect -R $(SSRSRC) Ssreflect"
-COQDEP = "$(COQBIN)coqdep $(OTHERFLAGS) -c"

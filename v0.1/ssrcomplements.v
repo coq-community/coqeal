@@ -116,17 +116,17 @@ case=> l xl lss.
 exact: (mem_flatten xl).
 Qed.
 
-Lemma map_perm_eq (g : T1 -> T2) s1 s2 : injective g ->
-  perm_eq (map g s1) (map g s2) -> perm_eq s1 s2.
-Proof.
-rewrite /perm_eq /same_count1=> injg /allP mem_eqcount.
-apply/allP=> x xcats12.
-have:= (mem_eqcount (g x)).
-rewrite -map_cat mem_map // =>/(_ xcats12).
-have predg: preim g (pred1 (g x)) =1 pred1 x.
-  by move=> y /=; apply: inj_eq.
-by rewrite !count_map !(eq_count predg).
-Qed.
+(* Lemma map_perm_eq (g : T1 -> T2) s1 s2 : injective g -> *)
+(*   perm_eq (map g s1) (map g s2) -> perm_eq s1 s2. *)
+(* Proof. *)
+(* rewrite /perm_eq /same_count1=> injg /allP mem_eqcount. *)
+(* apply/allP=> x xcats12. *)
+(* have:= (mem_eqcount (g x)). *)
+(* rewrite -map_cat mem_map // =>/(_ xcats12). *)
+(* have predg: preim g (pred1 (g x)) =1 pred1 x. *)
+(*   by move=> y /=; apply: inj_eq. *)
+(* by rewrite !count_map !(eq_count predg). *)
+(* Qed. *)
 
 Lemma count_rem P (l : seq T1) x : x \in l ->
   count P (rem x l) = if P x then (count P l).-1 else count P l.

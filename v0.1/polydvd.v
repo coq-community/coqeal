@@ -65,7 +65,8 @@ case: ifP=> spq.
     by rewrite (eqn_add2r _ 0) eq_sym size_poly_eq0 s0.
   by rewrite mulf_neq0 // lead_coef_eq0 (s0, q0).
 case: odivrP=> /= [x hx|hpq]; last first.
-  by constructor=> s; apply: contra (hpq _) => /eqP ->; rewrite lead_coefM.
+  constructor=> s; apply: contra (hpq (lead_coef s)) => /eqP ->.
+  by rewrite lead_coefM.
 set m  := _ * _.
 set d  := odivp_rec _ _ _ _.
 set om := omap (+%R^~ (- (r + m))) d.

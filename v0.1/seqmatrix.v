@@ -353,8 +353,9 @@ rewrite /mulseqmx mxE /fun_of_seqmx /rowseqmx (nth_map [::]).
     trans (x + \sum_(0 <= k < minn (size s1) (size s2)) s1`_k * s2`_k).
     move=>t; elim=>[s2 x|t1 s1 IHs s2 x].
       by rewrite min0n big_mkord big_ord0 GRing.addr0.
-    case:s2=>[|t2 s2]; first by rewrite minn0 big_mkord big_ord0 GRing.addr0.
-    by rewrite /= -mulE -addE IHs minSS big_nat_recl [_ + x]GRing.addrC GRing.addrA.
+    case: s2 => [|t2 s2] /=; first by rewrite minn0 big_mkord big_ord0 GRing.addr0.
+    rewrite /= -mulE -addE IHs minSS big_nat_recl ?leq0n //.
+    by rewrite GRing.addrA [_ + x]GRing.addrC.
   rewrite GRing.add0r size_map size_enum_ord size_map size_enum_ord minnn big_mkord.
   congr trans; apply:eq_bigr=>k _; rewrite (nth_map 0) ?size_enum_ord //.
   rewrite [X in _ * X](nth_map (0 : 'I_p.+1)) ?size_enum_ord // mxE.
