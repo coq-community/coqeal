@@ -35,13 +35,11 @@ Definition minor (m n k : nat) (f1 : 'I_k -> 'I_m) (f2 : 'I_k -> 'I_n)
 
 End minor_def.
 
-Implicit Arguments minor [R m n].
-
 Section minor_section.
 Variable R : comRingType.
  
 Lemma minor1 : forall (m n: nat) (A: 'M[R]_(m,n)) i j,
- minor 1 (fun _ => i) (fun _ => j) A = A i j.
+  @minor _ _ _ 1 (fun _ => i) (fun _ => j) A = A i j.
 Proof.
 move => m n A i j.
 by rewrite /minor [submatrix _ _ _]mx11_scalar det_scalar1 !mxE.
@@ -67,7 +65,7 @@ fun (x: 'I_(1 + k)) => match split x with
 
 (* Principal minor *)
 Definition pminor (m n k:nat) (h: k.+1 <= m) (h': k.+1 <= n)
-  (A: 'M[R]_(m,n)) := minor k.+1 (step_fun h) (step_fun h') A.
+  (A: 'M[R]_(m,n)) := minor (step_fun h) (step_fun h') A.
 
 Lemma size_tool : forall n k, k <= n -> k.+1 <= n.+1.
 Proof.
@@ -104,7 +102,7 @@ by apply/ord_inj.
 Qed.
 
 Lemma minorn : forall (n:nat) (A: 'M[R]_n),
-  minor n id id A = \det A.
+  minor id id A = \det A.
 Proof.
 rewrite /minor /submatrix => n A.
 f_equal.
@@ -123,7 +121,7 @@ by repeat f_equal; apply/ord_inj.
 Qed.
 
 Lemma minor2 : forall (m n:nat) (A: 'M[R]_(m,n)) f1 f2,
-  minor 2 f1 f2 A =
+  @minor _ _ _ 2 f1 f2 A =
     A (f1 0) (f2 0) * A (f1 1) (f2 1) -
     A (f1 1) (f2 0) * A (f1 0) (f2 1).
 Proof.
@@ -133,7 +131,7 @@ Qed.
 
 Lemma minor_ltn_eq0l k m1 m2 n1 n2 x (f : 'I_k -> 'I_(m1 + m2)) g 
   (M : 'M[R]_(m1,n1)) (N : 'M_(m1,n2)) :
-  m1 < f x -> minor k f g (block_mx M N 0 0) = 0. 
+  m1 < f x -> minor f g (block_mx M N 0 0) = 0. 
 Proof.
 move=> H; rewrite /minor (expand_det_row _ x) big1 // => i _.
 rewrite !mxE; case: (splitP _)=> j Hj.
@@ -143,7 +141,7 @@ Qed.
 
 Lemma minor_ltn_eq0r k m1 m2 n1 n2 x f (g : 'I_k -> 'I_(n1 + n2)) 
   (M : 'M[R]_(m1,n1)) (N : 'M_(m2,n1)) :
-  n1 < g x -> minor k f g (block_mx M 0 N 0) = 0. 
+  n1 < g x -> minor f g (block_mx M 0 N 0) = 0. 
 Proof.
 move=> H; rewrite /minor (expand_det_col _ x) big1 // => i _.
 rewrite !mxE; case: (splitP _)=> j Hj; rewrite !mxE; case: (splitP _)=> l Hl.
@@ -159,7 +157,7 @@ Section Theory.
 Variable R: comRingType.
 
 Lemma minor_alternate_f : forall (m n p:nat) f g (M: 'M[R]_(m,n)),
-  (exists x, exists y, (x != y) /\ (f x == f y)) -> minor p f g M = 0.
+  (exists x, exists y, (x != y) /\ (f x == f y)) -> @minor _ _ _ p f g M = 0.
 Proof.
 rewrite /minor => m n p f g M [x [y [hxy hf]]].
 apply: (determinant_alternate hxy) => a /=.
@@ -167,7 +165,7 @@ by rewrite !mxE (eqP hf).
 Qed.
 
 Lemma minor_alternate_g : forall (m n p:nat) f g (M: 'M[R]_(m,n)),
-  (exists x, exists y, (x != y) /\ (g x == g y)) -> minor p f g M = 0.
+  (exists x, exists y, (x != y) /\ (g x == g y)) -> @minor _ _ _ p f g M = 0.
 Proof.
 rewrite /minor => m n p f g M [x [y [hxy hg]]].
 rewrite -det_tr.
@@ -176,7 +174,7 @@ by rewrite !mxE (eqP hg).
 Qed.
 
 Lemma minor_f_not_injective : forall (m n p:nat) f g (M: 'M[R]_(m,n)),
-   ~ injective f -> minor p f g M = 0.
+   ~ injective f -> @minor _ _ _ p f g M = 0.
 Proof.
 move => m n p f g M /injectiveP /injectivePn [x [y hxy hf]].
 apply minor_alternate_f.
@@ -184,7 +182,7 @@ by exists x; exists y; split => //; rewrite hf.
 Qed.
 
 Lemma minor_g_not_injective : forall (m n p:nat) f g (M: 'M[R]_(m,n)),
-   ~ injective g -> minor p f g M = 0.
+   ~ injective g -> @minor _ _ _ p f g M = 0.
 Proof.
 move => m n p f g M /injectiveP /injectivePn [x [y hxy hg]].
 apply minor_alternate_g.
@@ -201,7 +199,7 @@ by apply/matrixP => i j; rewrite !mxE (h1 i) (h2 j).
 Qed.
 
 Lemma minor_eq : forall (m n k:nat) f1 g1 f2 g2 (M: 'M[R]_(m,n)),
-  (f1 =1 g1) -> (f2 =1 g2) -> minor k f1 f2 M = minor k g1 g2 M.
+  (f1 =1 g1) -> (f2 =1 g2) -> @minor _ _ _ k f1 f2 M = minor g1 g2 M.
 Proof.
 rewrite /minor => m n k f1 g1 f2 g2 M h1 h2.
 by rewrite (submatrix_eq M h1 h2).
@@ -280,8 +278,8 @@ by move => n m p q f1 f2; apply/matrixP => i j; rewrite !mxE.
 Qed.
 
 Lemma minor_lift_block : forall (m n p :nat) f1 f2 a (M: 'M[R]_(m,n)) (l: 'rV[R]_n),
-  minor p.+1 (lift_pred f1) (lift_pred f2) (block_mx a%:M l 0 M) =
-  a * minor p f1 f2 M.
+  minor (lift_pred f1) (lift_pred f2) (block_mx a%:M l 0 M) =
+  a * @minor _ _ _ p f1 f2 M.
 Proof.
 rewrite /minor => m n p f1 f2 a M l.
 rewrite submatrix_lift_block submatrix0.
