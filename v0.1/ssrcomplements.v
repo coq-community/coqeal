@@ -13,6 +13,23 @@ we could try to integrate them in Math Components' library.
 Definitions and theories are gathered according to the file of the
 library which they could be moved to. *)
 
+Section extraPP.
+
+Lemma existsPP (T : finType) (P : T -> Prop) (b : pred T) :
+   (forall x, reflect (P x) (b x)) ->
+   reflect (exists x : T, P x) [exists x, b x].
+Proof. by move=> bP; apply: (iffP existsP) => [] [Px /bP]; exists Px. Qed.
+
+Lemma forallPP (T : finType) (P : T -> Prop) (b : pred T) :
+   (forall x, reflect (P x) (b x)) ->
+   reflect (forall x : T, P x) [forall x, b x].
+Proof. by move=> bP; apply: (iffP forallP) => [] hP x; apply/bP. Qed.
+
+End extraPP.
+
+Notation "\forall_ view" := (forallPP (fun _ => view)) (at level 0).
+Notation "\exists_ view" := (existsPP (fun _ => view)) (at level 0).
+
 (** It is strongly possible that some names of lemmas are not appropriate **)
 (********************* seq.v *********************)
 Section Seq.

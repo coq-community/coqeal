@@ -142,11 +142,15 @@ Qed.
 Section IdealTheory.
 
 (** The sub-ideal membership function *)
-Fixpoint subid m n : 'rV[R]_m -> 'rV[R]_n -> bool :=
-  match m return 'rV[R]_m -> 'rV[R]_n -> bool with
-    | S p => fun (I : 'rV[R]_(1 + _)) J =>
-          member (I 0 0) J && subid (rsubmx I) J
-    | _ => fun _ _ => true
+
+(* subid can also be defined like this: *)
+(* Definition subid m n (I : 'rV[R]_m) (J : 'rV[R]_n) := *)
+(*   [forall i : 'I_m, member (I 0 i) J]. *)
+
+Fixpoint subid m n : 'rV[R]_m -> 'rV[R]_n -> bool := match m with
+  | S p => fun (I : 'rV[R]_(1 + _)) J =>
+           member (I 0 0) J && subid (rsubmx I) J
+  | _ => fun _ _ => true
   end.
 
 Arguments Scope subid
@@ -157,7 +161,7 @@ Local Notation "A <= B <= C" := ((A <= B) && (B <= C))%IS : ideal_scope.
 Local Notation "A == B" := (A <= B <= A)%IS : ideal_scope.
 
 Lemma subidP : forall m n (I : 'rV[R]_m) (J : 'rV[R]_n),
-  reflect (exists D, I = J *m D) (I <= J)%IS.
+  reflect (exists W, I = J *m W) (I <= J)%IS.
 Proof.
 elim=> [m I J|n ih m].
   by rewrite thinmx0; apply: ReflectT; exists 0; rewrite mulmx0.

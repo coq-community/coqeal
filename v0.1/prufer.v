@@ -16,7 +16,7 @@ Local Open Scope ring_scope.
 Module PruferDomain.
 
 Record mixin_of (R : ringType) : Type := Mixin {
-  prufer: R -> R -> (R*R*R)%type;
+  prufer: R -> R -> (R * R * R);
   _ : forall x y, let: (u,v,w) := prufer x y in
       u * x = v * y /\ (1 - u) * y = w * x
 }.
@@ -215,20 +215,20 @@ move: (h2 xi xj xl); rewrite !mxE !rshift1 mulrAC => ->.
 by rewrite mulrAC.
 Qed.
 
-Lemma col_plm_mull n (I: 'rV[R]_n.+1) j :
-  (col j (plm I)) *m I = (I 0 j) *: (plm I).
+Lemma col_plm_mull n (I : 'rV[R]_n.+1) i :
+  (col i (plm I)) *m I = (I 0 i) *: (plm I).
 Proof.
-apply/matrixP => i l; rewrite !mxE.
+apply/matrixP => j l; rewrite !mxE.
 case: (plmP I); rewrite /P1 /P2 => h1 h2.
 by rewrite big_ord_recl big_ord0 addr0 !mxE h2 mulrC.
 Qed.
 
 (** The columns of the PLM give the inverse of the ideal *)
-Lemma col_plm_mulr n (I: 'rV[R]_n.+1) j : I *m col j (plm I) = (I 0 j)%:M.
+Lemma col_plm_mulr n (I : 'rV[R]_n.+1) i : I *m col i (plm I) = (I 0 i)%:M.
 Proof.
 case: (plmP I); set M := plm _; rewrite /P1 /P2 => h1 h2.
-apply/matrixP=> i l; rewrite !ord1 !mxE eqxx mulr1n {i l}.
-have -> : \sum_j0 (I 0 j0 * (col j M) j0 0) = \sum_j0 (I 0 j * M j0 j0).
+apply/matrixP=> j l; rewrite !ord1 !mxE eqxx mulr1n {j l}.
+have -> : \sum_j0 (I 0 j0 * (col i M) j0 0) = \sum_j0 (I 0 i * M j0 j0).
   apply: eq_bigr=> j0 _.
   by rewrite !mxE mulrC -h2 mulrC.
 by rewrite -big_distrr /= h1 mulr1.
@@ -267,13 +267,12 @@ Section StronglyDiscrete.
 
 Variable R : pruferDomainType.
 
-Definition pmember n (x : R) : 'rV[R]_n -> option 'cV[R]_n :=
-  match n return 'rV[R]_n -> option 'cV[R]_n with
-  | S p => fun I : 'rV[R]_p.+1 =>
-      let: loc := plm I in
-        if [forall i, I 0 i %| loc i i * x] then
-          Some (\col_i odflt 0 (loc i i * x %/? I 0 i))
-        else None
+Definition pmember n (x : R) : 'rV[R]_n -> option 'cV[R]_n := match n with
+  | S p => fun (I : 'rV[R]_p.+1) =>
+      let a := plm I in
+      if [forall i, I 0 i %| a i i * x]
+         then Some (\col_i odflt 0 (a i i * x %/? I 0 i))
+         else None
   | _ => fun _ => if x == 0 then Some 0 else None
 end.
 
@@ -323,11 +322,7 @@ Section PruferIdeals.
 Variable R : pruferDomainType.
 
 (** Compute the i:th inverse of an ideal *)
-Definition inv_id n : 'I_n -> 'rV[R]_n -> 'rV[R]_n := match n with
-  | S p => fun (j : 'I_(1 + p)%N) (I : 'rV[R]_(1 + p)%N) =>
-    (col j (plm I))^T
-  | _   => fun _ _ => 0
-  end.
+Definition inv_id n (i : 'I_n) (I : 'rV[R]_n) : 'rV[R]_n := (col i (plm I))^T.
 
 Lemma inv_idP1 : forall n (I: 'rV[R]_n) j, (inv_id j I *i I <= (I 0 j)%:M)%IS.
 Proof.

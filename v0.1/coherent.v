@@ -108,21 +108,20 @@ exists (delta_mx i 0).
 by rewrite colE.
 Qed.
 
-Fixpoint size_solveMxN m n : 'M[R]_(m,n) -> nat :=
-  match m return 'M[R]_(m,n) -> nat with
+Fixpoint size_solveMxN m n : 'M[R]_(m,n) -> nat := match m with
     | S p => fun (M: 'M[R]_(1 + _,n)) =>
        size_solveMxN (dsubmx M *m solve_row (usubmx M))
     | _ => fun _ => n
 end.
 
-Fixpoint solveMxN m n : 
+Fixpoint solveMxN (m n : nat) :
   forall (M : 'M_(m,n)), 'M_(n,size_solveMxN M) :=
-  match m with
-    | S p => fun (M : 'M_(1+p,n)) =>
-      let G1 := solve_row (usubmx M) in 
-      G1 *m solveMxN (dsubmx M *m G1)
-    | _ => fun _ => 1%:M
-  end.
+    match m with
+      | S p => fun (M : 'M_(1 + _,n)) =>
+        let L1 := solve_row (usubmx M)
+        in L1 *m solveMxN (dsubmx M *m L1)
+      | _ => fun _ => 1%:M
+    end.
 
 Lemma solveMxNP : forall m n (M:'M[R]_(m,n)) (X:'cV[R]_n),
   reflect (exists Y, X = solveMxN M *m Y)
@@ -179,13 +178,13 @@ Qed.
 (** As everything is based on strongly discrete rings we can solve general
    systems of the kind MX = A *)
 Fixpoint solveGeneral m n : 'M_(m,n) -> 'cV_m -> option 'cV_n :=
-  match m return 'M[R]_(m,n) -> 'cV[R]_m -> option 'cV[R]_n with
+  match m with
    | S p => fun (M: 'M[R]_(1 + _,n)) (A : 'cV[R]_(1 + _)) =>
-    let G1 := solve_row (usubmx M) in
-    let W1 := member (A 0 0) (usubmx M) in
+     let G1 := solve_row (usubmx M) in
+     let W1 := member (A 0 0) (usubmx M) in
      obind (fun w1 : 'cV_n =>
        obind (fun S => Some (w1 + G1 *m S))
-       (solveGeneral (dsubmx M *m G1) (dsubmx A - dsubmx M *m w1))
+         (solveGeneral (dsubmx M *m G1) (dsubmx A - dsubmx M *m w1))
      ) W1
    | _ => fun _ _ => Some 0
   end.
