@@ -219,8 +219,8 @@ Definition cinv_id n i (I : seqmatrix CR) := match n with
 Lemma cinv_idE : forall n (i : 'I_n) (I : 'rV[R]_n),
   cinv_id n i (seqmx_of_mx CR I) = seqmx_of_mx CR (inv_id i I).
 Proof.
-elim => [/= _ _| n ih i I]; first by rewrite seqmx0E.
-by rewrite /cinv_id cplmE colseqmxE trseqmxE.
+case=> [/= i I|n i I]; first by rewrite thinmx0 seqmx0E.
+by rewrite /cinv_id /inv_id cplmE colseqmxE trseqmxE.
 Qed.
 
 End CPruferDomainTheory.
