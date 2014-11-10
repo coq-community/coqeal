@@ -115,12 +115,12 @@ Definition gcd_edr a b : R := (smith_seq (row_mx a%:M b%:M : 'rV_2))`_0.
 
 Arguments nth : simpl never.
 
-Lemma gcd_edrP a b g :
-  (g %| gcd_edr a b)%R = (g %| a)%R && (g %| b)%R.
+Lemma gcd_edrP d a b :
+  (d %| gcd_edr a b)%R = (d %| a)%R && (d %| b)%R.
 Proof.
-rewrite /gcd_edr /smith_seq; case: smithP => /= P d Q heq _ Punitmx Qunitmx.
+rewrite /gcd_edr /smith_seq; case: smithP => /= P ds Q heq _ Punitmx Qunitmx.
 apply/idP/andP => [gd0|[gdvda gdvdb]].
-  suff Hij : forall i j, g %| (row_mx a%:M b%:M : 'rV_2) i j.
+  suff Hij : forall i j, d %| (row_mx a%:M b%:M : 'rV_2) i j.
     move: (Hij 0 (@lshift 1 1 0)) (Hij 0 (rshift 1 0)).
     by rewrite (row_mxEl a%:M) (row_mxEr a%:M) !mxE !mulr1n.
   move/(canRL (mulmxK Qunitmx))/(canRL (mulKmx Punitmx)): heq ->.

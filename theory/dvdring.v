@@ -656,7 +656,7 @@ Module GcdDomain.
 
 Record mixin_of (R : dvdRingType) : Type := Mixin {
   gcd : R -> R -> R;
-  _ : forall a b g, g %| gcd a b = (g %| a) && (g %| b)
+  _ : forall d a b, d %| gcd a b = (d %| a) && (d %| b)
 }.
 
 Section ClassDef.
@@ -743,7 +743,7 @@ Variable R : gcdDomainType.
 
 Implicit Types a b : R.
 
-Lemma dvdr_gcd : forall g a b, g %| gcdr a b = (g %| a) && (g %| b) :> bool.
+Lemma dvdr_gcd : forall d a b, d %| gcdr a b = (d %| a) && (d %| b) :> bool.
 Proof. by case: R=> [? [? []]]. Qed.
 
 Lemma dvdr_gcdl a b : gcdr a b %| a.
@@ -1887,12 +1887,8 @@ Qed.
 Definition GCD (a b:R) : R :=
   acc_gcd (guarded 100 lt_wf2 (norm b)) a (refl_equal (norm b)).
 
-Lemma GCDP : forall (a b g:R),
-  g %| GCD a b = (g %| a) && (g %| b).
-Proof.
-rewrite /GCD => a b g.
-by apply: acc_gcdP.
-Qed.
+Lemma GCDP : forall d a b, d %| GCD a b = (d %| a) && (d %| b).
+Proof. by rewrite /GCD => d a b; apply: acc_gcdP. Qed.
 
 Definition gcd a b :=
   let: (a1, b1) := if norm a < norm b then (b, a) else (a, b) in
@@ -1903,9 +1899,9 @@ Definition gcd a b :=
       if n is n1.+1 then loop n1 bb rr else rr in
   loop (norm a1) a1 b1.
 
-Lemma gcdP : forall a b g, g %| gcd a b = (g %| a) && (g %| b).
+Lemma gcdP : forall d a b, d %| gcd a b = (d %| a) && (d %| b).
 Proof.
-move=>  a b g. rewrite /gcd.
+move=> d a b. rewrite /gcd.
 wlog nba: a b / norm b <= norm a=>[hwlog|].
   case: ltnP=> nab.
     by move/hwlog:(ltnW nab); rewrite ltnNge (ltnW nab) /= andbC.
@@ -2153,7 +2149,7 @@ apply: EuclideanDomain.Mixins.mod0r;
 exact: (DvdRing.class [dvdRingType of R]).
 Qed.
 
-Lemma dvdr_mod : forall a b g, (g %| a) && (g %| b) = (g %| b) && (g %| a %% b).
+Lemma dvdr_mod : forall a b d, (d %| a) && (d %| b) = (d %| b) && (d %| a %% b).
 Proof. exact: EuclideanDomain.Mixins.dvd_mod. Qed.
 
 Lemma divr_mulKr a b : b != 0 -> (b * a) %/ b = a.
