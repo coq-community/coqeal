@@ -98,8 +98,8 @@ Definition improve_pivot k m n (M : 'M[A]_(1 + m, 1 + n)) :=
   improve_pivot_rec k 1%HC M 1%HC.
 
 (* TODO: Why is this so slow?? *)
-Fixpoint Smith {m n} : 'M[A]_(m,n) -> 'M[A]_(m) * seq A * 'M[A]_(n) :=
-  match m, n return 'M[A]_(m, n) -> 'M[A]_(m) * seq A * 'M[A]_(n) with
+Fixpoint Smith m n : 'M[A]_(m,n) -> 'M[A]_(m) * seq A * 'M[A]_(n) :=
+  match m, n with
   | _.+1, _.+1 => fun M : 'M[A]_(1 + _, 1 + _) =>
       if find_pivot M is Some (i, j) then
       let a := fun_of_matrix M i j in let M := xrow i 0 (xcol j 0 M) in

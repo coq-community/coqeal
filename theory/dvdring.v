@@ -655,8 +655,8 @@ Hint Resolve eqdd.
 Module GcdDomain.
 
 Record mixin_of (R : dvdRingType) : Type := Mixin {
-  gcd : R -> R -> R;
-  _ : forall d a b, d %| gcd a b = (d %| a) && (d %| b)
+  gcdr : R -> R -> R;
+  _ : forall d a b, d %| gcdr a b = (d %| a) && (d %| b)
 }.
 
 Section ClassDef.
@@ -726,7 +726,7 @@ End Exports.
 End GcdDomain.
 Export GcdDomain.Exports.
 
-Definition gcdr R := GcdDomain.gcd (GcdDomain.class R).
+Definition gcdr R := GcdDomain.gcdr (GcdDomain.class R).
 
 Definition lcmr R a b := nosimpl
   (if (a == 0) || (b == 0) then 0 else odflt 0 ((a * b) %/? (@gcdr R a b))).
@@ -1692,9 +1692,9 @@ End PIDTheory.
 Module EuclideanDomain.
 
 CoInductive edivr_spec (R : ringType)
-  (g : R -> nat) (a b : R) : R * R -> Type :=
-  EdivrSpec q r of a = q * b + r & (b != 0) ==> (g r < g b)
-  : edivr_spec g a b (q, r).
+  (norm : R -> nat) (a b : R) : R * R -> Type :=
+  EdivrSpec q r of a = q * b + r & (b != 0) ==> (norm r < norm b)
+  : edivr_spec norm a b (q,r).
 
 Record mixin_of (R : ringType) : Type := Mixin {
   enorm : R -> nat;
