@@ -55,6 +55,9 @@ rewrite /step_fun => x.
 by apply/ord_inj.
 Qed.
 
+Lemma widen_ord_eq (m n : nat) (h h' : n <= m) : widen_ord h =1 widen_ord h'.
+Proof. by move=> x; apply/ord_inj. Qed.
+
 (* transform [a .. b] into [0, a+1, .., b+1] *)
 Definition lift_pred (n k:nat) (f: 'I_k -> 'I_n)
   : 'I_k.+1 -> 'I_n.+1 :=
@@ -212,6 +215,14 @@ rewrite /lift_pred => n k f.
 by case: splitP.
 Qed.
 
+(* lift step [ 0.. n-1] = [0 .. n ] *)
+Lemma lift_pred_widen_ord m n (h : n <= m) :
+  lift_pred (widen_ord h) =1 widen_ord (size_tool h).
+Proof.
+rewrite /lift_pred => x; have [y hx|y hx] := splitP; apply/ord_inj => //=.
+by rewrite hx [y]ord1.
+Qed.
+
 Lemma lift_predS : forall n k (f: 'I_k -> 'I_n) (x: 'I_k),
   lift_pred f (lift 0 x) = lift 0 (f x).
 Proof.
@@ -302,6 +313,13 @@ have -> : y = lift 0 w by apply/ord_inj.
 by move/lift_inj/hf ->.
 Qed.
 
+Lemma inj_widen_ord n m (h : n <= m) : injective (widen_ord h).
+Proof.
+move => x y hxy.
+have /= {hxy} hxy : widen_ord h x = widen_ord h y :> nat by rewrite hxy.
+by apply/ord_inj.
+Qed.
+
 Lemma inj_step : forall n m (h: n <= m),
   injective (step_fun h).
 Proof.
@@ -346,3 +364,19 @@ by move: h; rewrite (eqP h') eqxx.
 Qed.
 
 End Theory.
+
+Section minor_char_poly_mx.
+
+Variable R : comRingType.
+
+(* all principal minor of the characteristic matrix are monic *)
+Lemma pminor_char_poly_mx_monic m p (M : 'M[R]_m) (h h': p.+1 <= m) :
+  pminor h h' (char_poly_mx M) \is monic.
+Proof.
+have h'h : widen_ord h' =1 widen_ord h by apply/widen_ord_eq.
+rewrite /pminor (minor_eq _ (frefl _) h'h) /minor submatrix_char_poly_mx.
+  by rewrite char_poly_monic.
+exact: inj_widen_ord.
+Qed.
+
+End minor_char_poly_mx.
