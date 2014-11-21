@@ -64,8 +64,7 @@ let translate_inductive_command arity c name =
   let translation_entry = Parametricity.translate_mind_body arity evd env mut_ind mut_body in 
   debug_string [`Inductive] "Translating mind body ... done."; 
   let size = Declarations.(Array.length mut_body.mind_packets) in 
-  let _, kn_R = Declare.declare_mind Declare.UserVerbose translation_entry in
-  let mut_ind_R = Global.mind_of_delta_kn kn_R in 
+  let mut_ind_R = Command.declare_mutual_inductive_with_eliminations Declare.UserVerbose translation_entry [] in
   for k = 0 to size-1 do
     Relations.declare_inductive_relation arity (mut_ind, k) (mut_ind_R,k)
   done
