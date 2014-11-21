@@ -30,6 +30,7 @@ let declare_abstraction order evd env a b name =
     match kind_of_term a with 
       | Const cte -> Some 
          (Lemmas.mk_hook (fun _ dcl -> 
+           Pp.(msg_info (str (Printf.sprintf "'%s' is now a registered translation." (Names.Id.to_string name)))); 
             Relations.declare_relation order (Globnames.ConstRef (Univ.out_punivs cte)) dcl))
       | _ -> None
   in
@@ -49,7 +50,7 @@ let translate_command arity c names =
     match names, get_constant c with
       | None, Some cte -> Names.id_of_string @@ translate_string arity @@ Names.Label.to_string @@ Names.Constant.label @@ Univ.out_punivs cte
       | Some name, _ -> name
-      | _ -> failwith "In the case of a constant, Abstraction expects 0 or 1 identifier. Otherwise, 1 identifier." 
+      | _ -> Errors.error "In the case of a constant, Abstraction expects 0 or 1 identifier. Otherwise, 1 identifier." 
   in
   declare_abstraction arity sigma env c t name 
 
@@ -78,13 +79,12 @@ let realizer_command arity name var real =
   let gref = Term.(match kind_of_term var with 
      | Var id -> Globnames.VarRef id 
      | Const (cst, _) -> Globnames.ConstRef cst
-     | _ -> failwith "Realizer works only for variables and constants.") in 
+     | _ -> Errors.error "Realizer works only for variables and constants.") in 
   let sigma, typ = Typing.e_type_of ~refresh:true env sigma var in
   let evd = ref sigma in 
   let typ_R = Parametricity.relation arity evd env typ in 
   let sub = range (fun _ -> var) arity in 
   let typ_R = Vars.substl sub typ_R in
-  (* evd := Unification.w_unify env !evd Reduction.CUMUL realtyp typ_R; *)
   ignore (Evarconv.e_cumul env evd realtyp typ_R);
   let kind = Decl_kinds.Global, true, Decl_kinds.Definition in
   let name = match name with Some x -> x | _ -> failwith "TODO: provide a name" in 
@@ -98,5 +98,7 @@ let realizer_command arity name var real =
 
   let obls, _, real, typ_R = Obligations.eterm_obligations env name sigma 0 real typ_R in 
   let ctx = Evd.evar_universe_context sigma in
-  let hook = Lemmas.mk_hook (fun _ dcl -> Relations.declare_relation arity gref dcl) in
+  let hook = Lemmas.mk_hook (fun _ dcl -> 
+    Pp.(msg_info (str (Printf.sprintf "'%s' is now a registered translation." (Names.Id.to_string name)))); 
+    Relations.declare_relation arity gref dcl) in
   ignore (Obligations.add_definition name ~kind ~term:real ~hook typ_R ctx obls)

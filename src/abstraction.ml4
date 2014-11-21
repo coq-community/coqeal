@@ -32,7 +32,7 @@ VERNAC COMMAND EXTEND AbstractionWithName CLASSIFIED AS SIDEFF
   ] 
 END 
 
-VERNAC COMMAND EXTEND AbstractionWitharity CLASSIFIED AS SIDEFF
+VERNAC COMMAND EXTEND AbstractionWithArity CLASSIFIED AS SIDEFF
 | [ "Translate" constr(c) "arity" integer(arity)] -> 
   [
     translate_command arity c None 
@@ -53,21 +53,21 @@ VERNAC COMMAND EXTEND TranslateInductive CLASSIFIED AS SIDEFF
   ]
 END
 
-VERNAC COMMAND EXTEND TranslateInductive CLASSIFIED AS SIDEFF
+VERNAC COMMAND EXTEND TranslateInductiveWithName CLASSIFIED AS SIDEFF
 | [ "Translate" "Inductive" constr(c) "as" ident(name)  ] ->
   [
     translate_inductive_command default_arity c (Some name)
   ]
 END
 
-VERNAC COMMAND EXTEND TranslateInductiveWitharity CLASSIFIED AS SIDEFF
+VERNAC COMMAND EXTEND TranslateInductiveWithArity CLASSIFIED AS SIDEFF
 | [ "Translate" "Inductive" constr(c) "arity" integer(arity)  ] ->
   [
     translate_inductive_command arity c None
   ]
 END
 
-VERNAC COMMAND EXTEND TranslateInductiveWitharity CLASSIFIED AS SIDEFF
+VERNAC COMMAND EXTEND TranslateInductiveWithNameAndArity CLASSIFIED AS SIDEFF
 | [ "Translate" "Inductive" constr(c) "as" ident(name) "arity" integer(arity)  ] ->
   [
     translate_inductive_command arity c (Some name)
@@ -81,7 +81,7 @@ VERNAC COMMAND EXTEND Realizer CLASSIFIED AS SIDEFF
   ]
 END
 
-VERNAC COMMAND EXTEND Realizer CLASSIFIED AS SIDEFF
+VERNAC COMMAND EXTEND RealizerArity CLASSIFIED AS SIDEFF
 | [ "Realizer" constr(c) "as" ident(name) "arity" integer(arity) ":=" constr(t) ] ->
   [
     realizer_command arity (Some name) c t 

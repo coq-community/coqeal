@@ -249,7 +249,7 @@ let rec unfold_fixpoint_statement evdref (env : Environ.env) (t : constr) : type
         res
     | _ -> failwith "unfold_fixpoint_statement: expects a fixpoint"
 
-(* Tries to find a proof of the previous the "unfolding statement". 
+(* Tries to find a proof of the previous "unfolding statement". 
  * Should work if (and only if ?) the fixpoint as the following 
  * form: 
  * fix f x1 ... xn a1 ... an (x : I P1 ... Pp a1 ... an). F 
@@ -259,10 +259,13 @@ let rec unfold_fixpoint_statement evdref (env : Environ.env) (t : constr) : type
  * of this form. 
  * 
  * Note: that there are fixpoints that may not be proved to be 
- * extensionally equal to their unfolding. For instance :  
- * phi := fix A (f : A -> A) (x : A) (p : f x = x). 0
+ * extensionally equal to their unfolding. For instance, the 
+ * following constant fixpoint structurally recursive on a 
+ * non-contractible path: 
+ * phi := fix A (f : A -> A) (x : A) (p : f x = x) := 0
+ *
  * There is no (axiom free) proof that : 
- *   forall A f x p, phi f A x p = 0. 
+ *   forall A f x p, phi A f x p = 0. 
  * *)
 let rec unfold_fixpoint_proof (env : Environ.env) t : constr = 
   match kind t with 
@@ -604,7 +607,11 @@ and translate_constant order (evd : Evd.evar_map ref) env cst : constr =
                 let evd_, hole = Evarutil.new_evar Environ.empty_env !evd uf_opaque_stmt in evd := evd_; hole
             in 
             CoqConstants.transport evd [| typ; def; pred; res; fold; proof_opaque |]
-        | _ -> failwith "translate_constant")
+        | _ -> 
+            Errors.error 
+              (Printf.sprintf "The constant '%s' has no registered translation." 
+    (KerName.to_string (Constant.user (fst cst)))))
+            
 
 and translate_variable order evd env v : constr =
   Constr.mkConst (Relations.get_variable order v)
