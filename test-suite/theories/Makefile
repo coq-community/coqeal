@@ -25,8 +25,7 @@ Make.cfg:
 	echo "-install none" >> $@
 	echo "-I $(PLUGINSRC)" >> $@
 	echo "-R . Theories_R" >> $@
-	# (for dir in $(LIBRARIES) ; do echo "-R $$dir" ; done) >> $@
-	find . -name '*_R.v' -print >> $@
+	find . -depth 1 -name '*.v' -print >> $@
 	echo "./Parametricity.v" >> $@
 
 

@@ -74,6 +74,13 @@ VERNAC COMMAND EXTEND TranslateInductiveWithNameAndArity CLASSIFIED AS SIDEFF
   ]
 END
 
+VERNAC COMMAND EXTEND TranslateModule CLASSIFIED AS SIDEFF
+| [ "Translate" "Module" global(qid) ] ->
+  [
+    ignore (translate_module_command Parametricity.default_arity qid)
+  ]
+END
+
 VERNAC COMMAND EXTEND Realizer CLASSIFIED AS SIDEFF
 | [ "Realizer" constr(c) "as" ident(name) ":=" constr(t) ] ->
   [

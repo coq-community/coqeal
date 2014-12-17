@@ -63,7 +63,7 @@ let declare_variable_relation (n : int) (v : variable) (v_R : constant) =
 
 let get_constant n c = 
   let map = IntMap.find n !relations in
-  destConstRef (GMap.find (ConstRef c) map)
+  GMap.find (ConstRef c) map
 
 let get_inductive n i = 
   let map = IntMap.find n !relations in

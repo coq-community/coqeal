@@ -6,7 +6,7 @@ all: Parametricity.vo bug.vo
 Parametricity.vo: Parametricity.v
 	$(COQBIN)coqc -I ../src $<
 
-bug.vo: bug.v Parametricity.vo
+bug.vo: bug.v 
 	$(COQBIN)coqc -I ../src bug.v 
 
 ide:: 
