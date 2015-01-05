@@ -25,7 +25,6 @@ Definition bind_option2 {A B C} (f : A -> B -> option C) (x : option (A * B)) : 
 Notation "'do' X , Y   <- A 'in' B" := (bind_option2 (fun X Y => B) A)
  (at level 200, X ident, Y ident, A at level 100, B at level 200).
 
-
 Definition program (Q : Queue) (n : nat) : option nat :=
    (* q := 0::1::2::...::n *)
    let q : Q := 
@@ -71,11 +70,6 @@ Definition DListQueue := {|
     end
 |}.
 
-Eval compute in program ListQueue 3.
-Eval compute in program DListQueue 3.
-
-
-Translate Inductive nat.
 
 Lemma nat_R_equal : 
   forall x y, nat_R x y -> x = y.
@@ -87,7 +81,6 @@ intros x y H; subst.
 induction y; constructor; trivial.
 Defined.
 
-Translate Inductive option.
 Lemma option_nat_R_equal : 
   forall x y, option_R nat nat nat_R x y -> x = y.
 intros x1 x2 H; destruct H as [x1 x2 x_R | ].
@@ -101,10 +94,13 @@ intros x y H; subst.
 destruct y; constructor; apply equal_nat_R; reflexivity.
 Defined.
 
-
-
-Translate Inductive prod.
 Translate Inductive Queue.
+Translate @bind_option.
+Translate @bind_option2.
+Translate t.
+Translate empty.
+Translate push.
+Translate pop.
 
 Notation Bisimilar := Queue_R.
 
@@ -202,10 +198,7 @@ rewrite rev_involutive.
 reflexivity.
 Defined.
 
-
 Translate program.
-
-Print program_R.
 
 Lemma program_independent : 
  forall n, 
@@ -217,3 +210,5 @@ apply bisim_list_dlist.
 apply equal_nat_R.
 reflexivity.
 Defined.
+
+Print program_R.

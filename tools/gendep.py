@@ -66,7 +66,6 @@ output = './output.dot'
 fd = open(output, 'w')
 
 graph = defaultdict(list)
-start = sys.argv[1:] 
 
 for line in sys.stdin.readlines():
   line_splitted = line.split(':')
@@ -77,6 +76,11 @@ for line in sys.stdin.readlines():
 
   for x in targets:
       graph[x].extend(y for y in needs if x <> y)
+
+if len(sys.argv) == 2:
+    start = sys.argv[1:] 
+else :
+    start = list(graph)
 
 reduction = transitive_reduction(graph, start)
 sort = topological_sort(graph, start)
