@@ -37,8 +37,8 @@ let all = [`ProofIrrelevance;
            `Unfolding; 
            `Inductive; 
            `Module; 
-           `Realizer; `Opacity]
-let debug_flag = [`Typecheck;`UnfoldingConstant; `Fix]
+           `Realizer]
+let debug_flag = []
 
 let default_arity = 2
 
@@ -57,12 +57,8 @@ let debug flags (s : string) env evd c =
        ++ Printer.pr_context_of env evd));
       Pp.(msg_notice (str "" 
          ++ str "\n |-"
-         ++ Printer.pr_lconstr_env env evd c)) 
-    with _ ->
-     (try 
-        Pp.msg_notice (Termops.print_constr_env env c)
-      with e -> 
-      Pp.(msg_notice (str (Printf.sprintf "Caught exception while debugging '%s'" (Printexc.to_string e)))))
+         ++ Printer.safe_pr_constr_env env evd c)) 
+    with e -> Pp.(msg_notice (str (Printf.sprintf "Caught exception while debugging '%s'" (Printexc.to_string e))))
 
 let debug_evar_map flags s evd = 
   if List.exists (fun x -> List.mem x flags) debug_flag then (
@@ -483,7 +479,7 @@ and translate order evd env (t : constr) : constr =
         let tuple = (ci_R, p_R, c_R, bl_R) in 
         mkCase tuple
    
-    | Fix ((ri, i) as ln ,(lna, tl, bl)) ->
+    | Fix ((ri, i) as ln ,(lna, tl, bl)) -> 
         let print_fix (ri, i) lna tl bl =
           debug_string [`Fix] (Printf.sprintf "index = %d" i);
           debug_string [`Fix] (Printf.sprintf "recindxs = %s"
@@ -496,7 +492,6 @@ and translate order evd env (t : constr) : constr =
         print_fix ln lna tl bl;
         (* [nfun] is the number of function defined in the fixpoint. *)
         let nfun = Array.length lna in
-        let nb_letins = (order + 1) * nfun in 
         (* [ln_R] is the translation of ln, the array of arguments for each fixpoints. *) 
         let ln_R = (Array.map (fun x -> x*(order + 1) + order) ri, i) in
         (* [lna_R] is the translation of names of each fixpoints. *)
@@ -515,8 +510,8 @@ and translate order evd env (t : constr) : constr =
         in 
         (* tl_R is the array of translated types of fixpoints under the translation of env. *)
         let tl_R = Array.mapi (fun i (_, x) -> 
-            let sub = range (fun k -> mkRel (3*i + (order - k) + 1)) order in 
-            substl sub x) tl_relation 
+            let sub = range (fun k -> prime order k (friends i)) order in 
+            lift nfun (substl sub x)) tl_relation
         in
         (* env_rec is the environement under fipoints. *)
         let env_rec = push_rec_types (lna, tl, bl) env in 
@@ -538,7 +533,7 @@ and translate order evd env (t : constr) : constr =
           (* [appfix] is the l-th fixpoint applied to x^1, ..., x^narg, under the context env extented with x^1, ..., x^narg. *)
           let appfix = mkApp (fix, appvars) in 
           (* [unfolded] is the l-th fixpoint unfolded and applied to x^1, ..., x^narg, under the context extented with x^1, ..., x^narg. *)
-          let unfolded = mkApp (unfold_fixpoint env fix, appvars) in 
+          let unfolded = mkBetaApp (unfold_fixpoint env fix, appvars) in 
           let name = lna.(l) in 
           debug [`Fix] "type of fp :" env Evd.empty tl.(l);
           let _, typ = decompose_prod_n narg tl.(l) in 
@@ -555,30 +550,31 @@ and translate order evd env (t : constr) : constr =
           (* we substitute the "primes" of fixpoint name by the prime of friends. *)
           let sub = List.flatten 
            (range (fun i ->
-            (mkRel (nfun - i))::(range (fun k -> mkRel (nfun + 3*i + (order - k) + 1)) order))
+            (mkRel (nfun - i))::(range (fun k -> lift nfun (prime order k (friends i))) order))
             nfun) 
           in
           debug_string [`Fix] "fix subst :";
           List.iter (debug [`Fix] "" Environ.empty_env Evd.empty) sub;
+          (*
+          let bdy_R = liftn nfun (narg_R + 1) 
+             (mkApp (lift narg_R (substl sub (liftn nfun (List.length sub + 1) (translate order evd env_rec x))), appvars_R)) 
+          in
+          *)
           (* Defined in Gamma_R, f1_1, f1_2, f1_R,  .., fn_1, fn_2, fn_R *)
           let bdy_R = translate order evd env_rec x in 
           debug [`Fix] "bdy_R = " Environ.empty_env Evd.empty bdy_R;
-          (* Defined in Gamma_R, f1_1, f1_2, uf_1, ..., fn_1, fn_2 uf_n, f1_R,  .., fn_R *)
-          let bdy_R = substl sub (liftn (nb_letins + 1) ((List.length sub) + 1) bdy_R) in 
-          (*
           (* Defined in Gamma_R, f1_R,  .., fn_R *)
           let bdy_R = substl sub (liftn nfun ((List.length sub) + 1) bdy_R) in 
           debug [`Fix] "bdy_R = " Environ.empty_env Evd.empty bdy_R;
           (* Defined in Gamma_R, uf1, ..., ufn, f1_R,  .., fn_R *)
-          let bdy_R = liftn nb_letins (nfun + 1) bdy_R in 
-        *)
+          let bdy_R = liftn nfun (nfun + 1) bdy_R in
           debug [`Fix] "bdy_R = " Environ.empty_env Evd.empty bdy_R;
           let bdy_R = mkApp (lift narg_R bdy_R, appvars_R) in
           debug [`Fix] "bdy_R = " Environ.empty_env Evd.empty bdy_R;
           let prods, typ_relation = fst tl_relation.(l) in 
           (* [lift_two] insert the LetIn "unfold_fp" and the recursive argument. Example: [prime order k (lift_two appfix)] is the l-th fixpoint
            * indexed by k, under the context "env_R, f_R, unfold_fp, appvars_R". *)
-          let lift_two x = liftn (nb_letins + nfun) (narg_R + 1) x  in 
+          let lift_two x = liftn (2*nfun) (narg_R + 1) x  in 
           let res = 
             fold_nat (fun k acc ->
               let index = prime order k typ in
@@ -587,9 +583,9 @@ and translate order evd env (t : constr) : constr =
               debug [`Fix] (Printf.sprintf "pred(%d) = " k) Environ.empty_env Evd.empty pred;
               let endpoint = prime order k appfix in 
               let path = 
-                mkApp (mkApp (mkRel (narg_R + nfun + l*(order + 1) + 1), 
+                mkApp (mkApp (mkRel (narg_R + l + nfun + 1), 
                 Array.of_list (List.map 
-                  (fun x -> lift (nb_letins + nfun + narg_R) (prime order k (mkRel x))) (hyps_from_rel_context env))),
+                  (fun x -> lift (2*nfun + narg_R) (prime order k (mkRel x))) (hyps_from_rel_context env))),
                 Array.map (prime order k) appvars) in (* TODO : mkApp (..., env) *)
               CoqConstants.transport evd 
               [| lift_two index; 
@@ -601,11 +597,8 @@ and translate order evd env (t : constr) : constr =
           res) bl 
         in
         let rec build_uf_stmt k res =
-            debug_string [`Fix] (Printf.sprintf "build_uf_stm %d\n" k);
-            if k > 0 then
-              let k = k - 1 in 
-              let fp = friends k in 
-              let ft = tl.(k) in 
+            let fp = friends k in 
+            if k < nfun then
               let name = 
                 match lna.(k) with 
                 | Name id ->  Names.Id.to_string id
@@ -621,21 +614,13 @@ and translate order evd env (t : constr) : constr =
               let res = 
                 mkLetIn (Name (id_of_string (Printf.sprintf "unfold_fp_%s" name)), hole, uf_stmt, res) 
               in
-              let lift_value = (order + 1) * k  in 
-              let res = 
-                fold_nat (fun d res -> mkLetIn (Name (id_of_string (Printf.sprintf "fix_%s_%d" name (d+1))), 
-                   lift (lift_value + d) (prime order d fp), 
-                   lift (lift_value + d) (prime order d ft), 
-                   res)) 
-                  res order 
-              in
-              build_uf_stmt k res
+              build_uf_stmt (k+1) res
             else res
         in
         debug_evar_map [`Fix] "evd (endoffix) =" !evd;
         print_fix ln_R lna_R tl_R bl_R;
         let res = mkFix (ln_R, (lna_R, tl_R, bl_R)) in 
-        let res = build_uf_stmt nfun res in 
+        let res = build_uf_stmt 0 res in 
         debug [`Fix] "result of fix :" Environ.empty_env Evd.empty res;
         res
     | CoFix(ln, (_, tl, bl)) -> not_implemented ~reason:"cofix" env !evd t
@@ -646,7 +631,6 @@ and translate_constant order (evd : Evd.evar_map ref) env cst : constr =
   try 
     Evarutil.e_new_global evd (Relations.get_constant order (Univ.out_punivs cst)) 
   with Not_found -> 
-    debug_string [`UnfoldingConstant] (Printf.sprintf "Warning: the constant '%s' has no registered translation." (KerName.to_string (Constant.user (fst cst))));
       let (kn, u) = cst in 
       let cb = lookup_constant kn env in 
       Declarations.(match cb.const_body with 
