@@ -1,23 +1,33 @@
-Declare ML Module "relations".
-Declare ML Module "parametricity".
-Declare ML Module "declare_translation".
-Declare ML Module "abstraction".
+Set Printing All.
 
-Module False.
+Require Import Parametricity.
 
-Inductive False := .
+Section S.
+Variable x : nat.
 
-Axiom admit : False.
+Definition open_f g n :=  match n with 0 => x | S p => g p end.
 
-Definition test := forall X, X.
+Fixpoint f (n : nat) := open_f f n.
 
-End False.
+End S.
 
-Translate Module False.
+Translate open_f.
 
-Next Obligation.
-destruct False.admit.
-Defined.
+Translate f.
 
-Print Module False_R.
 
+Section test.
+
+Variable x : nat.
+
+Definition open_test test n :=  match n with 0 => x | S p => test p end.
+Fixpoint test (n : nat) := open_test test n 
+with testo (n : nat) := open_test testo n.
+
+End test.
+
+Translate open_test.
+Translate test.
+Translate testo.
+
+Print test_R.

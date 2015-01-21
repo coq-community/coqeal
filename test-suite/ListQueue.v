@@ -75,6 +75,7 @@ Lemma nat_R_equal :
   forall x y, nat_R x y -> x = y.
 intros x y H; induction H; subst; trivial.
 Defined.
+
 Lemma equal_nat_R : 
   forall x y, x = y -> nat_R x y.
 intros x y H; subst.
@@ -103,6 +104,7 @@ Translate push.
 Translate pop.
 
 Notation Bisimilar := Queue_R.
+Print Queue_R.
 
 
 Definition R (l1 : list nat) (l2 : list nat * list nat) :=
@@ -196,9 +198,12 @@ rewrite rev_app.
 simpl.
 rewrite rev_involutive.
 reflexivity.
-Defined.
+Qed.
+
+Print eq_R.
 
 Translate program.
+Print program_R.
 
 Lemma program_independent : 
  forall n, 
@@ -209,6 +214,6 @@ apply program_R.
 apply bisim_list_dlist.
 apply equal_nat_R.
 reflexivity.
-Defined.
+Defined.s
 
-Print program_R.
+
