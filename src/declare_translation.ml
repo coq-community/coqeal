@@ -7,9 +7,8 @@ open Libnames
 let default_continuation = ignore
 
 (** Adds the definition name := ⟦a⟧ : ⟦b⟧ a a. *)
-let declare_abstraction ?(opaque = false) ?(continuation = default_continuation) ?kind order evdr env a name =
+let declare_abstraction ?(continuation = default_continuation) ?kind order evdr env a name =
   debug_string [`Abstraction] "### Begin declaration !";
-  debug_string [`Opacity] (Printf.sprintf "opaque = %b" opaque);
   debug_evar_map [`Abstraction] "starting evarmap:" !evdr;
   let refresh = false in 
   let evd, b = Typing.e_type_of ~refresh env !evdr a in
@@ -24,7 +23,6 @@ let declare_abstraction ?(opaque = false) ?(continuation = default_continuation)
   let b_R = substl sub b_R in
   debug [`Abstraction] "translation of term, a_R = " env !evdr a_R;
   debug [`Abstraction] "translate of type, b_R = " env !evdr b_R;
-  debug_string [`Typecheck] "translation done.";
   debug_evar_map [`Abstraction] "type checking b_R in" !evdr;
   let evd, _ = Typing.e_type_of ~refresh env !evdr b_R in
   debug_evar_map [`Abstraction] "type checking  a_R in " evd;
@@ -49,7 +47,7 @@ let declare_abstraction ?(opaque = false) ?(continuation = default_continuation)
   debug_string [`Abstraction] "add_definition:";
   debug [`Abstraction] "a_R:\t" env evd a_R;
   debug [`Abstraction] "b_R:\t" env evd b_R;
-  ignore (Obligations.add_definition ~opaque name ~hook ?kind ~term:a_R b_R ctx obls)
+  ignore (Obligations.add_definition name ~hook ?kind ~term:a_R b_R ctx obls)
 
 let translate_command arity c names =  
   let (evd, env) = Lemmas.get_current_context () in 
@@ -57,12 +55,12 @@ let translate_command arity c names =
   let cte_option =
     match Term.kind_of_term c with Term.Const cte -> Some cte | _ -> None 
   in 
-  let poly, opaque = 
+  let poly = 
     match cte_option with
     | Some (cte, _) -> 
         let cb = Global.lookup_constant cte in 
-        Declarations.(cb.const_polymorphic, match cb.const_body with Def _ -> false | _ -> true)
-    | None -> false, false
+        cb.Declarations.const_polymorphic 
+    | None -> false
   in 
   let kind = Decl_kinds.(Global, poly, Definition) in
   let name =
@@ -71,10 +69,10 @@ let translate_command arity c names =
       | Some name, _ -> name
       | _ -> error (Pp.str "In the case of a constant, Abstraction expects 0 or 1 identifier. Otherwise, 1 identifier.")
   in
-  declare_abstraction ~opaque ~kind arity (ref evd) env c name 
+  declare_abstraction ~kind arity (ref evd) env c name 
 
 
-let declare_inductive  ?(continuation = default_continuation) arity evd env ((mut_ind, _) as ind) = 
+let declare_inductive ?(continuation = default_continuation) arity evd env ((mut_ind, _) as ind) = 
   let mut_body, _ = Inductive.lookup_mind_specif env ind in
   let inst, ctx = 
     let open Univ in 
@@ -218,9 +216,7 @@ and declare_module ?(continuation = ignore) arity mb =
        declare_realizer ~continuation arity evd env None (mkConst cst)
                
      | (lab, SFBconst cb) ->
-       let opaque =
-         match cb.const_body with OpaqueDef _ -> true | _ -> false 
-       in
+
        let kind = Decl_kinds.(Global, cb.const_polymorphic, Definition) in
        let (evdr, env) = ref Evd.empty, Global.env () in
        let cst = Mod_subst.constant_of_delta_kn mb.mod_delta (Names.KerName.make2 mp lab) in  
@@ -235,7 +231,7 @@ and declare_module ?(continuation = ignore) arity mb =
         debug [`Module] "type :" env !evdr typ
        with e -> error (Pp.str  (Printexc.to_string e)));
        debug_string [`Module] (Printf.sprintf "constant field: '%s'." (Names.Label.to_string lab));
-       declare_abstraction ~opaque ~continuation ~kind arity evdr env c lab_R
+       declare_abstraction ~continuation ~kind arity evdr env c lab_R
 
      | (lab, SFBmind _) -> 
        let (evd, env) = ref Evd.empty, Global.env () in 
