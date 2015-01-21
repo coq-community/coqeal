@@ -9,26 +9,26 @@ The plugin currently works on a branch of coq (hopefully, in the future, it will
 The easy (and long) way to test the plugin is to follow the following steps:
 * Create a fresh directory and move into it:
 
-    mkdir testplugin && cd testplugin 
+        mkdir testplugin && cd testplugin 
 
 * Retrieve my branch of coq and compile it (and go take a coffee, or may be 5 coffees):
  
-    git clone https://github.com/mlasson/coq.git
-    cd coq
-    ./configure -local 
-    make -j 4 
-    cd ..
+        git clone https://github.com/mlasson/coq.git
+        cd coq
+        ./configure -local 
+        make -j 4 
+        cd ..
 
 * Retrieve the plugin and compile it:
 
-    git clone https://github.com/mlasson/paramcoq.git
-    cd paramcoq 
-    make
+        git clone https://github.com/mlasson/paramcoq.git
+        cd paramcoq 
+        make
 
 To test the plugin:
 
-    cd test-suite
-    make ide
+        cd test-suite
+        make ide
 
 It will compile Parametricity.vo which loads the plugin and contains a translation of the initial modules. 
 Then, it launches coq-ide with some simple examples. 
