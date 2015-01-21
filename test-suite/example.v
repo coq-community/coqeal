@@ -37,9 +37,6 @@ boolfun_R = fun f1 f2 : bool -> bool =>
    forall x1 x2 : bool, bool_R x1 x2 -> 
                         bool_R (f1 x1) (f2 x2)
 *)
-
-Print Module Bool.
-
 Definition negb (x : bool) := 
   match x with 
    | true => false

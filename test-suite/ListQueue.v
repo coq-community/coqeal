@@ -214,6 +214,6 @@ apply program_R.
 apply bisim_list_dlist.
 apply equal_nat_R.
 reflexivity.
-Defined.s
+Defined.
 
 
