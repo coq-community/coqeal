@@ -88,7 +88,7 @@ let declare_inductive ?(continuation = default_continuation) arity evd env ((mut
   let translation_entry = Parametricity.retype_mind_entry env evd translation_entry in
   debug_string [`Inductive] "Retyping done."; 
   let size = Declarations.(Array.length mut_body.mind_packets) in 
-  let mut_ind_R = Command.declare_mutual_inductive_with_eliminations Declare.UserVerbose translation_entry [] in
+  let mut_ind_R = Command.declare_mutual_inductive_with_eliminations translation_entry [] in
   for k = 0 to size-1 do
     Relations.declare_inductive_relation arity (mut_ind, k) (mut_ind_R,k)
   done; 
