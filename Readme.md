@@ -8,9 +8,11 @@ Compilation
 The plugin currently works on a branch of coq (hopefully, in the future, it will also work on a stable official release). 
 The easy (and long) way to test the plugin is to follow the following steps:
 * Create a fresh directory and move into it:
+
     mkdir testplugin && cd testplugin 
 
 * Retrieve my branch of coq and compile it (and go take a coffee, or may be 5 coffees):
+ 
     git clone https://github.com/mlasson/coq.git
     cd coq
     ./configure -local 
@@ -18,11 +20,13 @@ The easy (and long) way to test the plugin is to follow the following steps:
     cd ..
 
 * Retrieve the plugin and compile it:
+
     git clone https://github.com/mlasson/paramcoq.git
     cd paramcoq 
     make
 
 To test the plugin:
+
     cd test-suite
     make ide
 
