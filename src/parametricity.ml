@@ -38,7 +38,7 @@ let all = [`ProofIrrelevance;
            `Inductive; 
            `Module; 
            `Realizer; `Opacity]
-let debug_flag = [`Typecheck;`UnfoldingConstant; `Fix]
+let debug_flag = []
 
 let default_arity = 2
 
@@ -115,6 +115,16 @@ let hyps_from_rel_context env =
   in 
   aux [] 1 rctx 
 
+let compose_prod_assum rel_context init = 
+ fold_rel_context_reverse (fun (acc : constr) ->
+  function (x, None, typ) -> mkProd (x, typ, acc) 
+         | (x, Some def, typ) -> mkLetIn (x, def, typ, acc)) ~init rel_context
+
+let compose_lam_assum rel_context init = 
+ fold_rel_context_reverse (fun (acc : constr) ->
+  function (x, None, typ) -> mkLambda (x, typ, acc) 
+         | (x, Some def, typ) -> mkLetIn (x, def, typ, acc)) ~init rel_context
+
 let prop_or_type env evdr s = s
 
 (* [prime order index c] replace all the free variable in c by its [index]-projection where 0 <= index < order. 
@@ -184,6 +194,10 @@ let range f order =
   in 
   aux 0 []
 
+(* [rev_range f n] computes [f 0; f 1; ...; f n-1] *)
+let rev_range f order = 
+  List.rev (range f order)
+
 (* the iterator for natural numbers. *)
 let fold_nat f x = 
   let rec aux acc n =
@@ -193,15 +207,7 @@ let fold_nat f x =
   in aux x 
 
 (* [first n l] returns the first [n] elements of [l]. *)
-let firsts n l = 
-  let rec aux n acc l = 
-    if n > 0 then 
-      match l with 
-       | [] -> failwith "firsts"
-       | hd::tl -> aux (n - 1) (hd :: acc) tl
-    else 
-      List.rev acc
-  in aux n [] l
+let firsts n l = fst (List.chop n l)
 
 (* If [t] is well-defined in G, x1, ..., xn, [apply_head_variables t n] returns 
  * (t x1 ... xn) *)
@@ -219,16 +225,6 @@ let substnl_rel_context subst n sign =
 let substl_rel_context subst = substnl_rel_context subst 0
 
 
-(* unfold the given fixpoint. *)
-let unfold_fixpoint env (t : constr) : constr = 
-  match kind t with 
-    | Fix ((ri, i),(lna, tl, bl)) -> 
-        let nfun = Array.length lna in 
-        let friends k = mkFix ((ri, k), (lna, tl, bl)) in 
-        let sub = range friends nfun in 
-        substl sub bl.(i)
-    | _ -> failwith "unfold_fixpoint: expects a fixpoint"
-
 (* A variant of mkApp that reduces redexes. *)
 let mkBetaApp (f, v) = Reduction.beta_appvect f v
 
@@ -241,124 +237,6 @@ let generalize_env (env : Environ.env) (init : types) =
 let abstract_env (env : Environ.env) (init : constr) = 
   let l = Environ.rel_context env in 
   Context.fold_rel_context_reverse (fun x y -> mkLambda_or_LetIn y x) l ~init 
-
-(* Returns the statement : 
-  *  forall x1 ... xn x, (fix f x1 ... xn x := F) x1 ... xn x = F[f/fix f x1 ... xn x := F] 
-  * *)
-let rec unfold_fixpoint_statement evdref (env : Environ.env) (t : constr) : types =
-  match kind t with 
-    | Fix ((ri, i), (lna, tl, bl)) -> 
-        let narg = ri.(i) + 1 in 
-        let cty = tl.(i) in
-        debug [`Unfolding] (Printf.sprintf "narg = %d\n" narg) env !evdref cty;
-        let front, typ = decompose_prod_n narg cty in 
-        let appvars = Array.of_list (range (fun n -> mkRel (n+1)) narg) in 
-        let unfolded = unfold_fixpoint env t in 
-        let concl = 
-          CoqConstants.eq evdref [| typ; mkBetaApp (lift narg unfolded, appvars); mkApp (lift narg t, appvars) |] 
-        in
-        let res = compose_prod front concl in 
-        debug [`Unfolding] "concl + front" env !evdref res;
-        let res = generalize_env env res in 
-        debug [`Unfolding] "generalize" Environ.empty_env !evdref res;
-        res
-    | _ -> failwith "unfold_fixpoint_statement: expects a fixpoint"
-
-(* Tries to find a proof of the previous "unfolding statement". 
- * Should work if (and only if ?) the fixpoint as the following 
- * form: 
- * fix f x1 ... xn a1 ... an (x : I P1 ... Pp a1 ... an). F 
- * where I is an inductive with p parameters and n arguments. 
- * The arguments of I are instantiated with unconstrained free variables. 
- * This is enough to translate all induction schemes, which are always
- * of this form. 
- * 
- * Note: that there are fixpoints that may not be proved to be 
- * extensionally equal to their unfolding. For instance, the 
- * following constant fixpoint structurally recursive on a 
- * non-contractible path: 
- * phi := fix A (f : A -> A) (x : A) (p : f x = x) := 0
- *
- * There is no (axiom free) proof that : 
- *   forall A f x p, phi A f x p = 0. 
- * *)
-let rec unfold_fixpoint_proof (env : Environ.env) t : constr = 
-  match kind t with 
-    | Fix ((ri, i), (lna, tl, bl)) -> 
-        let evdref = ref Evd.empty in 
-        let narg = ri.(i) + 1 in 
-        let cty = tl.(i) in
-        let front, typ = decompose_prod_n_assum narg cty in
-        let env' = Environ.push_rel_context front env in  
-        let (_, _, struct_arg), front' = List.hd front, List.tl front in 
-        let appvars = Array.of_list (range (fun n -> mkRel (n+1)) narg) in 
-        let unfolded = unfold_fixpoint env t in 
-        let base_point = mkBetaApp (lift narg unfolded, appvars) in 
-        let end_point =  mkApp (lift narg t, appvars) in 
-        let concl = CoqConstants.eq evdref [| typ; base_point; end_point |] in 
-        let (ind, _) as pind, args = Inductive.find_inductive env' struct_arg in
-        let param = firsts (Inductiveops.inductive_nparams ind) args in
-        let ind_fam = Inductiveops.make_ind_family (pind, param) in 
-        let ci = Inductiveops.make_case_info env' ind RegularStyle in 
-
-        let constructors = Inductiveops.get_constructors env' ind_fam in 
-        let realargs_and_struct = Inductiveops.inductive_nrealargs ind + 1 in 
-        let return_type = 
-          lift realargs_and_struct (it_mkLambda_or_LetIn concl (firsts realargs_and_struct front)) 
-        in
-        let build_branch env evdr k = 
-          let summary = constructors.(k) in 
-          List.iter (debug [`GenericUnfolding] "params" Environ.empty_env Evd.empty) summary.Inductiveops.cs_params;
-          let constructor_args = Termops.lift_rel_context 1 Inductiveops.(summary.cs_args) in 
-          debug_rel_context [`GenericUnfolding] "arguments of contructors:" env constructor_args;
-          let env' = Environ.push_rel_context constructor_args env in 
-          let evd = !evdr in
-          let hole1, hole2, evd = 
-            let evd, sort = Evarutil.new_Type env' evd in 
-            let evd, type_hole = Evarutil.new_evar env' evd sort in 
-            let evd, term_hole = Evarutil.new_evar env' evd type_hole in 
-            type_hole, term_hole, evd
-          in
-          evdr := evd;
-          let refl = 
-              CoqConstants.eq_refl evdr [| hole1; hole2 |]
-          in
-          let res = it_mkLambda_or_LetIn refl constructor_args in
-          debug [`GenericUnfolding] (Printf.sprintf "branch %d" k) env !evdr res; res
-        in  
-        let branches = Array.init (Array.length constructors) (build_branch env' evdref) in 
-        let res = mkCase (ci, return_type,  mkRel 1, branches) in
-        let res = it_mkLambda_or_LetIn res front in
-        let evd = !evdref in 
-        debug  [`GenericUnfolding] "proof of unfolding:" env evd res;
-        debug_evar_map [`GenericUnfolding] "evar before typing" evd;
-        let evd, _ = try
-            Typing.e_type_of env evd res 
-          with Type_errors.TypeError (env, err) ->
-            let msg = Himsg.explain_type_error env evd err in 
-            debug_message [`GenericUnfolding] "exception caught : " msg;
-            raise Not_found
-        in 
-        debug_evar_map [`GenericUnfolding] "evar after typing" evd;
-        let evd = Pretyping.solve_remaining_evars Pretyping.all_and_fail_flags env evd (Evd.empty, evd) in 
-        let res = Evarutil.flush_and_check_evars evd res in 
-        let evd = Evd.empty in 
-        debug  [`GenericUnfolding] "proof of unfolding in env:" env !evdref res;
-        let res = abstract_env env res in
-        let env = Environ.empty_env in
-        debug [`GenericUnfolding] "result after normalization" env evd res;
-        res
-
-    | Lambda (x, a, m) -> 
-        let env = push_rel (x, None, a) env in 
-        unfold_fixpoint_proof env m
-   
-    | Const cst ->  
-        let cval = Environ.constant_value_in env cst in 
-        unfold_fixpoint_proof env cval
-   
-    | _ -> failwith "unfold_fixpoint_proof: expects a fixpoint"
-
 
 let mkFreshInd env evd c = 
   let evd', res = Evd.fresh_inductive_instance env !evd c in 
@@ -447,7 +325,8 @@ and translate order evd env (t : constr) : constr =
 
     | Const c -> 
         translate_constant order evd env c
- 
+    | Fix _ ->  
+        translate_fix order evd env t
     | Ind (ind, u) -> mkFreshInd env evd (translate_inductive order env ind)
     | Construct (cstr, u) -> mkFreshConstruct env evd (translate_constructor order env cstr)
  
@@ -469,175 +348,13 @@ and translate order evd env (t : constr) : constr =
         debug_string [`Case] "substitution :"; List.iter (debug [`Case] "" Environ.empty_env !evd) sub;
         let t_R = substl sub t_R in 
         debug [`Case] "t_R" Environ.empty_env !evd t_R;
-        let lams_R = List.flatten (List.map 
-         (function (x, None, c) -> 
-            (translate_name order x, relation order evd env c)::
-              (range (fun k -> (prime_name order k x, lift k (prime order k c))) order)
-          | _ -> failwith "parametricity: definition in pattern matching.") lams) 
-        in
-        debug_string [`Case] "lams_R :";
-        List.iter (fun (x, c) -> debug [`Case] "" Environ.empty_env Evd.empty c) lams_R;
-        let p_R = compose_lam lams_R t_R in
+        let lams_R =  translate_rel_context order evd env lams in
+        let p_R = compose_lam_assum lams_R t_R in
         let c_R = translate order evd env c in 
         let bl_R = Array.map (translate order evd env) bl in 
         let tuple = (ci_R, p_R, c_R, bl_R) in 
         mkCase tuple
    
-    | Fix ((ri, i) as ln ,(lna, tl, bl)) ->
-        let print_fix (ri, i) lna tl bl =
-          debug_string [`Fix] (Printf.sprintf "index = %d" i);
-          debug_string [`Fix] (Printf.sprintf "recindxs = %s"
-            (String.concat ";" (List.map string_of_int (Array.to_list ri))));
-          debug_string [`Fix] "typearray =";
-          Array.iter (debug [`Fix] "" Environ.empty_env Evd.empty) tl;
-          debug_string [`Fix] "body =";
-          Array.iter (debug [`Fix] "" Environ.empty_env Evd.empty) bl
-        in
-        print_fix ln lna tl bl;
-        (* [nfun] is the number of function defined in the fixpoint. *)
-        let nfun = Array.length lna in
-        let nb_letins = (order + 1) * nfun in 
-        (* [ln_R] is the translation of ln, the array of arguments for each fixpoints. *) 
-        let ln_R = (Array.map (fun x -> x*(order + 1) + order) ri, i) in
-        (* [lna_R] is the translation of names of each fixpoints. *)
-        let lna_R = Array.map (translate_name order) lna in
-        (* [friends k] returns the k-th original fixpoint. *)
-        let friends k = mkFix ((ri, k), (lna, tl, bl)) in 
-        (* TODO : explain that *)
-        let tl_relation = Array.mapi (fun i x -> 
-           let narg = (fst ln).(i) + 1 in 
-           let narg_R = (fst ln_R).(i) + 1 in 
-           let _, bk = decompose_prod_n narg x in 
-           let bk_R = relation order evd env bk in (* TODO: WRONG ! Some things are translated twice here. *)
-           let x_R = relation order evd env x in 
-           let ft_R, _ = decompose_prod_n_assum narg_R x_R in   
-           ((ft_R, bk_R), x_R)) tl 
-        in 
-        (* tl_R is the array of translated types of fixpoints under the translation of env. *)
-        let tl_R = Array.mapi (fun i (_, x) -> 
-            let sub = range (fun k -> mkRel (3*i + (order - k) + 1)) order in 
-            substl sub x) tl_relation 
-        in
-        (* env_rec is the environement under fipoints. *)
-        let env_rec = push_rec_types (lna, tl, bl) env in 
-        (* [bl_R] is the array of translated bodies. *)
-        let bl_R = Array.mapi (fun l x -> 
-          (* narg is the number of arguments + 1 for the recursive argument. *)
-          let narg = (fst ln).(l) + 1 in 
-          debug_string [`Fix] (Printf.sprintf "narg = %d\n" narg);
-          (* narg_R is the number of translated arguments + 1 for the structural argument. *)
-          let narg_R = (fst ln_R).(l) + 1 in 
-          debug_string [`Fix] (Printf.sprintf "narg_R = %d\n" narg_R);
-          (* let [x^1 ... x^narg] be the argument of the fixpoint (x^narg is the structural argument). *)
-          (* appvars is [[| x^1, ..., x^narg |] *)
-          let appvars = Array.of_list (range (fun n -> mkRel (n+1)) narg) in 
-          (* appvars is [[| x^1_1, x^2_2, x^3_R,  ..., x^narg_1, x^narg_2, x^narg_R|] *)
-          let appvars_R = Array.of_list (range (fun n -> mkRel (n+1)) narg_R) in 
-          (* [fix] is the l-th fixpoint, under the context extented with x^1, ..., x^narg. *)
-          let fix = lift narg (friends l) in 
-          (* [appfix] is the l-th fixpoint applied to x^1, ..., x^narg, under the context env extented with x^1, ..., x^narg. *)
-          let appfix = mkApp (fix, appvars) in 
-          (* [unfolded] is the l-th fixpoint unfolded and applied to x^1, ..., x^narg, under the context extented with x^1, ..., x^narg. *)
-          let unfolded = mkApp (unfold_fixpoint env fix, appvars) in 
-          let name = lna.(l) in 
-          debug [`Fix] "type of fp :" env Evd.empty tl.(l);
-          let _, typ = decompose_prod_n narg tl.(l) in 
-          let pred_sub k =
-              (range (fun x -> lift 1 (prime order (k+1+x) appfix)) (order-1 - k))
-            @ [ mkRel 1 ] 
-            @ (range (fun x -> lift 1 (prime order x unfolded)) k)
-          in
-          for k = 0 to order-1 do  
-            debug_string [`Fix] (Printf.sprintf "pred %d subst :" k);
-            List.iter (debug [`Fix] "" Environ.empty_env Evd.empty) (pred_sub k)
-          done;
-          debug_string [`Fix] "--> Translating body:";
-          (* we substitute the "primes" of fixpoint name by the prime of friends. *)
-          let sub = List.flatten 
-           (range (fun i ->
-            (mkRel (nfun - i))::(range (fun k -> mkRel (nfun + 3*i + (order - k) + 1)) order))
-            nfun) 
-          in
-          debug_string [`Fix] "fix subst :";
-          List.iter (debug [`Fix] "" Environ.empty_env Evd.empty) sub;
-          (* Defined in Gamma_R, f1_1, f1_2, f1_R,  .., fn_1, fn_2, fn_R *)
-          let bdy_R = translate order evd env_rec x in 
-          debug [`Fix] "bdy_R = " Environ.empty_env Evd.empty bdy_R;
-          (* Defined in Gamma_R, f1_1, f1_2, uf_1, ..., fn_1, fn_2 uf_n, f1_R,  .., fn_R *)
-          let bdy_R = substl sub (liftn (nb_letins + 1) ((List.length sub) + 1) bdy_R) in 
-          (*
-          (* Defined in Gamma_R, f1_R,  .., fn_R *)
-          let bdy_R = substl sub (liftn nfun ((List.length sub) + 1) bdy_R) in 
-          debug [`Fix] "bdy_R = " Environ.empty_env Evd.empty bdy_R;
-          (* Defined in Gamma_R, uf1, ..., ufn, f1_R,  .., fn_R *)
-          let bdy_R = liftn nb_letins (nfun + 1) bdy_R in 
-        *)
-          debug [`Fix] "bdy_R = " Environ.empty_env Evd.empty bdy_R;
-          let bdy_R = mkApp (lift narg_R bdy_R, appvars_R) in
-          debug [`Fix] "bdy_R = " Environ.empty_env Evd.empty bdy_R;
-          let prods, typ_relation = fst tl_relation.(l) in 
-          (* [lift_two] insert the LetIn "unfold_fp" and the recursive argument. Example: [prime order k (lift_two appfix)] is the l-th fixpoint
-           * indexed by k, under the context "env_R, f_R, unfold_fp, appvars_R". *)
-          let lift_two x = liftn (nb_letins + nfun) (narg_R + 1) x  in 
-          let res = 
-            fold_nat (fun k acc ->
-              let index = prime order k typ in
-              let base = prime order k unfolded in
-              let pred = mkLambda (name, index, substl (pred_sub k) (liftn 1 (order+1) typ_relation)) in 
-              debug [`Fix] (Printf.sprintf "pred(%d) = " k) Environ.empty_env Evd.empty pred;
-              let endpoint = prime order k appfix in 
-              let path = 
-                mkApp (mkApp (mkRel (narg_R + nfun + l*(order + 1) + 1), 
-                Array.of_list (List.map 
-                  (fun x -> lift (nb_letins + nfun + narg_R) (prime order k (mkRel x))) (hyps_from_rel_context env))),
-                Array.map (prime order k) appvars) in (* TODO : mkApp (..., env) *)
-              CoqConstants.transport evd 
-              [| lift_two index; 
-                 lift_two base; 
-                 lift_two pred; acc; lift_two endpoint; path |])
-              bdy_R order
-          in 
-          let res = it_mkLambda_or_LetIn res prods in 
-          res) bl 
-        in
-        let rec build_uf_stmt k res =
-            debug_string [`Fix] (Printf.sprintf "build_uf_stm %d\n" k);
-            if k > 0 then
-              let k = k - 1 in 
-              let fp = friends k in 
-              let ft = tl.(k) in 
-              let name = 
-                match lna.(k) with 
-                | Name id ->  Names.Id.to_string id
-                | _ -> string_of_int k
-              in 
-              let uf_stmt = unfold_fixpoint_statement evd env fp in 
-              let hole =
-                 try unfold_fixpoint_proof env fp with Not_found ->
-                   let evd_, hole = Evarutil.new_evar Environ.empty_env !evd uf_stmt in 
-                   evd := evd_; hole
-              in
-              debug [`Fix] "uf statement:" Environ.empty_env Evd.empty uf_stmt;
-              let res = 
-                mkLetIn (Name (id_of_string (Printf.sprintf "unfold_fp_%s" name)), hole, uf_stmt, res) 
-              in
-              let lift_value = (order + 1) * k  in 
-              let res = 
-                fold_nat (fun d res -> mkLetIn (Name (id_of_string (Printf.sprintf "fix_%s_%d" name (d+1))), 
-                   lift (lift_value + d) (prime order d fp), 
-                   lift (lift_value + d) (prime order d ft), 
-                   res)) 
-                  res order 
-              in
-              build_uf_stmt k res
-            else res
-        in
-        debug_evar_map [`Fix] "evd (endoffix) =" !evd;
-        print_fix ln_R lna_R tl_R bl_R;
-        let res = mkFix (ln_R, (lna_R, tl_R, bl_R)) in 
-        let res = build_uf_stmt nfun res in 
-        debug [`Fix] "result of fix :" Environ.empty_env Evd.empty res;
-        res
     | CoFix(ln, (_, tl, bl)) -> not_implemented ~reason:"cofix" env !evd t
    
     | _ -> not_implemented ~reason:"trapfall" env !evd t
@@ -684,7 +401,23 @@ and translate_constant order (evd : Evd.evar_map ref) env cst : constr =
             error 
               (Pp.str (Printf.sprintf "The constant '%s' has no registered translation." 
     (KerName.to_string (Constant.user (fst cst))))))
-            
+
+and translate_rel_context order evd env rc =
+  let _, (ll : rel_context list) = Context.fold_rel_context (fun decl (env, acc) -> 
+     let (x, def, typ) = decl in 
+     let x_R = translate_name order x in 
+     let def_R = Option.map (translate order evd env) def in 
+     let typ_R = relation order evd env typ in 
+     let l : rel_context = range (fun k -> 
+       (prime_name order k x, 
+        Option.map (fun x -> lift k (prime order k x)) def, 
+        lift k (prime order k typ))) order
+     in
+     let env = push_rel decl env in 
+     env, (((x_R, Option.map (lift order) def_R, typ_R)::l))::acc) ~init:(env, []) rc
+  in 
+  List.flatten ll
+
 
 and translate_variable order evd env v : constr =
   Constr.mkConst (Relations.get_variable order v)
@@ -717,6 +450,263 @@ and translate_case_printing order env cp =
     style = translate_style cp.style }
 
 and translate_style x = x
+
+and translate_fix order evd env t = 
+  let ((ri, i) as ln, (lna, tl, bl)) as fix = destFix t in
+  let nfun = Array.length lna in
+  let rec letfix name fix typ n k acc =
+    if k = 0 then acc 
+    else 
+      let k = k-1 in 
+      let fix_k = lift (n*order + k) (prime order k fix) in 
+      let typ_k = lift (n*order + k) (prime order k typ) in 
+      let acc = mkLetIn (Name (id_of_string (Printf.sprintf "fix_%s_%d" name (k+1))),
+                           fix_k, typ_k, acc) in  
+      letfix name fix typ n k acc 
+  in 
+  let rec letfixs n acc = 
+    if n = 0 then acc
+    else 
+      let n = n - 1 in 
+      let name = 
+        match lna.(n) with 
+        | Name id ->  Names.Id.to_string id
+        | _ -> string_of_int n
+      in
+      let fix = mkFix ((ri, n), (lna, tl, bl)) in 
+      let typ = tl.(n) in 
+      let acc = letfix name fix typ n order acc in 
+      letfixs n acc
+  in
+  let nrealargs = Array.map (fun x -> nb_lam x) bl in     
+  (* [ln_R] is the translation of ln, the array of arguments for each fixpoints. *) 
+  let ln_R = (Array.map (fun x -> x*(order + 1) + order) ri, i) in
+  (* [lna_R] is the translation of names of each fixpoints. *)
+  let lna_R = Array.map (translate_name order) lna in
+  let ftbk_R = Array.mapi (fun i x -> 
+    let narg = nrealargs.(i) in 
+    let ft, bk = decompose_prod_n_assum narg x in 
+    let ft_R = translate_rel_context order evd env ft in
+    let env_ft = push_rel_context ft env in 
+    let bk_R = relation order evd env_ft bk in
+     (ft, ft_R, bk, bk_R)) tl
+  in
+  let tl_R = Array.mapi (fun n (ft, ft_R, bk, bk_R) -> 
+     (* bk_R is well-typed in | G, ft|, x_1 : bk_1, x_2 : bk_R *)
+     (* we lift it to insert the [nfun * order] letins. *)
+     let ft_R_len = rel_context_length ft_R in 
+     let bk_R = liftn (nfun * order) (ft_R_len + order + 1) bk_R in 
+     let sub = range (fun k -> 
+                  mkApp (mkRel (ft_R_len + (nfun - n)*order - k ),
+                     Array.map (prime order k) (Termops.extended_rel_vect 0 ft)))
+               order 
+     in 
+     compose_prod_assum (Termops.lift_rel_context (nfun * order) ft_R) (substl sub bk_R)) ftbk_R
+  in
+  (* env_rec is the environement under fipoints. *)
+  let env_rec = push_rec_types (lna, tl, bl) env in 
+  (* n : fix index *)
+  let process_body n = 
+    let lams, body = decompose_lam_assum bl.(n) in 
+    let narg = rel_context_length lams in 
+    (* rec_arg gives the position of the recursive argument *)
+    let rec_arg = narg - (fst ln).(n) in 
+    let args = Termops.extended_rel_list 0 lams in
+    let lams_R = translate_rel_context order evd env_rec lams in 
+    let env_lams = push_rel_context lams env_rec in 
+
+    let inst_args depth args = 
+      mkApp (mkRel (depth + nfun - n + narg), Array.of_list args)
+    in  
+    (* we use this complicated function to translate the 
+     * shallow cases just after a lambda (the goal is to 
+     * avoid as much as possible rewriting). 
+     * *)
+    let rec traverse_cases env depth (args : constr list) term = 
+      match kind term with 
+        | Case (ci , p, c, branches) when test_admissible env c args branches ->
+            process_case env depth args term 
+        | _ -> 
+            (* otherwise we have to perform some rewriting. *)
+            debug [`Fix] "c = " env !evd term;
+            let term_R  = translate order evd env term in 
+            let (_, ft_R, bk, bk_R) = ftbk_R.(n) in 
+            let theta = inst_args depth args in 
+            (* lift to insert fixpoints variables before arguments *)
+            let bk = liftn nfun (narg + 1) bk in 
+            let bk_R = liftn (nfun * (order + 1)) ((order + 1) * narg + order + 1) bk_R in 
+            (* depth + narg is the position of fixpoints in env *)
+            rewrite_fixpoints order evd env (depth + narg) fix term theta bk bk_R term_R
+
+    and test_admissible env c args branches = 
+       isRel c && List.mem c args && Array.for_all (Vars.noccurn (destRel c)) branches && 
+       let typ = Retyping.get_type_of env !evd c in 
+       let (ind, u), args = Inductiveops.find_inductive env !evd typ in 
+       let nparams = Inductiveops.inductive_nparams ind in 
+       let _, realargs = List.chop nparams args in 
+       List.for_all (fun x -> List.mem x args) realargs
+
+    and process_case env depth (fun_args : constr list) case = 
+        
+        debug [`Fix] "case = " env !evd case;
+        let (ci, p, c, bl) = destCase case in 
+        debug [`Fix] "predicate = " env !evd p;
+        let c_R = translate order evd env c in
+        let ci_R = translate_case_info order env ci in 
+        let c_typ = Retyping.get_type_of env !evd c in 
+        debug [`Fix] "c_typ = " env !evd c_typ;
+        let ((ind, u) as pind, params_args)  = 
+          Inductiveops.find_inductive env !evd c_typ 
+        in 
+       let i_nargs, i_nparams = 
+          Inductiveops.inductive_nrealargs ind, 
+          Inductiveops.inductive_nparams ind 
+        in
+        let i_params, i_realargs = List.chop i_nparams params_args in 
+        debug_string [`Fix] "make inductive family ...";
+        let ind_fam = Inductiveops.make_ind_family (pind, i_params) in
+        debug_string [`Fix] "get_constructors";
+        let constructors = Inductiveops.get_constructors env ind_fam in 
+        debug_string [`Fix] "done";
+ 
+        assert (List.length i_realargs = i_nargs);
+        let fun_args_i = 
+          List.map (fun x -> if x = c then mkRel 1
+                             else if List.mem x i_realargs then mkRel (2 + i_nargs - (List.index (=) x i_realargs))
+                             else lift (i_nargs + 1) x) fun_args 
+        in
+        let theta = inst_args (depth + i_nargs + 1) fun_args_i in 
+        let sub = range (fun k -> prime order k theta) order in 
+        let lams, typ = decompose_lam_n_assum (i_nargs + 1) p in 
+        debug [`Fix] "theta = " (push_rel_context lams env) !evd theta;
+        debug [`Fix] "theta = " Environ.empty_env !evd theta;
+        let lams_R = translate_rel_context order evd env lams in 
+        let env_lams = Environ.push_rel_context lams env in 
+        let typ_R = relation order evd env_lams typ in
+        let typ_R = substl sub typ_R in 
+        let p_R = compose_lam_assum lams_R typ_R in 
+        debug [`Fix] "predicate_R = " Environ.empty_env !evd p_R;
+        let bl_R = 
+          debug_string [`Fix] (Printf.sprintf "dest_rel = %d" (destRel c));
+          debug_string [`Fix] (Printf.sprintf "depth = %d" depth);
+          debug_string [`Fix] (Printf.sprintf "barg = %d" narg);
+          debug_string [`Fix] (Printf.sprintf "fst ln = %d" (fst ln).(n));
+          debug_string [`Fix] (Printf.sprintf "rec_arg = %d" rec_arg);
+          if (destRel c) = depth + rec_arg then 
+            Array.map (translate order evd env) bl 
+          else begin
+            Array.mapi (fun i b ->
+               (* FIX : let cstr = ith_constructor_of_inductive ind (i + 1) in *)
+               let (cstr, u) as cstru = constructors.(i).Inductiveops.cs_cstr in 
+               let pcstr = mkConstructU cstru in 
+               let nrealdecls = Inductiveops.constructor_nrealdecls cstr in
+               let realdecls, b = decompose_lam_n_assum nrealdecls b in
+               let lifted_i_params = List.map (lift nrealdecls) i_params in 
+               let instr_cstr = 
+                 mkApp (pcstr, 
+                        Array.of_list 
+                         (List.append lifted_i_params 
+                           (Termops.extended_rel_list 0 realdecls))) 
+               in
+               let concls = constructors.(i).Inductiveops.cs_concl_realargs in  
+               let fun_args = 
+                List.map (fun x -> if x = c then instr_cstr
+                             else if List.mem x i_realargs then concls.(i_nargs - (List.index (=) x i_realargs))
+                             else lift nrealdecls x) fun_args 
+               in
+               let realdecls_R = translate_rel_context order evd env realdecls in 
+               let env = push_rel_context realdecls env in 
+               let b_R = traverse_cases env (depth + nrealdecls) fun_args b in 
+               compose_lam_assum realdecls_R b_R
+            ) bl 
+          end
+        in 
+        mkCase (ci_R, p_R, c_R, bl_R)
+    in 
+    let body_R = traverse_cases env_lams 0 args body in 
+    let res = compose_lam_assum lams_R body_R in 
+    if List.exists (fun x -> List.mem x [`Fix]) debug_flag then begin
+      let env_R = translate_env order evd env_rec in 
+      debug [`Fix] "res = " env_R !evd res;
+    end;
+    res 
+  in
+  let bl_R = Array.init nfun process_body in 
+  let bl_R = 
+    (* example: if order = 2 and nfun = 3, then permut_sub is : [1;2;7;3;4;8;5;6;9] *)
+    let suc_order = order + 1 in 
+    let size_of_sub = suc_order * nfun in 
+    let permut_sub = 
+     let l = List.init size_of_sub (fun x -> if x mod suc_order <> 0 then nfun + x - x / suc_order else  1 + x / suc_order) in
+     List.map mkRel l
+    in 
+    Array.map (fun x -> 
+          let x = liftn size_of_sub (size_of_sub + 1) x in 
+          substl permut_sub x) bl_R
+  in 
+  let res = mkFix (ln_R, (lna_R, tl_R, bl_R)) in 
+  letfixs nfun res 
+
+(* for debugging only  *)
+and translate_env order evdr env = 
+  let init_env = Environ.reset_context env in 
+  let rc = translate_rel_context order evdr init_env (Environ.rel_context env) in
+  push_rel_context rc init_env
+
+(* Γ ⊢ source : typ
+ * Γ ⊢ target : typ
+ * ⟦Γ⟧, typ₁, typ₂ ⊢ typ_R : Type 
+ *
+ * builds : 
+ * 
+ *
+ * *)
+and rewrite_fixpoints order evdr env (depth : int) (fix : fixpoint) source target typ typ_R acc =
+  debug [`Fix] "source =" env !evdr source;
+  debug [`Fix] "target =" env !evdr target;
+  debug [`Fix] "typ =" env !evdr typ;
+  if List.exists (fun x -> List.mem x [`Fix]) debug_flag then begin
+    let env_R = translate_env order evdr env in 
+    let rc_order = rev_range (fun k -> (Name (id_of_string (Printf.sprintf "rel_%d" k))), None, 
+                         lift k (prime order k typ)) order in 
+    let env_R = push_rel_context rc_order env_R in
+    debug [`Fix] "typ_R =" env_R !evdr typ_R
+  end;
+  let instantiate_fixpoint_in_rel_context rc = 
+    let (ri, k), stuff = fix in 
+    let pos = depth in 
+    let nfun = Array.length ri in 
+    let front, back = List.chop pos rc in
+    let funs, back = List.chop nfun back in 
+    let fixs = List.mapi (fun i -> function (name, None, typ) -> 
+      (name, Some (mkFix ((ri, nfun - 1 - i), stuff)), typ) | _ -> assert false) funs in 
+    front @ fixs @ back
+  in
+  let env_rc = Environ.rel_context env in 
+  let env_rc = instantiate_fixpoint_in_rel_context env_rc in 
+  let gen_path = it_mkProd_or_LetIn (CoqConstants.eq evdr [| typ; source; target|]) env_rc in 
+  debug [`Fix] "gen_path_type" env !evdr gen_path;
+  let evd, hole = Evarutil.new_evar Environ.empty_env !evdr gen_path in 
+  evdr := evd; 
+  let let_gen acc = mkLetIn (Name (id_of_string "gen_path"), hole, gen_path, acc) in 
+  let_gen @@ (fold_nat (fun k acc ->
+    let pred_sub = 
+      (range (fun x -> lift 1 (prime order (k+1+x) target)) (order-1 - k))
+      @ [ mkRel 1 ] 
+      @ (range (fun x -> lift 1 (prime order x source)) k)
+    in
+    let index = lift 1 (prime order k typ) in 
+    let pred = mkLambda (Name (id_of_string "x"), index, liftn 1 2 (substl pred_sub (liftn 1 (order + 1) typ_R))) in 
+    let base = lift 1 (prime order k source) in 
+    let endpoint = lift 1 (prime order k target) in 
+    let path = mkApp (mkRel 1, 
+       Array.map (fun x -> lift 1 (prime order k x))
+        (Termops.extended_rel_vect 0 env_rc)) 
+    in 
+    CoqConstants.transport evdr
+          [| index; 
+             base; 
+             pred; acc; endpoint; path |]) (lift 1 acc) order)
 
 open Entries
 open Declarations

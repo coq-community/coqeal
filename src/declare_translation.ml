@@ -6,6 +6,18 @@ open Libnames
 
 let default_continuation = ignore
 
+let print_translation_command arity c =  
+  let (evd, env) = Lemmas.get_current_context () in 
+  let (evd, c) = Constrintern.interp_open_constr env evd c in
+  let evdr = ref evd in 
+  try
+    let c_R = translate arity evdr env c in 
+    Pp.(msg_notice (Printer.pr_lconstr_env env !evdr c_R))
+  with e -> 
+    Pp.(msg_notice (str (Printexc.to_string e)))
+
+
+
 (** Adds the definition name := ⟦a⟧ : ⟦b⟧ a a. *)
 let declare_abstraction ?(opaque = false) ?(continuation = default_continuation) ?kind order evdr env a name =
   debug_string [`Abstraction] "### Begin declaration !";
@@ -49,7 +61,7 @@ let declare_abstraction ?(opaque = false) ?(continuation = default_continuation)
   debug_string [`Abstraction] "add_definition:";
   debug [`Abstraction] "a_R:\t" env evd a_R;
   debug [`Abstraction] "b_R:\t" env evd b_R;
-  ignore (Obligations.add_definition ~opaque name ~hook ?kind ~term:a_R b_R ctx obls)
+  ignore (Obligations.add_definition ~opaque name ~hook ?kind ~tactic:(snd (Relations.get_parametricity_tactic ())) ~term:a_R b_R ctx obls)
 
 let translate_command arity c names =  
   let (evd, env) = Lemmas.get_current_context () in 
@@ -67,7 +79,12 @@ let translate_command arity c names =
   let kind = Decl_kinds.(Global, poly, Definition) in
   let name =
     match names, cte_option with
-      | None, Some cte -> Names.id_of_string @@ translate_string arity @@ Names.Label.to_string @@ Names.Constant.label @@ Univ.out_punivs cte
+      | None, Some cte -> 
+             Names.id_of_string 
+          @@ translate_string arity 
+          @@ Names.Label.to_string 
+          @@ Names.Constant.label 
+          @@ Univ.out_punivs cte
       | Some name, _ -> name
       | _ -> error (Pp.str "In the case of a constant, Abstraction expects 0 or 1 identifier. Otherwise, 1 identifier.")
   in

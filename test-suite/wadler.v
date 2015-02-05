@@ -36,7 +36,7 @@ induction y; constructor; trivial.
 Defined.
 
 Definition T := forall X, list X -> nat.
-Translate T.
+Parametricity T.
 
 Lemma param_length_type : 
   forall f (f_R  : T_R f f) A l1 l2,
@@ -49,7 +49,7 @@ Qed.
 
 Definition f A (l : list A) := 
   length (l ++ l).
-Translate f.
+Parametricity f.
 End Length.
 
 
@@ -71,7 +71,7 @@ Defined.
 
 Definition T := forall X, list X -> list X.
 
-Translate T.
+Parametricity T.
 
 Lemma param_naturality : 
    forall F (F_R : T_R F F) 
@@ -83,7 +83,7 @@ apply F_R.
 apply map_rel_map.
 Defined.
 
-Translate rev.
+Parametricity rev.
 
 Lemma rev_naturality : 
    forall A B (f : A -> B) l, rev (map f l) = map f (rev l).

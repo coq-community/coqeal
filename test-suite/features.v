@@ -2,9 +2,9 @@ Require Import Parametricity.
 
 
 (** Separate compilation: *)
-Translate nat as test.
+Parametricity nat as test.
 Require List.
-Translate List.rev.
+Parametricity List.rev.
 Check rev_R.
 
 (** Module translation *)
@@ -15,15 +15,15 @@ Module A.
   End B.
 End A.
 
-Translate Module A.
+Parametricity Module A.
 Print Module A_R.
 Print Module A_R.B_R.
 
-Translate Module Bool.
+Parametricity Module Bool.
 Print Module Bool_R.
 
 (** Unary parametricity *)
-Translate (forall X, X -> X) as ID_R arity 1.
+Parametricity (forall X, X -> X) as ID_R arity 1.
 
 Lemma ID_unique: 
   forall f, ID_R f -> forall A x, f A x = x.
@@ -33,7 +33,7 @@ apply f_R.
 reflexivity.
 Defined.
 
-Translate Inductive nat arity 10.
+Parametricity Inductive nat arity 10.
 Print nat_R_10.
 
 (** Realizing axioms and section variables. *)
@@ -42,7 +42,7 @@ Variable A : Set.
 Variable R : A -> A -> Set.
 Realizer A as A_R := R.
 Definition id : A -> A := fun x => x.
-Translate id.
+Parametricity id.
 End Test.
 
 Realizer proof_admitted as proof_admitted_R := _.
@@ -53,7 +53,7 @@ Defined.
 Lemma test_admit: 2+2 = 5.
 admit.
 Defined.
-Translate test_admit.
+Parametricity test_admit.
 Print test_admit_R.
 
 (** Opaque terms. **)
@@ -63,7 +63,7 @@ Require ProofIrrelevance.
 Lemma opaque : True.
 trivial.
 Qed.
-Translate opaque.
+Parametricity opaque.
 Eval compute in opaque.
 Eval compute in opaque_R.
 
@@ -71,7 +71,7 @@ Eval compute in opaque_R.
 Lemma opaquenat : nat.
 exact 41.
 Qed.
-Translate opaquenat.
+Parametricity opaquenat.
 Next Obligation.
 admit.
 Defined.
