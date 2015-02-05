@@ -1,16 +1,4 @@
-
-Require Import Parametricity.
-
-
-Fixpoint pred (n : nat) := 
-  match n with 
-   | 0 => 0 
-   | S p => id p
-  end
-with id (n : nat) :=
-   match n with 
-    | 0 => 0
-    | S p => S (pred p)
-   end.
-
-DebugTranslation pred.
+Declare ML Module "relations".
+Declare ML Module "parametricity".
+Declare ML Module "declare_translation".
+Declare ML Module "abstraction".

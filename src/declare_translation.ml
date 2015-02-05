@@ -21,7 +21,6 @@ let print_translation_command arity c =
 (** Adds the definition name := ⟦a⟧ : ⟦b⟧ a a. *)
 let declare_abstraction ?(opaque = false) ?(continuation = default_continuation) ?kind order evdr env a name =
   debug_string [`Abstraction] "### Begin declaration !";
-  debug_string [`Opacity] (Printf.sprintf "opaque = %b" opaque);
   debug_evar_map [`Abstraction] "starting evarmap:" !evdr;
   let refresh = false in 
   let evd, b = Typing.e_type_of ~refresh env !evdr a in
@@ -36,7 +35,6 @@ let declare_abstraction ?(opaque = false) ?(continuation = default_continuation)
   let b_R = substl sub b_R in
   debug [`Abstraction] "translation of term, a_R = " env !evdr a_R;
   debug [`Abstraction] "translate of type, b_R = " env !evdr b_R;
-  debug_string [`Typecheck] "translation done.";
   debug_evar_map [`Abstraction] "type checking b_R in" !evdr;
   let evd, _ = Typing.e_type_of ~refresh env !evdr b_R in
   debug_evar_map [`Abstraction] "type checking  a_R in " evd;
@@ -91,7 +89,7 @@ let translate_command arity c names =
   declare_abstraction ~opaque ~kind arity (ref evd) env c name 
 
 
-let declare_inductive  ?(continuation = default_continuation) arity evd env ((mut_ind, _) as ind) = 
+let declare_inductive ?(continuation = default_continuation) arity evd env ((mut_ind, _) as ind) = 
   let mut_body, _ = Inductive.lookup_mind_specif env ind in
   let inst, ctx = 
     let open Univ in 
@@ -235,8 +233,8 @@ and declare_module ?(continuation = ignore) arity mb =
        declare_realizer ~continuation arity evd env None (mkConst cst)
                
      | (lab, SFBconst cb) ->
-       let opaque =
-         match cb.const_body with OpaqueDef _ -> true | _ -> false 
+       let opaque =     
+         match cb.const_body with OpaqueDef _ -> true | _ -> false      
        in
        let kind = Decl_kinds.(Global, cb.const_polymorphic, Definition) in
        let (evdr, env) = ref Evd.empty, Global.env () in

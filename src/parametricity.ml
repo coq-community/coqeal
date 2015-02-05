@@ -38,6 +38,7 @@ let all = [`ProofIrrelevance;
            `Inductive; 
            `Module; 
            `Realizer; `Opacity]
+
 let debug_flag = []
 
 let default_arity = 2
@@ -57,12 +58,8 @@ let debug flags (s : string) env evd c =
        ++ Printer.pr_context_of env evd));
       Pp.(msg_notice (str "" 
          ++ str "\n |-"
-         ++ Printer.pr_lconstr_env env evd c)) 
-    with _ ->
-     (try 
-        Pp.msg_notice (Termops.print_constr_env env c)
-      with e -> 
-      Pp.(msg_notice (str (Printf.sprintf "Caught exception while debugging '%s'" (Printexc.to_string e)))))
+         ++ Printer.safe_pr_constr_env env evd c)) 
+    with e -> Pp.(msg_notice (str (Printf.sprintf "Caught exception while debugging '%s'" (Printexc.to_string e))))
 
 let debug_evar_map flags s evd = 
   if List.exists (fun x -> List.mem x flags) debug_flag then (
@@ -325,9 +322,12 @@ and translate order evd env (t : constr) : constr =
 
     | Const c -> 
         translate_constant order evd env c
+ 
     | Fix _ ->  
         translate_fix order evd env t
+ 
     | Ind (ind, u) -> mkFreshInd env evd (translate_inductive order env ind)
+ 
     | Construct (cstr, u) -> mkFreshConstruct env evd (translate_constructor order env cstr)
  
     | Case (ci , p, c, bl) -> 
@@ -363,7 +363,6 @@ and translate_constant order (evd : Evd.evar_map ref) env cst : constr =
   try 
     Evarutil.e_new_global evd (Relations.get_constant order (Univ.out_punivs cst)) 
   with Not_found -> 
-    debug_string [`UnfoldingConstant] (Printf.sprintf "Warning: the constant '%s' has no registered translation." (KerName.to_string (Constant.user (fst cst))));
       let (kn, u) = cst in 
       let cb = lookup_constant kn env in 
       Declarations.(match cb.const_body with 
