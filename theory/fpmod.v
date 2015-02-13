@@ -39,10 +39,15 @@ Record fpmod := FPmod {
 Definition fpmod_of of phant R := fpmod.
 (* Identity Coercion type_fpmod_of : fpmod_of >-> fpmod. *) (* Is this necessary? *)
 
+(* We want morphism_of_rect so temporarily add this: *)
+Set Nonrecursive Elimination Schemes.
+
 (** Morphisms *)
 Record morphism_of (M N : fpmod) :=
   Morphism { matrix_of_morphism : 'M[R]_(nbgen M,nbgen N);
              _ : (pres N %| pres M *m matrix_of_morphism)%MP }.
+
+Unset Nonrecursive Elimination Schemes.
 
 End morphismDef.
 

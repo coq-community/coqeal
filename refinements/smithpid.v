@@ -303,7 +303,9 @@ case: find_pivotP=> [[x1 x2] Hx|//].
 case: (improve_pivot _); case => a b c /=.
 case H: (Smith _)=>[[i j] k].
 rewrite /= size_map minnSS ltnS.
-by rewrite -/(let: (_,j,_) := (i,j,k) in (size j <= minn m' n')%N) -H Ih.
+move: (Ih n' (map_mx (fun x => odflt 0 (x %/? b 0 0))
+             (drsubmx b - const_mx 1 *m ursubmx b))).
+by rewrite H.
 Qed.
 
 Definition pidEDRMixin := EDR.Mixin SmithP.

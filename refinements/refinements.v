@@ -769,10 +769,11 @@ End AlgOp.
 
 Typeclasses Opaque AlgOp.subr AlgOp.divr.
 
-Lemma specE A C (R : A -> C -> Prop) `{spec_of C A} :
-  (param (R ==> Logic.eq) spec_id spec) ->
-  forall a c, param R a c -> spec c = a.
-Proof.
-move=> pf a c rac; rewrite -[a]/(idfun a).
-by symmetry; apply: paramP.
-Qed.
+(* TODO: Fix *)
+(* Lemma specE A C (R : A -> C -> Prop) `{spec_of C A} : *)
+(*   (param (R ==> Logic.eq) spec_id spec) -> *)
+(*   forall a c, param R a c -> spec c = a. *)
+(* Proof. *)
+(* move=> pf a c rac; rewrite -[a]/(idfun a). *)
+(* by symmetry; apply: paramP. *)
+(* Qed. *)

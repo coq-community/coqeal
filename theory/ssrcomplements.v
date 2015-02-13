@@ -54,14 +54,17 @@ Variable leT : rel T.
 
 Hypothesis leT_tr : transitive leT.
 
-
 Lemma sorted_drop (s : seq T) m : sorted leT s -> sorted leT (drop m s).
-Proof. by elim: s m => // a l ih [|n h] //; apply/ih/path_sorted. Qed.
+Proof.
+by elim: s m => //= a l ih [|n h] //; apply/ih/(path_sorted h).
+Qed.
+
+Lemma subseq_take (s : seq T) m : subseq (take m s) s.
+Proof. by elim: s m => // a l ih [] //= n; rewrite eqxx. Qed.
 
 Lemma sorted_take (s : seq T) m : sorted leT s -> sorted leT (take m s).
 Proof.
-move=> H; apply: subseq_sorted=> //. 
-by elim: s {H} m => // a l ih [] //=; rewrite eqxx.
+move=> H; exact: (subseq_sorted leT_tr (subseq_take _ _) H).
 Qed.
 
 End Seqeqtype.
