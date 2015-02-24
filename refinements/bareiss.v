@@ -1,78 +1,89 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
-(* Formalization of Sasaki-Murao algorithm - Not ported to CoqEAL 2.0 yet *)
+(* Formalization of the Sasaki-Murao algorithm *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path ssralg.
 Require Import fintype perm choice matrix bigop zmodp poly polydiv mxpoly.
 
 Require Import refinements minor.
 
-Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
+Import GRing.Theory AlgOp Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensives.
 
-Open Scope ring_scope.
+Local Open Scope ring_scope.
 
-(* A first try on a generic Bareiss: *)
-(* Section generic_bareiss. *)
+Section generic_bareiss.
 
-(* Variable A polyA mxA mxpA : Type. *)
+Variable R : Type.
 
-(* Context `{zero A, one polyA, opp mxA, sub mxpA, scale polyA mxpA}. *)
-(* Variable mulmxpA : mxpA -> mxpA -> mxpA. *)
-(* Variables ursubmxpA dlsubmxpA drsubmxpA : mxpA -> mxpA. *)
-(* Variable top_left : mxpA -> polyA. *)
-(* Variable map_mxpA : (polyA -> polyA) -> mxpA -> mxpA. *)
-(* Variable rdivpA : polyA -> polyA -> polyA. *)
-(* Variable char_poly_mxpA : mxA -> mxpA. *)
-(* Variable head : A -> polyA -> A. *)
+Import Refinements.Op.
 
-(* Fixpoint bareiss_rec m a (M : mxpA) : polyA := match m with *)
-(*     | S p => let d   := top_left M in *)
-(*              let l   := ursubmxpA M in *)
-(*              let c   := dlsubmxpA M in *)
-(*              let N   := drsubmxpA M in *)
-(*              let M'  := (d *: N - mulmxpA c l)%C in *)
-(*              let M'' := map_mxpA (fun x => rdivpA x a) M' in *)
-(*                bareiss_rec p d M'' *)
-(*     | _ => top_left M *)
-(*   end. *)
+Local Open Scope hetero_computable_scope.
+Local Open Scope computable_scope.
 
-(* Definition bareiss n M := bareiss_rec n 1%C M. *)
+Variable polyR : Type.
+Variable mxR : nat -> nat -> Type.
+Variable mxpolyR : nat -> nat -> Type.
+Variable ord : nat -> Type.
 
-(* Definition bareiss_char_poly n M := bareiss (1 + n) (char_poly_mxpA M). *)
+Context `{zero R, one polyR, !hopp mxR}.
+Context `{fun_of polyR ord mxpolyR, forall n, zero (ord (1 + n))}.
+Context `{ursub mxpolyR, dlsub mxpolyR, drsub mxpolyR}.
+Context `{!hsub mxpolyR, !hmul mxpolyR, !hscale polyR mxpolyR}.
+Context `{map_mx_class polyR mxpolyR}.
+Variable rdivp : polyR -> polyR -> polyR.
+Variable char_poly_mx : forall n, mxR n n -> mxpolyR n n.
+Variable head : polyR -> R.
 
-(* (* The actual determinant function based on Bareiss *) *)
-(* Definition bdet n M := head 0%C (bareiss_char_poly (1 + n) (- M)%C). *)
-
-(* End generic_bareiss. *)
-
-Section bareiss_def.
-
-Variable R : comRingType.
-
-Fixpoint bareiss_rec m a : 'M[{poly R}]_(1 + m) -> {poly R} :=
-  match m return 'M[_]_(1 + m) -> {poly R} with
-    | S p => fun (M: 'M[_]_(1 + _)) =>
-      let d   := M 0 0 in
+Fixpoint bareiss_rec m (a : polyR) : mxpolyR (1 + m) (1 + m) -> polyR :=
+  match m with
+    | S p => fun M =>
+      let d   := fun_of_matrix M 0 0 in
       let l   := ursubmx M in
       let c   := dlsubmx M in
       let N   := drsubmx M in
-      let M'  := d *: N - c *m l in
+      let M'  := (d *: N - c *m l)%HC in
       let M'' := map_mx (fun x => rdivp x a) M' in
         bareiss_rec d M''
-    | _ => fun M => M 0 0
+    | _ => fun M => fun_of_matrix M 0 0
   end.
 
-Definition bareiss n (M : 'M[{poly R}]_(1 + n)) := bareiss_rec 1 M.
+Definition bareiss n (M : mxpolyR (1 + n) (1 + n)) := bareiss_rec 1 M.
 
-Definition bareiss_char_poly n (M : 'M[R]_(1 + n)) := bareiss (char_poly_mx M).
+Definition bareiss_char_poly n (M : mxR (1 + n) (1 + n)) := bareiss (char_poly_mx M).
 
 (* The actual determinant function based on Bareiss *)
-Definition bdet n (M : 'M[R]_(1 + n)) := (bareiss_char_poly (-M))`_0.
+Definition bdet n (M : mxR (1 + n) (1 + n)) := head (bareiss_char_poly (- M)%HC).
 
-End bareiss_def.
+End generic_bareiss.
+
+(* Section bareiss_def. *)
+
+(* Variable R : comRingType. *)
+
+(* Fixpoint bareiss_rec m a : 'M[{poly R}]_(1 + m) -> {poly R} := *)
+(*   match m return 'M[_]_(1 + m) -> {poly R} with *)
+(*     | S p => fun (M: 'M[_]_(1 + _)) => *)
+(*       let d   := M 0 0 in *)
+(*       let l   := ursubmx M in *)
+(*       let c   := dlsubmx M in *)
+(*       let N   := drsubmx M in *)
+(*       let M'  := d *: N - c *m l in *)
+(*       let M'' := map_mx (fun x => rdivp x a) M' in *)
+(*         bareiss_rec d M'' *)
+(*     | _ => fun M => M 0 0 *)
+(*   end. *)
+
+(* Definition bareiss n (M : 'M[{poly R}]_(1 + n)) := bareiss_rec 1 M. *)
+
+(* Definition bareiss_char_poly n (M : 'M[R]_(1 + n)) := bareiss (char_poly_mx M). *)
+
+(* (* The actual determinant function based on Bareiss *) *)
+(* Definition bdet n (M : 'M[R]_(1 + n)) := (bareiss_char_poly (-M))`_0. *)
+
+(* End bareiss_def. *)
 
 Section bareiss_correctness.
 
@@ -108,75 +119,91 @@ End bareiss_comRingType.
 (* Switch to polynomials over a commutative ring *)
 Section bareiss_poly.
 
+Import Refinements.Op.
+
 Variable R : comRingType.
+
+Instance : zero R := 0.
+Instance : one {poly R} := 1.
+Instance : hopp (matrix R) := @oppmx R.
+Instance : fun_of {poly R} ordinal (matrix {poly R}) := @matrix.fun_of_matrix {poly R}.
+Instance : forall n, zero 'I_(1 + n) := fun n => 0%R.
+Instance : ursub (matrix {poly R}) := @matrix.ursubmx {poly R}.
+Instance : dlsub (matrix {poly R}) := @matrix.dlsubmx {poly R}.
+Instance : drsub (matrix {poly R}) := @matrix.drsubmx {poly R}.
+Instance : hsub (matrix {poly R}) := fun m n (M N : 'M[{poly R}]_(m,n)) => M - N.
+Instance : hmul (matrix {poly R}) := @mulmx [ringType of {poly R}].
+Instance : hscale {poly R} (matrix {poly R}) := @scalemx [ringType of {poly R}].
+Instance : map_mx_class {poly R} (matrix {poly R}) := @matrix.map_mx {poly R} {poly R}.
 
 (* Why is this not in the libraries? *)
 Lemma monic_lreg (p : {poly R}) : p \is monic -> GRing.lreg p.
 Proof. by rewrite monicE=> /eqP h; apply/lreg_lead; rewrite h; apply/lreg1. Qed.
 
-Lemma bareiss_invariants : forall m a (M : 'M[{poly R}]_(1 + m)),
-  a \is monic ->
- (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
- (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
-  let d   := M 0 0     in let l   := ursubmx M in 
-  let c   := dlsubmx M in let N   := drsubmx M in
-  let M'  := d *: N - c *m l in let M'' := map_mx (fun x => rdivp x a) M' in
-  [/\ M 0 0 \is monic,
-      M' = a *: M'', (* This is not really an invariant *)
-      forall p (h h' : p < m), pminor h h' M'' \is monic &
-      forall k (f g : 'I_k.+1 -> 'I_m), rdvdp (d ^+ k) (minor f g M'') ].
-Proof.
-move=> m a M am hpm hdvd /=.
-set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M'.
-have hM' : M' = a *: M''.
-  pose f := fun m (i : 'I_m) (x : 'I_2) => if x == 0 then 0 else (lift 0 i).
-  apply/matrixP => i j.
-  rewrite !mxE big_ord1 !rshift1 [a * _]mulrC rdivpK ?(eqP am,expr1n,mulr1) //.
-  move: (hdvd 1%nat (f _ i) (f _ j)).
-  by rewrite !minor2 /f /= expr1 !mxE !lshift0 !rshift1.
-have d_monic : d \is monic.
-  have -> // : d = pminor (ltn0Sn m) (ltn0Sn m) M.
-  have h : widen_ord (ltn0Sn m) =1 (fun _ => 0)
-    by move=> x; apply/ord_inj; rewrite [x]ord1.
-  by rewrite /pminor (minor_eq h h) minor1.
-split=> // [p h h'|k f g].
-  rewrite -(@monicMl _ (a ^+ p.+1)) ?monic_exp // -detZ -submatrix_scale -hM'.
-  rewrite -(monicMl _ d_monic) key_lemma_sub monicMr ?monic_exp //.
-  by rewrite (minor_eq (lift_pred_widen_ord h) (lift_pred_widen_ord h')) hpm.
-case/rdvdpP: (hdvd _ (lift_pred f) (lift_pred g)); rewrite ?monic_exp // => x hx.
-apply/rdvdpP; rewrite ?monic_exp //; exists x.
-apply/(@lregX _ _ k.+1 (monic_lreg am))/(monic_lreg d_monic).
-rewrite -detZ -submatrix_scale -hM' key_lemma_sub mulrA [x * _]mulrC mulrACA.
-by rewrite -exprS [_ * x]mulrC -hx.
-Qed.
+(* Lemma bareiss_invariants : forall m a (M : 'M[{poly R}]_(1 + m)), *)
+(*   a \is monic -> *)
+(*  (forall p (h h' : p < 1 + m), pminor h h' M \is monic) -> *)
+(*  (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) -> *)
+(*   let d   := M 0 0     in let l   := ursubmx M in  *)
+(*   let c   := dlsubmx M in let N   := drsubmx M in *)
+(*   let M'  := d *: N - c *m l in let M'' := map_mx (fun x => rdivp x a) M' in *)
+(*   [/\ M 0 0 \is monic, *)
+(*       M' = a *: M'', (* This is not really an invariant *) *)
+(*       forall p (h h' : p < m), pminor h h' M'' \is monic & *)
+(*       forall k (f g : 'I_k.+1 -> 'I_m), rdvdp (d ^+ k) (minor f g M'') ]. *)
+(* Proof. *)
+(* move=> m a M am hpm hdvd /=. *)
+(* set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M'. *)
+(* have hM' : M' = a *: M''. *)
+(*   pose f := fun m (i : 'I_m) (x : 'I_2) => if x == 0 then 0 else (lift 0 i). *)
+(*   apply/matrixP => i j. *)
+(*   rewrite !mxE big_ord1 !rshift1 [a * _]mulrC rdivpK ?(eqP am,expr1n,mulr1) //. *)
+(*   move: (hdvd 1%nat (f _ i) (f _ j)). *)
+(*   by rewrite !minor2 /f /= expr1 !mxE !lshift0 !rshift1. *)
+(* have d_monic : d \is monic. *)
+(*   have -> // : d = pminor (ltn0Sn m) (ltn0Sn m) M. *)
+(*   have h : widen_ord (ltn0Sn m) =1 (fun _ => 0) *)
+(*     by move=> x; apply/ord_inj; rewrite [x]ord1. *)
+(*   by rewrite /pminor (minor_eq h h) minor1. *)
+(* split=> // [p h h'|k f g]. *)
+(*   rewrite -(@monicMl _ (a ^+ p.+1)) ?monic_exp // -detZ -submatrix_scale -hM'. *)
+(*   rewrite -(monicMl _ d_monic) key_lemma_sub monicMr ?monic_exp //. *)
+(*   by rewrite (minor_eq (lift_pred_widen_ord h) (lift_pred_widen_ord h')) hpm. *)
+(* case/rdvdpP: (hdvd _ (lift_pred f) (lift_pred g)); rewrite ?monic_exp // => x hx. *)
+(* apply/rdvdpP; rewrite ?monic_exp //; exists x. *)
+(* apply/(@lregX _ _ k.+1 (monic_lreg am))/(monic_lreg d_monic). *)
+(* rewrite -detZ -submatrix_scale -hM' key_lemma_sub mulrA [x * _]mulrC mulrACA. *)
+(* by rewrite -exprS [_ * x]mulrC -hx. *)
+(* Qed. *)
 
-Lemma bareiss_recE2 : forall m a (M : 'M[{poly R}]_(1 + m)),
-  a \is monic ->
- (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
- (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
-  a ^+ m * (bareiss_rec a M) = \det M.
-Proof.
-elim=> [a M _ _ _|m ih a M am hpm hdvd] /=.
-  by rewrite expr0 mul1r {2}[M]mx11_scalar det_scalar1.
-case: (bareiss_invariants am hpm hdvd).
-set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M'.
-move=> d_monic hM' h1 h2.
-rewrite -[M]submxK; apply/(@lregX _ d m.+1 (monic_lreg d_monic)).
-have -> : ulsubmx M = d%:M by apply/rowP=> i; rewrite !mxE ord1 lshift0.
-rewrite key_lemma -/M' hM' detZ mulrCA [_ * (a ^+ _ * _)]mulrCA !exprS -!mulrA.
-by rewrite ih.
-Qed.
+(* Lemma bareiss_recE2 : forall m a (M : 'M[{poly R}]_(1 + m)), *)
+(*   a \is monic -> *)
+(*  (forall p (h h' : p < 1 + m), pminor h h' M \is monic) -> *)
+(*  (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) -> *)
+(*   a ^+ m * (bareiss_rec a M) = \det M. *)
+(* Proof. *)
+(* elim=> [a M _ _ _|m ih a M am hpm hdvd] /=. *)
+(*   by rewrite expr0 mul1r {2}[M]mx11_scalar det_scalar1. *)
+(* case: (bareiss_invariants am hpm hdvd). *)
+(* set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M'. *)
+(* move=> d_monic hM' h1 h2. *)
+(* rewrite -[M]submxK; apply/(@lregX _ d m.+1 (monic_lreg d_monic)). *)
+(* have -> : ulsubmx M = d%:M by apply/rowP=> i; rewrite !mxE ord1 lshift0. *)
+(* rewrite key_lemma -/M' hM' detZ mulrCA [_ * (a ^+ _ * _)]mulrCA !exprS -!mulrA. *)
+(* by rewrite ih. *)
+(* Qed. *)
 
 Lemma bareiss_recE : forall m a (M : 'M[{poly R}]_(1 + m)),
   a \is monic ->
  (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
  (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
-  a ^+ m * (bareiss_rec a M) = \det M.
+  a ^+ m * (bareiss_rec (@rdivp R) a M) = \det M.
 Proof.
 elim=> [a M _ _ _|m ih a M am hpm hdvd] /=.
   by rewrite expr0 mul1r {2}[M]mx11_scalar det_scalar1.
 have ak_monic k : a ^+ k \is monic by apply/monic_exp.
-set d := M 0 0; set M' := _ - _; set M'' := map_mx _ _; simpl in M'.
+simpC; rewrite /hsub_op /hsub_instance_0 /=.
+set d := M 0 0; set M' := (_ - _); set M'' := matrix.map_mx _ _; simpl in M'.
 have d_monic : d \is monic.
   have -> // : d = pminor (ltn0Sn _) (ltn0Sn _) M.
   have h : widen_ord (ltn0Sn m.+1) =1 (fun _ => 0)
@@ -190,7 +217,7 @@ have hM' : M' = a *: M''.
   move: (hdvd 1%nat (f _ i) (f _ j)).
   by rewrite !minor2 /f /= expr1 !mxE !lshift0 !rshift1.
 rewrite -[M]submxK; apply/(@lregX _ d m.+1 (monic_lreg d_monic)).
-have -> : ulsubmx M = d%:M by apply/rowP=> i; rewrite !mxE ord1 lshift0.
+have -> : matrix.ulsubmx M = d%:M by apply/rowP=> i; rewrite !mxE ord1 lshift0.
 rewrite key_lemma -/M' hM' detZ mulrCA [_ * (a ^+ _ * _)]mulrCA !exprS -!mulrA.
 rewrite ih // => [p h h'|k f g].
   rewrite -(@monicMl _ (a ^+ p.+1)) // -detZ -submatrix_scale -hM'.
@@ -203,25 +230,26 @@ rewrite -detZ -submatrix_scale -hM' key_lemma_sub mulrA [x * _]mulrC mulrACA.
 by rewrite -exprS [_ * x]mulrC -hx.
 Qed.
 
-Lemma bareissE n (M : 'M[{poly R}]_(1 + n)) 
+Lemma bareissE n (M : 'M[{poly R}]_(1 + n))
   (H : forall p (h h' : p < 1 + n), pminor h h' M \is monic) :
-  bareiss M = \det M.
+  bareiss (@rdivp R) M = \det M.
 Proof.
 rewrite /bareiss -(@bareiss_recE n 1 M) ?monic1 ?expr1n ?mul1r //.
 by move=> k f g; rewrite expr1n rdvd1p.
 Qed.
 
-Lemma bareiss_char_polyE n (M : 'M[R]_(1 + n)) : 
-  bareiss_char_poly M = char_poly M.
+Lemma bareiss_char_polyE n (M : 'M[R]_(1 + n)) :
+  bareiss_char_poly (@rdivp R) (@char_poly_mx R) M = char_poly M.
 Proof.
 rewrite /bareiss_char_poly bareissE // => p h h'.
 exact: pminor_char_poly_mx_monic.
 Qed.
 
-Lemma bdetE n (M : 'M[R]_(1 + n)) : bdet M = \det M.
+Lemma bdetE n (M : 'M[R]_(1 + n)) : bdet (@rdivp R) (@char_poly_mx R) (fun s => s`_0) M = \det M.
 Proof.
-rewrite /bdet bareiss_char_polyE char_poly_det -scaleN1r detZ mulrA -expr2.
-by rewrite sqrr_sign mul1r.
+rewrite /bdet bareiss_char_polyE char_poly_det.
+have -> : (-M)%HC = -M by [].
+by rewrite -scaleN1r detZ mulrA -expr2 sqrr_sign mul1r.
 Qed.
 
 (***** WIP below here **********)
@@ -238,14 +266,14 @@ Implicit Types p q : {poly R}.
 Definition prptnl n p := \poly_(j < size p - n) p`_(j + n).
 
 Lemma prptnl0p p : prptnl 0 p = p.
-Proof. 
+Proof.
 rewrite /prptnl subn0 -[RHS]coefK.
 apply/polyP=> i.
 by rewrite !coef_poly addn0.
 Qed.
 
 Lemma prptnlp0 n : prptnl n 0 = 0.
-Proof. 
+Proof.
 rewrite /prptnl size_poly0 sub0n.
 apply/polyP=> i.
 by rewrite coef_poly /= coef0.
@@ -254,7 +282,7 @@ Qed.
 Lemma prptnl_oversize n p : size p <= n -> prptnl n p = 0.
 Proof.
 move=> h; apply/polyP=> i.
-by rewrite coef_poly coef0 ltn_subRL leqNgt ltnS -[size p]addn0 
+by rewrite coef_poly coef0 ltn_subRL leqNgt ltnS -[size p]addn0
            (leq_add h (leq0n _)).
 Qed.
 
@@ -350,11 +378,11 @@ Qed.
 (* Lemma prptnlC : forall n c, prptnl n c%:P =  *)
 
 
-Lemma prptnl_mul n p q : prptnl (size p + n) (p * q) = 
+Lemma prptnl_mul n p q : prptnl (size p + n) (p * q) =
                          prptnl (size p) (p * prptnl n q).
 Proof.
 elim/poly_ind: p q n=> [|p c ih] q n; first by rewrite !mul0r !prptnlp0.
-have [/eqP ->|Hpn0] := (boolP (p == 0)). 
+have [/eqP ->|Hpn0] := (boolP (p == 0)).
   by rewrite mul0r add0r !prptnl_mulC prptnlK.
 rewrite !mulrDl !prptnl_add size_addl size_mulX //; last first.
   rewrite size_polyC ltnS.
@@ -385,10 +413,10 @@ Fixpoint sasaki_rec m (a : {poly R}) : 'M[{poly R}]_(1 + m) -> {poly R} :=
       let l   := ursubmx M in
       let c   := dlsubmx M in
       let N   := drsubmx M in
-      let M'  := \matrix_(i,j) (pmul (size a).-2 d (N i j) - 
+      let M'  := \matrix_(i,j) (pmul (size a).-2 d (N i j) -
                                 pmul (size a).-2 (c i 0) (l 0 j)) in
       let q   := rdivp 'X^(size a).*2.+1 a in
-      let M'' := map_mx (fun x => pmul ((size a).+3 - (size a == 1))%N q x) M' in 
+      let M'' := map_mx (fun x => pmul ((size a).+3 - (size a == 1))%N q x) M' in
         sasaki_rec d M''
     | _ => fun M => M 0 0
   end.
@@ -654,7 +682,7 @@ Definition sasaki_char_poly n (M : 'M[R]_(1 + n)) := sasaki_rec 1 (char_poly_mx 
 (*   (* rewrite (eqP sa1) /= prptnl0p. *) *)
 (*   (* admit. *) *)
 (*   (* admit. *) *)
-  
+
 (* (* simpl. *) *)
 (* (*   move=> i j. *) *)
 (* (*   rewrite !mxE !pmulP -prptnl_sub !lshift0 !rshift1. *) *)
@@ -665,7 +693,7 @@ Definition sasaki_char_poly n (M : 'M[R]_(1 + n)) := sasaki_rec 1 (char_poly_mx 
 (* (*   by move=> n; apply/ord_inj. *) *)
 (* (*   admit. *) *)
 (* (*   admit. *) *)
-  
+
 (* (*   move=> i j. *) *)
 (* (*   rewrite !mxE !pmulP -prptnl_sub !lshift0 !rshift1. *) *)
 (* (*   case: ifP => sa1. *) *)
@@ -704,7 +732,7 @@ Definition sasaki_char_poly n (M : 'M[R]_(1 + n)) := sasaki_rec 1 (char_poly_mx 
 (* (*   admit. *) *)
 (* (* admit. *) *)
 (* (* admit. *) *)
-  
+
 (* congr bareiss_rec. *)
 (* apply/matrixP=> i j; rewrite !mxE big_ord1 !pmulP !mxE lshift0 -prptnl_sub !rshift1. *)
 (* have [sa0|an0] := boolP (size a == 0)%N. *)

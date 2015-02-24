@@ -556,6 +556,10 @@ Class hmul {I} B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
 Local Notation "*m%HC" := hmul_op.
 Local Notation "x *m y" := (hmul_op x y) : hetero_computable_scope.
 
+Class hscale {I} A B := hscale_op : forall m n : I, A -> B m n -> B m n.
+Local Notation "*:%HC" := scale_op.
+Local Notation "x *: y" := (hscale_op x y) : hetero_computable_scope.
+
 Class heq {I} B := heq_op : forall m n : I, B m n -> B m n -> bool.
 Local Notation "==%HC" := heq_op.
 Local Notation "x == y" := (heq_op x y) : hetero_computable_scope.
@@ -675,6 +679,8 @@ Notation "x == y"  := (heq_op x y)    : hetero_computable_scope.
 Notation "a %:M"   := (scalar_mx a)   : hetero_computable_scope.
 Notation "*m%HC"   := hmul_op.
 Notation "x *m y"  := (hmul_op x y)   : hetero_computable_scope.
+Notation "*:%HC"   := hscale_op.
+Notation "x *: y"  := (hscale_op x y)   : hetero_computable_scope.
 Notation "x '.(' i ',' j ')'" := (fun_of_matrix x i j) (at level 10) : computable_scope.
 Notation "A ^T"    := (transpose_op A) : hetero_computable_scope.
 
@@ -709,6 +715,7 @@ Ltac simpC :=
       | rewrite -[hadd_op _ _]/(addmx _ _)
       | rewrite -[hsub_op _ _]/(fun _ _ => addmx _ (oppmx _))
       | rewrite -[hmul_op _ _]/(mulmx _ _)
+      | rewrite -[hscale_op _ _]/(scalemx _ _)
       | rewrite -[(_ *m _)%HC]/(_ *m _)%R
       | rewrite -[heq_op _ _]/(_ == _)%bool
       | rewrite -[transpose_op _]/(trmx _)
