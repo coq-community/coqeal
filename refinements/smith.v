@@ -355,10 +355,9 @@ Proof.
 elim: m n A=>[n'|m' Ih n']; first by rewrite min0n.
 case: n'=>[|n' A /=]; first by rewrite minn0.
 case: find_pivotP=> [[x1 x2] Hx|//].
-case: (improve_pivot _ _); case => a b c /=.
-case H: (Smith _)=>[[i j] k].
-rewrite /= size_map minnSS ltnS.
-by rewrite -/(let: (_,j,_) := (i,j,k) in (size j <= minn m' n')%N) -H Ih.
+case: (improve_pivot _ _); case => a b c /=; set M := map_mx _ _.
+case H: (Smith _) (Ih n' M) => [[i s] k] /=.
+by rewrite size_map minnSS ltnS.
 Qed.
 
 Definition euclidEDRMixin := EDR.Mixin SmithP.
