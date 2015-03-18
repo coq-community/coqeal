@@ -6,43 +6,59 @@ open Libnames
 
 let default_continuation = ignore
 
-let print_translation_command arity c =  
+let add_coercions env evdr term = 
+  (*
+    let glob = Detyping.detype true [] env !evdr term in 
+    Pretyping.understand_tcc_evars env evdr glob
+  *)
+  term
+
+let print_translation_command retype arity c =  
   let (evd, env) = Lemmas.get_current_context () in 
   let (evd, c) = Constrintern.interp_open_constr env evd c in
   let evdr = ref evd in 
   try
     let c_R = translate arity evdr env c in 
+    let c_R = if retype then add_coercions env evdr c_R else c_R in
     Pp.(msg_notice (Printer.pr_lconstr_env env !evdr c_R))
   with e -> 
     Pp.(msg_notice (str (Printexc.to_string e)))
 
 
-
 (** Adds the definition name := ⟦a⟧ : ⟦b⟧ a a. *)
 let declare_abstraction ?(opaque = false) ?(continuation = default_continuation) ?kind order evdr env a name =
+  let program_mode_before = Flags.is_program_mode () in 
+  Obligations.set_program_mode !Parametricity.program_mode;
   debug_string [`Abstraction] "### Begin declaration !";
   debug_evar_map [`Abstraction] "starting evarmap:" !evdr;
-  let refresh = false in 
-  let evd, b = Typing.e_type_of ~refresh env !evdr a in
-  evdr := evd;
-  Obligations.check_evars env evd;
-
+  let b = Retyping.get_type_of env !evdr a in
+  debug_string [`Time] "starting translation of term";
   debug [`Abstraction] "translate term :" env !evdr a;
   let a_R = translate order evdr env a  in
+  let a_R = add_coercions env evdr a_R in
+  let a_R = Typing.solve_evars env evdr a_R in
   debug [`Abstraction] "translate type :" env !evdr b;
+  debug_string [`Time] "starting translation of type";
   let b_R = relation order evdr env b in 
+  debug_string [`Time] "done translating";
   let sub = range (fun k -> prime order k a) order in 
   let b_R = substl sub b_R in
+  debug_string [`Time] "detyping ...";
+  let b_R = add_coercions env evdr b_R in
+  debug_string [`Time] "typing ...";
+  let b_R = Typing.solve_evars env evdr b_R in
+  debug_string [`Time] "retyping ...";
+  let b_R' = Retyping.get_type_of env !evdr a_R in 
+  debug_string [`Time] "unifying ...";
+  evdr := Unification.w_unify env !evdr Reduction.CUMUL b_R' b_R; 
+  debug_evar_map [`Abstraction] "after type checking (before simplification):" !evdr; 
+  let nf, _ = Evarutil.e_nf_evars_and_universes evdr in 
+  let a_R, b_R = nf a_R, nf b_R in 
   debug [`Abstraction] "translation of term, a_R = " env !evdr a_R;
-  debug [`Abstraction] "translate of type, b_R = " env !evdr b_R;
-  debug_evar_map [`Abstraction] "type checking b_R in" !evdr;
-  let evd, _ = Typing.e_type_of ~refresh env !evdr b_R in
-  debug_evar_map [`Abstraction] "type checking  a_R in " evd;
-  let evd, b_R' = Typing.e_type_of ~refresh env evd a_R in
+  let evd = !evdr in
+  debug_evar_map [`Abstraction] "after type checking :" evd; 
   debug [`Abstraction] "infered type is b_R' = " env evd b_R';
-  debug_string [`Abstraction] "checking cumulativity";
-  let evd = Unification.w_unify env evd Reduction.CUMUL b_R' b_R in 
-  debug_evar_map [`Abstraction] "after type checking :" evd;
+  debug_string [`Abstraction] "Cooking obligation ...";
   let obls, _, a_R, b_R = Obligations.eterm_obligations env name evd 0 a_R b_R in 
   let ctx = Evd.evar_universe_context evd in
   let hook = 
@@ -59,7 +75,8 @@ let declare_abstraction ?(opaque = false) ?(continuation = default_continuation)
   debug_string [`Abstraction] "add_definition:";
   debug [`Abstraction] "a_R:\t" env evd a_R;
   debug [`Abstraction] "b_R:\t" env evd b_R;
-  ignore (Obligations.add_definition ~opaque name ~hook ?kind ~tactic:(snd (Relations.get_parametricity_tactic ())) ~term:a_R b_R ctx obls)
+  ignore (Obligations.add_definition ~opaque name ~hook ?kind ~tactic:(snd (Relations.get_parametricity_tactic ())) ~term:a_R b_R ctx obls);
+  Obligations.set_program_mode program_mode_before
 
 let translate_command arity c names =  
   let (evd, env) = Lemmas.get_current_context () in 

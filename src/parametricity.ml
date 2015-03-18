@@ -14,13 +14,13 @@ module CoqConstants = struct
   let msg = "parametricity: unable to fetch constants"
   
   let eq evdref args = 
-    Program.papp evdref (fun () -> Coqlib.coq_reference msg ["Init"; "Logic"] "eq") args 
+    Program.papp evdref Program.coq_eq_ind args 
   
   let eq_refl evdref args = 
-    Program.papp evdref (fun () -> Coqlib.coq_reference msg ["Init"; "Logic"] "eq_refl") args 
+    Program.papp evdref Program.coq_eq_refl args 
 
   let transport evdref args = 
-    Program.papp evdref (fun () -> Coqlib.coq_reference msg ["Init"; "Logic"] "eq_rect") args 
+    Program.papp evdref Program.coq_eq_rect args 
 
   let proof_irrelevance evdref args = 
     Program.papp evdref (fun () -> Coqlib.coq_reference msg ["Logic"; "ProofIrrelevance"] "proof_irrelevance") args 
@@ -39,20 +39,43 @@ let all = [`ProofIrrelevance;
            `Module; 
            `Realizer; `Opacity]
 
-let debug_flag = []
+let debug_flag = [`Time; `Abstraction; `Module]
+
+let debug_mode = ref false
+let set_debug_mode = 
+   Goptions.declare_bool_option 
+    { Goptions.optsync  = true;
+      Goptions.optdepr  = false;
+      Goptions.optname  = "Parametricity Debug";
+      Goptions.optkey   = ["Parametricity"; "Debug"];
+      Goptions.optread  = (fun () -> !debug_mode);
+      Goptions.optwrite = (:=) debug_mode }
+
+let program_mode = ref false
+let set_program_mode = 
+   Goptions.declare_bool_option 
+    { Goptions.optsync  = true;
+      Goptions.optdepr  = false;
+      Goptions.optname  = "Parametricity Program";
+      Goptions.optkey   = ["Parametricity"; "Program"];
+      Goptions.optread  = (fun () -> !program_mode);
+      Goptions.optwrite = (:=) program_mode }
+
+
+
 
 let default_arity = 2
 
 let debug_message flags s e = 
-  if List.exists (fun x -> List.mem x flags) debug_flag then
+  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
     Pp.msg_notice Pp.(str s ++ e)
 
 let debug_env flags (s : string) env evd = 
-  if List.exists (fun x -> List.mem x flags) debug_flag then
+  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
     Pp.(msg_notice (str s ++ Printer.pr_context_of env evd)) 
 
 let debug flags (s : string) env evd c = 
-  if List.exists (fun x -> List.mem x flags) debug_flag then 
+  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then 
     try 
       Pp.(msg_notice (str s
        ++ Printer.pr_context_of env evd));
@@ -62,15 +85,15 @@ let debug flags (s : string) env evd c =
     with e -> Pp.(msg_notice (str (Printf.sprintf "Caught exception while debugging '%s'" (Printexc.to_string e))))
 
 let debug_evar_map flags s evd = 
-  if List.exists (fun x -> List.mem x flags) debug_flag then (
+  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then (
     Pp.msg_info Pp.(str s ++ Evd.pr_evar_universe_context (Evd.evar_universe_context evd)))
 
 let debug_string flags s =
-  if List.exists (fun x -> List.mem x flags) debug_flag then
+  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
     Pp.msg_notice (Pp.str ("--->\t"^s))
 
 let debug_case_info flags ci = 
-  if List.exists (fun x -> List.mem x flags) debug_flag then
+  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
     let (ind, k) = ci.ci_ind in 
     let ind_string = Printf.sprintf "%s[%d]" (MutInd.to_string ind) k in 
     let param = ci.ci_npar in 
@@ -96,7 +119,7 @@ let debug_case_info flags ci =
       (pp_info ci.ci_pp_info))
 
 let debug_rel_context flags s env l = 
-  if List.exists (fun x -> List.mem x flags) debug_flag then
+  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
     Pp.msg_notice Pp.(str s ++ (Termops.print_rel_context (push_rel_context l env)))
 
 let not_implemented ?(reason = "no reason") env evd t = 
@@ -121,6 +144,21 @@ let compose_lam_assum rel_context init =
  fold_rel_context_reverse (fun (acc : constr) ->
   function (x, None, typ) -> mkLambda (x, typ, acc) 
          | (x, Some def, typ) -> mkLetIn (x, def, typ, acc)) ~init rel_context
+
+let decompose_prod_n_assum_by_prod n =
+  if n < 0 then
+    failwith "decompose_prod_n_assum_by_prod: integer parameter must be positive";
+  let rec prodec_rec l n c =
+    if Int.equal n 0 then l,c
+    else match kind_of_term c with
+    | Prod (x,t,c)    -> prodec_rec (add_rel_decl (x,None,t) l) (n-1) c
+    | LetIn (x,b,t,c) -> prodec_rec (add_rel_decl (x,Some b,t) l) n c
+    | Cast (c,_,_)      -> prodec_rec l n c
+    | c -> failwith "decompose_prod_n_assum_by_prod: not enough assumptions"
+  in
+  prodec_rec empty_rel_context n
+
+
 
 let prop_or_type env evdr s = s
 
@@ -355,7 +393,8 @@ and translate order evd env (t : constr) : constr =
         let tuple = (ci_R, p_R, c_R, bl_R) in 
         mkCase tuple
    
-    | CoFix(ln, (_, tl, bl)) -> not_implemented ~reason:"cofix" env !evd t
+    | CoFix _ -> 
+        translate_cofix order evd env t
    
     | _ -> not_implemented ~reason:"trapfall" env !evd t
 
@@ -419,8 +458,11 @@ and translate_rel_context order evd env rc =
 
 
 and translate_variable order evd env v : constr =
-  Constr.mkConst (Relations.get_variable order v)
-
+  try 
+    Constr.mkConst (Relations.get_variable order v)
+  with Not_found -> 
+    error 
+      (Pp.str (Printf.sprintf "The variable '%s' has no registered translation, provide one with the Realizer command." (Names.Id.to_string v)))
 and translate_inductive order env (ind_name : inductive) =
   try 
     Relations.get_inductive order ind_name
@@ -450,6 +492,106 @@ and translate_case_printing order env cp =
 
 and translate_style x = x
 
+and translate_cofix order evd env t = 
+  let (index, (lna, tl, bl)) as fix = destCoFix t in
+  let nfun = Array.length lna in
+  let rec letfix name fix typ n k acc =
+    if k = 0 then acc 
+    else 
+      let k = k-1 in 
+      let fix_k = lift (n*order + k) (prime order k fix) in 
+      let typ_k = lift (n*order + k) (prime order k typ) in 
+      let acc = mkLetIn (Name (id_of_string (Printf.sprintf "fix_%s_%d" name (k+1))),
+                           fix_k, typ_k, acc) in  
+      letfix name fix typ n k acc 
+  in 
+  let rec letfixs n acc = 
+    if n = 0 then acc
+    else 
+      let n = n - 1 in 
+      let name = 
+        match lna.(n) with 
+        | Name id ->  Names.Id.to_string id
+        | _ -> string_of_int n
+      in
+      let fix = mkCoFix (index, (lna, tl, bl)) in 
+      let typ = tl.(n) in 
+      let acc = letfix name fix typ n order acc in 
+      letfixs n acc
+  in
+  let nrealargs = Array.map (fun x -> rel_context_nhyps (fst (decompose_lam_assum x))) bl in     
+  (* [lna_R] is the translation of names of each fixpoints. *)
+  let lna_R = Array.map (translate_name order) lna in
+  let ftbk_R = Array.mapi (fun i x -> 
+    let narg = nrealargs.(i) in 
+    let ft, bk = decompose_prod_n_assum_by_prod narg x in 
+    let ft_R = translate_rel_context order evd env ft in
+    let env_ft = push_rel_context ft env in 
+    let bk_R = relation order evd env_ft bk in
+     (ft, ft_R, bk, bk_R)) tl
+  in
+  let tl_R = Array.mapi (fun n (ft, ft_R, bk, bk_R) -> 
+     (* bk_R is well-typed in | G, ft|, x_1 : bk_1, x_2 : bk_R *)
+     (* we lift it to insert the [nfun * order] letins. *)
+     let ft_R_len = rel_context_length ft_R in 
+     let bk_R = liftn (nfun * order) (ft_R_len + order + 1) bk_R in 
+     let sub = range (fun k -> 
+                  mkApp (mkRel (ft_R_len + (nfun - n)*order - k ),
+                     Array.map (prime order k) (Termops.extended_rel_vect 0 ft)))
+               order 
+     in 
+     compose_prod_assum (Termops.lift_rel_context (nfun * order) ft_R) (substl sub bk_R)) ftbk_R
+  in
+
+  (* env_rec is the environement under fipoints. *)
+  let env_rec = push_rec_types (lna, tl, bl) env in 
+  (* n : fix index *)
+  let process_body n = 
+    let lams, body = decompose_lam_assum bl.(n) in 
+    let env_lams = push_rel_context lams env_rec in
+    let narg = rel_context_length lams in 
+    let body_R = translate order evd env_lams body in 
+    let (ft, ft_R, bk, bk_R) = ftbk_R.(n) in 
+    let theta = mkApp (mkRel (nfun - n + narg), Termops.extended_rel_vect 0 lams) in
+    (* lift to insert fixpoints variables before arguments 
+     * plus possible letins that were not in the type.
+     * *)
+    let nfun_letins = nfun + narg - nrealargs.(n) in 
+    let bk = liftn nfun_letins (narg + 1) bk in 
+    let bk_R = liftn (nfun_letins * (order + 1)) ((order + 1) * narg + order + 1) bk_R in 
+    (* narg is the position of fixpoints in env *)
+    let body_R = rewrite_cofixpoints order evd env_lams narg fix body theta bk bk_R body_R in
+    let lams_R = translate_rel_context order evd env_rec lams in 
+    let res = compose_lam_assum lams_R body_R in 
+    if List.exists (fun x -> List.mem x [`Fix]) debug_flag then begin
+      let env_R = translate_env order evd env_rec in 
+      debug [`Fix] "res = " env_R !evd res;
+    end;
+    res 
+  in
+  let bl_R = Array.init nfun process_body in 
+  let bl_R = 
+    (* example: if order = 2 and nfun = 3, then permut_sub is : [1;2;7;3;4;8;5;6;9] *)
+    let suc_order = order + 1 in 
+    let size_of_sub = suc_order * nfun in 
+    let permut_sub = 
+     let l = List.init size_of_sub (fun x -> if x mod suc_order <> 0 then nfun + x - x / suc_order else  1 + x / suc_order) in
+     List.map mkRel l
+    in 
+    Array.map (fun x -> 
+          let x = liftn size_of_sub (size_of_sub + 1) x in 
+          substl permut_sub x) bl_R
+  in 
+  let res = mkCoFix (index, (lna_R, tl_R, bl_R)) in 
+  let res = letfixs nfun res in
+  if List.exists (fun x -> List.mem x [`Fix]) debug_flag then begin
+    let env_R = translate_env order evd env in 
+    debug [`Fix] "cofix res = " env_R !evd res;
+  end;
+  res
+
+
+
 and translate_fix order evd env t = 
   let ((ri, i) as ln, (lna, tl, bl)) as fix = destFix t in
   let nfun = Array.length lna in
@@ -477,14 +619,14 @@ and translate_fix order evd env t =
       let acc = letfix name fix typ n order acc in 
       letfixs n acc
   in
-  let nrealargs = Array.map (fun x -> nb_lam x) bl in     
+  let nrealargs = Array.map (fun x -> rel_context_nhyps (fst (decompose_lam_assum x))) bl in     
   (* [ln_R] is the translation of ln, the array of arguments for each fixpoints. *) 
   let ln_R = (Array.map (fun x -> x*(order + 1) + order) ri, i) in
   (* [lna_R] is the translation of names of each fixpoints. *)
   let lna_R = Array.map (translate_name order) lna in
   let ftbk_R = Array.mapi (fun i x -> 
     let narg = nrealargs.(i) in 
-    let ft, bk = decompose_prod_n_assum narg x in 
+    let ft, bk = decompose_prod_n_assum_by_prod narg x in 
     let ft_R = translate_rel_context order evd env ft in
     let env_ft = push_rel_context ft env in 
     let bk_R = relation order evd env_ft bk in
@@ -521,28 +663,30 @@ and translate_fix order evd env t =
      * shallow cases just after a lambda (the goal is to 
      * avoid as much as possible rewriting). 
      * *)
-    let rec traverse_cases env depth (args : constr list) term = 
+    let rec traverse_cases env depth (args : constr list) typ typ_R term = 
       match kind term with 
-        | Case (ci , p, c, branches) when test_admissible env c args branches ->
+        | Case (ci , p, c, branches) when test_admissible env c args p branches ->
             process_case env depth args term 
         | _ -> 
             (* otherwise we have to perform some rewriting. *)
             debug [`Fix] "c = " env !evd term;
+            debug [`Fix] "typ = " env !evd typ;
             let term_R  = translate order evd env term in 
-            let (_, ft_R, bk, bk_R) = ftbk_R.(n) in 
             let theta = inst_args depth args in 
-            (* lift to insert fixpoints variables before arguments *)
-            let bk = liftn nfun (narg + 1) bk in 
-            let bk_R = liftn (nfun * (order + 1)) ((order + 1) * narg + order + 1) bk_R in 
             (* depth + narg is the position of fixpoints in env *)
-            rewrite_fixpoints order evd env (depth + narg) fix term theta bk bk_R term_R
+            rewrite_fixpoints order evd env (depth + narg) fix term theta typ typ_R term_R
 
-    and test_admissible env c args branches = 
+    and test_admissible env c args predicate branches = 
        isRel c && List.mem c args && Array.for_all (Vars.noccurn (destRel c)) branches && 
        let typ = Retyping.get_type_of env !evd c in 
-       let (ind, u), args = Inductiveops.find_inductive env !evd typ in 
+       debug [`Fix] "typ = " env !evd typ;
+       List.iteri (fun i x -> 
+          debug [`Fix] (Printf.sprintf "args.(%d) = " i) env !evd x) args;
+       let (ind, u), ind_args = Inductiveops.find_inductive env !evd typ in 
        let nparams = Inductiveops.inductive_nparams ind in 
-       let _, realargs = List.chop nparams args in 
+       let _, realargs = List.chop nparams ind_args in 
+       List.iteri (fun i x -> 
+          debug [`Fix] (Printf.sprintf "realargs.(%d) = " i) env !evd x) realargs;
        List.for_all (fun x -> List.mem x args) realargs
 
     and process_case env depth (fun_args : constr list) case = 
@@ -582,8 +726,8 @@ and translate_fix order evd env t =
         let lams_R = translate_rel_context order evd env lams in 
         let env_lams = Environ.push_rel_context lams env in 
         let typ_R = relation order evd env_lams typ in
-        let typ_R = substl sub typ_R in 
-        let p_R = compose_lam_assum lams_R typ_R in 
+        let p_R = substl sub typ_R in 
+        let p_R = compose_lam_assum lams_R p_R in 
         debug [`Fix] "predicate_R = " Environ.empty_env !evd p_R;
         let bl_R = 
           debug_string [`Fix] (Printf.sprintf "dest_rel = %d" (destRel c));
@@ -595,7 +739,6 @@ and translate_fix order evd env t =
             Array.map (translate order evd env) bl 
           else begin
             Array.mapi (fun i b ->
-               (* FIX : let cstr = ith_constructor_of_inductive ind (i + 1) in *)
                let (cstr, u) as cstru = constructors.(i).Inductiveops.cs_cstr in 
                let pcstr = mkConstructU cstru in 
                let nrealdecls = Inductiveops.constructor_nrealdecls cstr in
@@ -608,21 +751,33 @@ and translate_fix order evd env t =
                            (Termops.extended_rel_list 0 realdecls))) 
                in
                let concls = constructors.(i).Inductiveops.cs_concl_realargs in  
+               assert (Array.length concls = i_nargs);
                let fun_args = 
                 List.map (fun x -> if x = c then instr_cstr
                              else if List.mem x i_realargs then concls.(i_nargs - (List.index (=) x i_realargs))
                              else lift nrealdecls x) fun_args 
                in
                let realdecls_R = translate_rel_context order evd env realdecls in 
+               let sub = instr_cstr::(List.rev (Array.to_list concls)) in 
+               let typ = substl sub typ in 
+               (* FIXME : translate twice here :*)
+               let typ_R = relation order evd env_lams typ in
                let env = push_rel_context realdecls env in 
-               let b_R = traverse_cases env (depth + nrealdecls) fun_args b in 
+               let b_R = traverse_cases env (depth + nrealdecls) fun_args typ typ_R b in 
                compose_lam_assum realdecls_R b_R
             ) bl 
           end
         in 
         mkCase (ci_R, p_R, c_R, bl_R)
     in 
-    let body_R = traverse_cases env_lams 0 args body in 
+    let (_, ft_R, bk, bk_R) = ftbk_R.(n) in 
+    let nfun_letins = nfun + narg - nrealargs.(n) in 
+    (* lift to insert fixpoints variables before arguments 
+     * plus possible letins that were not in the type.
+     * *)
+    let bk = liftn nfun_letins (narg + 1) bk in 
+    let bk_R = liftn (nfun_letins * (order + 1)) ((order + 1) * narg + order + 1) bk_R in 
+    let body_R = traverse_cases env_lams 0 args bk bk_R body in 
     let res = compose_lam_assum lams_R body_R in 
     if List.exists (fun x -> List.mem x [`Fix]) debug_flag then begin
       let env_R = translate_env order evd env_rec in 
@@ -683,6 +838,103 @@ and rewrite_fixpoints order evdr env (depth : int) (fix : fixpoint) source targe
   in
   let env_rc = Environ.rel_context env in 
   let env_rc = instantiate_fixpoint_in_rel_context env_rc in 
+  let path = CoqConstants.eq evdr [| typ; source; target|] in
+  let gen_rc, new_vec, path = weaken_unused_free_rels env_rc path in  
+  let gen_path = it_mkProd_or_LetIn path  gen_rc in 
+  debug [`Fix] "gen_path_type" Environ.empty_env !evdr gen_path;
+  let evd, hole = Evarutil.new_evar Environ.empty_env !evdr gen_path in 
+  evdr := evd; 
+  let let_gen acc = mkLetIn (Name (id_of_string "gen_path"), hole, gen_path, acc) in 
+  let_gen @@ (fold_nat (fun k acc ->
+    let pred_sub = 
+      (range (fun x -> lift 1 (prime order (k+1+x) target)) (order-1 - k))
+      @ [ mkRel 1 ] 
+      @ (range (fun x -> lift 1 (prime order x source)) k)
+    in
+    let index = lift 1 (prime order k typ) in 
+    let pred = mkLambda (Name (id_of_string "x"), index, liftn 1 2 (substl pred_sub (liftn 1 (order + 1) typ_R))) in 
+    let base = lift 1 (prime order k source) in 
+    let endpoint = lift 1 (prime order k target) in 
+    let path = mkApp (mkRel 1, 
+       Array.map (fun x -> lift 1 (prime order k x)) new_vec)
+    in 
+    CoqConstants.transport evdr
+          [| index; 
+             base; 
+             pred; acc; endpoint; path |]) (lift 1 acc) order)
+
+and weaken_unused_free_rels env_rc term = 
+  (* Collect the dependencies with [vars] in a rel_context. *)
+   let rec collect_free_vars k vars = function 
+     | [] -> vars
+     | decl::tl when Int.Set.mem k vars -> 
+       let fv = 
+          match decl with 
+             (_, None, typ) -> 
+               Termops.free_rels typ
+           | (_, Some def, typ) -> 
+               Int.Set.union (Termops.free_rels def) (Termops.free_rels typ)
+       in
+       let vars = Int.Set.fold (fun x -> Int.Set.add (x + k)) fv vars in
+       collect_free_vars (k + 1) vars tl
+    | _::tl ->  
+       collect_free_vars (k + 1) vars tl
+   in
+   let rec apply_substitution_rel_context k sub acc = 
+     function [] -> List.rev acc | decl :: tl when destRel (List.hd sub) > 0 -> 
+       let sub = List.tl sub in 
+       let decl = substl_decl (List.map (lift (-k)) sub) decl in 
+       apply_substitution_rel_context (k + 1) sub (decl::acc) tl
+     | _ :: tl -> 
+       apply_substitution_rel_context k (List.tl sub) acc tl
+   in 
+
+   debug_rel_context [`Fix] "env_rv = " Environ.empty_env env_rc;
+   let set = collect_free_vars 1 (Termops.free_rels term) env_rc in 
+   let lst = Int.Set.fold (fun x acc -> x::acc) set [] in 
+   let lst = List.sort Pervasives.compare lst in
+   debug_string [`Fix] (Printf.sprintf "[%s]" (String.concat ";" (List.map string_of_int lst)));
+   let rec dup n x acc = if n <= 0 then acc else dup (n-1) x (x::acc) in 
+   let rec gen_sub min pos len acc = function
+            [] -> dup (len - min) 0 acc 
+    | hd :: tl -> 
+        let n = hd - min - 1 in 
+        let acc = pos::(dup n 0 acc) in 
+        gen_sub hd (pos + 1) len acc tl
+   in
+   let sub_lst = List.rev (gen_sub 0 1 (List.length env_rc) [] lst) in
+   debug_string [`Fix] (Printf.sprintf "[%s]" (String.concat ";" (List.map string_of_int sub_lst)));
+   let sub = List.map mkRel sub_lst in
+   let new_env_rc = apply_substitution_rel_context 1 sub [] env_rc in 
+   let new_vec = Termops.extended_rel_list 0 env_rc in
+   let new_vec = List.filter (fun x -> let v = destRel x in Int.Set.mem v set) new_vec in 
+   let new_vec = Array.of_list new_vec in
+   assert (Array.length new_vec == Context.rel_context_nhyps new_env_rc);
+   new_env_rc, new_vec, substl sub term
+   
+and rewrite_cofixpoints order evdr env (depth : int) (fix : cofixpoint) source target typ typ_R acc =
+  debug [`Fix] "source =" env !evdr source;
+  debug [`Fix] "target =" env !evdr target;
+  debug [`Fix] "typ =" env !evdr typ;
+  if List.exists (fun x -> List.mem x [`Fix]) debug_flag then begin
+    let env_R = translate_env order evdr env in 
+    let rc_order = rev_range (fun k -> (Name (id_of_string (Printf.sprintf "rel_%d" k))), None, 
+                         lift k (prime order k typ)) order in 
+    let env_R = push_rel_context rc_order env_R in
+    debug [`Fix] "typ_R =" env_R !evdr typ_R
+  end;
+  let instantiate_fixpoint_in_rel_context rc = 
+    let index, ((lna, _, _) as stuff) = fix in 
+    let pos = depth in 
+    let nfun = Array.length lna in 
+    let front, back = List.chop pos rc in
+    let funs, back = List.chop nfun back in 
+    let fixs = List.mapi (fun i -> function (name, None, typ) -> 
+      (name, Some (mkCoFix ((nfun - 1 - index), stuff)), typ) | _ -> assert false) funs in 
+    front @ fixs @ back
+  in
+  let env_rc = Environ.rel_context env in 
+  let env_rc = instantiate_fixpoint_in_rel_context env_rc in 
   let gen_path = it_mkProd_or_LetIn (CoqConstants.eq evdr [| typ; source; target|]) env_rc in 
   debug [`Fix] "gen_path_type" env !evdr gen_path;
   let evd, hole = Evarutil.new_evar Environ.empty_env !evdr gen_path in 
@@ -706,6 +958,9 @@ and rewrite_fixpoints order evdr env (depth : int) (fix : fixpoint) source targe
           [| index; 
              base; 
              pred; acc; endpoint; path |]) (lift 1 acc) order)
+
+
+
 
 open Entries
 open Declarations
