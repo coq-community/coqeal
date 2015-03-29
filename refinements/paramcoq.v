@@ -52,7 +52,6 @@ Parametricity minn.
 Parametricity maxn.
 
 (* seq *)
-Print iter.
 Parametricity Module BinNums.
 Parametricity ssrnat.iter.
 Parametricity ncons.
@@ -339,8 +338,9 @@ Proof.
 rewrite !refinesE=> m m' -> n n' ->; rewrite /eq_op /eq_N.
 case: (N.eqb_spec _ _) => [->|/eqP hneq].
   by rewrite eqxx; exact: true_R.
-admit.
-(* apply/negP => [/eqP /(can_inj nat_of_binK)]; apply/eqP. *)
+suff H : (nat_of_bin m' == nat_of_bin n') = false.
+  by rewrite H; exact: false_R.
+by apply/negP => [/eqP /(can_inj nat_of_binK)]; apply/eqP.
 Qed.
 
 End binnat_theory.
@@ -537,12 +537,11 @@ Proof. by rewrite refinesE /Rseqpoly /= cons_poly_def mul0r add0r. Qed.
 
 Instance Rseqpoly_opp : refines (Rseqpoly ==> Rseqpoly) -%R -%C.
 Proof.
-admit.
-(* rewrite refinesE /Rseqpoly => p sp -> {p}. *)
-(* apply/polyP => i /=; rewrite /opp_op /seqpoly_opp /=. *)
-(* rewrite coef_opp_poly !coef_Poly. *)
-(* have [hlt|hleq] := ltnP i (size sp); first by rewrite (nth_map 0%C). *)
-(* by rewrite !nth_default ?oppr0 ?size_mkseq ?size_map. *)
+rewrite refinesE /Rseqpoly => p sp -> {p}.
+apply/polyP => i /=; rewrite /opp_op /seqpoly_opp /=.
+rewrite coef_opp_poly !coef_Poly.
+have [hlt|hleq] := ltnP i (size sp); first by rewrite (nth_map 0%C).
+by rewrite !nth_default ?oppr0 ?size_mkseq ?size_map.
 Qed.
 
 Instance Rseqpoly_add : refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) +%R +%C.
@@ -836,3 +835,11 @@ by compute.
 Abort.
 
 End test_karatsuba.
+
+Section testmx.
+Variable mxA : nat -> nat -> Type.
+Definition idmx (m n : nat) (mx : mxA m n) : mxA m n := mx.
+End testmx.
+Parametricity idmx.
+Print idmx_R. (* Here we get something too general! *)
+
