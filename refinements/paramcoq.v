@@ -2,7 +2,7 @@ Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
 Require Import ssrint ZArith.
 
-Require Import param.
+Require Import hrel param.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -13,41 +13,10 @@ Local Open Scope ring_scope.
 Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
 
 Delimit Scope computable_scope with C.
-Delimit Scope rel_scope with rel.
+(* Delimit Scope rel_scope with rel. *)
 
 (* Shortcut for triggering typeclass resolution *)
 Ltac tc := do 1?typeclasses eauto.
-
-Section hrel.
-
-Definition sub_hrel A B (R R' : A -> B -> Type) :=
-  forall (x : A) (y : B), R x y -> R' x y.
-
-Definition comp_hrel A B C
-  (R : A -> B -> Type) (R' : B -> C -> Type) : A -> C -> Type :=
-    fun a c => sigT (fun b => R a b * R' b c)%type.
-
-Definition hrespectful (A B C D : Type)
-  (R : A -> B -> Type) (R' : C -> D -> Type) : (A -> C) -> (B -> D) -> Type :=
-  fun f g => forall (x : A) (y : B), R x y -> R' (f x) (g y).
-
-Local Notation "X \o Y" := (comp_hrel X Y) : rel_scope.
-Local Notation "X <= Y" := (sub_hrel X Y) : rel_scope.
-Local Notation " R ==> S " := (@hrespectful _ _ _ _ R S)
-    (right associativity, at level 55) : rel_scope.
-
-Lemma comp_eqr A B (R : A -> B -> Type) : (R \o eq <= R)%rel.
-Proof. by move=> x y [y' [? <-]]. Qed.
-
-Lemma comp_eql A B (R : A -> B -> Type) : (eq \o R <= R)%rel.
-Proof. by move=> x y [y' [<-]]. Qed.
-
-End hrel.
-
-Notation "X \o Y" := (comp_hrel X Y) : rel_scope.
-Notation "X <= Y" := (sub_hrel X Y) : rel_scope.
-Notation " R ==> S " := (@hrespectful _ _ _ _ R S)
-    (right associativity, at level 55) : rel_scope.
 
 Section refinements.
 
@@ -62,10 +31,6 @@ Proof. by rewrite /refines unlock. Qed.
 
 Lemma refines_eq T (x y : T) : refines eq x y -> x = y.
 Proof. by rewrite refinesE. Qed.
-
-Definition prod_hrel A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
-  A * B -> A' * B' -> Type :=
-  fun x y => (rA x.1 y.1 * rB x.2 y.2)%type.
 
 Global Instance refines_bool_eq x y : refines bool_R x y -> refines eq x y.
 Proof. by rewrite !refinesE=> [[]]. Qed.
@@ -109,7 +74,7 @@ Global Instance refines_apply
 Proof. by rewrite !refinesE => c d rcd a b rab; apply: rcd. Qed.
 
 Global Instance composable_rid1 A B (R : A -> B -> Type) : composable eq R R | 1.
-Proof. by rewrite composableE; apply: comp_eql. Qed.
+Proof. by rewrite composableE; apply: (eq_hrelRL (comp_eql _)). Qed.
 
 Global Instance composable_bool_id1 B (R : bool -> B -> Type) : composable bool_R R R | 1.
 Proof. by rewrite composableE => x y [y' [[]]]. Qed.
