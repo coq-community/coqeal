@@ -2,6 +2,8 @@ Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
 Require Import ssrint ZArith.
 
+Require Import param.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -12,53 +14,6 @@ Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
 
 Delimit Scope computable_scope with C.
 Delimit Scope rel_scope with rel.
-
-(* Parametricity stuff *)
-Declare ML Module "relations".
-Declare ML Module "parametricity".
-Declare ML Module "declare_translation".
-Declare ML Module "abstraction".
-
-Global Ltac destruct_reflexivity :=
-  intros ; repeat match goal with
-  | [ x : _ |- _ = _ ] => destruct x; reflexivity; fail
-  end.
-
-Global Parametricity Tactic := destruct_reflexivity.
-
-Require Import ProofIrrelevance. (* for opaque terms *)
-
-Parametricity Module Logic.
-(* Realizer of proof_admitted. *)
-Next Obligation. admit. Defined.
-Parametricity Module Datatypes.
-Parametricity Module Specif.
-Export Logic_R Datatypes_R.
-
-(* ssrnat *)
-Parametricity subn.
-Parametricity eqn.
-
-(* This trick avoids having to apply Parametricity to eqtype structure *)
-Definition leqn m n := eqn (m - n) 0.
-Parametricity leqn.
-Realizer ssrnat.leq as leq_R := leqn_R.
-(* Parametricity geq. *)
-Parametricity muln.
-Parametricity addn_rec.
-Parametricity addn.
-Parametricity half.
-Parametricity minn.
-Parametricity maxn.
-
-(* seq *)
-Parametricity Module BinNums.
-Parametricity ssrnat.iter.
-Parametricity ncons.
-Parametricity List.map.
-(* Parametricity drop. *)
-(* Parametricity take. *)
-(* TODO: Finish translating ssr constants! *)
 
 (* Shortcut for triggering typeclass resolution *)
 Ltac tc := do 1?typeclasses eauto.
@@ -352,17 +307,17 @@ Proof. by rewrite refinesE /Rnat /implem /implem_N bin_of_natK. Qed.
 
 Goal (1 == 1)%nat.
 rewrite [_ == _]refines_eq.
-Time compute.
+by compute.
 Abort.
 
 Goal (100 == 100)%nat.
 rewrite [_ == _]refines_eq.
-Time compute.
+by compute.
 Abort.
 
 Goal (998 + 2 == 1000)%nat.
 rewrite [_ == _]refines_eq.
-Time compute.
+by compute.
 Abort.
 
 End testnat.
@@ -425,17 +380,17 @@ Section testint.
 
 Goal (1 == 1 :> int).
 rewrite [_ == _]refines_eq.
-Time compute.
+by compute.
 Abort.
 
 Goal (10%:Z - 5%:Z == 1 + 4%:Z).
 rewrite [_ == _]refines_eq.
-Time compute.
+by compute.
 Abort.
 
 Goal (1000%:Z == 998%:Z + 2%:Z).
 rewrite [_ == _]refines_eq.
-Time compute.
+by compute.
 Abort.
 
 End testint.
@@ -657,7 +612,7 @@ Section testpoly.
 Goal (1 == (1 : {poly {poly {poly int}}})).
 rewrite [_ == _]refines_eq.
 do ?rewrite /one_op /seqpoly1.
-compute.
+by compute.
 Abort.
  
 Goal (Poly [:: 1; 2%:Z; 3%:Z] + Poly [:: 1; 2%:Z; 3%:Z]) == Poly [:: 1 + 1; 2%:Z + 2%:Z; 2%:Z + 4%:Z].
