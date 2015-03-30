@@ -4,6 +4,7 @@ Require Import choice fintype finfun ssrfun bigop.
 (* Require Import zint orderedalg orderedzint. *)
 
 Require Import dvdring cdvdring cssralg.
+
 Require Import Coq.ZArith.Zdiv Coq.ZArith.Zabs.
 
 Import GRing.
@@ -57,9 +58,7 @@ Canonical Structure p_choiceType :=
 Canonical Structure p_countType :=
   Eval hnf in CountType positive p_countMixin.
 
-
 (* Structures on Z *)
-
 Lemma eqzP : Equality.axiom Zeq_bool.
 Proof. by move=> z1 z2;  apply: (iffP idP); move/Zeq_is_eq_bool. Qed.
 
@@ -110,7 +109,6 @@ Canonical Structure z_choiceType :=
   Eval hnf in ChoiceType Z z_choiceMixin.
 Canonical Structure z_countType :=
   Eval hnf in CountType Z z_countMixin.
-
 
 Lemma ZplusA : associative Zplus.
 Proof. exact Zplus_assoc. Qed.
@@ -290,6 +288,8 @@ Qed.
 
 Definition Zdiv (a b : Z) : (Z * Z) := if b == 0 then (0%Z,a) else Zdiv_eucl a b.
 
+Import Omega.
+
 Lemma ZdivP : forall (a b : Z), EuclideanRing.edivr_spec Zabs_nat a b (Zdiv a b).
 Proof.
 move=> a b; rewrite /Zdiv.
@@ -303,7 +303,7 @@ apply/implyP=> _; move: b1; rewrite /Remainder.
 case=> [lt0rb | [ ltbr ler0 ] ]; first by apply/ltP; apply: Zabs_nat_lt.
 apply/ltP; apply: inj_lt_rev.
 rewrite !inj_Zabs_nat -Zabs_Zopp -[Zabs b]Zabs_Zopp -!inj_Zabs_nat.
-apply: inj_lt; apply: Zabs_nat_lt; omega.
+by apply: inj_lt; apply: Zabs_nat_lt; omega.
 Qed.
 
 Definition Z_euclidMixin := EuclideanRing.Mixin Zabs_mull ZdivP.
