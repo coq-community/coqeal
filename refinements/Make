@@ -3,8 +3,8 @@ bigQrat.v
 binint.v
 binnat.v
 boolF2.v
-fastlup.v
-gauss.v
+# fastlup.v <- not compiling anymore
+# gauss.v <- not compiling anymore
 hpoly.v
 invmx.v
 karatsuba.v

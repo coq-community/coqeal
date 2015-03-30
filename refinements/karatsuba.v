@@ -51,18 +51,17 @@ Instance mul_polyR : mul {poly R} := *%R.
 Instance sub_polyR : sub {poly R} := fun x y => (x - y)%R.
 Variable f : {poly R} -> nat.
 
-Definition karatsuba_recR :=
-  (karatsuba_rec (fun n => *%R^~ 'X^n) f
-                 (fun n p => (rdivp p 'X^n, rmodp p 'X^n))).
-Notation karatsubaR :=
-  (karatsuba (fun n => *%R^~ 'X^n) f
-             (fun n p => (rdivp p 'X^n, rmodp p 'X^n))).
+Definition shift_poly n : {poly R} -> {poly R} := *%R^~ 'X^n.
+Definition split_poly n (p : {poly R}) := (rdivp p 'X^n, rmodp p 'X^n).
+
+Definition karatsuba_recR := karatsuba_rec shift_poly f split_poly.
+Notation karatsubaR := (karatsuba shift_poly f split_poly).
 
 Lemma karatsuba_recE n (p q : {poly R}) : karatsuba_recR n p q = p * q.
 Proof.
 elim: n=> //= n ih in p q *; case: ifP=> // _; set m := minn _ _.
 rewrite [p in RHS](rdivp_eq (monicXn _ m)) [q in RHS](rdivp_eq (monicXn _ m)).
-rewrite !ih !(mulrDl, mulrDr, mulNr) mulnC exprM.
+rewrite /shift_poly /split_poly !ih !(mulrDl, mulrDr, mulNr) mulnC exprM.
 rewrite -addrA -opprD [X in X + _ - _]addrC addrACA addrK.
 by simpC; rewrite !(commr_polyXn, mulrA, addrA).
 Qed.
@@ -71,7 +70,6 @@ Lemma karatsubaP (p q : {poly R}) : karatsubaR p q = p * q.
 Proof. exact: karatsuba_recE. Qed.
 
 End karatsuba_poly.
-
 
 (* Karatsuba where we normalize, i.e. remove trailing zeroes in recursive call. 
    This version is much faster when applied to polynomials with trailing zeroes *)

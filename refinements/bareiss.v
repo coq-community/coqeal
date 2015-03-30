@@ -4,7 +4,7 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path ssralg.
 Require Import fintype perm choice matrix bigop zmodp poly polydiv mxpoly.
 
-Require Import refinements minor.
+Require Import hrel refinements minor.
 
 Import GRing.Theory AlgOp Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
 
@@ -26,28 +26,29 @@ Local Open Scope computable_scope.
 Variable polyR : Type.
 Variable mxR : nat -> nat -> Type.
 Variable mxpolyR : nat -> nat -> Type.
-Variable ord : nat -> Type.
+(* Variable ord : nat -> Type. *)
 
 Context `{zero R, one polyR, !hopp mxR}.
-Context `{fun_of polyR ord mxpolyR, forall n, zero (ord (1 + n))}.
+(* Context `{fun_of polyR ord mxpolyR, forall n, zero (ord (1 + n))}. *)
 Context `{ursub mxpolyR, dlsub mxpolyR, drsub mxpolyR}.
 Context `{!hsub mxpolyR, !hmul mxpolyR, !hscale polyR mxpolyR}.
 Context `{map_mx_class polyR mxpolyR}.
+Variable top_left : forall m, mxpolyR (1 + m) (1 + m) -> polyR.
 Variable rdivp : polyR -> polyR -> polyR.
 Variable char_poly_mx : forall n, mxR n n -> mxpolyR n n.
 Variable head : polyR -> R.
 
 Fixpoint bareiss_rec m (a : polyR) : mxpolyR (1 + m) (1 + m) -> polyR :=
   match m with
-    | S p => fun M =>
-      let d   := fun_of_matrix M 0 0 in
+    | S p => fun (M : mxpolyR (1 + (1 + p)) (1 + (1 + p))) =>
+      let d   := top_left M in
       let l   := ursubmx M in
       let c   := dlsubmx M in
       let N   := drsubmx M in
       let M'  := (d *: N - c *m l)%HC in
       let M'' := map_mx (fun x => rdivp x a) M' in
         bareiss_rec d M''
-    | _ => fun M => fun_of_matrix M 0 0
+    | _ => fun M => top_left M
   end.
 
 Definition bareiss n (M : mxpolyR (1 + n) (1 + n)) := bareiss_rec 1 M.
@@ -126,8 +127,8 @@ Variable R : comRingType.
 Instance : zero R := 0.
 Instance : one {poly R} := 1.
 Instance : hopp (matrix R) := @oppmx R.
-Instance : fun_of {poly R} ordinal (matrix {poly R}) := @matrix.fun_of_matrix {poly R}.
-Instance : forall n, zero 'I_(1 + n) := fun n => 0%R.
+(* Instance : fun_of {poly R} ordinal (matrix {poly R}) := @matrix.fun_of_matrix {poly R}. *)
+(* Instance : forall n, zero 'I_(1 + n) := fun n => 0%R. *)
 Instance : ursub (matrix {poly R}) := @matrix.ursubmx {poly R}.
 Instance : dlsub (matrix {poly R}) := @matrix.dlsubmx {poly R}.
 Instance : drsub (matrix {poly R}) := @matrix.drsubmx {poly R}.
@@ -135,6 +136,8 @@ Instance : hsub (matrix {poly R}) := fun m n (M N : 'M[{poly R}]_(m,n)) => M - N
 Instance : hmul (matrix {poly R}) := @mulmx [ringType of {poly R}].
 Instance : hscale {poly R} (matrix {poly R}) := @scalemx [ringType of {poly R}].
 Instance : map_mx_class {poly R} (matrix {poly R}) := @matrix.map_mx {poly R} {poly R}.
+
+Definition top_leftM m (M : 'M[{poly R}]_(1 + m,1 + m)) : {poly R} := M 0 0.
 
 (* Why is this not in the libraries? *)
 Lemma monic_lreg (p : {poly R}) : p \is monic -> GRing.lreg p.
@@ -197,8 +200,9 @@ Lemma bareiss_recE : forall m a (M : 'M[{poly R}]_(1 + m)),
   a \is monic ->
  (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
  (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
-  a ^+ m * (bareiss_rec (@rdivp R) a M) = \det M.
+  a ^+ m * (bareiss_rec top_leftM (@rdivp R) a M) = \det M.
 Proof.
+rewrite /top_leftM /=.
 elim=> [a M _ _ _|m ih a M am hpm hdvd] /=.
   by rewrite expr0 mul1r {2}[M]mx11_scalar det_scalar1.
 have ak_monic k : a ^+ k \is monic by apply/monic_exp.
@@ -232,31 +236,79 @@ Qed.
 
 Lemma bareissE n (M : 'M[{poly R}]_(1 + n))
   (H : forall p (h h' : p < 1 + n), pminor h h' M \is monic) :
-  bareiss (@rdivp R) M = \det M.
+  bareiss top_leftM (@rdivp R) M = \det M.
 Proof.
 rewrite /bareiss -(@bareiss_recE n 1 M) ?monic1 ?expr1n ?mul1r //.
 by move=> k f g; rewrite expr1n rdvd1p.
 Qed.
 
 Lemma bareiss_char_polyE n (M : 'M[R]_(1 + n)) :
-  bareiss_char_poly (@rdivp R) (@char_poly_mx R) M = char_poly M.
+  bareiss_char_poly top_leftM (@rdivp R) (@char_poly_mx R) M = char_poly M.
 Proof.
 rewrite /bareiss_char_poly bareissE // => p h h'.
 exact: pminor_char_poly_mx_monic.
 Qed.
 
-Lemma bdetE n (M : 'M[R]_(1 + n)) : bdet (@rdivp R) (@char_poly_mx R) (fun s => s`_0) M = \det M.
+Lemma bdetE n (M : 'M[R]_(1 + n)) : bdet top_leftM (@rdivp R) (@char_poly_mx R) (fun s => s`_0) M = \det M.
 Proof.
 rewrite /bdet bareiss_char_polyE char_poly_det.
 have -> : (-M)%HC = -M by [].
 by rewrite -scaleN1r detZ mulrA -expr2 sqrr_sign mul1r.
 Qed.
 
-(***** WIP below here **********)
-
 End bareiss_poly.
 End bareiss_correctness.
 
+Section bareiss_param.
+
+Import Refinements.Op.
+
+Variable R : comRingType.
+
+Instance : zero R := 0.
+Instance : one {poly R} := 1.
+Instance : hopp (matrix R) := @oppmx R.
+(* Instance : fun_of {poly R} ordinal (matrix {poly R}) := @matrix.fun_of_matrix {poly R}. *)
+(* Instance : forall n, zero 'I_(1 + n) := fun n => 0%R. *)
+Instance : ursub (matrix {poly R}) := @matrix.ursubmx {poly R}.
+Instance : dlsub (matrix {poly R}) := @matrix.dlsubmx {poly R}.
+Instance : drsub (matrix {poly R}) := @matrix.drsubmx {poly R}.
+Instance : hsub (matrix {poly R}) := fun m n (M N : 'M[{poly R}]_(m,n)) => M - N.
+Instance : hmul (matrix {poly R}) := @mulmx [ringType of {poly R}].
+Instance : hscale {poly R} (matrix {poly R}) := @scalemx [ringType of {poly R}].
+Instance : map_mx_class {poly R} (matrix {poly R}) := @matrix.map_mx {poly R} {poly R}.
+
+Context (polyR : Type)
+        (RpolyR : {poly R} -> polyR -> Prop)
+        (mxpolyR : nat -> nat -> Type)
+        (RmxpolyR : forall {m n}, 'M[{poly R}]_(m, n) -> mxpolyR m n -> Prop).
+Arguments RmxpolyR {m n} _ _.
+
+(* Context `{fun_of polyR ordA mxpolyR}. *)
+(* Context `{forall m, zero (ordA (1 + m))}. *)
+Context `{ursub mxpolyR, dlsub mxpolyR, drsub mxpolyR}.
+Context `{!hsub mxpolyR, !hmul mxpolyR, !hscale polyR mxpolyR}.
+Context `{map_mx_class polyR mxpolyR}.
+Context `{forall m n m' n', param (RmxpolyR ==> RmxpolyR)
+  (@matrix.drsubmx {poly R} m n m' n')  (@drsubmx _ _ m n m' n')}.
+Context `{forall m n m' n', param (RmxpolyR ==> RmxpolyR)
+  (@matrix.ursubmx {poly R} m n m' n')  (@ursubmx _ _ m n m' n')}.
+Context `{forall m n m' n', param (RmxpolyR ==> RmxpolyR)
+  (@matrix.dlsubmx {poly R} m n m' n')  (@dlsubmx _ _ m n m' n')}.
+
+Variable divp : polyR -> polyR -> polyR.
+Variable top_left : forall m, mxpolyR (1 + m) (1 + m) -> polyR.
+
+Global Instance param_bareiss m :
+   param (RpolyR ==> RmxpolyR ==> RpolyR)%rel
+         (@bareiss_rec {poly R} (matrix {poly R}) _ _ _ _ _ _ _ (@top_leftM R)  (@rdivp R) m)
+         (@bareiss_rec polyR mxpolyR _ _ _ _ _ _ _ top_left divp m).
+Admitted.
+
+End bareiss_param.
+
+
+(** WIP below *)
 Section poly_op.
 
 Variable R : comRingType.

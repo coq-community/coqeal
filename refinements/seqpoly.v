@@ -456,7 +456,8 @@ Context `{!param (rAC ==> rAC ==> rAC) subr sub_op}.
 Context `{!param (rAC ==> rAC ==> rAC) *%R *%C}.
 Context `{!param (rAC ==> rAC ==> Logic.eq) eqtype.eq_op eq_op}.
 
-Definition RseqpolyC := (Rseqpoly \o seq_hrel rAC)%rel.
+Definition RseqpolyC : {poly R} -> seq C -> Prop :=
+  (Rseqpoly \o seq_hrel rAC)%rel.
 
 Global Instance RseqpolyC_0 : param RseqpolyC 0%R 0%C.
 Proof. exact: param_trans. Qed.
@@ -486,7 +487,7 @@ Proof. exact: param_trans. Qed.
 
 Global Instance RseqpolyC_size_seqpoly : param (RseqpolyC ==> Logic.eq)
   (fun (p : {poly R}) => size p) (fun s => size_seqpoly s).
-Proof. 
+Proof.
 eapply param_trans; tc; rewrite paramE.
 elim=> [[]|a1 l1 ih [|a2 l2 /= [h1 h2]]] //.
 rewrite (ih l2 h2); case: ifP => // _; congr negb.

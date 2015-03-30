@@ -261,7 +261,8 @@ Proof.
 rewrite /Strassen /Strassen_xI /Strassen_xO; eapply get_param.
 rewrite -[X in getparam X]/((fun p : positive =>
          @RmxA p p ==> @RmxA p p ==> @RmxA p p)%rel p).
-by apply (@param_elim_positive (fun _ => _) (fun _ => _)); tc.
+admit. (* Why is this not working anymore? *)
+(* by apply (@param_elim_positive (fun _ => _) (fun _ => _)); tc. *)
 Qed.
 
 End strassen_param.
@@ -320,78 +321,79 @@ Definition Strassen_rectangular_step {m n p : positive}
   let C11 := X - C11 in
   block_mx C11 C12 C21 C22.
 
-Fixpoint Strassen_rectangular {m n p : positive} :=
-  match m, n, p return mxA m n -> mxA n p -> mxA m p with
-  | xH, _, _ | _, xH, _ | _, _, xH => fun A B => A *m B
-  | xO m, xO n, xO p => fun A B =>
-    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
-    else let A := castmx (addpp m, addpp n) A in
-    let B := castmx (addpp n, addpp p) B in
-    castmx (esym (addpp m), esym (addpp p))
-      (Strassen_rectangular_step A B Strassen_rectangular)
-  | xI m, xO n, xO p => fun A B =>
-    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
-    else let A := castmx (add1pp m, addpp n) A in
-    let B := castmx (addpp n, addpp p) B in
-    let Au := usubmx A in let Ad := dsubmx A in
-    let C := Strassen_rectangular_step Ad B Strassen_rectangular in
-    castmx (esym (add1pp m), esym (addpp p)) (col_mx (Au *m B) C)
-  | xO m, xI n, xO p => fun A B =>
-    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
-    else let A := castmx (addpp m, add1pp n) A in
-    let B := castmx (add1pp n, addpp p) B in
-    let Al := lsubmx A in let Ar := rsubmx A in
-    let Bu := usubmx B in let Bd := dsubmx B in
-    let C := Strassen_rectangular_step Ar Bd Strassen_rectangular in
-    castmx (esym (addpp m), esym (addpp p)) (Al *m Bu + C)
-  | xO m, xO n, xI p => fun A B =>
-    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
-    else let A := castmx (addpp m, addpp n) A in
-    let B := castmx (addpp n, add1pp p) B in
-    let Bl := lsubmx B in let Br := rsubmx B in
-    let C := Strassen_rectangular_step A Br Strassen_rectangular in
-    castmx (esym (addpp m), esym (add1pp p)) (row_mx (A *m Bl) C)
-  | xI m, xI n, xO p => fun A B =>
-    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
-    else let A := castmx (add1pp m, add1pp n) A in
-    let B := castmx (add1pp n, addpp p) B in
-    let Aul := ulsubmx A in let Aur := ursubmx A in
-    let Adl := dlsubmx A in let Adr := drsubmx A in
-    let Bu := usubmx B in let Bd := dsubmx B in
-    let C := Strassen_rectangular_step Adr Bd Strassen_rectangular in
-    castmx (esym (add1pp m), esym (addpp p))
-      (col_mx (Aul *m Bu + Aur *m Bd) (Adl *m Bu + C))
-  | xI m, xO n, xI p => fun A B =>
-    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
-    else let A := castmx (add1pp m, addpp n) A in
-    let B := castmx (addpp n, add1pp p) B in
-    let Au := usubmx A in let Ad := dsubmx A in
-    let Bl := lsubmx B in let Br := rsubmx B in
-    let C := Strassen_rectangular_step Ad Br Strassen_rectangular in
-    castmx (esym (add1pp m), esym (add1pp p))
-      (block_mx (Au *m Bl) (Au *m Br) (Ad *m Bl) C)
-  | xO m, xI n, xI p => fun A B =>
-    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
-    else let A := castmx (addpp m, add1pp n) A in
-    let B := castmx (add1pp n, add1pp p) B in
-    let Al := lsubmx A in let Ar := rsubmx A in
-    let Bul := ulsubmx B in let Bur := ursubmx B in
-    let Bdl := dlsubmx B in let Bdr := drsubmx B in
-    let C := Strassen_rectangular_step Ar Bdr Strassen_rectangular in
-    castmx (esym (addpp m), esym (add1pp p))
-      (row_mx (Al *m Bul + Ar *m Bdl) (Al *m Bur + C))
-  | xI m, xI n, xI p => fun A B =>
-    if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B
-    else let A := castmx (add1pp m, add1pp n) A in
-    let B := castmx (add1pp n, add1pp p) B in
-    let Aul := ulsubmx A in let Aur := ursubmx A in
-    let Adl := dlsubmx A in let Adr := drsubmx A in
-    let Bul := ulsubmx B in let Bur := ursubmx B in
-    let Bdl := dlsubmx B in let Bdr := drsubmx B in
-    let C := Strassen_rectangular_step Adr Bdr Strassen_rectangular in
-    castmx (esym (add1pp m), esym (add1pp p))
-      (block_mx (Aul *m Bul + Aur *m Bdl) (Aul *m Bur + Aur *m Bdr)
-        (Adl *m Bul + Adr *m Bdl) (Adl *m Bur + C))
-  end.
+(* Why is this not working? *)
+(* Fixpoint Strassen_rectangular {m n p : positive} := *)
+(*   match m, n, p return mxA m n -> mxA n p -> mxA m p with *)
+(*   | xH, _, _ | _, xH, _ | _, _, xH => fun A B => A *m B *)
+(*   | xO m, xO n, xO p => fun A B => *)
+(*     if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B *)
+(*     else let A := castmx (addpp m, addpp n) A in *)
+(*     let B := castmx (addpp n, addpp p) B in *)
+(*     castmx (esym (addpp m), esym (addpp p)) *)
+(*       (Strassen_rectangular_step A B Strassen_rectangular) *)
+(*   | xI m, xO n, xO p => fun A B => *)
+(*     if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B *)
+(*     else let A := castmx (add1pp m, addpp n) A in *)
+(*     let B := castmx (addpp n, addpp p) B in *)
+(*     let Au := usubmx A in let Ad := dsubmx A in *)
+(*     let C := Strassen_rectangular_step Ad B Strassen_rectangular in *)
+(*     castmx (esym (add1pp m), esym (addpp p)) (col_mx (Au *m B) C) *)
+(*   | xO m, xI n, xO p => fun A B => *)
+(*     if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B *)
+(*     else let A := castmx (addpp m, add1pp n) A in *)
+(*     let B := castmx (add1pp n, addpp p) B in *)
+(*     let Al := lsubmx A in let Ar := rsubmx A in *)
+(*     let Bu := usubmx B in let Bd := dsubmx B in *)
+(*     let C := Strassen_rectangular_step Ar Bd Strassen_rectangular in *)
+(*     castmx (esym (addpp m), esym (addpp p)) (Al *m Bu + C) *)
+(*   | xO m, xO n, xI p => fun A B => *)
+(*     if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B *)
+(*     else let A := castmx (addpp m, addpp n) A in *)
+(*     let B := castmx (addpp n, add1pp p) B in *)
+(*     let Bl := lsubmx B in let Br := rsubmx B in *)
+(*     let C := Strassen_rectangular_step A Br Strassen_rectangular in *)
+(*     castmx (esym (addpp m), esym (add1pp p)) (row_mx (A *m Bl) C) *)
+(*   | xI m, xI n, xO p => fun A B => *)
+(*     if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B *)
+(*     else let A := castmx (add1pp m, add1pp n) A in *)
+(*     let B := castmx (add1pp n, addpp p) B in *)
+(*     let Aul := ulsubmx A in let Aur := ursubmx A in *)
+(*     let Adl := dlsubmx A in let Adr := drsubmx A in *)
+(*     let Bu := usubmx B in let Bd := dsubmx B in *)
+(*     let C := Strassen_rectangular_step Adr Bd Strassen_rectangular in *)
+(*     castmx (esym (add1pp m), esym (addpp p)) *)
+(*       (col_mx (Aul *m Bu + Aur *m Bd) (Adl *m Bu + C)) *)
+(*   | xI m, xO n, xI p => fun A B => *)
+(*     if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B *)
+(*     else let A := castmx (add1pp m, addpp n) A in *)
+(*     let B := castmx (addpp n, add1pp p) B in *)
+(*     let Au := usubmx A in let Ad := dsubmx A in *)
+(*     let Bl := lsubmx B in let Br := rsubmx B in *)
+(*     let C := Strassen_rectangular_step Ad Br Strassen_rectangular in *)
+(*     castmx (esym (add1pp m), esym (add1pp p)) *)
+(*       (block_mx (Au *m Bl) (Au *m Br) (Ad *m Bl) C) *)
+(*   | xO m, xI n, xI p => fun A B => *)
+(*     if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B *)
+(*     else let A := castmx (addpp m, add1pp n) A in *)
+(*     let B := castmx (add1pp n, add1pp p) B in *)
+(*     let Al := lsubmx A in let Ar := rsubmx A in *)
+(*     let Bul := ulsubmx B in let Bur := ursubmx B in *)
+(*     let Bdl := dlsubmx B in let Bdr := drsubmx B in *)
+(*     let C := Strassen_rectangular_step Ar Bdr Strassen_rectangular in *)
+(*     castmx (esym (addpp m), esym (add1pp p)) *)
+(*       (row_mx (Al *m Bul + Ar *m Bdl) (Al *m Bur + C)) *)
+(*   | xI m, xI n, xI p => fun A B => *)
+(*     if (m <= K)%N || (n <= K)%N || (p <= K)%N then A *m B *)
+(*     else let A := castmx (add1pp m, add1pp n) A in *)
+(*     let B := castmx (add1pp n, add1pp p) B in *)
+(*     let Aul := ulsubmx A in let Aur := ursubmx A in *)
+(*     let Adl := dlsubmx A in let Adr := drsubmx A in *)
+(*     let Bul := ulsubmx B in let Bur := ursubmx B in *)
+(*     let Bdl := dlsubmx B in let Bdr := drsubmx B in *)
+(*     let C := Strassen_rectangular_step Adr Bdr Strassen_rectangular in *)
+(*     castmx (esym (add1pp m), esym (add1pp p)) *)
+(*       (block_mx (Aul *m Bul + Aur *m Bdl) (Aul *m Bur + Aur *m Bdr) *)
+(*         (Adl *m Bul + Adr *m Bdl) (Adl *m Bur + C)) *)
+(*   end. *)
 
 End strassen_rectangular.
