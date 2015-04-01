@@ -45,7 +45,8 @@ Definition leqn m n := eqn (m - n) 0.
 Parametricity leqn.
 Realizer leq as leq_R := leqn_R.
 
-(* geq, ltn and gtn use SimplRel, not sure how well they will work in proofs... *)
+(* geq, ltn and gtn use SimplRel, not sure how well they will work in
+   proofs... *)
 Parametricity geq.
 Parametricity ltn.
 Parametricity gtn.
