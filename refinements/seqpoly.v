@@ -196,6 +196,12 @@ Section testpoly.
 
 Require Import binint ssrint.
 
+Goal (0 == (0 : {poly {poly {poly int}}})).
+rewrite [_ == _]refines_eq.
+do ?rewrite /zero_op /seqpoly0.
+by compute.
+Abort.
+
 Goal (1 == (1 : {poly {poly {poly int}}})).
 rewrite [_ == _]refines_eq.
 do ?rewrite /one_op /seqpoly1.
