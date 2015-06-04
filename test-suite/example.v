@@ -1,12 +1,33 @@
 Require Import Parametricity.
 
+
+
+
 (** Base Types. **)
 
 Inductive bool := true | false.
 
-Translate Inductive bool.
+Translate Inductive bool arity 1.
 
-Print bool_R.
+Print bool_P.
+
+
+Definition boolfun := bool -> bool.
+
+Translate boolfun arity 1.
+Print boolfun_P.
+
+Definition myneg (b : bool) :=
+  match b with 
+   | true => false
+   | false => true
+  end.
+
+Translate myneg arity 1.
+
+Print myneg_P.
+
+
 (* Prints:  
 Inductive bool_R : bool -> bool -> Set :=  
   true_R : bool_R true true 

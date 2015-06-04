@@ -62,6 +62,25 @@ def topological_sort(graph, start):
         aux (result, x)
     return result
 
+def reverse(graph): 
+    result = defaultdict(set)
+    for x in graph: 
+        for son in graph[x]:
+            result[son].add(x)
+    return result
+
+def remove(graph, starts):
+    rev_graph = reverse(graph)
+    removed = list()
+    while starts :
+        current = starts.pop()
+        if current in graph:
+            for son in rev_graph[current]:
+              starts.append(son)
+            del graph[current]
+            removed.append(current)
+      
+
 output = './output.dot'
 fd = open(output, 'w')
 
@@ -77,10 +96,12 @@ for line in sys.stdin.readlines():
   for x in targets:
       graph[x].extend(y for y in needs if x <> y)
 
-if len(sys.argv) == 2:
-    start = sys.argv[1:] 
-else :
-    start = list(graph)
+
+if len(sys.argv) >= 2:
+    removed_nodes = list(os.path.splitext(x)[0] for x in sys.argv[1:])
+    remove(graph, removed_nodes)
+
+start = list(graph)
 
 reduction = transitive_reduction(graph, start)
 sort = topological_sort(graph, start)

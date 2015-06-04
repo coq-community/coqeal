@@ -33,6 +33,11 @@ let initial_relations = IntMap.empty
 
 let relations = Summary.ref initial_relations ~name:"parametricity"
 
+let print_relations () = 
+  IntMap.iter (fun n translations -> 
+   GMap.iter (fun gref c -> Pp.(msg_info (Printer.pr_global gref))) translations
+  ) !relations
+
 let add (n : int) f = 
   let translations =
     try IntMap.find n !relations with Not_found -> initial_translations
@@ -73,7 +78,7 @@ let get_constant n c =
 
 let get_inductive n i = 
   let map = IntMap.find n !relations in
-  destIndRef (GMap.find (IndRef i) map)
+  GMap.find (IndRef i) map
 
 let get_variable n v = 
   let map = IntMap.find n !relations in
