@@ -26,6 +26,33 @@ Local Notation "0" := hzero_op : hetero_computable_scope.
 Class heq_of I B := heq_op : forall m n : I, B m n -> B m n -> bool.
 Local Notation "x == y" := (heq_op x y) : hetero_computable_scope.
 
+Local Open Scope nat_scope.
+
+Class usubmx_of B := usubmx : forall (m1 m2 n : nat), B (m1 + m2) n -> B m1 n.
+Class dsubmx_of B := dsubmx : forall (m1 m2 n : nat), B (m1 + m2) n -> B m2 n.
+Class lsubmx_of B := lsubmx : forall (m n1 n2 : nat), B m (n1 + n2) -> B m n1.
+Class rsubmx_of B := rsubmx : forall (m n1 n2 : nat), B m (n1 + n2) -> B m n2.
+Class ulsubmx_of B :=
+  ulsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n1.
+Class ursubmx_of B :=
+  ursubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n2.
+Class dlsubmx_of B :=
+  dlsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n1.
+Class drsubmx_of B :=
+  drsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
+Class row_mx_of B := row_mx : forall (m n1 n2 : nat),
+  B m n1 -> B m n2 -> B m (n1 + n2).
+Class col_mx_of B := col_mx : forall (m1 m2 n : nat),
+  B m1 n -> B m2 n -> B (m1 + m2) n.
+Class block_mx_of B := block_mx : forall (m1 m2 n1 n2 : nat),
+  B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
+
+Class const_mx_of A B := const_mx : forall (m n : nat), A -> B m n.
+
+(* Is this really needed as a class like this? *)
+(* Class map_mx_of A B := map_mx : (A -> A) -> B -> B. *)
+(*   (* forall (m n : nat), B m n -> B m n. *) *)
+
 End classes.
 
 Notation "0" := hzero_op : hetero_computable_scope.
@@ -62,8 +89,12 @@ Definition mkseqmx_ord m n (f : 'I_m -> 'I_n -> A) : seqmx :=
   let enum_n := ord_enum_eq n in
   map (fun i => map (f i) enum_n) (ord_enum_eq m).
 
-Definition const_seqmx m n (x : A) := nseq m (nseq n x).
-Definition map_seqmx (f : A -> A) (M : seqmx) := map (map f) M. 
+Global Instance const_seqmx : const_mx_of A hseqmx :=
+  fun m n (x : A) => nseq m (nseq n x).
+(* Global Instance map_seqmx : map_mx_of A seqmx := *)
+(*   fun (f : A -> A) (M : seqmx) => map (map f) M. *)
+
+Definition map_seqmx (f : A -> A) (M : seqmx) := map (map f) M.
 
 Definition zipwith_seqmx (f : A -> A -> A) (M N : seqmx) :=
   zipwith (zipwith f) M N.
@@ -85,6 +116,46 @@ Fixpoint eq_seq T f (s1 s2 : seq T) :=
 
 Global Instance eq_seqmx : eq_of seqmx := eq_seq (eq_seq eq_op).
 
+(* Matrix surgery *)
+
+Global Instance usubseqmx : usubmx_of hseqmx :=
+  fun m1 m2 n (M : seqmx) => take m1 M.
+
+Global Instance dsubseqmx : dsubmx_of hseqmx :=
+  fun m1 m2 n (M : seqmx) => drop m1 M.
+
+Global Instance lsubseqmx : lsubmx_of hseqmx :=
+  fun m n1 n2 (M : seqmx) => map (take n1) M.
+
+Global Instance rsubseqmx : rsubmx_of hseqmx :=
+  fun m n1 n2 (M : seqmx) => map (drop n1) M.
+
+Global Instance ulsubseqmx : ulsubmx_of hseqmx :=
+  fun m1 m2 n1 n2 (M : hseqmx (m1 + m2)%N (n1 + n2)%N) =>
+    lsubseqmx (usubseqmx M).
+
+Global Instance ursubseqmx : ursubmx_of hseqmx :=
+  fun m1 m2 n1 n2 (M : hseqmx (m1 + m2)%N (n1 + n2)%N) =>
+    rsubseqmx (usubseqmx M).
+
+Global Instance dlsubseqmx : dlsubmx_of hseqmx :=
+  fun m1 m2 n1 n2 (M : hseqmx (m1 + m2)%N (n1 + n2)%N) =>
+  lsubseqmx (dsubseqmx M).
+
+Global Instance drsubseqmx : drsubmx_of hseqmx :=
+  fun m1 m2 n1 n2 (M : hseqmx (m1 + m2)%N (n1 + n2)%N) =>
+  rsubseqmx (dsubseqmx M).
+
+Global Instance row_seqmx : row_mx_of hseqmx :=
+  fun m n1 n2 (M N : seqmx) => zipwith cat M N.
+
+Global Instance col_seqmx : col_mx_of hseqmx :=
+  fun m1 m2 n (M N : seqmx) => M ++ N.
+
+Global Instance block_seqmx : block_mx_of hseqmx :=
+  fun m1 m2 n1 n2 Aul Aur Adl Adr =>
+  col_seqmx (row_seqmx Aul Aur) (row_seqmx Adl Adr).
+
 End seqmx_op.
 
 Parametricity Inductive ordinal.
@@ -99,6 +170,18 @@ Parametricity opp_seqmx.
 Parametricity add_seqmx.
 Parametricity eq_seq.
 Parametricity eq_seqmx.
+Parametricity usubseqmx.
+Parametricity dsubseqmx.
+Parametricity lsubseqmx.
+Parametricity rsubseqmx.
+Parametricity ulsubseqmx.
+Parametricity ursubseqmx. 
+Parametricity dlsubseqmx.
+Parametricity drsubseqmx.
+Parametricity row_seqmx.
+Parametricity col_seqmx.
+Parametricity block_seqmx.
+
 
 Section seqmx_theory.
 
@@ -121,13 +204,22 @@ Instance Rseqmx_mkseqmx_ord m n :
   refines (Logic.eq ==> Rseqmx) (matrix_of_fun matrix_key) (@mkseqmx_ord R m n).
 Admitted.
 
+Instance Rseqmx_const_seqmx m n :
+  refines (Logic.eq ==> Rseqmx) (@matrix.const_mx R m n) (const_seqmx m n).
+Admitted.
+
 Instance Rseqmx_0 m n :
-  refines Rseqmx (0 : 'M[R]_(m,n)) (@hzero_op _ (fun _ _ => seqmx R) _ m n).
+  refines Rseqmx (0 : 'M[R]_(m,n)) (seqmx0 m n).
 Proof.
 rewrite refinesE; constructor=>[|i|i j]; first by rewrite size_nseq.
   by rewrite nth_nseq => ->; rewrite size_nseq.
 by rewrite mxE !(nth_nseq,ltn_ord).
 Qed.
+
+(* This feels wrong... *)
+(* Instance Rseqmx_map_mx m n : *)
+(*   refines ((Logic.eq ==> Logic.eq) ==> Rseqmx ==> Rseqmx) (fun f => @matrix.map_mx R R f m n) map_mx. *)
+(* Admitted. *)
 
 Instance Rseqmx_opp m n :
   refines (Rseqmx ==> Rseqmx) (-%R : 'M[R]_(m,n) -> 'M[R]_(m,n)) -%C.
@@ -154,7 +246,52 @@ Instance Rseqmx_eq m n :
             (eqtype.eq_op : 'M[R]_(m,n) -> _ -> _) eq_op.
 Proof. admit. Admitted.
 
-Section seqmx_param.
+Instance Rseqmx_usubseqmx m1 m2 n :
+  refines (Rseqmx ==> Rseqmx) (@matrix.usubmx R m1 m2 n) (@usubseqmx R m1 m2 n).
+Admitted.
+
+Instance Rseqmx_dsubseqmx m1 m2 n :
+  refines (Rseqmx ==> Rseqmx) (@matrix.dsubmx R m1 m2 n) (@dsubseqmx R m1 m2 n).
+Admitted.
+
+Instance Rseqmx_lsubseqmx m n1 n2 :
+  refines (Rseqmx ==> Rseqmx) (@matrix.lsubmx R m n1 n2) (@lsubseqmx R m n1 n2).
+Admitted.
+
+Instance Rseqmx_rsubseqmx m n1 n2 :
+  refines (Rseqmx ==> Rseqmx) (@matrix.rsubmx R m n1 n2) (@rsubseqmx R m n1 n2).
+Admitted.
+
+Instance Rseqmx_ulsubseqmx m1 m2 n1 n2 :
+  refines (Rseqmx ==> Rseqmx) (@matrix.ulsubmx R m1 m2 n1 n2) (@ulsubseqmx R m1 m2 n1 n2).
+Admitted.
+
+Instance Rseqmx_ursubseqmx m1 m2 n1 n2 :
+  refines (Rseqmx ==> Rseqmx) (@matrix.ursubmx R m1 m2 n1 n2) (@ursubseqmx R m1 m2 n1 n2).
+Admitted.
+
+Instance Rseqmx_dlsubseqmx m1 m2 n1 n2 :
+  refines (Rseqmx ==> Rseqmx) (@matrix.dlsubmx R m1 m2 n1 n2) (@dlsubseqmx R m1 m2 n1 n2).
+Admitted.
+
+Instance Rseqmx_drsubseqmx m1 m2 n1 n2 :
+  refines (Rseqmx ==> Rseqmx) (@matrix.drsubmx R m1 m2 n1 n2) (@drsubseqmx R m1 m2 n1 n2).
+Admitted.
+
+Instance Rseqmx_row_seqmx m n1 n2 :
+  refines (Rseqmx ==> Rseqmx ==> Rseqmx) (@matrix.row_mx R m n1 n2) (@row_seqmx R m n1 n2).
+Admitted.
+
+Instance Rseqmx_col_seqmx m1 m2 n :
+  refines (Rseqmx ==> Rseqmx ==> Rseqmx) (@matrix.col_mx R m1 m2 n) (@col_seqmx R m1 m2 n).
+Admitted.
+
+Instance Rseqmx_block_seqmx m1 m2 n1 n2 :
+  refines (Rseqmx ==> Rseqmx ==> Rseqmx ==> Rseqmx ==> Rseqmx)
+    (@matrix.block_mx R m1 m2 n1 n2) (@block_seqmx R m1 m2 n1 n2).
+Admitted.
+
+Section seqmx_refines.
 
 Context (C : Type) (rAC : R -> C -> Type).
 Context `{zero_of C, opp_of C, add_of C, eq_of C}.
@@ -189,9 +326,18 @@ Global Instance RseqmxC_mkseqmx_ord m n :
           (matrix_of_fun matrix_key) (@mkseqmx_ord C m n).
 Proof. param_comp mkseqmx_ord_R. Qed.
 
+Global Instance RseqmxC_const_seqmx m n :
+  refines (rAC ==> RseqmxC) (@matrix.const_mx R m n) (const_seqmx m n).
+Proof. param_comp const_seqmx_R. Qed.
+
 Global Instance RseqmxC_0 m n :
   refines RseqmxC (0 : 'M[R]_(m,n)) (@hzero_op _ (fun _ _ => seqmx C) _ m n).
 Proof. param_comp seqmx0_R. Qed.
+
+(* Global Instance RseqmxC_map_mx m n : *)
+(*   refines ((rAC ==> rAC) ==> RseqmxC ==> RseqmxC) (fun f => @matrix.map_mx R R f m n) map_mx. *)
+(* Proof. param_comp map_seqmx_R. *)
+(* Admitted. *)
 
 Global Instance RseqmxC_opp m n :
   refines (RseqmxC ==> RseqmxC) (-%R : 'M[R]_(m,n) -> 'M[R]_(m,n)) -%C.
@@ -206,7 +352,52 @@ Global Instance RseqmxC_eq m n :
           (eqtype.eq_op : 'M[R]_(m,n) -> _ -> _) eq_op.
 Proof. param_comp eq_seqmx_R. Qed.
 
-End seqmx_param.
+Global Instance RseqmxC_usubseqmx m1 m2 n :
+  refines (RseqmxC ==> RseqmxC) (@matrix.usubmx R m1 m2 n) (@usubseqmx C m1 m2 n).
+Proof. param_comp usubseqmx_R. Qed.
+
+Global Instance RseqmxC_dsubseqmx m1 m2 n :
+  refines (RseqmxC ==> RseqmxC) (@matrix.dsubmx R m1 m2 n) (@dsubseqmx C m1 m2 n).
+Proof. param_comp dsubseqmx_R. Qed.
+
+Global Instance RseqmxC_lsubseqmx m n1 n2 :
+  refines (RseqmxC ==> RseqmxC) (@matrix.lsubmx R m n1 n2) (@lsubseqmx C m n1 n2).
+Proof. param_comp lsubseqmx_R. Qed.
+
+Global Instance RseqmxC_rsubseqmx m n1 n2 :
+  refines (RseqmxC ==> RseqmxC) (@matrix.rsubmx R m n1 n2) (@rsubseqmx C m n1 n2).
+Proof. param_comp rsubseqmx_R. Qed.
+
+Global Instance RseqmxC_ulsubseqmx m1 m2 n1 n2 :
+  refines (RseqmxC ==> RseqmxC) (@matrix.ulsubmx R m1 m2 n1 n2) (@ulsubseqmx C m1 m2 n1 n2).
+Proof. param_comp ulsubseqmx_R. Qed.
+
+Global Instance RseqmxC_ursubseqmx m1 m2 n1 n2 :
+  refines (RseqmxC ==> RseqmxC) (@matrix.ursubmx R m1 m2 n1 n2) (@ursubseqmx C m1 m2 n1 n2).
+Proof. param_comp ursubseqmx_R. Qed.
+
+Global Instance RseqmxC_dlsubseqmx m1 m2 n1 n2 :
+  refines (RseqmxC ==> RseqmxC) (@matrix.dlsubmx R m1 m2 n1 n2) (@dlsubseqmx C m1 m2 n1 n2).
+Proof. param_comp dlsubseqmx_R. Qed.
+
+Global Instance RseqmxC_drsubseqmx m1 m2 n1 n2 :
+  refines (RseqmxC ==> RseqmxC) (@matrix.drsubmx R m1 m2 n1 n2) (@drsubseqmx C m1 m2 n1 n2).
+Proof. param_comp drsubseqmx_R. Qed.
+
+Global Instance RseqmxC_row_seqmx m n1 n2 :
+  refines (RseqmxC ==> RseqmxC ==> RseqmxC) (@matrix.row_mx R m n1 n2) (@row_seqmx C m n1 n2).
+Proof. param_comp row_seqmx_R. Qed.
+
+Global Instance RseqmxC_col_seqmx m1 m2 n :
+  refines (RseqmxC ==> RseqmxC ==> RseqmxC) (@matrix.col_mx R m1 m2 n) (@col_seqmx C m1 m2 n).
+Proof. param_comp col_seqmx_R. Qed.
+
+Global Instance RseqmxC_block_seqmx m1 m2 n1 n2 :
+  refines (RseqmxC ==> RseqmxC ==> RseqmxC ==> RseqmxC ==> RseqmxC)
+    (@matrix.block_mx R m1 m2 n1 n2) (@block_seqmx C m1 m2 n1 n2).
+Proof. param_comp block_seqmx_R. Qed.
+
+End seqmx_refines.
 End seqmx_theory.
 
 Section testmx.
@@ -216,10 +407,10 @@ Require Import binint ssrint poly seqpoly.
 Goal ((0 : 'M[int]_(2,2)) == 0).
 rewrite [_ == _]refines_eq.
 by compute.
-(* erewrite refines_eq; last first. *)
-(* eapply refines_bool_eq; tc. *)
-(* eapply refines_apply; tc. *)
-(* eapply refines_apply; tc. *)
+(* erewrite param_eq; last first. *)
+(* eapply param_bool_eq; tc. *)
+(* eapply param_apply; tc. *)
+(* eapply param_apply; tc. *)
 (* eapply RseqmxC_0; tc. *)
 (* eapply RseqmxC_0; tc. *)
 (* by compute. *)

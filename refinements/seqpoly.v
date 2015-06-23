@@ -84,7 +84,8 @@ Definition Rseqpoly : {poly R} -> seqpoly R -> Type := fun p sp => p = Poly sp.
 
 Local Open Scope rel_scope.
 
-Instance Rseqpoly_cons : refines (Logic.eq ==> Rseqpoly ==> Rseqpoly) (@cons_poly R) cons.
+Instance Rseqpoly_cons :
+  refines (Logic.eq ==> Rseqpoly ==> Rseqpoly) (@cons_poly R) cons.
 Proof.
 rewrite !refinesE => x y -> p sp hp.
 apply/polyP => i /=.
