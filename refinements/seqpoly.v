@@ -54,6 +54,28 @@ Global Instance size_seqpoly : size_of seqpoly :=
 Global Instance seqpoly_eq : eq_of seqpoly := fun p q =>
   all (fun x => x == 0)%C (p - q)%C.
 
+(* pseudo-division *)
+(* Definition edivp_rec_seqpoly (q : seqpoly) := *)
+(*   let sq := size_seqpoly q in *)
+(*   let cq := cast (lead_coef_seqpoly q) in *)
+(*   fix loop (k : nat) (qq r : seqpoly) (n : nat) {struct n} := *)
+(*     if (size_seqpoly r < sq)%N then (k, qq, r) else *)
+(*     let m := shift (size_seqpoly r - sq) (cast (lead_coef_seqpoly r)) in *)
+(*     let qq1 := (qq * cq + m)%C in *)
+(*     let r1 := (r * cq - m * q)%C in *)
+(*     if n is n1.+1 then loop k.+1 qq1 r1 n1 else (k.+1, qq1, r1). *)
+
+(* Definition divp_seqpoly p q  := *)
+(*   (if (q == 0)%C then (0%N, 0%C, p) *)
+(*                  else edivp_rec_seqpoly q 0 0%C p (size_seqpoly p)).1.2. *)
+(* Definition modp_seqpoly p q  := *)
+(*   (if (q == 0)%C then (0%N, 0%C, p) *)
+(*                  else edivp_rec_seqpoly q 0 0%C p (size_seqpoly p)).2. *)
+(* Definition scalp_seqpoly p q := *)
+(*   (if (q == 0)%C then (0%N, 0%C, p) *)
+(*                  else edivp_rec_seqpoly q 0 0%C p (size_seqpoly p)).1.1. *)
+
+
 End seqpoly_op.
 
 Parametricity seqpoly0.

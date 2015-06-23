@@ -20,7 +20,7 @@ Section classes.
 Class hzero_of I B := hzero_op : forall m n : I, B m n.
 Local Notation "0" := hzero_op : hetero_computable_scope.
 
-Class hmul I B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
+Class hmul_of I B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
 Local Notation "*m%HC" := hmul_op.
 Local Notation "x *m y" := (hmul_op x y) : hetero_computable_scope.
 
@@ -117,12 +117,14 @@ Definition trseqmx (M : seqmx) : seqmx :=
 
 Global Instance seqmx0 : hzero_of hseqmx := fun m n => const_seqmx m n 0%C.
 (* Global Instance seqpoly1 : one_of seqpoly := [:: 1]. *)
-
 Global Instance opp_seqmx : opp_of seqmx := map_seqmx -%C.
 
 Global Instance add_seqmx : add_of seqmx := zipwith_seqmx +%C.
 
-Global Instance mul_seqmx : @hmul nat hseqmx :=
+(* TODO: Implement better *)
+Global Instance sub_seqmx : sub_of seqmx := fun a b => (a + - b)%C.
+
+Global Instance mul_seqmx : @hmul_of nat hseqmx :=
   fun _ n p M N => 
     let N := trseqmx N in
     if n is O then seqmx0 (size M) p else
@@ -193,6 +195,7 @@ Parametricity zipwith_seqmx.
 Parametricity seqmx0.
 Parametricity opp_seqmx.
 Parametricity add_seqmx.
+Parametricity sub_seqmx.
 Parametricity trseqmx.
 Parametricity mul_seqmx.
 Parametricity scale_seqmx.
@@ -267,6 +270,11 @@ Qed.
 
 Instance Rseqmx_add m n :
   refines (Rseqmx ==> Rseqmx ==> Rseqmx) (+%R : 'M[R]_(m,n) -> 'M[R]_(m,n) -> 'M[R]_(m,n)) +%C.
+Admitted.
+
+Instance Rseqmx_sub m n :
+  refines (Rseqmx ==> Rseqmx ==> Rseqmx)
+          (fun (M : 'M[R]_(m,n)) N => M - N) sub_op.
 Admitted.
 
 Instance Rseqmx_mul m n p :
@@ -388,6 +396,11 @@ Global Instance RseqmxC_add m n :
           (+%R : 'M[R]_(m,n) -> 'M[R]_(m,n) -> 'M[R]_(m,n)) +%C.
 Proof. param_comp add_seqmx_R. Qed.
 
+Global Instance RseqmxC_sub m n :
+  refines (RseqmxC ==> RseqmxC ==> RseqmxC)
+          (fun (M : 'M[R]_(m,n)) N => M - N) sub_op.
+Proof. param_comp sub_seqmx_R. Qed.
+
 Global Instance RseqmxC_mul m n p :
   refines (RseqmxC ==> RseqmxC ==> RseqmxC)
           (mulmx : 'M[R]_(m,n) -> 'M[R]_(n,p) -> 'M[R]_(m,p))
@@ -498,7 +511,7 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-Goal (M3 + Mn3 == 0).
+Goal (M3 - M3 == 0).
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
@@ -513,6 +526,25 @@ Definition Mp : 'M[{poly {poly int}}]_(2,2) :=
 
 Goal (Mp + -Mp == 0).
 rewrite [_ == _]refines_eq /=.
+by compute.
+Abort.
+
+Goal (Mp *m 0 == 0 :> 'M[_]_(2,2)).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Definition M := \matrix_(i,j < 2) 1%num%:Z.
+Definition N := \matrix_(i,j < 2) 2%num%:Z.
+Definition P := \matrix_(i,j < 2) 14%num%:Z.
+
+Goal (M + N + M + N + M + N + N + M + N) *m
+   (M + N + M + N + M + N + N + M + N) = 
+  (P *m M + P *m N + P *m M + P *m N + 
+   P *m M + P *m N + P *m N + P *m M + P *m N).
+Proof.
+apply/eqP.
+Time rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 

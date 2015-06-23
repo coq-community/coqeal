@@ -52,8 +52,8 @@ Definition karatsuba p q :=
 
 End generic_karatsuba.
 
-Parametricity karatsuba.
 Parametricity karatsuba_rec.
+Parametricity karatsuba.
 
 Section karatsuba_theory.
 
