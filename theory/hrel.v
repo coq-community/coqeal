@@ -30,12 +30,6 @@ Proof. by case. Qed.
 Lemma eq_hrelLR A B (R R' : A -> B -> Type) : (R <=> R')%rel -> (R' <= R)%rel.
 Proof. by case. Qed.
 
-Lemma comp_eqr A B (R : A -> B -> Type) : (R \o eq <=> R)%rel.
-Proof. by split=> [x y [y' [? <-]] //|x y Rxy]; exists y. Qed.
-
-Lemma comp_eql A B (R : A -> B -> Type) : (eq \o R <=> R)%rel.
-Proof. by split=> [x y [x' [<- ?]] //|x y Rxy]; exists x. Qed.
-
 Definition comp_hrel A B C
   (R : A -> B -> Type) (R' : B -> C -> Type) : A -> C -> Type :=
     fun a c => sigT (fun b => R a b * R' b c)%type.
@@ -50,11 +44,11 @@ Definition prod_hrel A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
   A * B -> A' * B' -> Type :=
   fun x y => (rA x.1 y.1 * rB x.2 y.2)%type.
 
-(* Lemma comp_eqr A B (R : A -> B -> Type) : (R \o eq <= R)%rel. *)
-(* Proof. by move=> x y [y' [? <-]]. Qed. *)
+Lemma comp_eqr A B (R : A -> B -> Type) : (R \o eq <= R)%rel.
+Proof. by move=> x y [y' [? <-]]. Qed.
 
-(* Lemma comp_eql A B (R : A -> B -> Type) : (eq \o R <= R)%rel. *)
-(* Proof. by move=> x y [y' [<-]]. Qed. *)
+Lemma comp_eql A B (R : A -> B -> Type) : (eq \o R <= R)%rel.
+Proof. by move=> x y [y' [<-]]. Qed.
 
 Definition fun_hrel A B (f : B -> A) : A -> B -> Type :=
   fun a b => f b = a.

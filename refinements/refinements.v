@@ -71,7 +71,10 @@ Proof. by rewrite !refinesE => c d rcd a b rab; apply: rcd. Qed.
 
 Global Instance composable_rid1 A B (R : A -> B -> Type) :
   composable eq R R | 1.
-Proof. by rewrite composableE; apply: (eq_hrelRL (comp_eql _)). Qed.
+Proof.
+rewrite composableE; apply: eq_hrelRL.
+by split; [ apply: comp_eql | move=> x y hxy; exists x ].
+Qed.
 
 Global Instance composable_bool_id1 B (R : bool -> B -> Type) :
   composable bool_R R R | 1.

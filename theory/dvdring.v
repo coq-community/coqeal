@@ -2,7 +2,7 @@
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 Require Import ssralg fintype perm tuple choice.
-Require Import matrix bigop zmodp mxalgebra poly generic_quotient.
+Require Import matrix bigop zmodp mxalgebra poly.
 
 (* Require Import generic_quotient. (* testing *) *)
 
@@ -439,6 +439,21 @@ Proof. exact: eqd_dvd. Qed.
 
 Lemma eqd_dvdl b a c : a %= b -> (a %| c) = (b %| c).
 Proof. by move/eqd_dvd; apply. Qed.
+
+(* TODO: remove once generic_quotient compile on 8.5 *)
+Section EquivRel.
+
+Variable T : Type.
+
+Lemma left_trans (e : rel T) :
+  symmetric e -> transitive e -> left_transitive e.
+Proof. by move=> s t ? * ?; apply/idP/idP; apply: t; rewrite // s. Qed.
+
+Lemma right_trans (e : rel T) :
+  symmetric e -> transitive e -> right_transitive e.
+Proof. by move=> s t ? * x; rewrite ![e x _]s; apply: left_trans. Qed.
+
+End EquivRel.
 
 Lemma eqd_ltrans : left_transitive (@eqd R).
 Proof. exact: (left_trans eqd_sym eqd_trans). Qed.

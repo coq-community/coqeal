@@ -187,12 +187,12 @@ Proof. by rewrite refinesE; elim=> [|n]; [ exact: O_R | exact: S_R ]. Qed.
 
 (* Test shiftp *)
 Goal (2%:Z *: shiftp 2%nat 1 == Poly [:: 0; 0; 2%:Z]).
-rewrite /= [_ == _]refines_eq.
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
 Goal (Poly [:: 1; 2%:Z] * Poly [:: 1; 2%:Z]) == Poly [:: 1; 4%:Z; 4%:Z].
-rewrite /= [_ == _]refines_eq.
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
@@ -206,7 +206,7 @@ Let p2 := Eval compute in bigseq 2 10.
 
 (* TODO: Translate Poly directly? *)
 Goal (Poly p1 * Poly p2 == Poly p2 * Poly p1).
-rewrite /= [_ == _]refines_eq.
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 

@@ -1,3 +1,6 @@
+-I /home/mortberg/dev/ssreflect-trunk/ssreflect/v8.5/src
+-R /home/mortberg/dev/ssreflect-trunk/ssreflect/v8.5/theories Ssreflect
+-R /home/mortberg/dev/mathcomp-1.5/theories MathComp
 -R . CoqEAL_refinements
 param.v
 refinements.v
@@ -5,3 +8,4 @@ binnat.v
 binint.v
 seqpoly.v
 karatsuba.v
+seqmx.v

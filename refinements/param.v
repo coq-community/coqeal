@@ -19,8 +19,6 @@ Global Parametricity Tactic := destruct_reflexivity.
 Require Import ProofIrrelevance. (* for opaque terms *)
 
 Parametricity Module Logic.
-(* Realizer of proof_admitted. *)
-Next Obligation. admit. Defined.
 
 Parametricity Module Datatypes.
 Parametricity Module Specif.

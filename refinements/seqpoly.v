@@ -90,7 +90,7 @@ rewrite !refinesE => x y -> p sp hp.
 apply/polyP => i /=.
 rewrite cons_poly_def.
 admit.
-Qed.
+Admitted.
 
 Instance Rseqpoly_0 : refines Rseqpoly 0%R 0%C.
 Proof. by rewrite refinesE. Qed.
@@ -192,6 +192,11 @@ Proof. param_comp seqpoly_eq_R. Qed.
 End seqpoly_param.
 End seqpoly_theory.
 
+(* Always simpl Poly. Maybe have refinement instance instead? Is this
+more efficient? *)
+Hint Extern 0 (refines _ (Poly _) _) => simpl : typeclass_instances.
+Hint Extern 0 (refines _ _ (Poly _)) => simpl : typeclass_instances.
+ 
 Section testpoly.
 
 Require Import binint ssrint.
@@ -207,9 +212,10 @@ rewrite [_ == _]refines_eq.
 do ?rewrite /one_op /seqpoly1.
 by compute.
 Abort.
- 
-Goal (Poly [:: 1; 2%:Z; 3%:Z] + Poly [:: 1; 2%:Z; 3%:Z]) == Poly [:: 1 + 1; 2%:Z + 2%:Z; 2%:Z + 4%:Z].
-rewrite /= [_ == _]refines_eq.
+
+Goal (Poly [:: 1; 2%:Z; 3%:Z] + Poly [:: 1; 2%:Z; 3%:Z]) ==
+      Poly [:: 1 + 1; 2%:Z + 2%:Z; 2%:Z + 4%:Z].
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
@@ -219,17 +225,24 @@ by compute.
 Abort.
 
 Goal (- Poly [:: 1; 2%:Z; 3%:Z]) == Poly [:: - 1; - 2%:Z; - 3%:Z].
-rewrite /= [_ == _]refines_eq.
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
 Goal (Poly [:: 1; 2%:Z; 3%:Z] - Poly [:: 1; 2%:Z; 3%:Z]) == 0.
-rewrite /= [_ == _]refines_eq.
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
 Goal (Poly [:: 1; 2%:Z] * Poly [:: 1; 2%:Z]) == Poly [:: 1; 4%:Z; 4%:Z].
-rewrite /= [_ == _]refines_eq.
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+(* (1 + xy) * x = x + x^2y *)
+Goal (Poly [:: Poly [:: 1; 0]; 1] * Poly [:: 1; 0]) ==
+      Poly [:: Poly [:: 1; 0]; 1 ; 0] :> {poly {poly int}}.
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
@@ -245,7 +258,7 @@ case: (eqn _ _); [ exact: true_R | exact: false_R ].
 Qed.
 
 Goal (sizep (Poly [:: 1; 2%:Z; 3%:Z]) == 3%nat).
-rewrite /= [_ == _]refines_eq.
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
