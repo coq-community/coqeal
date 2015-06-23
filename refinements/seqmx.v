@@ -20,6 +20,10 @@ Section classes.
 Class hzero_of I B := hzero_op : forall m n : I, B m n.
 Local Notation "0" := hzero_op : hetero_computable_scope.
 
+Class hmul I B := hmul_op : forall m n p : I, B m n -> B n p -> B m p.
+Local Notation "*m%HC" := hmul_op.
+Local Notation "x *m y" := (hmul_op x y) : hetero_computable_scope.
+
 (* Class hopp I B := hopp_op : forall m n : I, B m n -> B m n. *)
 (* Local Notation "- x" := (hopp_op x) : hetero_computable_scope. *)
 
@@ -58,9 +62,12 @@ End classes.
 Notation "0" := hzero_op : hetero_computable_scope.
 (* Notation "- x" := (hopp_op x) : hetero_computable_scope. *)
 Notation "x == y" := (heq_op x y) : hetero_computable_scope.
+Notation "*m%HC" := hmul_op.
+Notation "x *m y" := (hmul_op x y) : hetero_computable_scope.
 
-Section zipwith.
-Variables (T1 T2 R : Type) (f : T1 -> T2 -> R).
+Section extra_seq.
+
+Variables (T1 T2 T3 : Type) (f : T1 -> T2 -> T3).
 
 Fixpoint zipwith (s1 : seq T1) (s2 : seq T2) :=
   if s1 is x1 :: s1' then
@@ -70,9 +77,15 @@ Fixpoint zipwith (s1 : seq T1) (s2 : seq T2) :=
 Lemma zipwithE s1 s2 : zipwith s1 s2 = [seq f x.1 x.2 | x <- zip s1 s2].
 Proof. by elim: s1 s2 => [|x1 s1 ihs1] [|x2 s2] //=; rewrite ihs1. Qed.
 
-End zipwith.
+Fixpoint foldl2 (f : T3 -> T1 -> T2 -> T3) z (s : seq T1) (t : seq T2) :=
+  if s is x :: s' then
+    if t is y :: t' then foldl2 f (f z x y) s' t' else z
+  else z.
+
+End extra_seq.
 
 Parametricity zipwith.
+Parametricity foldl2.
 
 Section seqmx_op.
 
@@ -81,7 +94,7 @@ Variable A : Type.
 Definition seqmx := seq (seq A).
 Notation hseqmx := (fun (_ _ : nat) => seqmx).
 
-Context `{zero_of A, one_of A, add_of A, opp_of A, eq_of A}.
+Context `{zero_of A, one_of A, add_of A, opp_of A, mul_of A, eq_of A}.
 
 Definition ord_enum_eq n : seq 'I_n := pmap (insub_eq _) (iota 0 n).
 
@@ -99,12 +112,24 @@ Definition map_seqmx (f : A -> A) (M : seqmx) := map (map f) M.
 Definition zipwith_seqmx (f : A -> A -> A) (M N : seqmx) :=
   zipwith (zipwith f) M N.
 
+Definition trseqmx (M : seqmx) : seqmx :=
+  foldr (zipwith cons) (nseq (size (nth [::] M 0)) [::]) M.
+
 Global Instance seqmx0 : hzero_of hseqmx := fun m n => const_seqmx m n 0%C.
 (* Global Instance seqpoly1 : one_of seqpoly := [:: 1]. *)
 
 Global Instance opp_seqmx : opp_of seqmx := map_seqmx -%C.
 
 Global Instance add_seqmx : add_of seqmx := zipwith_seqmx +%C.
+
+Global Instance mul_seqmx : @hmul nat hseqmx :=
+  fun _ n p M N => 
+    let N := trseqmx N in
+    if n is O then seqmx0 (size M) p else
+      map (fun r => map (foldl2 (fun z x y => (x * y) + z) 0 r)%C N) M.
+
+Global Instance scale_seqmx : scale_of A seqmx :=
+  fun x M => map_seqmx (mul_op x) M.
 
 (* Inlining of && should provide lazyness here. *)
 Fixpoint eq_seq T f (s1 s2 : seq T) :=
@@ -168,6 +193,9 @@ Parametricity zipwith_seqmx.
 Parametricity seqmx0.
 Parametricity opp_seqmx.
 Parametricity add_seqmx.
+Parametricity trseqmx.
+Parametricity mul_seqmx.
+Parametricity scale_seqmx.
 Parametricity eq_seq.
 Parametricity eq_seqmx.
 Parametricity usubseqmx.
@@ -182,7 +210,6 @@ Parametricity row_seqmx.
 Parametricity col_seqmx.
 Parametricity block_seqmx.
 
-
 Section seqmx_theory.
 
 Variable R : ringType.
@@ -190,6 +217,7 @@ Variable R : ringType.
 Local Instance zeroR : zero_of R := 0%R.
 Local Instance oppR  : opp_of R := -%R.
 Local Instance addR  : add_of R := +%R.
+Local Instance mulR  : mul_of R := *%R.
 Local Instance eqR   : eq_of R   := eqtype.eq_op.
 
 CoInductive Rseqmx {m n} : 'M[R]_(m,n) -> seqmx R -> Type :=
@@ -239,6 +267,17 @@ Qed.
 
 Instance Rseqmx_add m n :
   refines (Rseqmx ==> Rseqmx ==> Rseqmx) (+%R : 'M[R]_(m,n) -> 'M[R]_(m,n) -> 'M[R]_(m,n)) +%C.
+Admitted.
+
+Instance Rseqmx_mul m n p :
+  refines (Rseqmx ==> Rseqmx ==> Rseqmx)
+          (mulmx : 'M[R]_(m,n) -> 'M[R]_(n,p) -> 'M[R]_(m,p))
+          (@hmul_op _ _ _  m n p).
+Admitted.
+
+Instance Rseqmx_scale m n :
+  refines (Logic.eq ==> Rseqmx ==> Rseqmx)
+          ( *:%R : _ -> 'M[R]_(m, n)  -> _) *:%C. 
 Admitted.
 
 Instance Rseqmx_eq m n :
@@ -294,10 +333,11 @@ Admitted.
 Section seqmx_refines.
 
 Context (C : Type) (rAC : R -> C -> Type).
-Context `{zero_of C, opp_of C, add_of C, eq_of C}.
+Context `{zero_of C, opp_of C, add_of C, mul_of C, eq_of C}.
 Context `{!refines rAC 0%R 0%C}.
 Context `{!refines (rAC ==> rAC) -%R -%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) +%R +%C}.
+Context `{!refines (rAC ==> rAC ==> rAC) *%R *%C}.
 Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}.
 
 Definition RseqmxC {m n} := (@Rseqmx m n \o (list_R (list_R rAC)))%rel.
@@ -344,8 +384,20 @@ Global Instance RseqmxC_opp m n :
 Proof. param_comp opp_seqmx_R. Qed.
 
 Global Instance RseqmxC_add m n :
-  refines (RseqmxC ==> RseqmxC ==> RseqmxC) (+%R : 'M[R]_(m,n) -> 'M[R]_(m,n) -> 'M[R]_(m,n)) +%C.
+  refines (RseqmxC ==> RseqmxC ==> RseqmxC)
+          (+%R : 'M[R]_(m,n) -> 'M[R]_(m,n) -> 'M[R]_(m,n)) +%C.
 Proof. param_comp add_seqmx_R. Qed.
+
+Global Instance RseqmxC_mul m n p :
+  refines (RseqmxC ==> RseqmxC ==> RseqmxC)
+          (mulmx : 'M[R]_(m,n) -> 'M[R]_(n,p) -> 'M[R]_(m,p))
+          (@hmul_op _ _ _  m n p).
+Proof. param_comp mul_seqmx_R. Qed.
+
+Global Instance RseqmxC_scale m n :
+  refines (rAC ==> RseqmxC ==> RseqmxC)
+          ( *:%R : _ -> 'M[R]_(m,n)  -> _) *:%C. 
+Proof. param_comp scale_seqmx_R. Qed.
 
 Global Instance RseqmxC_eq m n :
   refines (RseqmxC ==> RseqmxC ==> bool_R)
