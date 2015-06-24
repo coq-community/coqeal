@@ -13,42 +13,34 @@ Import Refinements.Op.
 Local Open Scope ring_scope.
 Local Open Scope rel.
 
-(* Classes for karatsuba *)
-Section classes.
-
-Class shift_of polyA := shift_op : nat -> polyA -> polyA.
-Class split_of polyA := split_op : nat -> polyA -> polyA * polyA.
-
-End classes.
-
 Section generic_karatsuba.
 
 Variable polyA : Type.
 
 Context `{add_of polyA, mul_of polyA, sub_of polyA}.
-Context `{shift_poly : shift_of polyA, size_poly : size_of polyA}.
-Context `{split_poly : split_of polyA}.
+Context `{shiftp : shift_of polyA, sizep : size_of polyA}.
+Context `{splitp : split_of polyA}.
 
 Fixpoint karatsuba_rec n (p q : polyA) := match n with
   | 0     => (p * q)%C
-  | n'.+1 => 
-      let sp := size_poly p in let sq := size_poly q in 
+  | n'.+1 =>
+      let sp := sizep p in let sq := sizep q in
       if (sp <= 2)%nat || (sq <= 2)%nat then (p * q)%C else
         let m       := minn sp./2 sq./2 in
-        let (p1,p2) := split_poly m p in
-        let (q1,q2) := split_poly m q in
+        let (p1,p2) := splitp m p in
+        let (q1,q2) := splitp m q in
         let p1q1    := karatsuba_rec n' p1 q1 in
         let p2q2    := karatsuba_rec n' p2 q2 in
         let p12     := (p1 + p2)%C in
         let q12     := (q1 + q2)%C in
         let p12q12  := karatsuba_rec n' p12 q12 in
-        (shift_poly (2 * m)%nat p1q1 +
-         shift_poly m (p12q12 - p1q1 - p2q2) +
+        (shiftp (2 * m)%nat p1q1 +
+         shiftp m (p12q12 - p1q1 - p2q2) +
          p2q2)%C
   end.
 
 Definition karatsuba p q :=
-  karatsuba_rec (maxn (size_poly p) (size_poly q)) p q.
+  karatsuba_rec (maxn (sizep p) (sizep q)) p q.
 
 End generic_karatsuba.
 
@@ -113,8 +105,8 @@ Global Instance RpolyC_karatsuba :
     (karatsuba (polyA:={poly R})) (karatsuba (polyA:=polyC)).
 Proof. param karatsuba_R. Qed.
 
-(* Give this higher priority than the instance for mul_seqpoly so that it
-   gets found instead *)
+(* Give this higher priority than the instance for mul_seqpoly so that
+   it gets found instead *)
 Global Instance RpolyC_karatsuba_mul :
   refines (RpolyC ==> RpolyC ==> RpolyC) *%R (karatsuba (polyA:=polyC)) | 0.
 Proof.
@@ -124,72 +116,9 @@ Qed.
 End karatsuba_param.
 End karatsuba_theory.
 
-Section seqpoly_karatsuba.
-
-Section op.
-
-Variable C : Type.
-
-Context `{zero_of C}.
-
-Global Instance shift : shift_of (seqpoly C) := fun n => ncons n 0%C.
-(* Arguments shift n p : simpl nomatch. *)
-
-Global Instance split_seqpoly : split_of (seqpoly C) := fun n p => 
-  (take n p,drop n p).
-
-End op.
-
-Parametricity shift.
-Parametricity split_seqpoly.
-
-Section correctness.
-
-Variable R : ringType.
-Instance : zero_of R := 0.
-
-(* These can be done with Logic.eq instead of nat_R *)
-Instance Rseqpoly_shift :
-  refines (Logic.eq ==> @Rseqpoly R ==> @Rseqpoly R) (@shiftp R) shift_op.
-Admitted.
-
-Instance Rseqpoly_split :
-  refines (Logic.eq ==> @Rseqpoly R ==> prod_hrel (@Rseqpoly R) (@Rseqpoly R))
-    (@splitp R) split_op.
-Admitted.
-
-Section param.
-
-Context (C : Type) (rAC : R -> C -> Type).
-Context `{zero_of C, !refines rAC 0%R 0%C}.
-
-(* This should use nat_R and not Logic.eq *)
-Global Instance RseqpolyC_shift :
-  refines (nat_R ==> RseqpolyC rAC ==> RseqpolyC rAC) (@shiftp R) shift_op.
-Proof. param_comp shift_R. Qed.
-
-(* Uses composable_prod *)
-Global Instance RseqpolyC_split :
-  refines (nat_R ==> RseqpolyC rAC ==> prod_R (RseqpolyC rAC) (RseqpolyC rAC))
-    (@splitp R) split_op.
-Proof. param_comp split_seqpoly_R. Qed.
-
-End param.
-End correctness.
-End seqpoly_karatsuba.
-
 Section test_karatsuba.
 
 Require Import ssrint binint.
-
-Local Instance refines_refl_nat : forall m, refines nat_R m m | 999. 
-Proof. by rewrite refinesE; elim=> [|n]; [ exact: O_R | exact: S_R ]. Qed.
-
-(* Test shiftp *)
-Goal (2%:Z *: shiftp 2%nat 1 == Poly [:: 0; 0; 2%:Z]).
-rewrite [_ == _]refines_eq.
-by compute.
-Abort.
 
 Goal (Poly [:: 1; 2%:Z] * Poly [:: 1; 2%:Z]) == Poly [:: 1; 4%:Z; 4%:Z].
 rewrite [_ == _]refines_eq.
