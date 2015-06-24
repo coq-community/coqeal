@@ -32,30 +32,39 @@ Local Notation "x == y" := (heq_op x y) : hetero_computable_scope.
 
 Local Open Scope nat_scope.
 
-Class usubmx_of B := usubmx : forall (m1 m2 n : nat), B (m1 + m2) n -> B m1 n.
-Class dsubmx_of B := dsubmx : forall (m1 m2 n : nat), B (m1 + m2) n -> B m2 n.
-Class lsubmx_of B := lsubmx : forall (m n1 n2 : nat), B m (n1 + n2) -> B m n1.
-Class rsubmx_of B := rsubmx : forall (m n1 n2 : nat), B m (n1 + n2) -> B m n2.
-Class ulsubmx_of B :=
-  ulsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n1.
-Class ursubmx_of B :=
-  ursubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n2.
-Class dlsubmx_of B :=
-  dlsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n1.
-Class drsubmx_of B :=
-  drsubmx : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
-Class row_mx_of B := row_mx : forall (m n1 n2 : nat),
-  B m n1 -> B m n2 -> B m (n1 + n2).
-Class col_mx_of B := col_mx : forall (m1 m2 n : nat),
-  B m1 n -> B m2 n -> B (m1 + m2) n.
-Class block_mx_of B := block_mx : forall (m1 m2 n1 n2 : nat),
-  B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
+(* TODO: Remove this and get a better way for extracting elements *)
+Class top_left_of A B := top_left_op : A -> B.
 
-Class const_mx_of A B := const_mx : forall (m n : nat), A -> B m n.
+Class usubmx_of B :=
+  usubmx_op : forall (m1 m2 n : nat), B (m1 + m2) n -> B m1 n.
+Class dsubmx_of B :=
+  dsubmx_op : forall (m1 m2 n : nat), B (m1 + m2) n -> B m2 n.
+Class lsubmx_of B :=
+  lsubmx_op : forall (m n1 n2 : nat), B m (n1 + n2) -> B m n1.
+Class rsubmx_of B :=
+  rsubmx_op : forall (m n1 n2 : nat), B m (n1 + n2) -> B m n2.
+Class ulsubmx_of B :=
+  ulsubmx_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n1.
+Class ursubmx_of B :=
+  ursubmx_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m1 n2.
+Class dlsubmx_of B :=
+  dlsubmx_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n1.
+Class drsubmx_of B :=
+  drsubmx_op : forall (m1 m2 n1 n2 : nat), B (m1 + m2) (n1 + n2) -> B m2 n2.
+Class row_mx_of B :=
+  row_mx_op : forall (m n1 n2 : nat), B m n1 -> B m n2 -> B m (n1 + n2).
+Class col_mx_of B :=
+  col_mx_op : forall (m1 m2 n : nat), B m1 n -> B m2 n -> B (m1 + m2) n.
+Class block_mx_of B :=
+  block_mx_op : forall (m1 m2 n1 n2 : nat),
+    B m1 n1 -> B m1 n2 -> B m2 n1 -> B m2 n2 -> B (m1 + m2) (n1 + n2).
+
+Class const_mx_of A B := const_mx_op : forall (m n : nat), A -> B m n.
 
 (* Is this really needed as a class like this? *)
-(* Class map_mx_of A B := map_mx : (A -> A) -> B -> B. *)
-(*   (* forall (m n : nat), B m n -> B m n. *) *)
+Class map_mx_of A B :=
+  (* map_mx : (A -> A) -> forall (m n : nat), B m n -> B m n. *)
+  map_mx_op : (A -> A) -> B -> B.
 
 End classes.
 
@@ -104,10 +113,11 @@ Definition mkseqmx_ord m n (f : 'I_m -> 'I_n -> A) : seqmx :=
 
 Global Instance const_seqmx : const_mx_of A hseqmx :=
   fun m n (x : A) => nseq m (nseq n x).
-(* Global Instance map_seqmx : map_mx_of A seqmx := *)
-(*   fun (f : A -> A) (M : seqmx) => map (map f) M. *)
 
-Definition map_seqmx (f : A -> A) (M : seqmx) := map (map f) M.
+Global Instance map_seqmx : map_mx_of A seqmx :=
+  fun (f : A -> A) (M : seqmx) => map (map f) M.
+
+(* Definition map_seqmx (f : A -> A) (M : seqmx) := map (map f) M. *)
 
 Definition zipwith_seqmx (f : A -> A -> A) (M N : seqmx) :=
   zipwith (zipwith f) M N.
@@ -115,8 +125,11 @@ Definition zipwith_seqmx (f : A -> A -> A) (M N : seqmx) :=
 Definition trseqmx (M : seqmx) : seqmx :=
   foldr (zipwith cons) (nseq (size (nth [::] M 0)) [::]) M.
 
-Global Instance seqmx0 : hzero_of hseqmx := fun m n => const_seqmx m n 0%C.
+Global Instance seqmx0 : hzero_of hseqmx :=
+  fun m n => const_seqmx m n 0%C.
+
 (* Global Instance seqpoly1 : one_of seqpoly := [:: 1]. *)
+
 Global Instance opp_seqmx : opp_of seqmx := map_seqmx -%C.
 
 Global Instance add_seqmx : add_of seqmx := zipwith_seqmx +%C.
@@ -143,7 +156,8 @@ Fixpoint eq_seq T f (s1 s2 : seq T) :=
 
 Global Instance eq_seqmx : eq_of seqmx := eq_seq (eq_seq eq_op).
 
-(* Matrix surgery *)
+Global Instance top_left_seqmx : top_left_of seqmx A :=
+  fun (M : seqmx) => nth 0%C (nth [::] M 0) 0.
 
 Global Instance usubseqmx : usubmx_of hseqmx :=
   fun m1 m2 n (M : seqmx) => take m1 M.
@@ -201,6 +215,7 @@ Parametricity mul_seqmx.
 Parametricity scale_seqmx.
 Parametricity eq_seq.
 Parametricity eq_seqmx.
+Parametricity top_left_seqmx.
 Parametricity usubseqmx.
 Parametricity dsubseqmx.
 Parametricity lsubseqmx.
@@ -232,11 +247,16 @@ CoInductive Rseqmx {m n} : 'M[R]_(m,n) -> seqmx R -> Type :=
 (* Definition Rord n (i : 'I_n) j := i = j :> nat. *)
 
 Instance Rseqmx_mkseqmx_ord m n :
-  refines (Logic.eq ==> Rseqmx) (matrix_of_fun matrix_key) (@mkseqmx_ord R m n).
+  refines (eq ==> Rseqmx) (matrix_of_fun matrix_key) (@mkseqmx_ord R m n).
 Admitted.
 
 Instance Rseqmx_const_seqmx m n :
-  refines (Logic.eq ==> Rseqmx) (@matrix.const_mx R m n) (const_seqmx m n).
+  refines (eq ==> Rseqmx) (@matrix.const_mx R m n) (const_seqmx m n).
+Admitted.
+
+Instance Rseqmx_map_seqmx m n :
+  refines (eq ==> Rseqmx ==> Rseqmx)
+     (fun (f : R -> R) => @matrix.map_mx R R f m n) map_mx_op.
 Admitted.
 
 Instance Rseqmx_0 m n :
@@ -246,11 +266,6 @@ rewrite refinesE; constructor=>[|i|i j]; first by rewrite size_nseq.
   by rewrite nth_nseq => ->; rewrite size_nseq.
 by rewrite mxE !(nth_nseq,ltn_ord).
 Qed.
-
-(* This feels wrong... *)
-(* Instance Rseqmx_map_mx m n : *)
-(*   refines ((Logic.eq ==> Logic.eq) ==> Rseqmx ==> Rseqmx) (fun f => @matrix.map_mx R R f m n) map_mx. *)
-(* Admitted. *)
 
 Instance Rseqmx_opp m n :
   refines (Rseqmx ==> Rseqmx) (-%R : 'M[R]_(m,n) -> 'M[R]_(m,n)) -%C.
@@ -284,7 +299,7 @@ Instance Rseqmx_mul m n p :
 Admitted.
 
 Instance Rseqmx_scale m n :
-  refines (Logic.eq ==> Rseqmx ==> Rseqmx)
+  refines (eq ==> Rseqmx ==> Rseqmx)
           ( *:%R : _ -> 'M[R]_(m, n)  -> _) *:%C. 
 Admitted.
 
@@ -292,6 +307,12 @@ Instance Rseqmx_eq m n :
   refines (Rseqmx ==> Rseqmx ==> bool_R)
             (eqtype.eq_op : 'M[R]_(m,n) -> _ -> _) eq_op.
 Proof. admit. Admitted.
+
+Instance Rseqmx_top_left_seqmx m :
+  refines (Rseqmx ==> eq)
+          (fun (M : 'M[R]_(1+m,1+m)) => M ord0 ord0)
+          (top_left_op).
+Admitted.
 
 Instance Rseqmx_usubseqmx m1 m2 n :
   refines (Rseqmx ==> Rseqmx) (@matrix.usubmx R m1 m2 n) (@usubseqmx R m1 m2 n).
@@ -359,7 +380,7 @@ Proof. by rewrite refinesE; apply: refl_nat_R. Qed.
 (* Local Instance refines_refl_ord : forall m (i : 'I_m), refines nat_R i i | 999.  *)
 (* Proof. ewrite refinesE; elim=> [|n]; [ exact: O_R | exact: S_R ]. Qed. *)
 
-(* Local Instance refines_eq_refl_nat : forall (m : nat), refines Logic.eq m m | 999.  *)
+(* Local Instance refines_eq_refl_nat : forall (m : nat), refines eq m m | 999.  *)
 (* Proof. by rewrite refinesE. Qed. *)
 
 Local Instance refines_ordinal_eq (m : nat) (i j : 'I_m) :
@@ -370,7 +391,7 @@ apply: ord_inj; exact: nat_R_eq.
 Qed.
 
 Global Instance RseqmxC_mkseqmx_ord m n :
-  refines ((Logic.eq ==> Logic.eq ==> rAC) ==> RseqmxC)
+  refines ((eq ==> eq ==> rAC) ==> RseqmxC)
           (matrix_of_fun matrix_key) (@mkseqmx_ord C m n).
 Proof. param_comp mkseqmx_ord_R. Qed.
 
@@ -382,10 +403,10 @@ Global Instance RseqmxC_0 m n :
   refines RseqmxC (0 : 'M[R]_(m,n)) (@hzero_op _ (fun _ _ => seqmx C) _ m n).
 Proof. param_comp seqmx0_R. Qed.
 
-(* Global Instance RseqmxC_map_mx m n : *)
-(*   refines ((rAC ==> rAC) ==> RseqmxC ==> RseqmxC) (fun f => @matrix.map_mx R R f m n) map_mx. *)
-(* Proof. param_comp map_seqmx_R. *)
-(* Admitted. *)
+Global Instance RseqmxC_map_mx m n :
+  refines ((rAC ==> rAC) ==> RseqmxC ==> RseqmxC)
+          (fun f => @matrix.map_mx R R f m n) (@map_seqmx C).
+Proof. param_comp map_seqmx_R. Qed.
 
 Global Instance RseqmxC_opp m n :
   refines (RseqmxC ==> RseqmxC) (-%R : 'M[R]_(m,n) -> 'M[R]_(m,n)) -%C.
@@ -416,6 +437,12 @@ Global Instance RseqmxC_eq m n :
   refines (RseqmxC ==> RseqmxC ==> bool_R)
           (eqtype.eq_op : 'M[R]_(m,n) -> _ -> _) eq_op.
 Proof. param_comp eq_seqmx_R. Qed.
+
+Global Instance RseqmxC_top_left_seqmx m :
+  refines (RseqmxC ==> rAC)
+          (fun (M : 'M[R]_(1+m,1+m)) => M ord0 ord0)
+          (@top_left_seqmx C _).
+Proof. param_comp top_left_seqmx_R. Qed.
 
 Global Instance RseqmxC_usubseqmx m1 m2 n :
   refines (RseqmxC ==> RseqmxC) (@matrix.usubmx R m1 m2 n) (@usubseqmx C m1 m2 n).

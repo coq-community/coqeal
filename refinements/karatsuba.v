@@ -13,7 +13,7 @@ Import Refinements.Op.
 Local Open Scope ring_scope.
 Local Open Scope rel.
 
-Section generic_karatsuba.
+Section karatsuba_generic.
 
 Variable polyA : Type.
 
@@ -42,12 +42,12 @@ Fixpoint karatsuba_rec n (p q : polyA) := match n with
 Definition karatsuba p q :=
   karatsuba_rec (maxn (sizep p) (sizep q)) p q.
 
-End generic_karatsuba.
+End karatsuba_generic.
 
 Parametricity karatsuba_rec.
 Parametricity karatsuba.
 
-Section karatsuba_theory.
+Section karatsuba_correctness.
 
 Local Open Scope rel_scope.
 
@@ -114,9 +114,9 @@ by rewrite refinesE; do?move=> ?*; rewrite -karatsubaE; apply: refinesP; tc.
 Qed.
 
 End karatsuba_param.
-End karatsuba_theory.
+End karatsuba_correctness.
 
-Section test_karatsuba.
+Section karatsuba_test.
 
 Require Import ssrint binint.
 
@@ -139,4 +139,4 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-End test_karatsuba.
+End karatsuba_test.
