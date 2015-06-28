@@ -22,7 +22,7 @@ Lemma length_same_length :
   forall A B (l1 : list A) (l2 : list B),
     length l1 = length l2 -> same_length l1 l2.
 admit. (* exercise :) *)
-Qed.
+Admitted.
 
 Lemma nat_R_equal : 
   forall x y, nat_R x y -> x = y.

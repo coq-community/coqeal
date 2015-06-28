@@ -7,14 +7,14 @@ Require Import Parametricity.
 
 Inductive bool := true | false.
 
-Translate Inductive bool arity 1.
+Parametricity bool arity 1.
 
 Print bool_P.
 
 
 Definition boolfun := bool -> bool.
 
-Translate boolfun arity 1.
+Parametricity boolfun arity 1.
 Print boolfun_P.
 
 Definition myneg (b : bool) :=
@@ -23,7 +23,7 @@ Definition myneg (b : bool) :=
    | false => true
   end.
 
-Translate myneg arity 1.
+Parametricity myneg arity 1.
 
 Print myneg_P.
 
@@ -50,8 +50,7 @@ Defined.
 
 (** Boolean functions **)
 
-Definition boolfun := bool -> bool.
-Translate boolfun.
+Parametricity Recursive boolfun.
 Print boolfun_R.
 (* Prints:
 boolfun_R = fun f1 f2 : bool -> bool => 
@@ -63,13 +62,13 @@ Definition negb (x : bool) :=
    | true => false
    | fale => true
   end. 
-Translate negb.
+Parametricity negb.
 Check negb_R.
 Print negb_R.
 
 (** Universes **)
 
-Translate Type as Type_R.
+Parametricity Translation Type as Type_R.
 Print Type_R.
 (* Prints : 
   Type_R = fun A1 A2 : Type => A1 -> A2 -> Type
@@ -78,7 +77,7 @@ Check (bool_R : Type_R bool bool).
 Check (boolfun_R : Type_R boolfun boolfun).
 
 Polymorphic Definition pType := Type.
-Translate pType.
+Parametricity pType.
 Check (pType_R : pType_R pType pType).
 
 (** Simple arrows **)
@@ -86,7 +85,7 @@ Check (pType_R : pType_R pType pType).
 Definition arrow (A : Type) (B  : Type) := 
   A -> B.
 
-Translate arrow.
+Parametricity arrow.
 Print arrow_R.
 (* Prints: 
 arrow_R = 
@@ -100,7 +99,7 @@ arrow_R =
 (** Lambdas **)
 Definition lambda (A : Type) (B : Type)
   (f : arrow A B) := fun x => f x.
-Translate lambda.
+Parametricity lambda.
 Print lambda_R.
 (* lambda_R = 
 fun (A₁ A₂ : Type) (A_R : A₁ -> A₂ -> Type)
@@ -112,7 +111,7 @@ fun (A₁ A₂ : Type) (A_R : A₁ -> A₂ -> Type)
 (** Applications of functions *)
 Definition application A B (f : arrow A B) (x : A) : B :=
   f x.
-Translate application.
+Parametricity application.
 Print application_R.
 (* Prints : 
 fun (A₁ A₂ : Type) (A_R : A₁ -> A₂ -> Type) 
@@ -123,7 +122,7 @@ fun (A₁ A₂ : Type) (A_R : A₁ -> A₂ -> Type)
 
 (** Dependent product **)
 Definition for_all (A : Type) (B : A -> Type) := forall x, B x.
-Translate for_all.
+Parametricity for_all.
 Print for_all_R.
 (* Prints: 
 for_all_R =
@@ -138,7 +137,7 @@ for all (x₁ : A₁) (x₂ : A₂) (x_R : A_R x₁ x₂), B_R x₁ x₂ x_R (f�
 Inductive nat := 
   | O : nat 
   | S : nat -> nat.
-Translate Inductive nat.
+Parametricity nat.
 Print nat_R.
 (* Prints:
 Inductive nat_R : nat -> nat -> Set :=  
@@ -146,7 +145,7 @@ Inductive nat_R : nat -> nat -> Set :=
 | S_R : forall n₁ n₂ : nat, nat_R n₁ n₂ -> nat_R (S n₁) (S n₂) *)
 
 Inductive list (A : Type) : Type :=  nil : list A | cons : A -> list A -> list A.
-Translate Inductive list.
+Parametricity list.
 Print list_R.
 (* Prints : 
 Inductive list_R (A₁ A₂ : Type) (A_R : A₁ -> A₂ -> Type) : 
@@ -159,22 +158,22 @@ Inductive list_R (A₁ A₂ : Type) (A_R : A₁ -> A₂ -> Type) :
 
 Fixpoint length A (l : list A) : nat := 
   match l with nil _ => O | cons _ _ tl => S (length A tl) end.
-Translate length.
+Parametricity length.
 Check length_R.
 Print length_R.
 (* Prints : ... something that looks complicated. *)
 
-Translate list_rec.
+Parametricity list_rec.
 Print list_rec_R.
 Definition length2 (A : Type) (l : list A) : nat :=
   list_rec A (fun _ => nat) O (fun _ _ => S) l.
-Translate length2.
+Parametricity length2.
 Check length2_R.
 Print length2_R.
 
 Print sum_rect.
 
-Translate sum_rect.
+Parametricity sum_rect.
 Check sum_rect.
 Check sum_rect_R.
 Print Datatypes_R.sum_rect_R.
