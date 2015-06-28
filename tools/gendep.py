@@ -1,14 +1,23 @@
 import sys
 import os
+import re
 from collections import Counter, defaultdict
 
+
+def module_name(x):
+    if 'theories/' in x:
+        y = re.sub(r'^.*theories/','', x)
+        y = re.sub(r'/','.', y)
+        return y
+    else:
+        return os.path.basename(x)
 
 
 def draw (graph, sort, fd):
     fd.write('digraph {')
     for x in graph:
         for y in graph[x]:
-            fd.write('"{0}" -> "{1}";'.format(x,y))
+            fd.write('"{0}" -> "{1}";\n'.format(x,y))
     if sort:
         prev = sort[0]
         for x in sort[1:]:
@@ -81,7 +90,7 @@ def remove(graph, starts):
             removed.append(current)
       
 
-output = './output.dot'
+output = './graph.dot'
 fd = open(output, 'w')
 
 graph = defaultdict(list)
@@ -101,10 +110,26 @@ if len(sys.argv) >= 2:
     removed_nodes = list(os.path.splitext(x)[0] for x in sys.argv[1:])
     remove(graph, removed_nodes)
 
+init = list(x for x in list(graph) if 'Init/' in x)
+for x in list(graph) : 
+    if not (x in init) : 
+        graph[x].extend(init)
 start = list(graph)
-
 reduction = transitive_reduction(graph, start)
 sort = topological_sort(graph, start)
 draw(reduction, sort, fd)
-print(' '.join(os.path.basename(x) for x in sort))
-
+sort = map(module_name, sort)
+def aliasing(l):
+    done = defaultdict(int)
+    result = []
+    for x in l:
+        basename = re.sub(r'^.*\.','', x)
+        done[basename]+=1
+        if done[basename] > 1:
+            result.append('{0}-{1}{2}_R'.format(x, basename, done[basename]))
+        else:
+            result.append(x)
+    return result
+    
+sort = aliasing(sort)
+print(' '.join(sort))

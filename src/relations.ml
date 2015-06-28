@@ -24,6 +24,19 @@ open Libobject
 let (set_parametricity_tactic, get_parametricity_tactic, print_parametricity_tactic) = 
     Tactic_option.declare_tactic_option "Parametricity tactic"
 
+(* TODO : 
+let recursive_translation = ref false
+let _ =
+  declare_bool_option
+    { optsync  = true;
+      optdepr  = false;
+      optname  = "Recursively translates and register constants instead of unfolding.";
+      optkey   = ["Parametricity";"Recursive"];
+      optread  = (fun () -> !recursive_translation);
+      optwrite = (:=) recursive_translation }
+*)
+
+
 module IntMap = Map.Make(Int)
 module GMap = Map.Make(Globnames.RefOrdered)
 
@@ -84,4 +97,8 @@ let get_variable n v =
   let map = IntMap.find n !relations in
   destConstRef (GMap.find (VarRef v) map)
   
-
+let is_referenced n ref = 
+  try
+    let map = IntMap.find n !relations in 
+    GMap.mem ref map
+  with Not_found -> false

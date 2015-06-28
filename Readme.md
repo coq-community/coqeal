@@ -13,7 +13,7 @@ The easy (and long) way to test the plugin is to follow the following steps:
 
 * Retrieve my branch of coq and compile it (and go take a coffee, or may be 5 coffees):
  
-        git clone https://github.com/mlasson/coq.git
+        git clone -b paramcoq https://github.com/mlasson/coq.git
         cd coq
         ./configure -local 
         make -j 4 
@@ -39,13 +39,14 @@ Available commands
 The default arity is 2. 
 The default name is automatically generated when translating a constant (otherwise you need to provide it). 
 
-- Parametricity *term* [as *name*] [arity *n*]. 
+- Parametricity [Recursive] *ident* [as *name*] [arity *n*].
+
+Declare the translation named *name* from the translation of the constant or the inductive *ident*. 
+You can use the recursive option to recursively translate all the constant and inductives which are used by *ident*.
+
+- Parametricity Translation *term* [as *name*] [arity *n*]. 
 
 Define a new constant named *name* obtained by computing the parametricity translation of *term*. 
-
-- Parametricity Inductive *inductive* [as *name*] [arity *n*].
-
-Declare a new inductive type named *name* from the translation of *inductive*. 
 
 - Parametricity Module *modulepath*.
 

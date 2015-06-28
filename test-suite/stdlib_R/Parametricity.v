@@ -42,25 +42,17 @@ Ltac destruct_reflexivity_with_nat_arg_pattern :=
     | [ x : _ |- _ = _ ] => destruct_with_nat_arg_pattern x; reflexivity; fail
   end.
  
+Axiom absurd : forall X, X.
+
+Ltac admit_and_print := 
+  intros; match goal with 
+  | [ |- _ = ?RHS ] => idtac "Warning: admiting an ogligation for" RHS
+  | [ |- ?GOAL] => idtac "Warning: admiting an ogligation of goal" GOAL
+  end; apply absurd.
+
 Global Parametricity Tactic := ((destruct_reflexivity; fail)
                             || (unfold_cofix; fail) 
                             || (destruct_reflexivity_with_nat_arg_pattern; fail)
-                            ||  auto). 
+                            || admit_and_print). 
 
-
-Require Import ProofIrrelevance. (* for opaque terms *)
-
-Parametricity Module Logic.
-Parametricity Module Datatypes.
-
-
-Parametricity Module Logic_Type.
-Parametricity Module Nat.
-
-Parametricity Module Specif.
-Parametricity Module Peano.
-
-Parametricity Module Wf.
-Parametricity Module Tactics.
-
-Export Logic_R Datatypes_R Logic_Type_R Specif_R Nat_R Peano_R Wf_R Tactics_R. 
+Require ProofIrrelevance. (* for opaque terms *)

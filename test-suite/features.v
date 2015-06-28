@@ -23,7 +23,7 @@ Parametricity Module Bool.
 Print Module Bool_R.
 
 (** Unary parametricity *)
-Parametricity (forall X, X -> X) as ID_R arity 1.
+Parametricity Translation (forall X, X -> X) as ID_R arity 1.
 
 Lemma ID_unique: 
   forall f, ID_R f -> forall A x, f A x = x.
@@ -33,7 +33,7 @@ apply f_R.
 reflexivity.
 Defined.
 
-Parametricity Inductive nat arity 10.
+Parametricity nat arity 10.
 Print nat_R_10.
 
 (** Realizing axioms and section variables. *)
@@ -44,17 +44,6 @@ Realizer A as A_R := R.
 Definition id : A -> A := fun x => x.
 Parametricity id.
 End Test.
-
-Realizer proof_admitted as proof_admitted_R := _.
-Next Obligation.
-admit.
-Defined.
-
-Lemma test_admit: 2+2 = 5.
-admit.
-Defined.
-Parametricity test_admit.
-Print test_admit_R.
 
 (** Opaque terms. **)
 
@@ -68,13 +57,14 @@ Eval compute in opaque.
 Eval compute in opaque_R.
 
 
-Lemma opaquenat : nat.
-exact 41.
+Lemma opaqueunit : unit.
+exact tt.
 Qed.
-Parametricity opaquenat.
-Next Obligation.
-admit.
-Defined.
+
+Parametricity opaqueunit.
+destruct opaqueunit.
+reflexivity.
+Parametricity Done.
 
 
  

@@ -6,6 +6,7 @@ open Environ
 open Util
 open Context
 open Environ
+open Debug
 
 let error msg = 
   raise (Errors.UserError ("Parametricity plugin", msg))
@@ -51,31 +52,6 @@ module CoqConstants = struct
     Program.papp evdref (fun () -> Coqlib.coq_reference msg ["Logic"; "ProofIrrelevance"] "proof_irrelevance") args 
 end
 
-
-let all = [`ProofIrrelevance; 
-           `Abstraction; 
-           `Relation; 
-           `Translate; 
-           `Fix; 
-           `Case; 
-           `GenericUnfolding; 
-           `Unfolding; 
-           `Inductive; 
-           `Module; 
-           `Realizer; `Opacity]
-
-let debug_flag = [`Time; `Abstraction; `Module; `Realizer; `Translate; `Cast; `Relation; `Inductive; `Module]
-
-let debug_mode = ref false
-let set_debug_mode = 
-   Goptions.declare_bool_option 
-    { Goptions.optsync  = true;
-      Goptions.optdepr  = false;
-      Goptions.optname  = "Parametricity Debug";
-      Goptions.optkey   = ["Parametricity"; "Debug"];
-      Goptions.optread  = (fun () -> !debug_mode);
-      Goptions.optwrite = (:=) debug_mode }
-
 let program_mode = ref false
 let set_program_mode = 
    Goptions.declare_bool_option 
@@ -87,76 +63,6 @@ let set_program_mode =
       Goptions.optwrite = (:=) program_mode }
 
 let default_arity = 2
-
-let debug_rename_env env = 
-  let rc = Environ.rel_context env in 
-  let env = Environ.reset_context env in 
-  let rc = Namegen.name_context env rc in
-  let env = push_rel_context rc env in
-  Namegen.make_all_name_different env
-
-
-let debug_message flags s e = 
-  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
-    Pp.msg_notice Pp.(str s ++ e)
-
-let debug_env flags (s : string) env evd = 
-  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
-    let env = debug_rename_env env in 
-    Pp.(msg_notice (str s ++ Printer.pr_context_of env evd)) 
-
-let debug flags (s : string) env evd c = 
-  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then 
-    try 
-      let env = debug_rename_env env in 
-      Pp.(msg_notice (str s
-       ++ Printer.pr_context_of env evd));
-      Pp.(msg_notice (str "" 
-         ++ str "\n |-"
-         ++ Printer.safe_pr_constr_env env evd c)) 
-    with e -> Pp.(msg_notice (str (Printf.sprintf "Caught exception while debugging '%s'" (Printexc.to_string e))))
-
-let debug_evar_map flags s evd = 
-  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then (
-    Pp.msg_info Pp.(str s ++ Evd.pr_evar_universe_context (Evd.evar_universe_context evd)))
-
-let debug_string flags s =
-  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
-    Pp.msg_notice (Pp.str ("--->\t"^s))
-
-let debug_case_info flags ci = 
-  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
-    let (ind, k) = ci.ci_ind in 
-    let ind_string = Printf.sprintf "%s[%d]" (MutInd.to_string ind) k in 
-    let param = ci.ci_npar in 
-    let ndecls = String.concat ";" (List.map string_of_int (Array.to_list ci.ci_cstr_ndecls)) in 
-    let nargs = String.concat ";" (List.map string_of_int (Array.to_list ci.ci_cstr_nargs)) in 
-    let pp_info x =
-      let ind_tags = String.concat ";" (List.map string_of_bool x.ind_tags) in  
-      let cstr_tags = 
-        String.concat "," (List.map (fun tags -> String.concat ";" (List.map string_of_bool tags)) 
-        (Array.to_list x.cstr_tags))
-      in  
-      let string_of_style = match x.style with 
-        LetStyle -> "LetStyle" | IfStyle -> "IfStyle" | LetPatternStyle -> "LetPatternStyle" | MatchStyle -> "MatchStyle" | RegularStyle -> "RegularStyle" 
-      in
-      Printf.sprintf "ind_tags = %s, cstr_tags = %s, style = %s" ind_tags cstr_tags string_of_style
-    in 
-    debug_string flags
-  (Printf.sprintf "CASEINFO:inductive = %s.\nparam = %d.\nndecls = %s.\nnargs = %s.\npp_info = %s\n.EOFCASEINFO"
-      ind_string
-      param
-      ndecls
-      nargs 
-      (pp_info ci.ci_pp_info))
-
-let debug_rel_context flags s env l = 
-  if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
-    Pp.msg_notice Pp.(str s ++ (Termops.print_rel_context (push_rel_context l env)))
-
-let not_implemented ?(reason = "no reason") env evd t = 
-  debug [`Not_implemented] (Printf.sprintf "not implemented (%s):" reason) env evd t;
-  failwith "not_implemented"
 
 let hyps_from_rel_context env = 
   let rctx = Environ.rel_context env in 
@@ -495,8 +401,6 @@ and translate order evd env (t : constr) : constr =
 and translate_constant order (evd : Evd.evar_map ref) env cst : constr =
   try 
    let cst, names = cst in 
-  (*
-    Evarutil.e_new_global evd (Relations.get_constant order (Univ.out_punivs cst))  *)
    let evd', constr = Evd.fresh_global ~rigid:Evd.univ_rigid ~names env !evd (Relations.get_constant order cst) in 
    evd := evd';
    constr
@@ -1083,20 +987,6 @@ let map_local_entry f = function
 
 let constr_of_local_entry = function LocalDef c | LocalAssum c -> c 
 
-
-let check_params env evdr ctx l = 
-  let env = push_context ctx env in
-  let env, params = List.fold_left
-     (fun (env, params) -> function (x, LocalAssum c) | (x, LocalDef c) -> 
-        debug [`Inductive] "c = " env !evdr c;
-        evdr := fst (Typing.e_type_of env !evdr c);
-        let env = push_rel (Names.Name x, None, c) env in 
-        let params = (Names.Name x, None, c)::params in
-        env, params) (env, []) (List.rev l)
-  in 
-  env, params
-
-
 (* Translation of inductives. *)
 
 let rec translate_mind_body order evdr env kn b inst = 
@@ -1133,8 +1023,9 @@ let rec translate_mind_body order evdr env kn b inst =
       (fun i x -> translate_mind_inductive order evdr env (kn,i) b inst envs x) 
       (Array.to_list b.mind_packets)
   in
+  debug_evar_map [`Inductive] "translate_mind, evd = \n" !evdr;
   let ctx = Evd.universe_context !evdr in
-  { 
+  let res = { 
     mind_entry_record = None;
     mind_entry_finite = b.mind_finite;
     mind_entry_params = mind_entry_params_R;
@@ -1142,7 +1033,9 @@ let rec translate_mind_body order evdr env kn b inst =
     mind_entry_polymorphic = b.mind_polymorphic;
     mind_entry_universes = ctx;
     mind_entry_private = b.mind_private
-  }
+  } in
+  Debug.debug_mutual_inductive_entry !evdr res; 
+  res
 
 
 and translate_mind_param order evd env (l : rel_context) = 
@@ -1170,7 +1063,6 @@ and translate_mind_inductive order evdr env ikn mut_entry inst (env_params, para
   let arity_R = 
       debug_string [`Inductive] "Computing arity";
       let arity_R = relation order evdr env_params arity in
-      debug [`Inductive] "Arity_R before substitution:" Environ.empty_env Evd.empty arity_R;
       let inds = List.rev (fold_nat 
          (fun k acc -> 
            prime order k 
@@ -1178,7 +1070,10 @@ and translate_mind_inductive order evdr env ikn mut_entry inst (env_params, para
       debug_string [`Inductive] "Substitution:";
       List.iter (debug [`Inductive] "" Environ.empty_env Evd.empty) inds;
       let result = substl inds arity_R in 
-      debug [`Inductive] "Arity_R after substitution:" Environ.empty_env Evd.empty result;
+      if List.exists (fun x -> List.mem x [`Inductive]) debug_flag then begin
+        let env_params_R = translate_env order evdr env_params in      
+        debug [`Inductive] "Arity_R after substitution:" env_params_R !evdr result;
+      end;
       result
   in
   { 
@@ -1249,64 +1144,3 @@ and translate_mind_inductive order evdr env ikn mut_entry inst (env_params, para
   }
 
 
-
-(*
-let rec retype_mind_entry env evdr mie = 
-  debug_evar_map [`Inductive] "before retyping, evar = " !evdr;
-  let params = relcontext_of_local_entry env evdr mie.mind_entry_params in
-  debug_evar_map [`Inductive] "after retyping params, evar = " !evdr;
-  let env_params = push_rel_context params env in 
-  let arities = List.map (fun ind -> 
-          let arity = ind.mind_entry_arity in 
-          let ctx, sort = Reduction.dest_arity env_params arity in
-          (* let new_sort = Evarutil.e_new_Type env_params evdr in *)
-          let arity = mkArity(ctx, sort) in 
-          (* debug [`Inductive] "refreshing : " env !evdr ind.mind_entry_arity;
-          let evd, arity = Evarsolve.refresh_universes (Some false) env !evdr ind.mind_entry_arity in 
-          debug [`Inductive] " refreshed : " env !evdr arity; 
-          evdr := evd; *)
-          ind.mind_entry_typename, arity
-      ) mie.mind_entry_inds
-  in 
-  debug_evar_map [`Inductive] "after refreshing universes, evar = " !evdr;
-  let full_arities = List.map (fun (n, x) -> (n, it_mkProd_or_LetIn x params)) arities in 
-  let env_arities = 
-    List.fold_left (fun env (typename, full_arity) -> 
-      debug_string [`Inductive] (Printf.sprintf "Adding '%s' to the environement." (Names.Id.to_string typename));
-      let env = Environ.push_rel (Names.Name typename, None, full_arity) env in 
-      env
-    ) env full_arities
-  in 
-  let env_arities_params = push_rel_context params env_arities in
-  List.iteri (fun k ind -> 
-    let _, arity_sort = Reduction.dest_arity env_params (snd (List.nth arities k)) in
-    debug_string [`Inductive] (Printf.sprintf "Inductive '%s'" (Names.Id.to_string ind.mind_entry_typename));
-    debug [`Inductive] "sort =" Environ.empty_env !evdr (mkSort arity_sort);
-    List.iteri (fun i cstr ->
-       debug_string [`Inductive] (Printf.sprintf "checking constructor %d:" i);
-       debug_evar_map [`Inductive] "evar = " !evdr;
-       debug [`Inductive] "cstr = " env_arities_params !evdr cstr;
-       let evd, typ = Typing.e_type_of env_arities_params !evdr cstr in 
-       debug [`Inductive] "typ = " env_arities_params !evdr typ;
-       let constructor_sort = destSort typ in 
-       evdr := Evd.set_leq_sort env_arities_params evd constructor_sort arity_sort;
-   ) ind.mind_entry_lc) mie.mind_entry_inds;
-   debug_evar_map [`Inductive] "evar = " !evdr;
-   
-   { mie with 
-     mind_entry_inds = List.mapi
-       (fun i mei -> { mei with mind_entry_arity = snd (List.nth arities i)}) mie.mind_entry_inds;
-     mind_entry_universes = Evd.universe_context !evdr }
-   
-and relcontext_of_local_entry env evdr local_entry = 
-  let env, params = List.fold_left
-     (fun (env, params) -> function (x, LocalAssum c)  -> 
-        debug [`Inductive] "c = " env !evdr c;
-        evdr := fst (Typing.e_type_of env !evdr c);
-        let env = push_rel (Names.Name x, None, c) env in 
-        let params = (Names.Name x, None, c)::params in
-        env, params     
-     | (x, LocalDef c) -> assert false (* TODO *)
-     ) (env, []) (List.rev local_entry)
-  in 
-  params *)

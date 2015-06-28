@@ -19,11 +19,6 @@ DECLARE PLUGIN "parametricity"
 open Parametricity
 open Declare_translation
 
-(* Old classifier, useless now : 
-let classify_machin _ = 
-  Vernacexpr.(VtStartProof ("Classic", Doesn'tGuaranteeOpacity, []), VtLater) 
-*)
-
 VERNAC COMMAND EXTEND SetParametricityTactic CLASSIFIED AS SIDEFF
 | [ "Parametricity" "Tactic" ":=" tactic(t) ] -> [
     Relations.set_parametricity_tactic
@@ -44,15 +39,7 @@ END
 
 VERNAC COMMAND EXTEND ParametricityDefined CLASSIFIED AS SIDEFF
 | [ "Parametricity" "Done"  ] -> [
-  let proof = Proof_global.give_me_the_proof () in 
-  let is_done = Proof.is_done proof in 
-  if is_done then
-    begin
-      Pp.(msg_info (str "Proof saved"));
-      let proof_obj, terminator = Proof_global.close_proof ~keep_body_ucst_sepatate:false (fun x -> x) in 
-      Pfedit.delete_current_proof ();
-      terminator (Proof_global.Proved (Vernacexpr.Transparent,None,proof_obj))
-    end
+    parametricity_close_proof ()
 ]
 END
 
@@ -61,47 +48,47 @@ VERNAC COMMAND EXTEND AbstractionReference CLASSIFIED AS SIDEFF
   [
     command_reference default_arity (Constrintern.intern_reference c) None  
   ]
+| [ "Parametricity" reference(c) "as" ident(name)] -> 
+  [
+    command_reference default_arity (Constrintern.intern_reference c) (Some name)
+  ]
+| [ "Parametricity" reference(c) "arity" integer(arity) ] -> 
+  [
+    command_reference arity (Constrintern.intern_reference c) None  
+  ]
+| [ "Parametricity" reference(c) "arity" integer(arity) "as" ident(name) ] ->
+  [
+    command_reference arity (Constrintern.intern_reference c) (Some name)  
+  ]
+| [ "Parametricity" reference(c)  "as" ident(name) "arity" integer(arity) ] -> 
+  [
+    command_reference arity (Constrintern.intern_reference c) (Some name)  
+  ]
 END 
 
-VERNAC COMMAND EXTEND AbstractionWithName CLASSIFIED AS SIDEFF
+VERNAC COMMAND EXTEND AbstractionRecursive CLASSIFIED AS SIDEFF
+| [ "Parametricity" "Recursive" reference(c) ] -> 
+  [
+    command_reference_recursive default_arity (Constrintern.intern_reference c)
+  ]
+| [ "Parametricity" "Recursive" reference(c) "arity" integer(arity) ] -> 
+  [
+    command_reference_recursive arity (Constrintern.intern_reference c)
+  ]
+END
+
+VERNAC COMMAND EXTEND Abstraction CLASSIFIED AS SIDEFF
 | [ "Parametricity" "Translation" constr(c) "as" ident(name)] -> 
   [
     translate_command default_arity c name
   ] 
-END 
-
-VERNAC COMMAND EXTEND AbstractionWithNameAndarity CLASSIFIED AS SIDEFF
 | [ "Parametricity" "Translation" constr(c) "as" ident(name) "arity" integer(arity) ] -> 
   [
     translate_command arity c name 
   ]
-END
-
-VERNAC COMMAND EXTEND TranslateInductive CLASSIFIED AS SIDEFF
-| [ "Parametricity" "Inductive" constr(c)  ] ->
+| [ "Parametricity" "Translation" constr(c) "arity" integer(arity) "as" ident(name)] -> 
   [
-    translate_inductive_command default_arity c None
-  ]
-END
-
-VERNAC COMMAND EXTEND TranslateInductiveWithName CLASSIFIED AS SIDEFF
-| [ "Parametricity" "Inductive" constr(c) "as" ident(name)  ] ->
-  [
-    translate_inductive_command default_arity c (Some name)
-  ]
-END
-
-VERNAC COMMAND EXTEND TranslateInductiveWithArity CLASSIFIED AS SIDEFF
-| [ "Parametricity" "Inductive" constr(c) "arity" integer(arity)  ] ->
-  [
-    translate_inductive_command arity c None
-  ]
-END
-
-VERNAC COMMAND EXTEND TranslateInductiveWithNameAndArity CLASSIFIED AS SIDEFF
-| [ "Parametricity" "Inductive" constr(c) "as" ident(name) "arity" integer(arity)  ] ->
-  [
-    translate_inductive_command arity c (Some name)
+    translate_command arity c name 
   ]
 END
 
@@ -110,12 +97,21 @@ VERNAC COMMAND EXTEND TranslateModule CLASSIFIED AS SIDEFF
   [
     ignore (translate_module_command Parametricity.default_arity qid)
   ]
-END
-
-VERNAC COMMAND EXTEND TranslateModuleWithArity CLASSIFIED AS SIDEFF
+| [ "Parametricity" "Module" global(qid) "as" ident(name) ] ->
+  [
+    ignore (translate_module_command ~name Parametricity.default_arity qid)
+  ]
 | [ "Parametricity" "Module" global(qid) "arity" integer(arity) ] ->
   [
     ignore (translate_module_command arity qid)
+  ]
+| [ "Parametricity" "Module" global(qid) "as" ident(name) "arity" integer(arity) ] ->
+  [
+    ignore (translate_module_command ~name arity qid)
+  ]
+| [ "Parametricity" "Module" global(qid) "arity" integer(arity) "as" ident(name)] ->
+  [
+    ignore (translate_module_command ~name arity qid)
   ]
 END
 
@@ -124,10 +120,11 @@ VERNAC COMMAND EXTEND Realizer CLASSIFIED AS SIDEFF
   [
     realizer_command Parametricity.default_arity (Some name) c t 
   ]
-END
-
-VERNAC COMMAND EXTEND RealizerArity CLASSIFIED AS SIDEFF
 | [ "Realizer" constr(c) "as" ident(name) "arity" integer(arity) ":=" constr(t) ] ->
+  [
+    realizer_command arity (Some name) c t 
+  ]
+| [ "Realizer" constr(c) "arity" integer(arity) "as" ident(name) ":=" constr(t) ] ->
   [
     realizer_command arity (Some name) c t 
   ]

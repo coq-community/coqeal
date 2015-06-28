@@ -94,13 +94,7 @@ intros x y H; subst.
 destruct y; constructor; apply equal_nat_R; reflexivity.
 Defined.
 
-Translate Inductive Queue.
-Translate @bind_option.
-Translate @bind_option2.
-Translate t.
-Translate empty.
-Translate push.
-Translate pop.
+Parametricity Recursive Queue.
 
 Notation Bisimilar := Queue_R.
 
@@ -198,7 +192,7 @@ rewrite rev_involutive.
 reflexivity.
 Defined.
 
-Translate program.
+Parametricity Recursive program.
 
 Lemma program_independent : 
  forall n, 

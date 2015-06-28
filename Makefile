@@ -4,18 +4,16 @@ COQBIN := ../coq/bin/
 coq:: Makefile.coq
 	COQBIN=$(COQBIN) COQDEP=$(COQBIN)coqdep $(MAKE) -f Makefile.coq
 
-Makefile.coq: Makefile $(MODULES)
+src/paramcoq_mod.ml: src/paramcoq.mllib
+	sed -e "s/\([^ ]\{1,\}\)/let _=Mltop.add_known_module\"\1\" /g" $< > $@
+	echo "let _=Mltop.add_known_module\"paramcoq\"" >> $@
+
+Makefile.coq: Make.cfg src/paramcoq_mod.ml
 	$(COQBIN)coq_makefile -f Make.cfg -o Makefile.coq
-
-test:: 
-	$(COQBIN)coqide -I src test-suite/*.v 
-
-test1: 
-	$(COQBIN)coqc -I src test-suite/test1.v 
-
-test2: 
-	$(COQBIN)coqc -I src test-suite/test_eq.v 
 
 clean:: Makefile.coq
 	$(MAKE) -f Makefile.coq clean
+	rm -f src/paramcoq_mod.ml
+
+distclean:
 	rm -f Makefile.coq Makefile.coq.bak .depend
