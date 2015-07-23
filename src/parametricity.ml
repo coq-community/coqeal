@@ -206,12 +206,10 @@ let firsts n l = fst (List.chop n l)
  * (t x1 ... xn) *)
 let apply_head_variables t n = 
   let l = fold_nat (fun k l -> (mkRel (k + 1))::l) [] n in 
-  let res = mkApp (t, Array.of_list (List.rev l)) in 
-  if has_cast t then (
-    debug [`Relation] (Printf.sprintf "res apply has cast : %b and t = " (has_cast res)) Environ.empty_env Evd.empty t;
-    debug [`Relation] (Printf.sprintf "res = ") Environ.empty_env Evd.empty res
-  );
-  res
+  mkApp (t, Array.of_list (List.rev l)) 
+
+let apply_head_variables_ctxt t ctxt = 
+  mkApp (t, Termops.extended_rel_vect 0 ctxt) 
 
 (* Substitution in a signature. *)
 let substnl_rel_context subst n sign =
@@ -1041,10 +1039,16 @@ let rec translate_mind_body order evdr env kn b inst =
 and translate_mind_param order evd env (l : rel_context) = 
   let rec aux env acc = function 
      | [] -> acc
-     | (x,op,hd)::tl -> 
-           (* TODO : This is not the right thing. *)
+     | (x, (Some def as op), hd)::tl -> 
+       let x_R = (translate_name order x, LocalDef (translate order evd env def)) in  
+       let env = push_rel (x, op, hd) env in
+       let x_i = range (fun k -> 
+                 (prime_name order k x, LocalDef (lift k (prime order k def)))) order in 
+       let acc = (x_R::x_i):: acc in
+       aux env acc tl  
+     | (x,None,hd)::tl -> 
            let x_R = (translate_name order x, LocalAssum (relation order evd env hd)) in  
-           let env = push_rel (x, op, hd) env in
+           let env = push_rel (x, None, hd) env in
            let x_i = range (fun k -> 
                      (prime_name order k x, LocalAssum (lift k (prime order k hd)))) order in 
            let acc = (x_R::x_i):: acc in
@@ -1055,9 +1059,12 @@ and translate_mind_param order evd env (l : rel_context) =
 
 and translate_mind_inductive order evdr env ikn mut_entry inst (env_params, params, env_arities, env_arities_params) e = 
   let typename = e.mind_typename in
-  let p = mut_entry.mind_nparams in 
+  let p = List.length mut_entry.mind_params_ctxt in
+  Debug.debug_string [`Inductive] (Printf.sprintf "mind_nparams = %d" mut_entry.mind_nparams); 
+  Debug.debug_string [`Inductive] (Printf.sprintf "mind_nparams_rec = %d" p); 
+  Debug.debug_string [`Inductive] (Printf.sprintf "mind_nparams_ctxt = %d" (List.length mut_entry.mind_params_ctxt)); 
   let _, arity = 
-     decompose_prod_n p (Inductive.type_of_inductive env ((mut_entry, e), inst))
+     decompose_prod_n_assum p (Inductive.type_of_inductive env ((mut_entry, e), inst))
   in
   debug [`Inductive] "Arity:" env_params !evdr arity;
   let arity_R = 
@@ -1066,7 +1073,7 @@ and translate_mind_inductive order evdr env ikn mut_entry inst (env_params, para
       let inds = List.rev (fold_nat 
          (fun k acc -> 
            prime order k 
-            (apply_head_variables (mkIndU (ikn, inst)) p)::acc) [] order) in 
+            (apply_head_variables_ctxt (mkIndU (ikn, inst)) params)::acc) [] order) in 
       debug_string [`Inductive] "Substitution:";
       List.iter (debug [`Inductive] "" Environ.empty_env Evd.empty) inds;
       let result = substl inds arity_R in 
@@ -1088,7 +1095,7 @@ and translate_mind_inductive order evdr env ikn mut_entry inst (env_params, para
         let l = List.map (subst_instance_constr inst) l in
         debug_string [`Inductive] "before translation :";
         List.iter (debug [`Inductive] "" env_arities !evdr) l;
-        let l =  List.map (fun x -> snd (decompose_prod_n p x)) l in
+        let l =  List.map (fun x -> snd (decompose_prod_n_assum p x)) l in
         debug_string [`Inductive] "remove uniform parameters :";
         List.iter (debug [`Inductive] "" env_arities_params !evdr) l;
         (*
@@ -1128,7 +1135,7 @@ and translate_mind_inductive order evdr env ikn mut_entry inst (env_params, para
             (mkRel ((order + 1)*(k+1)))::(range (fun i -> mkRel ((order + 1)*k + i + 1)) order)) p)
           in
           debug_string [`Inductive] (Printf.sprintf "constructor n°%d" k);
-          let third_part = range (fun m -> prime order m (apply_head_variables (mkConstructU  ((ikn, k + 1), inst)) p)) order in 
+          let third_part = range (fun m -> prime order m (apply_head_variables_ctxt (mkConstructU  ((ikn, k + 1), inst)) params)) order in 
           let final_substitution = third_part @ second_part @ (first_part) in
           debug_string [`Inductive] "substitution :";
           List.iter (debug [`Inductive] "" Environ.empty_env Evd.empty) final_substitution;

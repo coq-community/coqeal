@@ -123,11 +123,18 @@ let debug_mutual_inductive_entry =
       (match entry.mind_entry_finite with 
        Finite -> "Finite" | CoFinite -> "CoFinite" | BiFinite -> "BiFinite")
     in 
+    debug_string all "env_params:";
     let env_params = 
       List.fold_left (fun acc -> function (id, LocalAssum typ) -> 
-       Environ.push_rel (Name id, None, typ) acc | _ -> assert false) 
-       Environ.empty_env (List.rev entry.mind_entry_params)
+         debug_env all "acc = " acc evd;
+         debug all "typ = " acc evd typ;
+       Environ.push_rel (Name id, None, typ) acc | (id, LocalDef def) -> 
+         debug_env all "acc = " acc evd;
+         debug all "def = " acc evd def;
+         Environ.push_rel (Name id, Some def, Typing.unsafe_type_of acc evd def) acc) 
+       (Global.env ()) (List.rev entry.mind_entry_params)
     in 
+    debug_string all "arities:";
     let mind_entry_params_pp = Printer.pr_context_of env_params Evd.empty in 
     let arities = List.map 
       (fun entry -> entry.mind_entry_typename, entry.mind_entry_arity) 
@@ -204,4 +211,5 @@ let debug_mutual_inductive_entry =
     List.fold_left (fun acc (name, pp) -> 
         field name pp acc) (close () ++ str "}") fields
   in 
-  fun evd entry -> if !debug_mode then debug_mutual_inductive_entry evd entry
+  fun evd entry -> if !debug_mode then 
+    debug_mutual_inductive_entry evd entry
