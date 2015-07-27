@@ -1,6 +1,6 @@
 COQSRC=../../../coq/
 COQPLUGIN=../../src
-TOOL=bash -x ../../tools/coqdep.sh 
+TOOL=bash ../../tools/coqdep.sh 
 
 all: Makefile.gen
 	make -f Makefile.gen

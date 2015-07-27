@@ -1,3 +1,18 @@
+(**************************************************************************)
+(*                                                                        *)
+(*     CoqParam                                                           *)
+(*     Copyright (C) 2012                                                 *)
+(*                                                                        *)
+(*     Chantal Keller                                                     *)
+(*     Marc Lasson                                                        *)
+(*                                                                        *)
+(*     INRIA - École Polytechnique - ÉNS de Lyon                          *)
+(*                                                                        *)
+(*   This file is distributed under the terms of the GNU Lesser General   *)
+(*   Public License                                                       *)
+(*                                                                        *)
+(**************************************************************************)
+
 open Debug
 open Parametricity
 open Vars
@@ -332,8 +347,9 @@ let command_reference ?(continuation = default_continuation) arity gref names =
 
 let command_reference_recursive ?(continuation = default_continuation) arity gref = 
   let open Globnames in 
+  let label = Names.Label.of_id (Nametab.basename_of_global gref) in 
   let c = printable_constr_of_global gref in 
-  let (direct, graph) = Assumptions.traverse c in 
+  let (direct, graph, _) = Assumptions.traverse label c in 
   let inductive_of_constructor ref = 
     let open Globnames in 
     if not (isConstructRef ref) then ref else

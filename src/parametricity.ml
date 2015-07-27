@@ -1,3 +1,18 @@
+(**************************************************************************)
+(*                                                                        *)
+(*     CoqParam                                                           *)
+(*     Copyright (C) 2012                                                 *)
+(*                                                                        *)
+(*     Chantal Keller                                                     *)
+(*     Marc Lasson                                                        *)
+(*                                                                        *)
+(*     INRIA - École Polytechnique - ÉNS de Lyon                          *)
+(*                                                                        *)
+(*   This file is distributed under the terms of the GNU Lesser General   *)
+(*   Public License                                                       *)
+(*                                                                        *)
+(**************************************************************************)
+
 open Term
 open Names
 open Vars

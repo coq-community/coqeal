@@ -94,6 +94,25 @@ Defined.
 End Map.
 
 
+Module Prod.
+
+Parametricity prod.
+
+Definition prod_map {A B} (f : A -> B) 
+                  {A' B'} (g : A' -> B') :=
+           prod_R A B (fun x y => f x = y) A' B' (fun x y => g x = y).
+
+Definition ZIP := 
+  forall X Y, list X -> list Y -> list (X * Y).
+Parametricity ZIP.
+
+Definition zip_natural (zip : ZIP) (zip_R : ZIP_R zip zip) :
+   forall {X1 Y1 X2 Y2} (f : X1 -> Y1) (g : X2 -> Y2) l1 l2, 
+    map (fun (c : X1 * X2) => let (x1, x2) := c in (f x1, g x2)) (zip _ _ l1 l2) = zip _ _  (map f l1) (map g l2).
+
+
+      
+
 
 
 

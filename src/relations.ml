@@ -24,19 +24,6 @@ open Libobject
 let (set_parametricity_tactic, get_parametricity_tactic, print_parametricity_tactic) = 
     Tactic_option.declare_tactic_option "Parametricity tactic"
 
-(* TODO : 
-let recursive_translation = ref false
-let _ =
-  declare_bool_option
-    { optsync  = true;
-      optdepr  = false;
-      optname  = "Recursively translates and register constants instead of unfolding.";
-      optkey   = ["Parametricity";"Recursive"];
-      optread  = (fun () -> !recursive_translation);
-      optwrite = (:=) recursive_translation }
-*)
-
-
 module IntMap = Map.Make(Int)
 module GMap = Map.Make(Globnames.RefOrdered)
 

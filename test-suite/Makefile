@@ -16,7 +16,7 @@ example.vo: example.v Parametricity.vo
 	$(COQC) -I ../src $<
 
 bug.vo: bug.v Parametricity.vo 
-	$(COQC) -I ../src $<
+	$(COQC) -debug -I ../src $<
 
 features.vo: features.v Parametricity.vo 
 	$(COQC) -I ../src $<
