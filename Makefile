@@ -1,4 +1,3 @@
-COQBIN := ../coq/bin/
 .PHONY: coq clean
 
 coq:: Makefile.coq
