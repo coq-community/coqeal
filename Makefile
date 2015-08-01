@@ -1,3 +1,7 @@
+ifndef COQBIN
+COQBIN = ../coq/bin/
+endif
+
 .PHONY: coq clean
 
 coq:: Makefile.coq
@@ -9,6 +13,7 @@ src/paramcoq_mod.ml: src/paramcoq.mllib
 
 Makefile.coq: Make.cfg src/paramcoq_mod.ml
 	$(COQBIN)coq_makefile -f Make.cfg -o Makefile.coq
+	sed -i 's/$$(COQDEP) $$(OCAMLLIBS)/$$(COQDEP) $$(OCAMLLIBS) -c/' Makefile.coq
 
 clean:: Makefile.coq
 	$(MAKE) -f Makefile.coq clean

@@ -395,6 +395,9 @@ and translate order evd env (t : constr) : constr =
    
     | CoFix _ -> 
         translate_cofix order evd env t
+
+    | Proj (p, c) -> 
+        mkProj (Projection.map (fun cte -> Globnames.destConstRef (Relations.get_constant order cte)) p, translate order evd env c)
    
     | _ -> not_implemented ~reason:"trapfall" env !evd t
  in  
@@ -1006,6 +1009,7 @@ let rec translate_mind_body order evdr env kn b inst =
   let env = push_context b.mind_universes env in
 
   debug_string [`Inductive] "computing envs ...";
+  debug_env [`Inductive] "translate_mind, env = \n" env;
   debug_evar_map [`Inductive] "translate_mind, evd = \n" !evdr;
   let envs = 
     let params = subst_instance_context inst b.mind_params_ctxt in

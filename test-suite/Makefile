@@ -1,5 +1,5 @@
 COQBIN := ../../coq/bin/
-COQC := $(COQBIN)coqc -verbose
+COQC := $(COQBIN)coqc 
 .PHONY: coq clean
 
 all: Parametricity.vo 
@@ -15,8 +15,14 @@ ListQueue.vo: ListQueue.v Parametricity.vo
 example.vo: example.v Parametricity.vo 
 	$(COQC) -I ../src $<
 
+Transport.vo: Transport.v Parametricity.vo 
+	$(COQC) -I ../src $<
+
 bug.vo: bug.v Parametricity.vo 
 	$(COQC) -debug -I ../src $<
+
+group.vo: group.v Transport.vo Parametricity.vo 
+	$(COQC) -I ../src $<
 
 features.vo: features.v Parametricity.vo 
 	$(COQC) -I ../src $<

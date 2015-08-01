@@ -3,14 +3,8 @@ Require Import Parametricity.
 Require Import List.
 Import ListNotations.
 
-Record Queue := {
-  t :> Type;
-  empty : t;
-  push : nat -> t -> t;
-  pop : t -> option (nat * t) 
-}.
-
-Definition bind_option {A B} (f : A -> option B) (x : option A) : option B := 
+Definition bind_option {A B} (f : A -> option B) (x : option A) : 
+  option B := 
   match x with 
    | Some x => f x
    | None => None
@@ -19,11 +13,25 @@ Definition bind_option {A B} (f : A -> option B) (x : option A) : option B :=
 Notation "'do' X <- A 'in' B" := (bind_option (fun X  => B) A)
  (at level 200, X ident, A at level 100, B at level 200).
 
-Definition bind_option2 {A B C} (f : A -> B -> option C) (x : option (A * B)) : option C := 
+Definition bind_option2 {A B C} (f : A -> B -> option C) 
+   (x : option (A * B)) : option C := 
   do yz <- x in let (y, z) := yz : A * B in f y z.
 
 Notation "'do' X , Y   <- A 'in' B" := (bind_option2 (fun X Y => B) A)
  (at level 200, X ident, Y ident, A at level 100, B at level 200).
+
+
+      
+Require Import List.
+
+
+Record Queue := {
+  t :> Type;
+  empty : t;
+  push : nat -> t -> t;
+  pop : t -> option (nat * t) 
+}.
+
 
 Definition program (Q : Queue) (n : nat) : option nat :=
    (* q := 0::1::2::...::n *)
@@ -39,8 +47,6 @@ Definition program (Q : Queue) (n : nat) : option nat :=
    in 
    do q <- q in 
    option_map fst (Q.(pop) q).
-      
-Require Import List.
 
 Definition ListQueue := {|
   t := list nat; 
@@ -70,6 +76,7 @@ Definition DListQueue := {|
     end
 |}.
 
+Print nat_R.
 
 Lemma nat_R_equal : 
   forall x y, nat_R x y -> x = y.
@@ -87,16 +94,20 @@ intros x1 x2 H; destruct H as [x1 x2 x_R | ].
 rewrite (nat_R_equal _ _ x_R); reflexivity.
 reflexivity.
 Defined.
-
 Lemma equal_option_nat_R : 
   forall x y, x = y -> option_R nat nat nat_R x y.
 intros x y H; subst.
 destruct y; constructor; apply equal_nat_R; reflexivity.
 Defined.
 
-Parametricity Recursive Queue.
+Parametricity Queue.
+
+Print Queue_R.
+Check Queue_R.
 
 Notation Bisimilar := Queue_R.
+
+Print Queue_R.
 
 
 Definition R (l1 : list nat) (l2 : list nat * list nat) :=
@@ -124,7 +135,8 @@ Defined.
 Theorem rev_rect A :
   forall P:list A -> Type,
 	P [] ->
-	(forall (x:A) (l:list A), P l -> P (l ++ [x])) -> forall l:list A, P l.
+	(forall (x:A) (l:list A), P l -> P (l ++ [x])) ->
+  forall l:list A, P l.
 Proof.
   intros.
   generalize (rev_involutive l).
@@ -192,8 +204,11 @@ rewrite rev_involutive.
 reflexivity.
 Defined.
 
+Print program.
+Check program.
 Parametricity Recursive program.
-
+Check program_R.
+Prigi
 Lemma program_independent : 
  forall n, 
   program ListQueue n = program DListQueue n.
@@ -204,5 +219,5 @@ apply bisim_list_dlist.
 apply equal_nat_R.
 reflexivity.
 Defined.
-
+Print program.
 Print program_R.
