@@ -349,7 +349,7 @@ let command_reference_recursive ?(continuation = default_continuation) arity gre
   let open Globnames in 
   let label = Names.Label.of_id (Nametab.basename_of_global gref) in 
   let c = printable_constr_of_global gref in 
-  let (direct, graph, _) = Assumptions.traverse label c in 
+  let (direct, graph(* , _ *) ) = Assumptions.traverse (* label *) c in 
   let inductive_of_constructor ref = 
     let open Globnames in 
     if not (isConstructRef ref) then ref else
