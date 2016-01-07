@@ -55,8 +55,8 @@ Global Instance invQ : inv Q   := fun x   =>
                          else (- (cast x.2), cast (- x.1)).
 Global Instance subQ : sub Q   := fun x y => (x + - y).
 Global Instance divQ : div Q   := fun x y => (x * y^-1).
-Global Instance divQ : div Q   := fun x y => (x * y^-1).
-Global Instance speqQ : spec_of Q rat := fun q => (spec q.1)%:~R / (proj1 (spec q.2))%:R.
+Global Instance expQnat : exp Q nat := fun x n => iter n (mulQ x) 1.
+Global Instance specQ : spec_of Q rat := fun q => (spec q.1)%:~R / (proj1 (spec q.2))%:R.
 
 (* Embedding from Z to Q *)
 Global Instance cast_ZQ : cast_class Z Q := fun x => (x, 1).
