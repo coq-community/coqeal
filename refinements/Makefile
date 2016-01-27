@@ -11,12 +11,12 @@ all: $(COQMAKEFILE)
 	$(COQMAKE) all
 
 $(COQMAKEFILE) config:
-	$(COQBIN)coq_makefile -f Make -o $(COQMAKEFILE)
+	$(COQBIN)coq_makefile -f _CoqProject -o $(COQMAKEFILE)
 
 dist:
 	mkdir CoqEAL_refinements
-	cp Make.dist CoqEAL_refinements/Make
-	cat CoqEAL_refinements/Make | egrep -v "^#" | egrep ".v$$" | xargs cp -t CoqEAL_refinements
+	cp Make.dist CoqEAL_refinements/_CoqProject
+	cat CoqEAL_refinements/_CoqProject | egrep -v "^#" | egrep ".v$$" | xargs cp -t CoqEAL_refinements
 	cp -t CoqEAL_refinements README
 	cp -t CoqEAL_refinements INSTALL
 	cp -t CoqEAL_refinements LICENSE
