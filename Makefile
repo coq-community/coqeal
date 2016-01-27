@@ -1,7 +1,3 @@
-ifndef COQBIN
-COQBIN = ../coq/bin/
-endif
-
 .PHONY: coq clean
 
 coq:: Makefile.coq

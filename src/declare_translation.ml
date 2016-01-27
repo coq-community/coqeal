@@ -34,7 +34,7 @@ let obligation_message () =
 let default_continuation = ignore
 
 let parametricity_close_proof () =
-  let proof_obj, terminator = Proof_global.close_proof ~keep_body_ucst_sepatate:false (fun x -> x) in 
+  let proof_obj, terminator = Proof_global.close_proof ~keep_body_ucst_separate:false (fun x -> x) in 
   let opacity = if !ongoing_translation_opacity then Vernacexpr.Opaque None else  Vernacexpr.Transparent in
   Pfedit.delete_current_proof ();
   ongoing_translation := false;
@@ -110,7 +110,7 @@ let declare_inductive ?(continuation = default_continuation) arity evd env (((mu
   let size = Declarations.(Array.length mut_body.mind_packets) in 
   let mut_ind_R = Command.declare_mutual_inductive_with_eliminations translation_entry [] in
   for k = 0 to size-1 do
-    Relations.declare_inductive_relation arity (mut_ind, k) (mut_ind_R,k)
+    Relations.declare_inductive_relation arity (mut_ind, k) (mut_ind_R [], k)
   done; 
   continuation ()
 
@@ -349,7 +349,7 @@ let command_reference_recursive ?(continuation = default_continuation) arity gre
   let open Globnames in 
   let label = Names.Label.of_id (Nametab.basename_of_global gref) in 
   let c = printable_constr_of_global gref in 
-  let (direct, graph(* , _ *) ) = Assumptions.traverse (* label *) c in 
+  let (direct, graph, _) = Assumptions.traverse label c in 
   let inductive_of_constructor ref = 
     let open Globnames in 
     if not (isConstructRef ref) then ref else
@@ -357,18 +357,18 @@ let command_reference_recursive ?(continuation = default_continuation) arity gre
      Globnames.IndRef ind
   in 
   let rec fold_sort graph visited nexts f acc =
-    Refset.fold (fun ref ((visited, acc) as visacc) -> 
+    Refset_env.fold (fun ref ((visited, acc) as visacc) -> 
           let ref_ind = inductive_of_constructor ref in
-          if Refset.mem ref_ind visited 
+          if Refset_env.mem ref_ind visited 
           || Relations.is_referenced arity ref_ind  then visacc else
-          let nexts = Refmap.find ref graph in 
-          let visited = Refset.add ref_ind visited in
+          let nexts = Refmap_env.find ref graph in 
+          let visited = Refset_env.add ref_ind visited in
           let visited, acc = fold_sort graph visited nexts f acc in 
           let acc = f ref_ind acc in 
           (visited, acc)
      ) nexts (visited, acc)
   in
-  let _, dep_refs = fold_sort graph Refset.empty direct (fun x l -> (inductive_of_constructor x)::l) [] in
+  let _, dep_refs = fold_sort graph Refset_env.empty direct (fun x l -> (inductive_of_constructor x)::l) [] in
   let dep_refs = List.rev dep_refs in 
   (* DEBUG: 
   List.iter (fun x -> let open Pp in msg_info (Printer.pr_global x)) dep_refs; *)

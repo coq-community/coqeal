@@ -1048,7 +1048,7 @@ let rec translate_mind_body order evdr env kn b inst =
     mind_entry_params = mind_entry_params_R;
     mind_entry_inds = mind_entry_inds_R;
     mind_entry_polymorphic = b.mind_polymorphic;
-    mind_entry_universes = ctx;
+    mind_entry_universes = snd ctx;
     mind_entry_private = b.mind_private
   } in
   Debug.debug_mutual_inductive_entry !evdr res; 
