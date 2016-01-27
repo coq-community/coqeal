@@ -17,9 +17,9 @@
     Received 30 March 1992. Available online 25 March 2002.
     Submitted by Richard A. Brualdi.
 *)
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
-Require Import ssralg fintype perm choice finfun.
-Require Import matrix  bigop zmodp mxalgebra fingroup.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
+From mathcomp Require Import ssralg fintype perm choice finfun.
+From mathcomp Require Import matrix  bigop zmodp mxalgebra fingroup.
 Require Import minor.
 
 Import GRing.Theory.

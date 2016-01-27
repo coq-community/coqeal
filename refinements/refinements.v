@@ -1,8 +1,8 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
 (* Require Import path choice fintype tuple finset ssralg bigop poly polydiv. *)
 (* Require Import ssrint ZArith. *)
 
-Require Import hrel param.
+From CoqEAL Require Import hrel param.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

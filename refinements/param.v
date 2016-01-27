@@ -1,13 +1,10 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Declare ML Module "relations".
-Declare ML Module "parametricity".
-Declare ML Module "declare_translation".
-Declare ML Module "abstraction".
+Declare ML Module "paramcoq".
 
 Global Ltac destruct_reflexivity :=
   intros ; repeat match goal with
@@ -18,15 +15,21 @@ Global Parametricity Tactic := destruct_reflexivity.
 
 Require Import ProofIrrelevance. (* for opaque terms *)
 
-Parametricity Module Logic.
+(*Parametricity Module Logic.
 
 Parametricity Module Datatypes.
 Parametricity Module Specif.
 Parametricity Module Nat.
-Export Logic_R Datatypes_R Specif_R Nat_R.
+Export Logic_R Datatypes_R Specif_R Nat_R.*)
+Parametricity option.
+Parametricity unit.
+Parametricity bool.
+Parametricity nat.
+Parametricity list.
+Parametricity prod.
 
 (** ssrfun *)
-Parametricity Inductive simpl_fun.
+Parametricity simpl_fun.
 
 (** ssrbool *)
 Parametricity SimplRel.
@@ -39,7 +42,8 @@ Parametricity addn.
 Parametricity eqn.
 
 (* This trick avoids having to apply Parametricity to eqtype structure *)
-Definition leqn m n := eqn (m - n) 0.
+Opaque eqn subn.
+Definition leqn := Eval cbv in leq.
 Parametricity leqn.
 Realizer leq as leq_R := leqn_R.
 
@@ -68,48 +72,48 @@ Parametricity half.
 (** seq *)
 
 (* Here we must make the implicit argument in size explicit *)
-Parametricity @size.
+Parametricity size.
 
 Definition nilp' T (s : seq T) := eqn (size s) 0.
 Parametricity nilp'.
 Realizer nilp as nilp_R := nilp'_R.
 
-Parametricity @ohead.
-Parametricity @head.
-Parametricity @behead.
+Parametricity ohead.
+Parametricity head.
+Parametricity behead.
 Parametricity ncons.
 Parametricity nseq.
-Parametricity @cat.
-Parametricity @rcons.
-Parametricity @last.
-Parametricity @belast.
-Parametricity @nth.
-Parametricity @set_nth.
-Parametricity @find.
-Parametricity @filter.
-Parametricity @count.
-Parametricity @has.
-Parametricity @all.
-Parametricity @drop.
-Parametricity @take.
-Parametricity @rot.
-Parametricity @rotr.
-Parametricity @catrev.
-Parametricity @rev.
-Parametricity @map.
-Parametricity @pmap.
-Parametricity @iota.
-Parametricity @mkseq.
-Parametricity @foldr.
-Parametricity @sumn.
-Parametricity @foldl.
-Parametricity @pairmap.
-Parametricity @scanl.
-Parametricity @zip.
-Parametricity @unzip1.
-Parametricity @unzip2.
-Parametricity @flatten.
-Parametricity @shape.
-Parametricity @reshape.
-Parametricity @allpairs.
+Parametricity cat.
+Parametricity rcons.
+Parametricity last.
+Parametricity belast.
+Parametricity nth.
+Parametricity set_nth.
+Parametricity find.
+Parametricity filter.
+Parametricity count.
+Parametricity has.
+Parametricity all.
+Parametricity drop.
+Parametricity take.
+Parametricity rot.
+Parametricity rotr.
+Parametricity catrev.
+Parametricity rev.
+Parametricity map.
+Parametricity pmap.
+Parametricity iota.
+Parametricity mkseq.
+Parametricity foldr.
+Parametricity sumn.
+Parametricity foldl.
+Parametricity pairmap.
+Parametricity scanl.
+Parametricity zip.
+Parametricity unzip1.
+Parametricity unzip2.
+Parametricity flatten.
+Parametricity shape.
+Parametricity reshape.
+Parametricity allpairs.
 

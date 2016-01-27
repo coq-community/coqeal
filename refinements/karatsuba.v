@@ -1,7 +1,7 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
-Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
+From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
 
-Require Import hrel param refinements seqpoly.
+From CoqEAL Require Import hrel param refinements seqpoly.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -118,7 +118,8 @@ End karatsuba_correctness.
 
 Section karatsuba_test.
 
-Require Import ssrint binint.
+From mathcomp Require Import ssrint.
+From CoqEAL Require Import binint.
 
 Goal (Poly [:: 1; 2%:Z] * Poly [:: 1; 2%:Z]) == Poly [:: 1; 4%:Z; 4%:Z].
 rewrite [_ == _]refines_eq.

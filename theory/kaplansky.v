@@ -1,7 +1,7 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
-Require Import ssralg fintype matrix mxalgebra bigop zmodp perm choice.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
+From mathcomp Require Import ssralg fintype matrix mxalgebra bigop zmodp perm choice.
 
 Require Import dvdring mxstructure minor edr.
 

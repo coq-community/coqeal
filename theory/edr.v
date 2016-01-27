@@ -1,8 +1,8 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path tuple.
-Require Import perm fingroup choice ssralg fintype finfun poly polydiv.
-Require Import bigop matrix zmodp mxalgebra.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path tuple.
+From mathcomp Require Import perm fingroup choice ssralg fintype finfun poly polydiv.
+From mathcomp Require Import bigop matrix zmodp mxalgebra.
 
 Require Import ssrcomplements dvdring mxstructure similar minor binetcauchy.
 Require Import stronglydiscrete coherent.

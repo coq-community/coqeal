@@ -1,3 +1,4 @@
+-R . CoqEAL.theory
 binetcauchy.v
 coherent.v
 dvdring.v

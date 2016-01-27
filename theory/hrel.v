@@ -1,7 +1,7 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-Require Import path choice fintype tuple finset bigop.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
+From mathcomp Require Import path choice fintype tuple finset bigop.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

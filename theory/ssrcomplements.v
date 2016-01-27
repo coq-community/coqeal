@@ -1,8 +1,8 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
-Require Import ssralg fintype finfun perm matrix bigop zmodp mxalgebra.
-Require Import choice poly polydiv mxpoly binomial.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
+From mathcomp Require Import ssralg fintype finfun perm matrix bigop zmodp mxalgebra.
+From mathcomp Require Import choice poly polydiv mxpoly binomial.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

@@ -1,7 +1,7 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
-Require Import path choice fintype tuple finset ssralg bigop poly matrix.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
+From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly matrix.
 
-Require Import hrel param refinements.
+From CoqEAL Require Import hrel param refinements.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -199,8 +199,9 @@ Global Instance block_seqmx : block_mx_of hseqmx :=
 
 End seqmx_op.
 
-Parametricity Inductive ordinal.
-Parametricity Inductive subType.
+Parametricity eq.
+Parametricity ordinal.
+Parametricity subType.
 Parametricity ord_enum_eq.
 Parametricity mkseqmx_ord.
 Parametricity const_seqmx.
@@ -494,7 +495,8 @@ End seqmx_theory.
 
 Section testmx.
 
-Require Import binint ssrint poly seqpoly.
+From mathcomp Require Import ssrint poly.
+From CoqEAL Require Import binint seqpoly.
 
 Goal ((0 : 'M[int]_(2,2)) == 0).
 rewrite [_ == _]refines_eq.

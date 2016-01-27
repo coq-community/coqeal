@@ -1,7 +1,7 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
-Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
+From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
 
-Require Import hrel param refinements.
+From CoqEAL Require Import hrel param refinements.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -320,7 +320,8 @@ Hint Extern 0 (refines _ _ (Poly _)) => simpl : typeclass_instances.
 
 Section testpoly.
 
-Require Import binint ssrint.
+From mathcomp Require Import ssrint.
+From CoqEAL Require Import binint.
 
 Goal (0 == (0 : {poly {poly {poly int}}})).
 rewrite [_ == _]refines_eq.

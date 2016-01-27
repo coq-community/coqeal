@@ -1,7 +1,7 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
 Require Import NArith.
 
-Require Import hrel param refinements.
+From CoqEAL Require Import hrel param refinements.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

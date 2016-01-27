@@ -1,10 +1,10 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 (* Formalization of the Sasaki-Murao algorithm *)
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path ssralg.
-Require Import fintype perm choice matrix bigop zmodp poly polydiv mxpoly.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path ssralg.
+From mathcomp Require Import fintype perm choice matrix bigop zmodp poly polydiv mxpoly.
 
-Require Import hrel param refinements minor seqmx seqpoly.
+From CoqEAL Require Import hrel param refinements minor seqmx seqpoly.
 
 Import Refinements.Op.
 Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
