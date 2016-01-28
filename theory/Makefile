@@ -11,11 +11,11 @@ all: $(COQMAKEFILE)
 	$(COQMAKE) all
 
 $(COQMAKEFILE) config:
-	$(COQBIN)coq_makefile -f Make  -o $(COQMAKEFILE)
+	$(COQBIN)coq_makefile -f _CoqProject -o $(COQMAKEFILE)
 
 dist:
 	mkdir CoqEAL_theory
-	cp Make.dist CoqEAL_theory/Make
+	cp Make.dist CoqEAL_theory/_CoqProject
 	cat CoqEAL_theory/Make | egrep -v "^#" | egrep ".v$$" | xargs cp -t CoqEAL_theory
 	cp -t CoqEAL_theory README
 	cp -t CoqEAL_theory INSTALL
