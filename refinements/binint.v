@@ -7,7 +7,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import Refinements.Op.
+Import GRing.Theory Refinements.Op.
 
 Local Open Scope ring_scope.
 
@@ -48,10 +48,28 @@ Proof. by rewrite refinesE. Qed.
 Global Instance Rint_1 : refines Rint 1 1%C.
 Proof. by rewrite refinesE. Qed.
 
+Lemma nat_of_pos_neq0 (p : positive) : nat_of_pos p <> 0%N.
+Proof.
+  apply/eqP; elim: p => //= p nop_ne0.
+  by rewrite NatTrec.trecE double_eq0.
+Qed.
+
 Global Instance Rint_opp : refines (Rint ==> Rint) -%R -%C.
-Admitted.
+Proof.
+  rewrite refinesE => _ n ->.
+  rewrite /Rint; case: n=> // p /=; rewrite NegzE Nat.succ_pred //;
+    try apply nat_of_pos_neq0.
+  by rewrite opprK.
+Qed.
 
 Global Instance Rint_add : refines (Rint ==> Rint ==> Rint) +%R +%C.
+Proof.
+  rewrite refinesE => _ n -> _ m ->.
+  rewrite /Rint; case: n=> [|p|p] /=; case m => //=;
+  rewrite ?(add0r, addr0) //= => q /=;
+  rewrite ?add0r ?NegzE ?Nat.succ_pred //=;
+  try apply nat_of_pos_neq0; rewrite ?nat_of_addn_gt0 //=.
+
 Admitted.
 
 Global Instance Rint_mul : refines (Rint ==> Rint ==> Rint) *%R *%C.
