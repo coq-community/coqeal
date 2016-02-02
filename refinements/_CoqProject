@@ -2,7 +2,7 @@
 param.v
 refinements.v
 pos.v
-# binnat.v
+binnat.v
 # binint.v
 # seqpoly.v
 # karatsuba.v
