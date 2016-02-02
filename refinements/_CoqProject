@@ -1,7 +1,7 @@
 -R . CoqEAL.refinements
 param.v
 refinements.v
-# pos.v
+pos.v
 # binnat.v
 # binint.v
 # seqpoly.v
