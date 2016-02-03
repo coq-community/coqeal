@@ -127,6 +127,7 @@ Parametricity addZ.
 Parametricity oppZ.
 Parametricity subZ.
 Parametricity eqZ.
+Parametricity mulZ.
 Parametricity leqZ.
 Parametricity cast_NZ.
 Parametricity cast_PZ.
@@ -213,27 +214,25 @@ Proof.
   by rewrite [int_to_nat a]refines_eq {a rab}.
 Qed.
 
+Lemma eqSub (n m : nat) : int_of_Z (if (m <= n)%C then Zpos {n : nat | (0 < n)%N} (n - m)%N
+                                     else Zneg nat (cast (m - n)%N)) = (Posz n) - (Posz m).
+Proof.
+  have [mn|nm] /= := leqP m n.
+    have := mn.
+    rewrite -[((_<=_)%N)]/(_<=_)%C => ->.
+    by rewrite /= -subzn.
+  rewrite [((_<=_)%C)]/(_<=_)%N ifN_eq=> /=.
+    by rewrite insubdK -?topredE /= ?subn_gt0 // -?subzn 1?ltnW // opprB.
+  by have := nm; rewrite lt0n_neq0 // subn_gt0.
+Qed.
+
 Global Instance Rint_add : refines (Rint ==> Rint ==> Rint) +%R +%C.
 Proof.
   rewrite refinesE /Rint /fun_hrel /add_op /= => _ x <- _ y <-.
   case: x y => [x|x] [y|y] //=; rewrite ?(add0r, addr0) //=; simpC.
-      have [yx|xy] := leqP (cast y) x.
-        have := yx.
-        rewrite -[((_<=_)%N)]/(_<=_)%C => ->.
-        by rewrite /= -subzn.
-      have := xy.
-      rewrite [((_<=_)%C)]/(_<=_)%N -subn_gt0.
-      rewrite ifN_eq=> [_|] /=;
-        by rewrite ?insubdK -?topredE /= ?lt0n_neq0 ?subn_gt0 -?subzn ?opprB // ltnW.
-    have [yx|xy] := leqP (cast x) y.
-      have := yx.
-      rewrite -[((_<=_)%N)]/(_<=_)%C => ->.
-      by rewrite /= addrC -subzn.
-    have := xy.
-    rewrite [((_<=_)%C)]/(_<=_)%N -subn_gt0.
-    rewrite ifN_eq=> [_|] /=;
-      by rewrite ?insubdK -?topredE /= ?lt0n_neq0 ?subn_gt0 // [in RHS]addrC -subzn ?opprB 1?ltnW.
-   by rewrite insubdK -?topredE /= ?addn_gt0 ?valP // -opprB opprK addrC.
+      by rewrite (eqSub x (cast y)).
+    by rewrite (eqSub y (cast x)) addrC.
+  by rewrite insubdK -?topredE /= ?addn_gt0 ?valP // -opprB opprK addrC.
 Qed.
 
 Global Instance Rint_opp : refines (Rint ==> Rint) -%R -%C.
@@ -245,39 +244,33 @@ Qed.
 Global Instance Rint_sub : refines (Rint ==> Rint ==> Rint) (fun x y => x - y) sub_op.
 Proof.
   rewrite refinesE /Rint /fun_hrel /sub_op => _ x <- _ y <-.
-  case: x y => [x|x] [y|y]; rewrite ?opprK //=; simpC.
-      have [yx|xy] /= := leqP y x.
-        have := yx.
-        rewrite -[((_<=_)%N)]/(_<=_)%C => ->.
-        by rewrite /= -subzn.
-      rewrite [((_<=_)%C)]/(_<=_)%N ifN_eq=> /=.
-        by rewrite insubdK -?topredE /= ?subn_gt0 // -?subzn 1?ltnW // opprB.
-      by have := xy; rewrite lt0n_neq0 // subn_gt0.
+  case: x y=> [x|x] [y|y]; rewrite ?opprK //=; simpC.
+      by rewrite (eqSub x y).
     have [->|y_neq0 /=] := (altP eqP); first by rewrite subr0.
     by rewrite !insubdK -?opprD -?topredE //= ?addn_gt0 ?valP ?lt0n.
-  have [yx|xy] /= := leqP (cast x) (cast y).
-    have := yx.
-      rewrite -[((_<=_)%N)]/(_<=_)%C => ->.
-      by rewrite /= addrC -subzn.
-  rewrite [((_<=_)%C)]/(_<=_)%N ifN_eq=> /=.
-    by rewrite insubdK -?topredE /= ?subn_gt0 // -?subzn 1?ltnW // opprB addrC.
-  by have := xy; rewrite lt0n_neq0 // subn_gt0.
+  by rewrite (eqSub (cast y) (cast x)) addrC.
 Qed.
 
-Global Instance Rint_eq : refines (Rint ==> Rint ==> Logic.eq) eqtype.eq_op eq_op.
+Global Instance Rint_eq : refines (Rint ==> Rint ==> bool_R) eqtype.eq_op eq_op.
 Proof.
-rewrite refinesE /Rint /fun_hrel /eq_op => _ x <- _ y <-;
-case: x y => [x|x] [y|y] //=; rewrite ?eqr_opp // ?[- _ == _]eq_sym;
-by rewrite gtr_eqF // (@ltr_le_trans _ 0) // ltr_oppl oppr0 [_ < _]valP.
+  rewrite refinesE=> _ x <- _ y <-; rewrite /eq_op /eqZ.
+  case: x y => [x|x] [y|y] /=; simpC; rewrite ?eqr_opp ?[- _ == _]eq_sym; last 3 first;
+  [idtac|idtac|by case h: (x == y); rewrite [(_ == _ :> int)]h; first (by exact: true_R);
+                 by exact: false_R ..];
+  by rewrite gtr_eqF; first (by exact: false_R);
+  by rewrite (@ltr_le_trans _ 0) // ltr_oppl oppr0 [_ < _]valP.
 Qed.
 
-Global Instance Rint_leq : refines (Rint ==> Rint ==> Logic.eq) Num.le leq_op.
+Global Instance Rint_leq : refines (Rint ==> Rint ==> bool_R) Num.le leq_op.
 Proof.
-rewrite refinesE /Rint /fun_hrel /eq_op => _ x <- _ y <-.
-case: x y => [x|x] [y|y] //=.
-- by rewrite lerNgt (@ltr_le_trans _ 0) //; rewrite oppr_lt0; apply: valP.
-- by rewrite (@ler_trans _ 0) // oppr_le0.
-by rewrite ler_opp2.
+  rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leqZ.
+  case: x y => [x|x] [y|y] /=; rewrite -?[((_<=_)%C)]/(_<=_)%N ?ler_opp2; last 3 first;
+  [idtac|idtac|by case h: (_ <= _)%N; rewrite [((_ <= _)%R)]h; first (by exact: true_R);
+                 by exact: false_R ..].
+  rewrite lerNgt (@ltr_le_trans _ 0) ?oppr_lt0 /=; first (by exact: false_R);
+  first (apply: valP); rewrite (@ler_trans _ 0) // oppr_le0.
+  rewrite ler_oppl (@ler_trans _ 0); first (by exact: true_R); first (by rewrite oppr_le0).
+  by rewrite le0z_nat.
 Qed.
 
 (*Global Instance Rint_lt : refines (Rint ==> Rint ==> Logic.eq) Num.lt lt_op.
@@ -396,14 +389,14 @@ Context `{!refines (Rnat ==> Rnat ==> Rnat) subn sub_op}.
 Context `{!refines (Rpos ==> Rpos ==> Rpos) sub_pos sub_op}.
 Context `{!refines (Rnat ==> Rnat ==> Rnat) muln *%C}.
 Context `{!refines (Rpos ==> Rpos ==> Rpos) mul_pos *%C}.
-Context `{!refines (Rnat ==> Rnat ==> Logic.eq) ssrnat.leq leq_op}.
+Context `{!refines (Rnat ==> Rnat ==> bool_R) ssrnat.leq leq_op}.
 (*Context `{!refines (Rnat ==> Rnat ==> Logic.eq) ssrnat.ltn lt_op}.*)
-Context `{!refines (Rpos ==> Rpos ==> Logic.eq) leq_pos leq_op}.
+Context `{!refines (Rpos ==> Rpos ==> bool_R) leq_pos leq_op}.
 (*Context `{!refines (Rpos ==> Rpos ==> Logic.eq) lt_pos lt_op}.*)
 Context `{!refines (Rnat ==> Rpos) (insubd pos1) cast}.
 Context `{!refines (Rpos ==> Rnat) val cast}.
-Context `{!refines (Rnat ==> Rnat ==> Logic.eq) eqtype.eq_op eq_op}.
-Context `{!refines (Rpos ==> Rpos ==> Logic.eq) eqtype.eq_op eq_op}.
+Context `{!refines (Rnat ==> Rnat ==> bool_R) eqtype.eq_op eq_op}.
+Context `{!refines (Rpos ==> Rpos ==> bool_R) eqtype.eq_op eq_op}.
 Context `{forall x, refines Rnat (spec x) x,
           forall x, refines Rpos (spec x) x}.
 Context `{!refines (Rnat ==> Logic.eq) spec_id spec,
@@ -430,29 +423,28 @@ Global Instance RZNP_castZP: refines (RZNP ==> Rpos) int_to_pos cast.
 Proof. rewrite /cast; param_comp cast_ZP_R. Qed.
 
 Global Instance RZNP_addZ : refines (RZNP ==> RZNP ==> RZNP) +%R +%C.
-Proof. param_comp addZ_R.
-(*  exact: refines_trans.*) Qed.
+Proof. param_comp addZ_R. Qed.
 
 Global Instance RZNP_mulZ : refines (RZNP ==> RZNP ==> RZNP) *%R *%C.
-Proof. exact: refines_trans. Qed.
+Proof. param_comp mulZ_R. Qed.
 
 Global Instance RZNP_oppZ : refines (RZNP ==> RZNP) -%R -%C.
-Proof. exact: refines_trans. Qed.
+Proof. param_comp oppZ_R. Qed.
 
-Global Instance RZNP_subZ : refines (RZNP ==> RZNP ==> RZNP) subr sub_op.
-Proof. exact: refines_trans. Qed.
+Global Instance RZNP_subZ : refines (RZNP ==> RZNP ==> RZNP) (fun x y => x - y) sub_op.
+Proof. param_comp subZ_R. Qed.
 
 Global Instance RZNP_eqZ :
-  refines (RZNP ==> RZNP ==> Logic.eq) eqtype.eq_op (@Op.eq_op Z _).
-Proof. exact: refines_trans. Qed.
+  refines (RZNP ==> RZNP ==> bool_R) eqtype.eq_op (@Op.eq_op Z _).
+Proof. param_comp eqZ_R. Qed.
 
 Global Instance RZNP_leqZ :
-  refines (RZNP ==> RZNP ==> Logic.eq) Num.le (@Op.leq_op Z _).
-Proof. exact: refines_trans. Qed.
+  refines (RZNP ==> RZNP ==> bool_R) Num.le (@Op.leq_op Z _).
+Proof. param_comp leqZ_R. Qed.
 
-Global Instance RZNP_ltZ :
+(*Global Instance RZNP_ltZ :
   refines (RZNP ==> RZNP ==> Logic.eq) Num.lt (@Op.lt_op Z _).
-Proof. exact: refines_trans. Qed.
+Proof. exact: refines_trans. Qed.*)
 
 Instance refines_eq_refl A (x : A) : refines Logic.eq x x | 999.
 Proof. by rewrite refinesE. Qed.
@@ -463,8 +455,8 @@ Instance refines_fun_eq2 A B C (f : A -> B -> C) :
   refines (Logic.eq ==> Logic.eq ==> Logic.eq) f f.
 Proof. by rewrite !refinesE => x x' -> y y' ->. Qed.
 
-Global Instance RZNP_specZ' : refines (RZNP ==> Logic.eq) spec_id spec.
-Proof. exact: refines_trans. Qed.
+(*Global Instance RZNP_specZ' : refines (RZNP ==> Logic.eq) spec_id spec.
+Proof. exact: refines_trans. Qed.*)
 
 End binint_nat_pos.
 End binint_parametricity.

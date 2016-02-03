@@ -109,11 +109,13 @@ rewrite /sub_op /sub_positive Pos.sub_le ?Pos2Nat.inj_le //.
 by rewrite subn_gt0 !ltnNge; move/leP: h ->.
 Qed.
 
-Global Instance Rpos_leq : refines (Rpos ==> Rpos ==> Logic.eq) leq_pos leq_op.
+Global Instance Rpos_leq : refines (Rpos ==> Rpos ==> bool_R) leq_pos leq_op.
 Proof.
-rewrite refinesE => /= _ x <- _ y <-; rewrite /leq_pos !val_insubd.
-move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
-by apply/leP/idP => [|h]; rewrite -Pos2Nat.inj_le -Pos.leb_le.
+  rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /le_positive /leq_pos !val_insubd.
+  move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
+  case: (Pos.leb_spec0 _ _); move /Pos2Nat.inj_le /leP.
+    by move->; exact true_R.
+  by rewrite -eqbF_neg; move/eqP ->; exact: false_R.
 Qed.
 
 (*Global Instance Rpos_lt : param (Rpos ==> Rpos ==> Logic.eq) lt_pos lt_op.
@@ -123,16 +125,14 @@ move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
 by apply/ltP/idP => [|h]; rewrite -Pos2Nat.inj_lt -Pos.ltb_lt.
 Qed.*)
 
-Global Instance Rpos_eq : refines (Rpos ==> Rpos ==> Logic.eq) eq_pos eq_op.
+Global Instance Rpos_eq : refines (Rpos ==> Rpos ==> bool_R) eq_pos eq_op.
 Proof.
-rewrite refinesE /eq_pos => /= _ x <- _ y <-.
-rewrite /pos_of_positive /eq_op /eq_positive Pos.eqb_compare Pos2Nat.inj_compare.
-have [/eqP->|/eqP h] := (boolP (Pos.to_nat x == Pos.to_nat y));
-  rewrite -Pos2Nat.inj_compare -Pos.eqb_compare.
-  by rewrite Pos.eqb_refl /insubd; case: insubP => //= u _ _; rewrite eqxx.
-move: (h); rewrite Pos2Nat.inj_iff -Pos.eqb_neq => ->.
-apply/negbTE; move/eqP: h; apply/contra_neq; rewrite !val_insubd.
-by move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
+  rewrite refinesE=> _ x <- _ y <-; rewrite /eq_op /eq_positive /eq_pos.
+  case: (Pos.eqb_spec _ _)=> [->|h].
+    by rewrite eqxx; exact: true_R.
+  suff H : (pos_of_positive x == pos_of_positive y) = false.
+    by rewrite H; exact: false_R.
+  by apply/negP=> [/eqP /(can_inj pos_of_positiveK)].
 Qed.
 
 (* Global Instance Rpos_exp : param (Rpos ==> Rpos ==> Rpos) exp_pos exp_op.  *)
@@ -232,20 +232,24 @@ Qed.
 (*   by rewrite natTrecE double_gt0. *)
 (* Admitted. *)
 
-Global Instance Rnat_eq : refines (Rnat ==> Rnat ==> Logic.eq) eqtype.eq_op eq_op.
+Global Instance Rnat_eq : refines (Rnat ==> Rnat ==> bool_R) eqtype.eq_op eq_op.
 Proof.
-rewrite refinesE => _ x <- _ y <-; rewrite  /eq_op /eq_N.
-case: (N.eqb_spec _ _) => [->|/eqP hneq]; first by rewrite eqxx.
-by apply/negP => [/eqP /(can_inj nat_of_binK)]; apply/eqP.
+  rewrite refinesE=> _ x <- _ y <-; rewrite /eq_op /eq_N.
+  case: (N.eqb_spec _ _) => [->|/eqP hneq]; first by rewrite eqxx; exact true_R.
+  suff H : (nat_of_bin x == nat_of_bin y) = false.
+    by rewrite H; exact: false_R.
+  by apply/negP => [/eqP /(can_inj nat_of_binK)]; apply/eqP.
 Qed.
 
-Global Instance Rnat_leq : refines (Rnat ==> Rnat ==> Logic.eq) ssrnat.leq leq_op.
+Global Instance Rnat_leq : refines (Rnat ==> Rnat ==> bool_R) ssrnat.leq leq_op.
 Proof.
-rewrite refinesE => x x' rx y y' ry; rewrite /leq_op /leq_N.
-case: (N.leb_spec0 _ _) => [/N.sub_0_le|] /= h.
-  by apply/eqP; rewrite [x - y]RnatE [(_ - _)%C]h.
-apply/negP => /eqP; rewrite [x - y]RnatE [0]RnatE.
-by move/(can_inj nat_of_binK)/N.sub_0_le.
+  rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leq_N /leq.
+  case: (N.leb_spec0 _ _)=> [/N.sub_0_le|]=> h.
+    by rewrite [x - y]RnatE [(_ - _)%C]h /= eqxx; exact true_R.
+  suff H : (nat_of_bin x - nat_of_bin y == 0) = false.
+    by rewrite H; exact: false_R.
+  apply/negP=> /eqP; rewrite [x - y]RnatE [0]RnatE.
+  by move/(can_inj nat_of_binK)/N.sub_0_le.
 Qed.
 
 (*Global Instance Rnat_lt : refines (Rnat ==> Rnat ==> Logic.eq) ltn lt_op.
