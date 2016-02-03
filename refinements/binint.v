@@ -328,46 +328,6 @@ End testint.
 (*************************************************************************)
 Section binint_parametricity.
 
-(*Section Zrefinement.
-
-Variables N N' P P' : Type.
-Variables (RN : N -> N' -> Prop) (RP : P -> P' -> Prop).
-
-Local Notation Z' := (Z N' P').
-Local Notation Z  := (Z N P).
-
-Definition RZ : Z -> Z' -> Prop := fun x y => match x, y with
-  | Zpos x, Zpos y => RN x y
-  | Zneg x, Zneg y => RP x y
-  | _, _ => False
-  end.*)
-
-(*Lemma refines_Zpos : (refines RN ==> refines RZ)%rel (@Zpos N P) (@Zpos N' P').
-Proof. by rewrite !refinesE. Qed.
-
-Lemma refines_Zneg : (refines RP ==> refines RZ)%rel (@Zneg N P) (@Zneg N' P').
-Proof. by rewrite !refinesE. Qed.
-
-Lemma refines_Zmatch T T' (R : T -> T' -> Prop) :
-  (refines RZ ==> refines (RN ==> R) ==> refines (RP ==> R) ==> refines R)%rel
-  (@Zmatch _ _ _) (@Zmatch _ _ _).
-Proof.
-rewrite ?refinesE => x x' rx f f' rf g g' rg.
-by case: x x' rx=> [a|b] [a'|b'] //= rab; [apply: rf|apply: rg].
-Qed.
-
-End Zrefinement.
-
-Arguments refines_Zmatch {_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _}.
-Arguments refines_Zpos {_ _ _ _ _ _ _ _ _}.
-Arguments refines_Zneg {_ _ _ _ _ _ _} _ _.
-
-Hint Extern 1 (refines _ _ _) => eapply refines_Zmatch: typeclass_instances.
-Hint Extern 1 (refines _ _ _) =>
-eapply refines_Zneg: typeclass_instances.
-Hint Extern 1 (refines _ _ _) =>
-eapply refines_Zpos: typeclass_instances.*)
-
 Section binint_nat_pos.
   
 Variables N P : Type.
