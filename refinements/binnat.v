@@ -111,11 +111,11 @@ Qed.
 
 Global Instance Rpos_leq : refines (Rpos ==> Rpos ==> bool_R) leq_pos leq_op.
 Proof.
-  rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /le_positive /leq_pos !val_insubd.
+  rewrite refinesE=> _ x <- _ y <-;
+  rewrite /leq_op /le_positive /leq_pos !val_insubd.
   move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
-  case: (Pos.leb_spec0 _ _); move /Pos2Nat.inj_le /leP.
-    by move->; exact true_R.
-  by rewrite -eqbF_neg; move/eqP ->; exact: false_R.
+  by case: (Pos.leb_spec0 _ _); move /Pos2Nat.inj_le /leP;
+  [move ->|rewrite -eqbF_neg; move/eqP ->].
 Qed.
 
 (*Global Instance Rpos_lt : param (Rpos ==> Rpos ==> Logic.eq) lt_pos lt_op.
@@ -129,9 +129,9 @@ Global Instance Rpos_eq : refines (Rpos ==> Rpos ==> bool_R) eq_pos eq_op.
 Proof.
   rewrite refinesE=> _ x <- _ y <-; rewrite /eq_op /eq_positive /eq_pos.
   case: (Pos.eqb_spec _ _)=> [->|h].
-    by rewrite eqxx; exact: true_R.
+    by rewrite eqxx.
   suff H : (pos_of_positive x == pos_of_positive y) = false.
-    by rewrite H; exact: false_R.
+    by rewrite H.
   by apply/negP=> [/eqP /(can_inj pos_of_positiveK)].
 Qed.
 
@@ -235,9 +235,10 @@ Qed.
 Global Instance Rnat_eq : refines (Rnat ==> Rnat ==> bool_R) eqtype.eq_op eq_op.
 Proof.
   rewrite refinesE=> _ x <- _ y <-; rewrite /eq_op /eq_N.
-  case: (N.eqb_spec _ _) => [->|/eqP hneq]; first by rewrite eqxx; exact true_R.
+  case: (N.eqb_spec _ _) => [->|/eqP hneq].
+    by rewrite eqxx.
   suff H : (nat_of_bin x == nat_of_bin y) = false.
-    by rewrite H; exact: false_R.
+    by rewrite H.
   by apply/negP => [/eqP /(can_inj nat_of_binK)]; apply/eqP.
 Qed.
 
@@ -245,9 +246,9 @@ Global Instance Rnat_leq : refines (Rnat ==> Rnat ==> bool_R) ssrnat.leq leq_op.
 Proof.
   rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leq_N /leq.
   case: (N.leb_spec0 _ _)=> [/N.sub_0_le|]=> h.
-    by rewrite [x - y]RnatE [(_ - _)%C]h /= eqxx; exact true_R.
+    by rewrite [x - y]RnatE [(_ - _)%C]h /= eqxx.
   suff H : (nat_of_bin x - nat_of_bin y == 0) = false.
-    by rewrite H; exact: false_R.
+    by rewrite H.
   apply/negP=> /eqP; rewrite [x - y]RnatE [0]RnatE.
   by move/(can_inj nat_of_binK)/N.sub_0_le.
 Qed.

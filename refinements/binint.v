@@ -251,26 +251,31 @@ Proof.
   by rewrite (eqSub (cast y) (cast x)) addrC.
 Qed.
 
+Implicit Type n : nat.
+Implicit Type p : pos.
+
+Lemma bool_Rxx b : bool_R b b.
+Proof. by case: b. Qed.
+
 Global Instance Rint_eq : refines (Rint ==> Rint ==> bool_R) eqtype.eq_op eq_op.
 Proof.
+  have nat_nneg n p : bool_R (n == - (Posz (sval p)) :> int) false.
+    by rewrite gtr_eqF // ltNz_nat -lt0n [(_ < _)%N]valP.
   rewrite refinesE=> _ x <- _ y <-; rewrite /eq_op /eqZ.
-  case: x y => [x|x] [y|y] /=; simpC; rewrite ?eqr_opp ?[- _ == _]eq_sym; last 3 first;
-  [idtac|idtac|by case h: (x == y); rewrite [(_ == _ :> int)]h; first (by exact: true_R);
-                 by exact: false_R ..];
-  by rewrite gtr_eqF; first (by exact: false_R);
-  by rewrite (@ltr_le_trans _ 0) // ltr_oppl oppr0 [_ < _]valP.
+  case: x; case: y=> * /=; simpC; rewrite ?eqr_opp ?[- _ == _]eq_sym //;
+  exact: bool_Rxx.
 Qed.
 
 Global Instance Rint_leq : refines (Rint ==> Rint ==> bool_R) Num.le leq_op.
 Proof.
+  have nat_nleqneg n p : bool_R (n <= - (Posz (sval p)) :> int) false.
+    rewrite lerNgt (@ltr_le_trans _ 0) ?oppr_lt0 //=.
+    apply: valP.
+  have neg_leqnat n p : bool_R (- (Posz (sval p)) <= n :> int) true.
+    by rewrite ler_oppl (@ler_trans _ 0) // oppr_le0 le0z_nat.
   rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leqZ.
-  case: x y => [x|x] [y|y] /=; rewrite -?[((_<=_)%C)]/(_<=_)%N ?ler_opp2; last 3 first;
-  [idtac|idtac|by case h: (_ <= _)%N; rewrite [((_ <= _)%R)]h; first (by exact: true_R);
-                 by exact: false_R ..].
-  rewrite lerNgt (@ltr_le_trans _ 0) ?oppr_lt0 /=; first (by exact: false_R);
-  first (apply: valP); rewrite (@ler_trans _ 0) // oppr_le0.
-  rewrite ler_oppl (@ler_trans _ 0); first (by exact: true_R); first (by rewrite oppr_le0).
-  by rewrite le0z_nat.
+  case: x y => [x|x] [y|y] /=; rewrite -?[((_<=_)%C)]/(_<=_)%N ?ler_opp2 //;
+  exact: bool_Rxx.
 Qed.
 
 (*Global Instance Rint_lt : refines (Rint ==> Rint ==> Logic.eq) Num.lt lt_op.
@@ -299,9 +304,9 @@ Global Instance Rint_specZ' :
   refines (Rint ==> Logic.eq) id spec.
 Proof. by rewrite refinesE => a a' ra; rewrite [spec _]RintE. Qed.
 
-Global Instance Rint_implem n : refines Rint n (implem n) | 999.
+Global Instance Rint_implem x : refines Rint x (implem x) | 999.
 Proof.
-  by rewrite refinesE; case: n.
+  by rewrite refinesE; case: x.
 Qed.
 
 Section testint.

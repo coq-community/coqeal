@@ -15,15 +15,11 @@ Global Parametricity Tactic := destruct_reflexivity.
 
 Require Import ProofIrrelevance. (* for opaque terms *)
 
-(*Parametricity Module Logic.
-
-Parametricity Module Datatypes.
-Parametricity Module Specif.
-Parametricity Module Nat.
-Export Logic_R Datatypes_R Specif_R Nat_R.*)
+(* data types *)
 Parametricity option.
 Parametricity unit.
 Parametricity bool.
+Hint Resolve true_R false_R.
 Parametricity nat.
 Parametricity list.
 Parametricity prod.
