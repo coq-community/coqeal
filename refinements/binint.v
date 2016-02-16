@@ -254,9 +254,6 @@ Qed.
 Implicit Type n : nat.
 Implicit Type p : pos.
 
-Lemma bool_Rxx b : bool_R b b.
-Proof. by case: b. Qed.
-
 Global Instance Rint_eq : refines (Rint ==> Rint ==> bool_R) eqtype.eq_op eq_op.
 Proof.
   have nat_nneg n p : bool_R (n == - (Posz (sval p)) :> int) false.
@@ -308,25 +305,6 @@ Global Instance Rint_implem x : refines Rint x (implem x) | 999.
 Proof.
   by rewrite refinesE; case: x.
 Qed.
-
-Section testint.
-
-Goal (1 == 1 :> int).
-  rewrite [_ == _]refines_eq.
-  by compute.
-Abort.
-
-(*Goal (10%:Z - 5%:Z == 1 + 4%:Z).
-rewrite [_ == _]refines_eq.
-by compute.
-Abort.*)
-
-Goal (1000%:Z == 998%:Z + 2%:Z).
-rewrite [_ == _]refines_eq.
-by compute.
-Abort.
-
-End testint.
 
 (*************************************************************************)
 (* PART III: Parametricity part                                          *)
@@ -426,3 +404,32 @@ Proof. exact: refines_trans. Qed.*)
 End binint_nat_pos.
 End binint_parametricity.
 End binint_theory.
+
+Section testint.
+
+Goal (1 == 1 :> int).
+  rewrite [_ == _]refines_eq.
+  by compute.
+Abort.
+
+(*Goal (-1%:Z == -1%:Z).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (10%:Z - 5%:Z == 1 + 4%:Z).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.*)
+
+Goal (1000%:Z == 998%:Z + 2%:Z).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (1000%:Z == 2%:Z * 500%:Z).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+End testint.

@@ -24,6 +24,9 @@ Parametricity nat.
 Parametricity list.
 Parametricity prod.
 
+Lemma bool_Rxx b : bool_R b b.
+Proof. by case: b. Qed.
+
 (** ssrfun *)
 Parametricity simpl_fun.
 
