@@ -125,20 +125,35 @@ case=> [[/= rab rab']] /prod_hrel_R [/= rbc rbc'].
 by split; [ apply: h1; exists b | apply: h2; exists b'].
 Qed.
 
-(* Global Instance refines_pair *)
-(*   A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) : *)
-(*   refines (rA ==> rB ==> prod_hrel rA rB)%rel (@pair _ _) (@pair _ _). *)
-(* Proof. by rewrite refinesE. Qed. *)
+Lemma refines_abstr A B C D (R : A -> B -> Type) (R' : C -> D -> Type)
+      (c : A -> C) (d : B -> D):
+        (forall (a :  A) (b : B), refines R a b -> refines R' (c a) (d b)) ->
+        refines (R ==> R') c d.
+Proof. by rewrite !refinesE; apply. Qed.
 
-(* Global Instance refines_fst *)
-(*   A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) : *)
-(*   refines (prod_hrel rA rB ==> rA)%rel (@fst _ _) (@fst _ _). *)
-(* Proof. by rewrite !refinesE=> [??] [??]. Qed. *)
+Lemma refines_abstr2 A B A' B' A'' B''
+      (R : A -> B -> Type) (R' : A' -> B' -> Type) (R'' : A'' -> B'' -> Type)
+      (f : A -> A' -> A'' ) (g : B -> B' -> B''):
+        (forall (a : A)   (b : B), refines R a b ->
+         forall (a' : A') (b' : B'), refines R' a' b' ->
+        refines R'' (f a a') (g b b')) ->
+        refines (R ==> R' ==> R'') f g.
+Proof. by move=> H; do 2![eapply refines_abstr => *]; apply: H. Qed.
 
-(* Global Instance refines_snd *)
-(*   A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) : *)
-(*   refines (prod_hrel rA rB ==> rB)%rel (@snd _ _) (@snd _ _). *)
-(* Proof. by rewrite !refinesE=> [??] [??]. Qed. *)
+Global Instance refines_pair
+  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
+  refines (rA ==> rB ==> prod_hrel rA rB)%rel (@pair _ _) (@pair _ _).
+Proof. by rewrite refinesE. Qed.
+
+Global Instance refines_fst
+  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
+  refines (prod_hrel rA rB ==> rA)%rel (@fst _ _) (@fst _ _).
+Proof. by rewrite !refinesE=> [??] [??]. Qed.
+
+Global Instance refines_snd
+  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
+  refines (prod_hrel rA rB ==> rB)%rel (@snd _ _) (@snd _ _).
+Proof. by rewrite !refinesE=> [??] [??]. Qed.
 
 End refinements.
 

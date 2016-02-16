@@ -11,7 +11,6 @@ Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
 Import Refinements.Op.
 
 Local Open Scope ring_scope.
-Local Open Scope rel.
 
 (* Specific classes for polynomials *)
 Section classes.
@@ -71,7 +70,7 @@ Global Instance shift_seqpoly : shift_of seqpoly :=
   fun n => ncons n 0%C.
 
 Global Instance split_seqpoly : split_of seqpoly :=
-  fun n p => (take n p,drop n p).
+  fun n p => (drop n p,take n p).
 
 Global Instance lead_coef_seqpoly : lead_coef_of A seqpoly :=
   fun p => nth 0 p (size_seqpoly p).-1.
@@ -98,10 +97,9 @@ Global Instance mod_seqpoly : mod_of seqpoly :=
                  then (0%nat, 0%C, p)
                  else div_rec_seqpoly q 0 0%C p (size_op p)).2.
 
-(* TODO: Add this *)
-(* Definition scalp_seqpoly p q := *)
-(*   (if (q == 0)%C then (0%N, 0%C, p) *)
-(*                  else edivp_rec_seqpoly q 0 0%C p (size_seqpoly p)).1.1. *)
+Definition scal_seqpoly p q :=
+  (if (q == 0)%C then (0%N, 0%C, p)
+                 else div_rec_seqpoly q 0 0%C p (size_seqpoly p)).1.1.
 
 End seqpoly_op.
 
@@ -121,6 +119,7 @@ Parametricity lead_coef_seqpoly.
 Parametricity div_rec_seqpoly.
 Parametricity div_seqpoly.
 Parametricity mod_seqpoly.
+Parametricity scal_seqpoly.
 
 Section seqpoly_theory.
 
@@ -134,102 +133,136 @@ Local Instance mulR  : mul_of R  := *%R.
 Local Instance oppR  : opp_of R  := -%R.
 Local Instance eqR   : eq_of R   := eqtype.eq_op.
 
-(* Lemma seqpoly_of_polyK : pcancel (@polyseq R) (some \o Poly). *)
-(* Proof. by move=> p /=; rewrite polyseqK. Qed. *)
-
 Definition splitp : nat -> {poly R} -> {poly R} * {poly R} :=
   fun n p => (rdivp p 'X^n, rmodp p 'X^n).
 
 Definition shiftp n (p : {poly R}) := p * 'X^n.
 
-Definition Rseqpoly : {poly R} -> seqpoly R -> Type := fun p sp => p = Poly sp.
+Definition seqpoly_of_poly (p : {poly R}) : seqpoly R :=
+  polyseq p.
+
+Definition poly_of_seqpoly (sp : seqpoly R) : {poly R} :=
+  \poly_(i < size sp) nth 0 sp i.
+
+Definition Rseqpoly : {poly R} -> seqpoly R -> Type := fun_hrel poly_of_seqpoly.
 
 Local Open Scope rel_scope.
+
+(* zero and one *)
+Instance Rseqpoly_0 : refines Rseqpoly 0%R 0%C.
+Proof.
+  by rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly poly_def big_ord0.
+Qed.
+
+Instance Rseqpoly_1 : refines Rseqpoly 1%R 1%C.
+Proof.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly poly_def /=.
+  by rewrite zmodp.big_ord1 expr0 alg_polyC [(1%:P)]/(1%C) polyC1.
+Qed.
 
 Instance Rseqpoly_cons :
   refines (eq ==> Rseqpoly ==> Rseqpoly) (@cons_poly R) cons.
 Proof.
-rewrite !refinesE => x y -> p sp ->.
-exact: poly_inj.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ x -> _ sp <-.
+  rewrite cons_poly_def poly_def big_ord_recl /= expr0 alg_polyC addrC.
+  rewrite /bump poly_def big_distrl /=.
+  apply: congr2=> //.
+  apply: eq_bigr=> i _.
+  by rewrite -[in RHS]mul_polyC -mulrA -exprSr mul_polyC.
 Qed.
 
 Instance Rseqpoly_cast : refines (eq ==> Rseqpoly) polyC cast_op.
 Proof.
-rewrite !refinesE=> x y ->.
-by apply: poly_inj; rewrite polyseq_cons polyseq0.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ x ->.
+  rewrite /cast /cast_seqpoly /= poly_def zmodp.big_ord1 /=.
+  by rewrite expr0 alg_polyC.
 Qed.
-
-Instance Rseqpoly_0 : refines Rseqpoly 0%R 0%C.
-Proof. by rewrite refinesE. Qed.
-
-Instance Rseqpoly_1 : refines Rseqpoly 1%R 1%C.
-Proof. by rewrite refinesE /Rseqpoly /= cons_poly_def mul0r add0r. Qed.
 
 Instance Rseqpoly_opp : refines (Rseqpoly ==> Rseqpoly) -%R -%C.
 Proof.
-rewrite refinesE /Rseqpoly => p sp -> {p}.
-apply/polyP => i /=; rewrite coef_opp_poly !coef_Poly.
-have [hlt|hleq] := ltnP i (size sp); first by rewrite (nth_map 0%C).
-by rewrite !nth_default ?oppr0 ?size_mkseq ?size_map.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <-.
+  rewrite !poly_def -GRing.sumrN size_map.
+  apply: eq_bigr=> i _.
+  rewrite -[in RHS]mul_polyC -mulNr -polyC_opp mul_polyC.
+  by rewrite (nth_map 0%C).
 Qed.
 
-Instance Rseqpoly_add : refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) +%R +%C.
+Lemma coef_poly_of_seqpoly (sp : seqpoly R) (i : nat) :
+  (\poly_(j < size sp) sp`_j)`_i = sp`_i.
 Proof.
-rewrite refinesE /Rseqpoly => p sp -> q sq -> {p q}.
-elim: sp sq=> [[] /= *|a p ih [|b q]] /=; do ?rewrite ?add0r ?addr0 //.
-by rewrite !cons_poly_def -ih addrAC addrA -mulrDl raddfD /= -!addrA [_ + a%:P]addrC.
+  rewrite coef_poly.
+  have [iltp|pleqi] := ltnP i (size sp)=> //.
+  by rewrite nth_default.
 Qed.
 
-Lemma opp_map (p : seq R) : - Poly p = Poly (List.map -%C p).
+Lemma coef_add_seqpoly (sp sq : seqpoly R) (i : nat) :
+  (sp + sq)%C`_i = sp`_i + sq`_i.
 Proof.
-  elim: p=> [|a p ihp] /=; first by rewrite oppr0.
-  by rewrite !cons_poly_def opprD polyC_opp -mulNr ihp.
-Qed.  
+  elim: sp sq i=> [sq i|a p ihp [|b q] [|i]] //=.
+        by rewrite [(_ + _)%C]/add_seqpoly /add_seqpoly_fun nth_nil add0r.
+      by rewrite addr0.
+    by rewrite addr0.
+  by rewrite ihp.
+Qed.
 
-Instance Rseqpoly_sub : refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (fun x y => x - y) sub_op.
+Instance Rseqpoly_add :
+  refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) +%R +%C.
 Proof.
-  rewrite refinesE /Rseqpoly=> _ sp -> _ sq ->.
-  elim: sp sq=> [[|b q]|a p ihp [|b q]] /=; rewrite ?add0r ?oppr0 ?addr0 //.
-    by rewrite !cons_poly_def opprD polyC_opp /opp_seqpoly -mulNr opp_map.
-  by rewrite !cons_poly_def -ihp polyC_add polyC_opp opprD addrAC addrA addrAC addrA mulrDl mulNr.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <- _ sq <-.
+  apply/polyP=> i.
+  by rewrite coef_add_poly !coef_poly_of_seqpoly coef_add_seqpoly.
+Qed.
+
+Lemma coef_opp_seqpoly (sp : seqpoly R) (i : nat) : (- sp)%C`_i = - sp`_i.
+Proof.
+  have [iltp|pleqi] := ltnP i (size sp).
+    by rewrite (nth_map 0%C).
+  by rewrite !nth_default ?oppr0 ?size_map.
+Qed.
+
+Instance Rseqpoly_sub :
+    refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (fun x y => x - y) sub_op.
+Proof.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <- _ sq <-.
+  apply/polyP=> i.
+  rewrite coef_add_poly coef_opp_poly !coef_poly_of_seqpoly coef_add_seqpoly.
+  by rewrite coef_opp_seqpoly.
 Qed.
 
 (* scaling *)
 
-Lemma scale_map (a : R) (p : seq R) : a *: Poly p = Poly (scale_seqpoly a p).
+Lemma coef_scale_seqpoly (sp : seqpoly R) (a : R) (i : nat) :
+  (a *: sp)%C`_i = a * sp`_i.
 Proof.
-  elim: p=> [|b p ihp] /=; first by rewrite scaler0.
-  by rewrite !cons_poly_def scalerDr scalerAl polyC_mul mul_polyC ihp.
+  have [iltp|pleqi] := ltnP i (size sp).
+    by rewrite (nth_map 0%C).
+  by rewrite !nth_default ?mulr0 ?size_map.
 Qed.
 
-Instance Rseqpoly_scale : refines (eq ==> Rseqpoly ==> Rseqpoly) *:%R *:%C.
+Instance Rseqpoly_scale :
+  refines (eq ==> Rseqpoly ==> Rseqpoly) *:%R *:%C.
 Proof.
-  rewrite refinesE /Rseqpoly=> _ a -> _ sp ->.
-  elim: sp=> [|b p ihp] /=; first by rewrite scaler0.
-  by rewrite !cons_poly_def scalerDr scalerAl polyC_mul mul_polyC scale_map.
-Qed.
-
-Lemma consSeqpoly (p : seq R) (a : R) : Poly (a::p)%C = a%:P + Poly p * 'X.
-Proof.
-  elim: p=> [|b p ihp] /=; first by rewrite cons_poly_def mul0r addrC.
-  by rewrite !cons_poly_def addrC [Y in (Y * 'X)]addrC.
-Qed.
-
-Lemma addSeqpoly (p q : seq R) : Poly (p + q)%C = Poly p + Poly q.
-Proof.
-  elim: p q=> [q|a p ihp [|b q]] /=;
-    first by rewrite [((_ + _)%C)]/add_seqpoly /add_seqpoly_fun add0r.
-    by rewrite cons_poly_def addr0.
-  by rewrite !cons_poly_def ihp polyC_add [in RHS]addrACA -[in RHS]mulrDl.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ x -> _ sp <-.
+  apply/polyP=> i.
+  by rewrite coefZ !coef_poly_of_seqpoly coef_scale_seqpoly.
 Qed.
 
 (* multiplication *)
-Instance Rseqpoly_mul : refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) *%R *%C.
+Instance Rseqpoly_mul :
+  refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) *%R *%C.
 Proof.
-  rewrite refinesE /Rseqpoly=> _ sp -> _ sq ->.
-  elim: sp => [|a p ihp] /=; first by rewrite mul0r.
-  rewrite cons_poly_def mulrDl commr_polyX -mulrA mul_polyC.  
-  by rewrite addSeqpoly consSeqpoly /= polyC0 add0r -scale_map addrC commr_polyX ihp.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <- _ sq <-.
+  apply/polyP=> i.
+  rewrite coef_poly_of_seqpoly.
+  elim: sp i=> [i|a p ihp i].
+    by rewrite [(_ * _)%C]/mul_seqpoly poly_def big_ord0 mul0r coef0 nth_nil.
+  rewrite [(_ * _)%C]/mul_seqpoly coef_add_seqpoly coefM big_ord_recl.
+  rewrite !coef_poly_of_seqpoly subn0.
+  apply: congr2; first by rewrite coef_scale_seqpoly.
+  move: ihp; case: i=> [_|i ihp]; first by rewrite big_ord0.
+  rewrite [(_ :: _)`_ _]/= ihp coefM=> {ihp}.
+  apply: eq_bigr=> j _.
+  by rewrite !coef_poly_of_seqpoly.
 Qed.
 
 (* This definition hides the coercion which makes it possible for proof search
@@ -237,47 +270,136 @@ Qed.
 Definition sizep : {poly R} -> nat := size.
 Lemma sizepE s : sizep s = size s. Proof. by []. Qed.
 
+Lemma poly_cons (p : seqpoly R) (a : R) :
+  \poly_(i < size (a :: p)) (a :: p)`_i = a%:P + (\poly_(i < size p) p`_i) * 'X.
+Proof.
+  rewrite !poly_def big_ord_recl big_distrl /= expr0 alg_polyC /bump /=.
+  apply: congr2=> //; apply: eq_bigr=> i _.
+  by rewrite add1n exprSr scalerAl.
+Qed.
+
 Instance Rseqpoly_size :
   refines (Rseqpoly ==> eq) sizep size_op.
 Proof.
-  rewrite refinesE => _ sp ->; rewrite sizepE /size_op.
-  elim: sp=> [|a p ihp]/=; first by rewrite size_poly0.
-  rewrite size_cons_poly /nilp ihp eqnE Bool.andb_if; simpC.
-  case: (a == 0)=> /=.
-    by [].
-  case hp: (size_seqpoly p == 0%C).
-    by apply/eqP; rewrite -addn1 -[(1%N)]add0n eqn_add2r hp.
-  by [].
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <-.
+  rewrite sizepE /size_op.
+  elim: sp=> [|a p ihp].
+    by rewrite poly_def big_ord0 size_poly0.
+  rewrite poly_cons /= -ihp; case sp: (size (\poly_(i < size p) p`_i))=> [|n] /=.
+    move /eqP: sp; rewrite size_poly_eq0; move/eqP=> ->.
+    by rewrite mul0r addr0 size_polyC.
+  rewrite addrC size_addl size_mulX ?sp ?size_polyC; case: (a != 0)=> //;
+  by apply/negP; rewrite -size_poly_eq0 sp.
 Qed.
 
 Instance Rseqpoly_eq :
-  refines (Rseqpoly ==> Rseqpoly ==> Logic.eq) eqtype.eq_op eq_op.
+  refines (Rseqpoly ==> Rseqpoly ==> bool_R) eqtype.eq_op eq_op.
 Proof.
-  rewrite refinesE /eq_op /eq_seqpoly=> _ sp -> _ sq ->.
-  apply/eqP/allP=> [hsq x|hsq].
-Admitted.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <- _ sq <-.
+  have -> : (\poly_(i < size sp) sp`_i == \poly_(i < size sq) sq`_i)
+            = (sp == sq)%C.
+    apply/eqP/allP=> [/polyP heq|heq].
+      move=> x /(nthP 0%C) [i] hi <-.
+      rewrite coef_add_seqpoly coef_opp_seqpoly; simpC.
+      by have := (heq i); rewrite !coef_poly_of_seqpoly subr_eq0=> ->.
+    apply/polyP=> i; rewrite !coef_poly_of_seqpoly; apply/eqP.
+    have [hlt|] := ltnP i (size (sp - sq)%C).
+      rewrite -subr_eq0 -coef_opp_seqpoly -coef_add_seqpoly [_ == _]heq //.
+      by rewrite mem_nth.
+    have -> : size (sp - sq)%C = maxn (size sp) (size sq)=> [{heq}|hleq].
+      elim: sp sq=> [sq|a p ihp [|b q]] /=.
+          by rewrite max0n [(_ - _)%C]/add_seqpoly /add_seqpoly_fun size_map.
+        by rewrite maxn0.
+      by rewrite ihp maxnSS.
+    by rewrite !nth_default // (leq_trans _ hleq) // leq_max leqnn ?orbT.
+  exact: bool_Rxx.
+Qed.
 
 (* These can be done with eq instead of nat_R *)
 Instance Rseqpoly_shift :
   refines (eq ==> Rseqpoly ==> Rseqpoly) shiftp shift_op.
-Admitted.
+Proof.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ n -> _ sp <-.
+  apply/polyP=> i.
+  rewrite /shiftp coefMXn !coef_poly_of_seqpoly /shift_op /shift_seqpoly.
+  by rewrite nth_ncons.
+Qed.
 
 Instance Rseqpoly_split :
   refines (eq ==> Rseqpoly ==> prod_hrel Rseqpoly Rseqpoly)
           splitp split_op.
-Admitted.
+Proof.
+  rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ n -> _ sp <-.
+  rewrite /prod_hrel /split_op /split_seqpoly /splitp /=.
+  elim: sp n=> [n|a p ihp [|n]].
+      by rewrite poly_def big_ord0 rdiv0p rmod0p.
+    by rewrite expr0 rdivp1 rmodp1 [\poly_(_ < 0) _]poly_def big_ord0.
+  rewrite !poly_cons [\poly_(i < size p) p`_i](@rdivp_eq _ 'X^n) ?monicXn //.
+  have [-> ->] := ihp n.
+  rewrite mulrDl -mulrA -exprSr addrC -addrA.
+  suff htnp :
+    size (rmodp (\poly_(i < size p) p`_i) 'X^n * 'X + a%:P) <
+    size ('X^n.+1 : {poly R}).
+    by rewrite rdivp_addl_mul_small ?rmodp_addl_mul_small ?monicXn // addrC.
+  rewrite size_polyXn size_MXaddC ltnS; case: ifP=> // _.
+  by rewrite (leq_trans (ltn_rmodpN0 _ _)) ?monic_neq0 ?monicXn ?size_polyXn.
+Qed.
 
 Instance Rseqpoly_lead_coef :
   refines (Rseqpoly ==> eq) lead_coef lead_coef_op.
-Admitted.
+Proof.
+  rewrite refinesE /lead_coef_op /lead_coef_seqpoly /lead_coef=> p sp hp.
+  rewrite -sizepE [sizep _]refines_eq /size_op -hp /poly_of_seqpoly.
+  by rewrite coef_poly_of_seqpoly.
+Qed.
+
+Local Instance refines_eq_refl A (n : A) : refines Logic.eq n n | 999.
+Proof. by rewrite refinesE. Qed.
+
+Instance Rseqpoly_edivp_rec :
+  refines (Rseqpoly ==> Logic.eq ==> Rseqpoly ==> Rseqpoly ==> Logic.eq ==>
+         prod_hrel (prod_hrel Logic.eq Rseqpoly) Rseqpoly)
+         (@redivp_rec R) (@div_rec_seqpoly _ _ _ _ _ _).
+Proof.
+rewrite refinesE=> q sq hsq n m <- {m} p sp hsp r sr hsr m m' <- {m'} /=.
+apply refinesP; elim: m => [|m ih] /= in n p sp hsp q sq hsq r sr hsr *;
+rewrite -![size_op _]refines_eq -!sizepE -mul_polyC
+        -[_ * 'X^_]/(shiftp (sizep r - sizep q) _).
+  case: ifP=> _; rewrite refinesE /prod_hrel //=; do ?split;
+    eapply refinesP; rewrite ?/sub_op ?/sub_seqpoly;
+    eauto 14 with typeclass_instances.
+  case: ifP=> _; first by rewrite refinesE /prod_hrel.
+  apply: ih=> //; eapply refinesP; rewrite ?/sub_op ?/sub_seqpoly;
+    eauto 14 with typeclass_instances.
+Qed.
 
 Instance Rseqpoly_div :
   refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (@rdivp R) div_op.
-Admitted.
+Proof.
+  apply refines_abstr2; rewrite /rdivp unlock=> p sp hsp q sq hsq.
+  rewrite [(_ %/ _)%C]/div_seqpoly -sizepE -[(sq == 0)%C]refines_eq;
+  case: ifP=> _ /=; rewrite refinesE.
+    exact: refinesP.
+  eapply refinesP; eauto 9 with typeclass_instances.
+Qed.
 
 Instance Rseqpoly_mod :
   refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (@rmodp R) mod_op.
-Admitted.
+Proof.
+  apply refines_abstr2; rewrite /rmodp unlock=> p sp hsp q sq hsq.
+  rewrite [(_ %% _)%C]/mod_seqpoly -[(sq == 0)%C]refines_eq;
+  case: ifP=> _ //; rewrite -sizepE refinesE.
+  eapply refinesP; eauto 8 with typeclass_instances.
+Qed.
+
+Instance Rseqpoly_scal : refines (Rseqpoly ==> Rseqpoly ==> Logic.eq)
+  (@rscalp R) (fun p => scal_seqpoly p).
+Proof.
+  apply refines_abstr2; rewrite /rscalp unlock => p sp hsp q sq hsq.
+  rewrite /scal_seqpoly -sizepE -[(sq == 0)%C]refines_eq;
+  case: ifP=> _ /=; rewrite refinesE //.
+  eapply refinesP; eauto 9 with typeclass_instances.
+Qed.
 
 Section seqpoly_param.
 
