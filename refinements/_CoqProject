@@ -6,4 +6,4 @@ binnat.v
 binint.v
 seqpoly.v
 karatsuba.v
-# seqmx.v
+seqmx.v
