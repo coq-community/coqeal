@@ -493,7 +493,7 @@ more efficient? *)
 Hint Extern 0 (refines _ (Poly _) _) => simpl : typeclass_instances.
 Hint Extern 0 (refines _ _ (Poly _)) => simpl : typeclass_instances.
 
-Section testpoly.
+(*Section testpoly.
 
 From mathcomp Require Import ssrint.
 From CoqEAL Require Import binint.
@@ -572,4 +572,4 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-End testpoly.
+End testpoly.*)
