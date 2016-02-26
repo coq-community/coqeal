@@ -148,22 +148,22 @@ Global Hint Extern 0 (refines _ (spec _) _)
   => apply Rpos_spec_pos_r : typeclass_instances.
 
 Global Hint Extern 0 (refines _ spec_id _)
-  => exact Rpos_spec_pos_l : typeclass_instances.
+  => apply Rpos_spec_pos_l : typeclass_instances.
 
 Global Hint Extern 0 (refines _ pos1 _)
-  => exact Rpos_1 : typeclass_instances.
+  => apply Rpos_1 : typeclass_instances.
 
 Global Hint Extern 0 (refines _ add_pos _)
-  => exact Rpos_add : typeclass_instances.
+  => apply Rpos_add : typeclass_instances.
 
 Global Hint Extern 0 (refines _ mul_pos _)
-  => exact Rpos_mul : typeclass_instances.
+  => apply Rpos_mul : typeclass_instances.
 
 Global Hint Extern 0 (refines _ sub_pos _)
-  => exact Rpos_sub : typeclass_instances.
+  => apply Rpos_sub : typeclass_instances.
 
 Global Hint Extern 0 (refines _ leq_pos _)
-  => exact Rpos_leq : typeclass_instances.
+  => apply Rpos_leq : typeclass_instances.
 
 Global Hint Extern 0 (refines _ eqtype.eq_op _)
   => exact Rpos_eq : typeclass_instances.
@@ -306,40 +306,40 @@ Global Hint Extern 0 (refines _ (nat_of_bin _) _)
   => apply Rnat_spec_r : typeclass_instances.
 
 Global Hint Extern 0 (refines _ spec_id _)
-  => exact Rnat_spec_l : typeclass_instances.
+  => apply Rnat_spec_l : typeclass_instances.
 
 Global Hint Extern 0 (refines _ (implem_id _) _)
-  => exact Rnat_implem : typeclass_instances.
+  => apply Rnat_implem : typeclass_instances.
 
 Global Hint Extern 0 (refines _ 0 _)
-  => exact Rnat_0 : typeclass_instances.
+  => apply Rnat_0 : typeclass_instances.
 
 Global Hint Extern 0 (refines _ 1%N _)
-  => exact Rnat_1 : typeclass_instances.
+  => apply Rnat_1 : typeclass_instances.
 
 Global Hint Extern 0 (refines _ addn _)
-  => exact Rnat_add : typeclass_instances.
+  => apply Rnat_add : typeclass_instances.
 
 Global Hint Extern 0 (refines _ S _)
-  => exact Rnat_S : typeclass_instances.
+  => apply Rnat_S : typeclass_instances.
 
 Global Hint Extern 0 (refines _ subn _)
-  => exact Rnat_sub : typeclass_instances.
+  => apply Rnat_sub : typeclass_instances.
 
 Global Hint Extern 0 (refines _ muln _)
-  => exact Rnat_mul : typeclass_instances.
+  => apply Rnat_mul : typeclass_instances.
 
 Global Hint Extern 0 (refines _ eqtype.eq_op _)
   => exact Rnat_eq : typeclass_instances.
 
 Global Hint Extern 0 (refines _ ssrnat.leq _)
-  => exact Rnat_leq : typeclass_instances.
+  => apply Rnat_leq : typeclass_instances.
 
 Global Hint Extern 0 (refines _ val _)
-  => exact Rnat_cast_positive_N : typeclass_instances.
+  => apply Rnat_cast_positive_N : typeclass_instances.
 
 Global Hint Extern 0 (refines _ (insubd pos1) _)
-  => exact Rnat_cast_N_positive : typeclass_instances.
+  => apply Rnat_cast_N_positive : typeclass_instances.
 
 Typeclasses Opaque nat_of_bin bin_of_nat.
 Global Opaque nat_of_bin bin_of_nat.

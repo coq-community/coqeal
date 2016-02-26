@@ -45,7 +45,7 @@ Context `{implem_of nat N, implem_of pos P}.
 Global Instance zeroZ : zero_of Z := Zpos 0.
 Global Instance oneZ : one_of Z := Zpos 1.
 
-Global Instance addZ : add_of Z := fun x y : Z => match x, y with
+Global Instance addZ : add_of Z | 1 := fun x y : Z => match x, y with
   | Zpos x, Zpos y => Zpos (x + y)
   | Zneg x, Zneg y => Zneg (x + y)
   | Zpos x, Zneg y => if (cast y <= x) then Zpos (x - cast y)
@@ -195,6 +195,7 @@ Proof. by rewrite refinesE. Qed.
 Local Instance Rint_Posz : refines (Logic.eq ==> Rint) Posz cast.
 Proof. by rewrite refinesE=> n n' <-. Qed.
 
+
 Local Instance Rint_pos_to_int : refines (Logic.eq ==> Rint) pos_to_int cast.
 Proof. by rewrite refinesE=> n n' <-; rewrite /pos_to_int natz. Qed.
 
@@ -212,8 +213,9 @@ Proof.
   by rewrite [int_to_nat a]refines_eq {a rab}.
 Qed.
 
-Lemma eqSub (n m : nat) : int_of_Z (if (m <= n)%C then Zpos {n : nat | (0 < n)%N} (n - m)%N
-                                     else Zneg nat (cast (m - n)%N)) = (Posz n) - (Posz m).
+Lemma eqSub (n m : nat) :
+  int_of_Z (if (m <= n)%C then Zpos {n : nat | (0 < n)%N} (n - m)%N
+            else Zneg nat (cast (m - n)%N)) = (Posz n) - (Posz m).
 Proof.
   have [mn|nm] /= := leqP m n.
     have := mn.
@@ -239,7 +241,8 @@ rewrite refinesE  /Rint /fun_hrel => _ x <-.
 by case: x => [[]|] //= n; rewrite ?insubdK ?opprK.
 Qed.
 
-Local Instance Rint_sub : refines (Rint ==> Rint ==> Rint) (fun x y => x - y) sub_op.
+Local Instance Rint_sub :
+  refines (Rint ==> Rint ==> Rint) (fun x y => x - y) sub_op.
 Proof.
   rewrite refinesE /Rint /fun_hrel /sub_op => _ x <- _ y <-.
   case: x y=> [x|x] [y|y]; rewrite ?opprK //=; simpC.
@@ -310,7 +313,7 @@ Qed.
 Section binint_parametricity.
 
 Section binint_nat_pos.
-  
+
 Variables N P : Type.
 Variables (Rnat : nat -> N -> Prop) (Rpos : pos -> P -> Prop).
 
@@ -403,13 +406,11 @@ End binint_nat_pos.
 End binint_parametricity.
 End binint_theory.
 
-(* Why do some hints need "exact:" or "apply" while "exact" is sufficient for
-others? *)
 Hint Extern 0 (refines _ 0 _)
-  => exact: RZNP_zeroZ : typeclass_instances.
+  => apply RZNP_zeroZ : typeclass_instances.
 
 Hint Extern 0 (refines _ 1 _)
-  => exact: RZNP_oneZ : typeclass_instances.
+  => apply RZNP_oneZ : typeclass_instances.
 
 Hint Extern 0 (refines _ Posz _)
   => exact: RZNP_castNZ : typeclass_instances.
@@ -418,10 +419,10 @@ Hint Extern 0 (refines _ pos_to_int _)
   => exact: RZNP_castPZ : typeclass_instances.
 
 Hint Extern 0 (refines _ int_to_nat _)
-  => exact: RZNP_castZN : typeclass_instances.
+  => apply RZNP_castZN : typeclass_instances.
 
 Hint Extern 0 (refines _ int_to_pos _)
-  => exact: RZNP_castZP : typeclass_instances.
+  => apply RZNP_castZP : typeclass_instances.
 
 Hint Extern 0 (refines _ +%R _)
   => apply RZNP_addZ : typeclass_instances.
@@ -442,6 +443,11 @@ Hint Extern 0 (refines _ Num.le _)
   => apply RZNP_leqZ : typeclass_instances.
 
 Section testint.
+
+Goal (0 == 0 :> int).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
 
 Goal (1 == 1 :> int).
 rewrite [_ == _]refines_eq.
