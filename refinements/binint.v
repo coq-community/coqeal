@@ -166,17 +166,6 @@ Local Instance leq_nat  : leq_of nat  := ssrnat.leq.
 (*Local Instance lt_nat   : lt nat  := ssrnat.ltn.*)
 Local Instance eq_nat   : eq_of nat   := eqtype.eq_op.
 
-Local Instance one_ps : one_of pos := posS 0.
-Local Instance add_ps : add_of pos := fun m n => insubd (posS 0) (val m + val n)%N.
-Local Instance sub_ps : sub_of pos := fun m n => insubd (posS 0) (val m - val n)%N.
-Local Instance mul_ps : mul_of pos := fun m n => insubd (posS 0) (val m * val n)%N.
-Local Instance leq_ps : leq_of pos := fun m n => (val m <= val n)%N.
-(*Local Instance lt_pos  : lt pos  := fun m n => (val m < val n)%N.*)
-Local Instance eq_ps  : eq_of pos  := eqtype.eq_op.
-
-Local Instance cast_ps_nat : cast_of pos nat := val.
-Local Instance cast_nat_ps : cast_of nat pos := insubd 1%C.
-
 Local Instance spec_nat : spec_of nat nat := spec_id.
 Local Instance spec_ps : spec_of pos pos := spec_id.
 
@@ -194,7 +183,6 @@ Proof. by rewrite refinesE. Qed.
 
 Local Instance Rint_Posz : refines (Logic.eq ==> Rint) Posz cast.
 Proof. by rewrite refinesE=> n n' <-. Qed.
-
 
 Local Instance Rint_pos_to_int : refines (Logic.eq ==> Rint) pos_to_int cast.
 Proof. by rewrite refinesE=> n n' <-; rewrite /pos_to_int natz. Qed.
@@ -214,7 +202,7 @@ Proof.
 Qed.
 
 Lemma eqSub (n m : nat) :
-  int_of_Z (if (m <= n)%C then Zpos {n : nat | (0 < n)%N} (n - m)%N
+  int_of_Z (if (m <= n)%C then Zpos pos (n - m)%N
             else Zneg nat (cast (m - n)%N)) = (Posz n) - (Posz m).
 Proof.
   have [mn|nm] /= := leqP m n.
@@ -257,7 +245,7 @@ Implicit Type p : pos.
 
 Local Instance Rint_eq : refines (Rint ==> Rint ==> bool_R) eqtype.eq_op eq_op.
 Proof.
-  have nat_nneg n p : bool_R (n == - (Posz (sval p)) :> int) false.
+  have nat_nneg n p : bool_R (n == - (Posz (val p)) :> int) false.
     by rewrite gtr_eqF // ltNz_nat -lt0n [(_ < _)%N]valP.
   rewrite refinesE=> _ x <- _ y <-; rewrite /eq_op /eqZ.
   case: x; case: y=> * /=; simpC; rewrite ?eqr_opp ?[- _ == _]eq_sym //;
@@ -266,10 +254,10 @@ Qed.
 
 Local Instance Rint_leq : refines (Rint ==> Rint ==> bool_R) Num.le leq_op.
 Proof.
-  have nat_nleqneg n p : bool_R (n <= - (Posz (sval p)) :> int) false.
+  have nat_nleqneg n p : bool_R (n <= - (Posz (val p)) :> int) false.
     rewrite lerNgt (@ltr_le_trans _ 0) ?oppr_lt0 //=.
     apply: valP.
-  have neg_leqnat n p : bool_R (- (Posz (sval p)) <= n :> int) true.
+  have neg_leqnat n p : bool_R (- (Posz (val p)) <= n :> int) true.
     by rewrite ler_oppl (@ler_trans _ 0) // oppr_le0 le0z_nat.
   rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leqZ.
   case: x y => [x|x] [y|y] /=; rewrite -?[((_<=_)%C)]/(_<=_)%N ?ler_opp2 //;
@@ -348,94 +336,100 @@ Context `{!refines (Rnat ==> Logic.eq) spec_id spec,
 
 Local Notation Z := (Z N P).
 
-Lemma RZNP_zeroZ  : refines RZNP 0 0%C.
+Global Instance RZNP_zeroZ  : refines RZNP 0 0%C.
 Proof. param_comp zeroZ_R. Qed.
 
-Lemma RZNP_oneZ  : refines RZNP 1 1%C.
+Global Instance RZNP_oneZ  : refines RZNP 1 1%C.
 Proof. param_comp oneZ_R. Qed.
 
-Lemma RZNP_castNZ : refines (Rnat ==> RZNP) Posz cast.
+Global Instance RZNP_castNZ : refines (Rnat ==> RZNP) Posz cast.
 Proof. param_comp cast_NZ_R. Qed.
 
-Lemma RZNP_castPZ : refines (Rpos ==> RZNP) pos_to_int cast.
+Global Instance RZNP_castPZ : refines (Rpos ==> RZNP) pos_to_int cast.
 Proof. param_comp cast_PZ_R. Qed.
 
-Lemma RZNP_castZN: refines (RZNP ==> Rnat) int_to_nat cast.
+Global Instance RZNP_castZN: refines (RZNP ==> Rnat) int_to_nat cast.
 Proof. rewrite /cast; param_comp cast_ZN_R. Qed.
 
-Lemma RZNP_castZP: refines (RZNP ==> Rpos) int_to_pos cast.
+Global Instance RZNP_castZP: refines (RZNP ==> Rpos) int_to_pos cast.
 Proof. rewrite /cast; param_comp cast_ZP_R. Qed.
 
-Lemma RZNP_addZ : refines (RZNP ==> RZNP ==> RZNP) +%R +%C.
+Global Instance RZNP_addZ : refines (RZNP ==> RZNP ==> RZNP) +%R +%C.
 Proof. param_comp addZ_R. Qed.
 
-Lemma RZNP_mulZ : refines (RZNP ==> RZNP ==> RZNP) *%R *%C.
+Global Instance RZNP_mulZ : refines (RZNP ==> RZNP ==> RZNP) *%R *%C.
 Proof. param_comp mulZ_R. Qed.
 
-Lemma RZNP_oppZ : refines (RZNP ==> RZNP) -%R -%C.
+Global Instance RZNP_oppZ : refines (RZNP ==> RZNP) -%R -%C.
 Proof. param_comp oppZ_R. Qed.
 
-Lemma RZNP_subZ : refines (RZNP ==> RZNP ==> RZNP) (fun x y => x - y) sub_op.
+Global Instance RZNP_subZ : refines (RZNP ==> RZNP ==> RZNP) (fun x y => x - y) sub_op.
 Proof. param_comp subZ_R. Qed.
 
-Lemma RZNP_eqZ :
+Global Instance RZNP_eqZ :
   refines (RZNP ==> RZNP ==> bool_R) eqtype.eq_op (@Op.eq_op Z _).
 Proof. param_comp eqZ_R. Qed.
 
-Lemma RZNP_leqZ :
+Global Instance RZNP_leqZ :
   refines (RZNP ==> RZNP ==> bool_R) Num.le (@Op.leq_op Z _).
 Proof. param_comp leqZ_R. Qed.
 
-(*Lemma RZNP_ltZ :
+(*Global Instance RZNP_ltZ :
   refines (RZNP ==> RZNP ==> Logic.eq) Num.lt (@Op.lt_op Z _).
 Proof. exact: refines_trans. Qed.*)
 
-(*Lemma RZNP_specZ' : refines (RZNP ==> Logic.eq) spec_id spec.
+(*Global Instance RZNP_specZ' : refines (RZNP ==> Logic.eq) spec_id spec.
 Proof. exact: refines_trans. Qed.*)
 
 End binint_nat_pos.
 End binint_parametricity.
 End binint_theory.
 
-Hint Extern 0 (refines _ 0 _)
-  => apply RZNP_zeroZ : typeclass_instances.
+(* Hint Extern 0 (refines _ 0 _) *)
+(*   => apply RZNP_zeroZ : typeclass_instances. *)
 
-Hint Extern 0 (refines _ 1 _)
-  => apply RZNP_oneZ : typeclass_instances.
+(* Hint Extern 0 (refines _ 1 _) *)
+(*   => apply RZNP_oneZ : typeclass_instances. *)
 
-Hint Extern 0 (refines _ Posz _)
-  => exact: RZNP_castNZ : typeclass_instances.
+(* Hint Extern 0 (refines _ Posz _) *)
+(*   => exact: RZNP_castNZ : typeclass_instances. *)
 
-Hint Extern 0 (refines _ pos_to_int _)
-  => exact: RZNP_castPZ : typeclass_instances.
+(* Hint Extern 0 (refines _ pos_to_int _) *)
+(*   => exact: RZNP_castPZ : typeclass_instances. *)
 
-Hint Extern 0 (refines _ int_to_nat _)
-  => apply RZNP_castZN : typeclass_instances.
+(* Hint Extern 0 (refines _ int_to_nat _) *)
+(*   => apply RZNP_castZN : typeclass_instances. *)
 
-Hint Extern 0 (refines _ int_to_pos _)
-  => apply RZNP_castZP : typeclass_instances.
+(* Hint Extern 0 (refines _ int_to_pos _) *)
+(*   => apply RZNP_castZP : typeclass_instances. *)
 
-Hint Extern 0 (refines _ +%R _)
-  => apply RZNP_addZ : typeclass_instances.
+(* Hint Extern 0 (refines _ +%R _) *)
+(*   => apply RZNP_addZ : typeclass_instances. *)
 
-Hint Extern 0 (refines _ *%R _)
-  => apply RZNP_mulZ : typeclass_instances.
+(* Hint Extern 0 (refines _ *%R _) *)
+(*   => apply RZNP_mulZ : typeclass_instances. *)
 
-Hint Extern 0 (refines _ -%R _)
-  => apply RZNP_oppZ : typeclass_instances.
+(* Hint Extern 0 (refines _ -%R _) *)
+(*   => apply RZNP_oppZ : typeclass_instances. *)
 
-Hint Extern 0 (refines _ (fun x y => x - y) _)
-  => apply RZNP_subZ : typeclass_instances.
+(* Hint Extern 0 (refines _ (fun x y => x - y) _) *)
+(*   => apply RZNP_subZ : typeclass_instances. *)
+
+(* From CoqEAL Require Import binnat. *)
+
+(* Hint Extern 1 (refines _ eqtype.eq_op _) *)
+(*   => apply: RZNP_eqZ : typeclass_instances. *)
+
+(* Hint Extern 0 (refines _ Num.le _) *)
+(*   => apply RZNP_leqZ : typeclass_instances. *)
+
+Section testint.
 
 From CoqEAL Require Import binnat.
 
-Hint Extern 0 (refines _ eqtype.eq_op _)
-  => apply (@RZNP_eqZ N positive) : typeclass_instances.
+Typeclasses eauto := debug.
 
-Hint Extern 0 (refines _ Num.le _)
-  => apply RZNP_leqZ : typeclass_instances.
-
-Section testint.
+Hint Mode refines - - - + - : typeclass_instances.
 
 Goal (0 == 0 :> int).
 rewrite [_ == _]refines_eq.
@@ -457,7 +451,7 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-Goal (1000%:Z == 998%:Z + 2%:Z).
+(*Goal (1000%:Z == 998%:Z + 2%:Z).
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
@@ -465,6 +459,6 @@ Abort.
 Goal (1000%:Z == 2%:Z * 500%:Z).
 rewrite [_ == _]refines_eq.
 by compute.
-Abort.
+Abort.*)
 
 End testint.
