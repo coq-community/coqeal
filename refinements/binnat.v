@@ -144,28 +144,28 @@ Qed.
 
 End positive_theory.
 
-Global Hint Extern 0 (refines _ (spec _) _)
+Hint Extern 0 (refines _ (spec _) _)
   => apply Rpos_spec_pos_r : typeclass_instances.
 
-Global Hint Extern 0 (refines _ spec_id _)
+Hint Extern 0 (refines _ spec_id _)
   => apply Rpos_spec_pos_l : typeclass_instances.
 
-Global Hint Extern 0 (refines _ pos1 _)
+Hint Extern 0 (refines _ pos1 _)
   => apply Rpos_1 : typeclass_instances.
 
-Global Hint Extern 0 (refines _ add_pos _)
+Hint Extern 0 (refines _ add_pos _)
   => apply Rpos_add : typeclass_instances.
 
-Global Hint Extern 0 (refines _ mul_pos _)
+Hint Extern 0 (refines _ mul_pos _)
   => apply Rpos_mul : typeclass_instances.
 
-Global Hint Extern 0 (refines _ sub_pos _)
+Hint Extern 0 (refines _ sub_pos _)
   => apply Rpos_sub : typeclass_instances.
 
-Global Hint Extern 0 (refines _ leq_pos _)
+Hint Extern 0 (refines _ leq_pos _)
   => apply Rpos_leq : typeclass_instances.
 
-Global Hint Extern 0 (refines _ eqtype.eq_op _)
+Hint Extern 0 (refines _ eqtype.eq_op _)
   => exact Rpos_eq : typeclass_instances.
 
 Typeclasses Opaque pos_of_positive positive_of_pos.
@@ -302,43 +302,43 @@ Qed.
 
 End binnat_theory.
 
-Global Hint Extern 0 (refines _ (nat_of_bin _) _)
+Hint Extern 0 (refines _ (nat_of_bin _) _)
   => apply Rnat_spec_r : typeclass_instances.
 
-Global Hint Extern 0 (refines _ spec_id _)
+Hint Extern 0 (refines _ spec_id _)
   => apply Rnat_spec_l : typeclass_instances.
 
-Global Hint Extern 0 (refines _ (implem_id _) _)
+Hint Extern 0 (refines _ (implem_id _) _)
   => apply Rnat_implem : typeclass_instances.
 
-Global Hint Extern 0 (refines _ 0 _)
+Hint Extern 0 (refines _ 0 _)
   => apply Rnat_0 : typeclass_instances.
 
-Global Hint Extern 0 (refines _ 1%N _)
+Hint Extern 0 (refines _ 1%N _)
   => apply Rnat_1 : typeclass_instances.
 
-Global Hint Extern 0 (refines _ addn _)
+Hint Extern 0 (refines _ addn _)
   => apply Rnat_add : typeclass_instances.
 
-Global Hint Extern 0 (refines _ S _)
+Hint Extern 0 (refines _ S _)
   => apply Rnat_S : typeclass_instances.
 
-Global Hint Extern 0 (refines _ subn _)
+Hint Extern 0 (refines _ subn _)
   => apply Rnat_sub : typeclass_instances.
 
-Global Hint Extern 0 (refines _ muln _)
+Hint Extern 0 (refines _ muln _)
   => apply Rnat_mul : typeclass_instances.
 
-Global Hint Extern 0 (refines _ eqtype.eq_op _)
+Hint Extern 0 (refines _ eqtype.eq_op _)
   => exact Rnat_eq : typeclass_instances.
 
-Global Hint Extern 0 (refines _ ssrnat.leq _)
+Hint Extern 0 (refines _ ssrnat.leq _)
   => apply Rnat_leq : typeclass_instances.
 
-Global Hint Extern 0 (refines _ val _)
+Hint Extern 0 (refines _ val _)
   => apply Rnat_cast_positive_N : typeclass_instances.
 
-Global Hint Extern 0 (refines _ (insubd pos1) _)
+Hint Extern 0 (refines _ (insubd pos1) _)
   => apply Rnat_cast_N_positive : typeclass_instances.
 
 Typeclasses Opaque nat_of_bin bin_of_nat.

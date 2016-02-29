@@ -3,7 +3,7 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 From mathcomp Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
 
-From CoqEAL Require Import hrel param refinements pos binnat.
+From CoqEAL Require Import hrel param refinements pos.
 
 (******************************************************************************)
 (* Attempt to refine SSReflect integers (ssrint) are to a new type            *)
@@ -390,15 +390,6 @@ Proof. param_comp leqZ_R. Qed.
   refines (RZNP ==> RZNP ==> Logic.eq) Num.lt (@Op.lt_op Z _).
 Proof. exact: refines_trans. Qed.*)
 
-(*Instance refines_eq_refl A (x : A) : refines Logic.eq x x | 999.
-Proof. by rewrite refinesE. Qed.
-Instance refines_fun_eq1 A B (f : A -> B) :
-  refines (Logic.eq ==> Logic.eq) f f.
-Proof. by rewrite !refinesE => x x' ->. Qed.
-Instance refines_fun_eq2 A B C (f : A -> B -> C) :
-  refines (Logic.eq ==> Logic.eq ==> Logic.eq) f f.
-Proof. by rewrite !refinesE => x x' -> y y' ->. Qed.*)
-
 (*Lemma RZNP_specZ' : refines (RZNP ==> Logic.eq) spec_id spec.
 Proof. exact: refines_trans. Qed.*)
 
@@ -435,6 +426,8 @@ Hint Extern 0 (refines _ -%R _)
 
 Hint Extern 0 (refines _ (fun x y => x - y) _)
   => apply RZNP_subZ : typeclass_instances.
+
+From CoqEAL Require Import binnat.
 
 Hint Extern 0 (refines _ eqtype.eq_op _)
   => apply (@RZNP_eqZ N positive) : typeclass_instances.
