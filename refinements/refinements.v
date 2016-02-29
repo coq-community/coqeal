@@ -199,6 +199,9 @@ End Refinements.
 
 Import Refinements.Op.
 
+Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of div_of mod_of
+            scale_of eq_of leq_of spec_of implem_of cast_of.
+
 Notation "0"      := zero_op        : computable_scope.
 Notation "1"      := one_op         : computable_scope.
 Notation "-%C"    := opp_op.
