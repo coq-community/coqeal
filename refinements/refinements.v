@@ -21,6 +21,7 @@ Section refinements.
 Fact refines_key : unit. Proof. done. Qed.
 Class refines A B (R : A -> B -> Type) (m : A) (n : B) :=
   refines_rel : (locked_with refines_key R) m n.
+Hint Mode refines - - - + - : typeclass_instances.
 
 Lemma refinesE A B (R : A -> B -> Type) : refines R = R.
 Proof. by rewrite /refines unlock. Qed.
