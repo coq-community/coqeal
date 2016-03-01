@@ -176,31 +176,45 @@ Module Refinements.
 Module Op.
 
 Class zero_of A := zero_op : A.
+Hint Mode zero_of + : typeclass_instances.
 Class one_of A := one_op : A.
+Hint Mode one_of + : typeclass_instances.
 Class opp_of A := opp_op : A -> A.
+Hint Mode opp_of + : typeclass_instances.
 Class add_of A := add_op : A -> A -> A.
+Hint Mode add_of + : typeclass_instances.
 Class sub_of A := sub_op : A -> A -> A.
+Hint Mode sub_of + : typeclass_instances.
 Class mul_of A := mul_op : A -> A -> A.
+Hint Mode mul_of + : typeclass_instances.
 Class div_of A := div_op : A -> A -> A.
+Hint Mode div_of + : typeclass_instances.
 Class mod_of A := mod_op : A -> A -> A.
+Hint Mode mod_of + : typeclass_instances.
 Class scale_of A B := scale_op : A -> B -> B.
+Hint Mode scale_of + + : typeclass_instances.
 
 Class eq_of A := eq_op : A -> A -> bool.
+Hint Mode eq_of + : typeclass_instances.
 Class leq_of A := leq_op : A -> A -> bool.
+Hint Mode leq_of + : typeclass_instances.
 
 Class spec_of A B   := spec : A -> B.
+Hint Mode spec_of + + : typeclass_instances.
 Definition spec_id {A : Type} : spec_of A A := id.
 Class implem_of A B := implem : A -> B.
+Hint Mode implem_of + + : typeclass_instances.
 Definition implem_id {A : Type} : implem_of A A := id.
-Class cast_of A B   := cast_op : A -> B.
+Class cast_of A B  := cast_op : A -> B.
+Hint Mode cast_of + + : typeclass_instances.
 
 End Op.
 End Refinements. 
 
 Import Refinements.Op.
 
-Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of div_of mod_of
-            scale_of eq_of leq_of spec_of implem_of cast_of.
+Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of div_of
+            mod_of scale_of eq_of leq_of spec_of implem_of cast_of.
 
 Notation "0"      := zero_op        : computable_scope.
 Notation "1"      := one_op         : computable_scope.

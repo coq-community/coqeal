@@ -418,124 +418,124 @@ Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}.
 Definition RseqpolyC : {poly R} -> seq C -> Type :=
   (Rseqpoly \o (list_R rAC)).
 
-Global Instance RseqpolyC_cons :
+Local Instance RseqpolyC_cons :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) (@cons_poly R) cons.
 Proof. param_comp cons_R. Qed.
 
-Global Instance RseqpolyC_cast :
+Local Instance RseqpolyC_cast :
   refines (rAC ==> RseqpolyC) polyC cast_op.
 Proof. param_comp cast_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_0 : refines RseqpolyC 0%R 0%C.
+Local Instance RseqpolyC_0 : refines RseqpolyC 0%R 0%C.
 Proof. param_comp seqpoly0_R. Qed.
 
-Global Instance RseqpolyC_1 : refines RseqpolyC 1%R 1%C.
+Local Instance RseqpolyC_1 : refines RseqpolyC 1%R 1%C.
 Proof. param_comp seqpoly1_R. Qed.
 
-Global Instance RseqpolyC_opp : refines (RseqpolyC ==> RseqpolyC) -%R -%C.
+Local Instance RseqpolyC_opp : refines (RseqpolyC ==> RseqpolyC) -%R -%C.
 Proof. param_comp opp_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_add :
+Local Instance RseqpolyC_add :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) +%R +%C.
 Proof. param_comp add_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_sub :
+Local Instance RseqpolyC_sub :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) (fun x y => x - y) sub_op.
 Proof. param_comp sub_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_scale :
+Local Instance RseqpolyC_scale :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) *:%R *:%C.
 Proof. param_comp scale_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_mul :
+Local Instance RseqpolyC_mul :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) *%R *%C | 1.
 Proof. param_comp mul_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_size :
+Local Instance RseqpolyC_size :
   refines (RseqpolyC ==> nat_R) sizep size_op.
 Proof. param_comp size_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_eq :
+Local Instance RseqpolyC_eq :
   refines (RseqpolyC ==> RseqpolyC ==> bool_R) eqtype.eq_op eq_op.
 Proof. param_comp eq_seqpoly_R. Qed.
 
 (* This should use nat_R and not eq *)
-Global Instance RseqpolyC_shift :
+Local Instance RseqpolyC_shift :
   refines (nat_R ==> RseqpolyC ==> RseqpolyC) shiftp shift_op.
 Proof. param_comp shift_seqpoly_R. Qed.
 
 (* Uses composable_prod *)
-Global Instance RseqpolyC_split :
+Local Instance RseqpolyC_split :
   refines (nat_R ==> RseqpolyC ==> prod_R RseqpolyC RseqpolyC)
     splitp split_op.
 Proof. param_comp split_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_lead_coef :
+Local Instance RseqpolyC_lead_coef :
   refines (RseqpolyC ==> rAC) lead_coef lead_coef_op.
 Proof.
 rewrite /lead_coef_op. (* Why is this necessary? *)
 param_comp lead_coef_seqpoly_R.
 Qed.
 
-Global Instance RseqpolyC_div :
+Local Instance RseqpolyC_div :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) (@rdivp R) div_op.
 Proof. param_comp div_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_mod :
+Local Instance RseqpolyC_mod :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) (@rmodp R) mod_op.
 Proof. param_comp mod_seqpoly_R. Qed.
 
 End seqpoly_param.
 End seqpoly_theory.
 
-(* Hint Extern 0 (refines _ (cons_poly (R:=_)) _) *)
-(*   => apply RseqpolyC_cons : typeclass_instances. *)
+Hint Extern 0 (refines _ (cons_poly (R:=_)) _)
+  => apply RseqpolyC_cons : typeclass_instances.
 
-(* Hint Extern 0 (refines _ polyC _) *)
-(*   => apply RseqpolyC_cast : typeclass_instances. *)
+Hint Extern 0 (refines _ polyC _)
+  => apply RseqpolyC_cast : typeclass_instances.
 
-(* Hint Extern 0 (refines _ 0%R _) *)
-(*   => apply RseqpolyC_0 : typeclass_instances. *)
+Hint Extern 0 (refines _ 0%R _)
+  => apply RseqpolyC_0 : typeclass_instances.
 
-(* Hint Extern 0 (refines _ 1%R _) *)
-(*   => apply RseqpolyC_1 : typeclass_instances. *)
+Hint Extern 0 (refines _ 1%R _)
+  => apply RseqpolyC_1 : typeclass_instances.
 
-(* Hint Extern 0 (refines _ -%R _) *)
-(*   => apply RseqpolyC_opp : typeclass_instances. *)
+Hint Extern 0 (refines _ -%R _)
+  => apply RseqpolyC_opp : typeclass_instances.
 
-(* Hint Extern 0 (refines _ +%R _) *)
-(*   => apply RseqpolyC_add : typeclass_instances. *)
+Hint Extern 0 (refines _ +%R _)
+  => apply RseqpolyC_add : typeclass_instances.
 
-(* Hint Extern 0 (refines _ (fun x y => x - y) _) *)
-(*   => apply RseqpolyC_sub : typeclass_instances. *)
+Hint Extern 0 (refines _ (fun x y => x - y) _)
+  => apply RseqpolyC_sub : typeclass_instances.
 
-(* Hint Extern 0 (refines _ *:%R _) *)
-(*   => apply RseqpolyC_scale : typeclass_instances. *)
+Hint Extern 0 (refines _ *:%R _)
+  => apply RseqpolyC_scale : typeclass_instances.
 
-(* (* Lower priority to make karatsuba default instance *) *)
-(* Hint Extern 1 (refines _ *%R _) *)
-(*   => apply RseqpolyC_mul : typeclass_instances. *)
+(* Lower priority to make karatsuba default instance *)
+Hint Extern 1 (refines _ *%R _)
+  => apply RseqpolyC_mul : typeclass_instances.
 
-(* Hint Extern 0 (refines _ (sizep (R:=_))_) *)
-(*   => apply RseqpolyC_size; tc : typeclass_instances. *)
+Hint Extern 0 (refines _ (sizep (R:=_))_)
+  => apply RseqpolyC_size; tc : typeclass_instances.
 
-(* Hint Extern 0 (refines _ eqtype.eq_op _) *)
-(*   => apply RseqpolyC_eq; tc : typeclass_instances. *)
+Hint Extern 0 (refines _ eqtype.eq_op _)
+  => apply RseqpolyC_eq; tc : typeclass_instances.
 
-(* Hint Extern 0 (refines _ (shiftp (R:=_)) _) *)
-(*   => apply RseqpolyC_shift : typeclass_instances. *)
+Hint Extern 0 (refines _ (shiftp (R:=_)) _)
+  => apply RseqpolyC_shift : typeclass_instances.
 
-(* Hint Extern 0 (refines _ splitp _) *)
-(*   => apply RseqpolyC_split : typeclass_instances. *)
+Hint Extern 0 (refines _ splitp _)
+  => apply RseqpolyC_split : typeclass_instances.
 
-(* Hint Extern 0 (refines _ lead_coef _) *)
-(*   => apply RseqpolyC_lead_coef : typeclass_instances. *)
+Hint Extern 0 (refines _ lead_coef _)
+  => apply RseqpolyC_lead_coef : typeclass_instances.
 
-(* Hint Extern 0 (refines _ rdivp _) *)
-(*   => apply RseqpolyC_div : typeclass_instances. *)
+Hint Extern 0 (refines _ rdivp _)
+  => apply RseqpolyC_div : typeclass_instances.
 
-(* Hint Extern 0 (refines _ rmodp _) *)
-(*   => apply RseqpolyC_mod : typeclass_instances. *)
+Hint Extern 0 (refines _ rmodp _)
+  => apply RseqpolyC_mod : typeclass_instances.
 
 (* Always simpl Poly. Maybe have refinement instance instead? Is this
 more efficient? *)
