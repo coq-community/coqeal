@@ -35,8 +35,8 @@ Proof. by rewrite !refinesE=> [[]]. Qed.
 Lemma nat_R_eq x y : nat_R x y -> x = y.
 Proof. by elim=> // m n _ ->. Qed.
 
-(* Global Instance refines_nat_eq x y : refines nat_R x y -> refines eq x y. *)
-(* Proof. rewrite !refinesE; exact: nat_R_eq. Qed. *)
+Global Instance refines_nat_eq x y : refines nat_R x y -> refines eq x y.
+Proof. rewrite !refinesE; exact: nat_R_eq. Qed.
 
 Lemma refinesP T T' (R : T -> T' -> Type) (x : T) (y : T') :
   refines R x y -> R x y.
@@ -67,7 +67,7 @@ Proof. by rewrite refinesE. Qed.
 Global Instance refines_apply
   A B (R : A -> B -> Type) C D (R' : C -> D -> Type) :
   forall (c : A -> C) (d : B -> D), refines (R ==> R') c d ->
-  forall (a : A) (b : B), refines R a b -> refines R' (c a) (d b).
+  forall (a : A) (b : B), refines R a b -> refines R' (c a) (d b) | 99.
 Proof. by rewrite !refinesE => c d rcd a b rab; apply: rcd. Qed.
 
 Global Instance composable_rid1 A B (R : A -> B -> Type) :

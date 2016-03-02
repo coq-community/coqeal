@@ -469,6 +469,37 @@ Global Instance RseqpolyC_shift :
   refines (nat_R ==> RseqpolyC ==> RseqpolyC) shiftp shift_op.
 Proof. param_comp shift_seqpoly_R. Qed.
 
+Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
+Proof. by rewrite refinesE; elim=> [|n]; [ exact: O_R | exact: S_R ]. Qed.
+
+Global Instance RseqpolyC_mulXn p sp n :
+  refines RseqpolyC p sp -> refines RseqpolyC (p * 'X^n) (shift_op n sp).
+Proof.
+  move=> hp; rewrite -[_ * 'X^_]/(shiftp _ _).
+  apply: refines_apply.
+Qed.
+
+Global Instance RseqpolyC_scaleXn c rc n :
+  refines rAC c rc -> refines RseqpolyC (c *: 'X^n) (shift_op n (cast rc)).
+Proof.
+  move=> hc; rewrite -mul_polyC -[_ * 'X^_]/(shiftp _ _).
+  apply: refines_apply.
+Qed.
+
+Global Instance RseqpolyC_mulCX p sp :
+  refines RseqpolyC p sp -> refines RseqpolyC (p * 'X) (shift_op 1 sp).
+Proof.
+  move=> hp; rewrite -['X]expr1 -[_ * 'X^_]/(shiftp _ _).
+  apply: refines_apply.
+Qed.
+
+Global Instance RseqpolyC_scaleCX c rc :
+  refines rAC c rc -> refines RseqpolyC (c *: 'X) (shift_op 1 (cast rc)).
+Proof.
+  move=> hc. rewrite -mul_polyC -['X]expr1 -[_ * 'X^_]/(shiftp _ _).
+  apply: refines_apply.
+Qed.
+
 (* Uses composable_prod *)
 Global Instance RseqpolyC_split :
   refines (nat_R ==> RseqpolyC ==> prod_R RseqpolyC RseqpolyC)
@@ -523,6 +554,12 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
+Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
+      == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
 Goal (Poly [:: 1; 2%:Z; 3%:Z] + Poly [:: 1; 2%:Z; 3%:Z]) ==
       Poly [:: 1 + 1; 2%:Z + 2%:Z; 2%:Z + 4%:Z].
 rewrite [_ == _]refines_eq.
@@ -534,12 +571,27 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
+Goal (- (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2) == -1 - 2%:Z%:P * 'X - 3%:Z *: 'X^2).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
 Goal (- Poly [:: 1; 2%:Z; 3%:Z]) == Poly [:: - 1; - 2%:Z; - 3%:Z].
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
+Goal (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 0).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
 Goal (Poly [:: 1; 2%:Z; 3%:Z] - Poly [:: 1; 2%:Z; 3%:Z]) == 0.
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z *: 'X^2).
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
@@ -556,25 +608,27 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
-Proof. by rewrite refinesE; elim=> [|n]; [ exact: O_R | exact: S_R ]. Qed.
+(* (* sizep gives a nat, should one handle it like this? *) *)
+(* Local Instance refines_eq_nat  : *)
+(*   refines (nat_R ==> nat_R ==> bool_R)%rel eqtype.eq_op eqn. *)
+(* Proof. *)
+(* rewrite refinesE /eqtype.eq_op /= => m n /nat_R_eq -> m' n' /nat_R_eq ->. *)
+(* by case: (eqn _ _). *)
+(* Qed. *)
 
-(* sizep gives a nat, should one handle it like this? *)
-Local Instance refines_eq_nat  :
-  refines (nat_R ==> nat_R ==> bool_R)%rel eqtype.eq_op eqn.
-Proof.
-rewrite refinesE /eqtype.eq_op /= => m n /nat_R_eq -> m' n' /nat_R_eq ->.
-case: (eqn _ _); [ exact: true_R | exact: false_R ].
-Qed.
+Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 3).
+rewrite [sizep _]refines_eq.
+by compute.
+Abort.
 
 Goal (sizep (Poly [:: 1; 2%:Z; 3%:Z]) == 3%nat).
-rewrite [_ == _]refines_eq.
+rewrite [sizep _]refines_eq.
 by compute.
 Abort.
 
 (* (* This is not working... *) *)
 (* Goal (splitp 2%nat (Poly [:: 1; 2%:Z; 3%:Z; 4%:Z]) == *)
-(*      (Poly [:: 1; 2%:Z],Poly [:: 3%:Z; 4%:Z])). *)
+(*      (Poly [:: 3%:Z; 4%:Z], Poly [:: 1; 2%:Z])). *)
 (* rewrite /= [_ == _]refines_eq. *)
 (* by compute. *)
 (* Abort. *)
