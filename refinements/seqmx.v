@@ -770,8 +770,7 @@ Instance refines_fun A B C D (R : A -> B -> Type) (Q : C -> D -> Type)
   a b `{!refines Q a b} : refines (R ==> Q) (fun _ => a) (fun _ => b).
 Proof. by rewrite refinesE => ? ? ?; apply: refinesP. Qed.
 
-(* Set Typeclasses Debug. *)
-(*Goal (- - M3 == M3).
+Goal (- - M3 == M3).
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
@@ -784,7 +783,7 @@ Abort.
 Goal (M3 - M3 == 0).
 rewrite [_ == _]refines_eq.
 by compute.
-Abort.*)
+Abort.
 
 Goal (M3 + M3 == M6).
 rewrite [_ == _]refines_eq.
@@ -794,10 +793,10 @@ Abort.
 Definition Mp : 'M[{poly {poly int}}]_(2,2) :=
   \matrix_(i,j < 2) (Poly [:: Poly [:: 3%:Z; 0; 1]; 0]).
 
-(*Goal (Mp + -Mp == 0).
+Goal (Mp + -Mp == 0).
 rewrite [_ == _]refines_eq /=.
 by compute.
-Abort.*)
+Abort.
 
 Goal (Mp *m 0 == 0 :> 'M[_]_(2,2)).
 rewrite [_ == _]refines_eq.
