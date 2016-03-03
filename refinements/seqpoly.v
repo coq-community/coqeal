@@ -478,6 +478,16 @@ Proof.
   apply: refines_apply.
 Qed.
 
+Lemma mulXnC (p : {poly R}) n : p * 'X^n = 'X^n * p.
+Proof.
+  apply/polyP=> i.
+  by rewrite coefMXn coefXnM.
+Qed.
+
+Global Instance RseqpolyC_Xnmul p sp n :
+  refines RseqpolyC p sp -> refines RseqpolyC ('X^n * p) (shift_op n sp).
+Proof. rewrite -mulXnC; exact: RseqpolyC_mulXn. Qed.
+
 Global Instance RseqpolyC_scaleXn c rc n :
   refines rAC c rc -> refines RseqpolyC (c *: 'X^n) (shift_op n (cast rc)).
 Proof.
@@ -485,19 +495,17 @@ Proof.
   apply: refines_apply.
 Qed.
 
-Global Instance RseqpolyC_mulCX p sp :
+Global Instance RseqpolyC_mulX p sp :
   refines RseqpolyC p sp -> refines RseqpolyC (p * 'X) (shift_op 1 sp).
-Proof.
-  move=> hp; rewrite -['X]expr1 -[_ * 'X^_]/(shiftp _ _).
-  apply: refines_apply.
-Qed.
+Proof. rewrite -['X]expr1; exact: RseqpolyC_mulXn. Qed.
 
-Global Instance RseqpolyC_scaleCX c rc :
+Global Instance RseqpolyC_Xmul p sp :
+  refines RseqpolyC p sp -> refines RseqpolyC ('X * p) (shift_op 1 sp).
+Proof. rewrite -['X]expr1 -mulXnC; exact: RseqpolyC_mulX. Qed.
+
+Global Instance RseqpolyC_scaleX c rc :
   refines rAC c rc -> refines RseqpolyC (c *: 'X) (shift_op 1 (cast rc)).
-Proof.
-  move=> hc. rewrite -mul_polyC -['X]expr1 -[_ * 'X^_]/(shiftp _ _).
-  apply: refines_apply.
-Qed.
+Proof. rewrite -['X]expr1; exact: RseqpolyC_scaleXn. Qed.
 
 (* Uses composable_prod *)
 Global Instance RseqpolyC_split :
