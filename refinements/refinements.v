@@ -156,6 +156,21 @@ Global Instance refines_snd
   refines (prod_hrel rA rB ==> rB)%rel (@snd _ _) (@snd _ _).
 Proof. by rewrite !refinesE=> [??] [??]. Qed.
 
+Global Instance refines_pair_R
+  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
+  refines (rA ==> rB ==> prod_R rA rB)%rel (@pair _ _) (@pair _ _).
+Proof. by rewrite refinesE. Qed.
+
+Global Instance refines_fst_R
+  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
+  refines (prod_R rA rB ==> rA)%rel (@fst _ _) (@fst _ _).
+Proof. by rewrite !refinesE=> [??] [??]. Qed.
+
+Global Instance refines_snd_R
+  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
+  refines (prod_R rA rB ==> rB)%rel (@snd _ _) (@snd _ _).
+Proof. by rewrite !refinesE=> [??] [??]. Qed.
+
 End refinements.
 
 Hint Extern 0 (refines _ _ _)

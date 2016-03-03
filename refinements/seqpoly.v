@@ -506,6 +506,27 @@ Global Instance RseqpolyC_split :
     splitp split_op.
 Proof. param_comp split_seqpoly_R. Qed.
 
+Global Instance RseqpolyC_splitn n p sp :
+  refines RseqpolyC p sp -> refines (prod_R RseqpolyC RseqpolyC) (splitp n p)
+                                    (split_op n sp).
+Proof. by move=> hp; apply: refines_apply. Qed.
+
+Definition eq_prod_seqpoly (x y : (seqpoly C * seqpoly C)) :=
+  (eq_op x.1 y.1) && (eq_op x.2 y.2).
+
+Global Instance refines_prod_RseqpolyC_eq :
+  refines (prod_R RseqpolyC RseqpolyC ==> prod_R RseqpolyC RseqpolyC ==> bool_R)
+          eqtype.eq_op eq_prod_seqpoly.
+Proof.
+  rewrite refinesE=> x x' hx y y' hy.
+  rewrite /eqtype.eq_op /eq_prod_seqpoly /=.
+  have -> : (x.1 == y.1) = (x'.1 == y'.1)%C.
+    apply: refines_eq.
+  have -> : (x.2 == y.2) = (x'.2 == y'.2)%C.
+    apply: refines_eq.
+  exact: bool_Rxx.
+Qed.
+
 Global Instance RseqpolyC_lead_coef :
   refines (RseqpolyC ==> rAC) lead_coef lead_coef_op.
 Proof.
@@ -626,12 +647,11 @@ rewrite [sizep _]refines_eq.
 by compute.
 Abort.
 
-(* (* This is not working... *) *)
-(* Goal (splitp 2%nat (Poly [:: 1; 2%:Z; 3%:Z; 4%:Z]) == *)
-(*      (Poly [:: 3%:Z; 4%:Z], Poly [:: 1; 2%:Z])). *)
-(* rewrite /= [_ == _]refines_eq. *)
-(* by compute. *)
-(* Abort. *)
+Goal (splitp 2%nat (Poly [:: 1; 2%:Z; 3%:Z; 4%:Z]) ==
+     (Poly [:: 3%:Z; 4%:Z], Poly [:: 1; 2%:Z])).
+rewrite /= [_ == _]refines_eq.
+by compute.
+Abort.
 
 (* Test shiftp *)
 Goal (2%:Z *: shiftp 2%nat 1 == Poly [:: 0; 0; 2%:Z]).
