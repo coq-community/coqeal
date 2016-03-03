@@ -549,6 +549,9 @@ Global Instance RseqpolyC_mod :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) (@rmodp R) mod_op.
 Proof. param_comp mod_seqpoly_R. Qed.
 
+Global Instance RseqpolyC_X : refines RseqpolyC 'X (shift_op 1 1)%C.
+Proof. rewrite -['X]mul1r; exact: RseqpolyC_mulX. Qed.
+
 End seqpoly_param.
 End seqpoly_theory.
 
@@ -630,6 +633,11 @@ by compute.
 Abort.
 
 (* (1 + xy) * x = x + x^2y *)
+Goal ((1 + 'X * 'X%:P) * 'X == 'X + 'X^2 * 'X%:P :> {poly {poly int}}).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
 Goal (Poly [:: Poly [:: 1; 0]; 1] * Poly [:: 1; 0]) ==
       Poly [:: Poly [:: 1; 0]; 1 ; 0] :> {poly {poly int}}.
 rewrite [_ == _]refines_eq.
@@ -651,6 +659,12 @@ Abort.
 
 Goal (sizep (Poly [:: 1; 2%:Z; 3%:Z]) == 3%nat).
 rewrite [sizep _]refines_eq.
+by compute.
+Abort.
+
+Goal (splitp 2 (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
+      (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
+rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
