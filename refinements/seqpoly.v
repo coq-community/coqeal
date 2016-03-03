@@ -451,9 +451,8 @@ Global Instance RseqpolyC_scale :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) *:%R *:%C.
 Proof. param_comp scale_seqpoly_R. Qed.
 
-(* Lower priority to make karatsuba default instance *)
 Global Instance RseqpolyC_mul :
-  refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) *%R *%C | 1.
+  refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) *%R *%C.
 Proof. param_comp mul_seqpoly_R. Qed.
 
 Global Instance RseqpolyC_size :

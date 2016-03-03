@@ -5,5 +5,5 @@ pos.v
 binnat.v
 binint.v
 seqpoly.v
-# karatsuba.v
+karatsuba.v
 # seqmx.v

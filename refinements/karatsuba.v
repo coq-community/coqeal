@@ -105,21 +105,27 @@ Global Instance RpolyC_karatsuba :
     (karatsuba (polyA:={poly R})) (karatsuba (polyA:=polyC)).
 Proof. param karatsuba_R. Qed.
 
-(* Give this higher priority than the instance for mul_seqpoly so that
-   it gets found instead *)
-Global Instance RpolyC_karatsuba_mul :
-  refines (RpolyC ==> RpolyC ==> RpolyC) *%R (karatsuba (polyA:=polyC)) | 0.
+Global Instance RpolyC_karatsuba_mul p sp q sq :
+  refines RpolyC p sp -> refines RpolyC q sq ->
+  refines RpolyC (p * q) (karatsuba sp sq).
 Proof.
-by rewrite refinesE; do?move=> ?*; rewrite -karatsubaE; apply: refinesP; tc.
+  move=> hp hq.
+  rewrite refinesE -karatsubaE.
+  apply: refinesP.
 Qed.
 
 End karatsuba_param.
 End karatsuba_correctness.
 
-(*Section karatsuba_test.
+Section karatsuba_test.
 
 From mathcomp Require Import ssrint.
 From CoqEAL Require Import binint.
+
+Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z%:P * 'X^2).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
 
 Goal (Poly [:: 1; 2%:Z] * Poly [:: 1; 2%:Z]) == Poly [:: 1; 4%:Z; 4%:Z].
 rewrite [_ == _]refines_eq.
@@ -131,8 +137,17 @@ Fixpoint bigseq (x : int) (n : nat) : seq int := match n with
   | n'.+1 => x :: bigseq (x+1) n'
   end.
 
+Fixpoint bigpoly (x : int) (n : nat) : {poly int} :=
+  match n with
+  | 0 => x%:P
+  | n.+1 => x%:P + (bigpoly (x+1) n) * 'X
+  end.
+
 Let p1 := Eval compute in bigseq 1 10.
 Let p2 := Eval compute in bigseq 2 10.
+
+Let q1 := Eval simpl in bigpoly 1 10.
+Let q2 := Eval simpl in bigpoly 2 10.
 
 (* TODO: Translate Poly directly? *)
 Goal (Poly p1 * Poly p2 == Poly p2 * Poly p1).
@@ -140,4 +155,9 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-End karatsuba_test.*)
+Goal (q1 * q2 == q2 * q1).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+End karatsuba_test.
