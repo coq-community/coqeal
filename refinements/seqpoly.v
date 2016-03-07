@@ -472,10 +472,18 @@ Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
 Proof. by rewrite refinesE; elim=> [|n]; [ exact: O_R | exact: S_R ]. Qed.
 
 Global Instance RseqpolyC_mulXn p sp n :
-  refines RseqpolyC p sp -> refines RseqpolyC (p * 'X^n) (shift_op n sp).
+  refines RseqpolyC p sp -> refines RseqpolyC (p * 'X^n) (shift_op n sp) | 1.
 Proof.
   move=> hp; rewrite -[_ * 'X^_]/(shiftp _ _).
   apply: refines_apply.
+Qed.
+
+Global Instance RseqpolyC_mulXn_rel p sp n rn :
+  refines nat_R n rn -> refines RseqpolyC p sp ->
+  refines RseqpolyC (p * 'X^n) (shift_op rn sp) | 0.
+Proof.
+  move=> hn; rewrite (refines_eq (refines_nat_eq hn)).
+  exact: RseqpolyC_mulXn.
 Qed.
 
 Lemma mulXnC (p : {poly R}) n : p * 'X^n = 'X^n * p.
@@ -485,14 +493,30 @@ Proof.
 Qed.
 
 Global Instance RseqpolyC_Xnmul p sp n :
-  refines RseqpolyC p sp -> refines RseqpolyC ('X^n * p) (shift_op n sp).
+  refines RseqpolyC p sp -> refines RseqpolyC ('X^n * p) (shift_op n sp) | 0.
 Proof. rewrite -mulXnC; exact: RseqpolyC_mulXn. Qed.
 
+Global Instance RseqpolyC_Xnmul_rel p sp n rn :
+  refines nat_R n rn -> refines RseqpolyC p sp ->
+  refines RseqpolyC ('X^n * p) (shift_op rn sp) | 1.
+Proof.
+  move=> hn; rewrite (refines_eq (refines_nat_eq hn)).
+  exact: RseqpolyC_Xnmul.
+Qed.
+
 Global Instance RseqpolyC_scaleXn c rc n :
-  refines rAC c rc -> refines RseqpolyC (c *: 'X^n) (shift_op n (cast rc)).
+  refines rAC c rc -> refines RseqpolyC (c *: 'X^n) (shift_op n (cast rc)) | 1.
 Proof.
   move=> hc; rewrite -mul_polyC -[_ * 'X^_]/(shiftp _ _).
   apply: refines_apply.
+Qed.
+
+Global Instance RseqpolyC_scaleXn_rel c rc n rn :
+  refines nat_R n rn -> refines rAC c rc ->
+  refines RseqpolyC (c *: 'X^n) (shift_op rn (cast rc)) | 0.
+Proof.
+  move=> hn; rewrite (refines_eq (refines_nat_eq hn)).
+  exact: RseqpolyC_scaleXn.
 Qed.
 
 Global Instance RseqpolyC_mulX p sp :
@@ -515,8 +539,16 @@ Proof. param_comp split_seqpoly_R. Qed.
 
 Global Instance RseqpolyC_splitn n p sp :
   refines RseqpolyC p sp -> refines (prod_R RseqpolyC RseqpolyC) (splitp n p)
-                                    (split_op n sp).
+                                    (split_op n sp) | 1.
 Proof. by move=> hp; apply: refines_apply. Qed.
+
+Global Instance RseqpolyC_splitn_rel n rn p sp :
+  refines nat_R n rn -> refines RseqpolyC p sp ->
+  refines (prod_R RseqpolyC RseqpolyC) (splitp n p) (split_op rn sp) | 0.
+Proof.
+  move=> hn; rewrite (refines_eq (refines_nat_eq hn)).
+  exact: RseqpolyC_splitn.
+Qed.
 
 Definition eq_prod_seqpoly (x y : (seqpoly C * seqpoly C)) :=
   (eq_op x.1 y.1) && (eq_op x.2 y.2).
@@ -551,6 +583,16 @@ Proof. param_comp mod_seqpoly_R. Qed.
 
 Global Instance RseqpolyC_X : refines RseqpolyC 'X (shift_op 1 1)%C.
 Proof. rewrite -['X]mul1r; exact: RseqpolyC_mulX. Qed.
+
+Global Instance RseqpolyC_Xn n : refines RseqpolyC 'X^n (shift_op n 1)%C | 1.
+Proof. rewrite -['X^_]mul1r; exact: RseqpolyC_mulXn. Qed.
+
+Global Instance RseqpolyC_Xn_rel  n rn :
+  refines nat_R n rn -> refines RseqpolyC 'X^n (shift_op rn 1)%C | 0.
+Proof.
+  move=> hn; rewrite (refines_eq (refines_nat_eq hn)).
+  exact: RseqpolyC_Xn.
+Qed.
 
 End seqpoly_param.
 End seqpoly_theory.
@@ -652,6 +694,12 @@ Abort.
 (* by case: (eqn _ _). *)
 (* Qed. *)
 
+(* Goal (sizep ('X^2 : {poly int}) == *)
+(*       sizep (- 3%:Z *: 'X^(sizep ('X : {poly int})))). *)
+(* rewrite [_ == _]refines_eq. *)
+(* by compute. *)
+(* Abort. *)
+
 Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 3).
 rewrite [sizep _]refines_eq.
 by compute.
@@ -662,7 +710,20 @@ rewrite [sizep _]refines_eq.
 by compute.
 Abort.
 
+Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))) ==
+      1 + 4%:Z *: 'X + 4%:Z *: 'X^(sizep (10%:Z *: 'X))).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
 Goal (splitp 2 (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
+      (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (splitp (sizep ('X : {poly int}))
+             (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
       (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
 rewrite [_ == _]refines_eq.
 by compute.
