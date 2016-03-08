@@ -23,10 +23,12 @@ Class size_of polyA := size_op : polyA -> nat.
 Hint Mode size_of + : typeclass_instances.
 Class lead_coef_of A polyA := lead_coef_op : polyA -> A.
 Hint Mode lead_coef_of + + : typeclass_instances.
+Class scal_of polyA := scal_op : polyA -> polyA -> nat.
+Hint Mode scal_of + : typeclass_instances.
 
 End classes.
 
-Typeclasses Transparent shift_of split_of size_of lead_coef_of.
+Typeclasses Transparent shift_of split_of size_of lead_coef_of scal_of.
 
 Section seqpoly_op.
 
@@ -103,9 +105,9 @@ Global Instance mod_seqpoly : mod_of seqpoly :=
                  then (0%nat, 0%C, p)
                  else div_rec_seqpoly q 0 0%C p (size_op p)).2.
 
-Definition scal_seqpoly p q :=
-  (if (q == 0)%C then (0%N, 0%C, p)
-                 else div_rec_seqpoly q 0 0%C p (size_seqpoly p)).1.1.
+Global Instance scal_seqpoly : scal_of seqpoly :=
+  fun p q => (if (q == 0)%C then (0%N, 0%C, p)
+              else div_rec_seqpoly q 0 0%C p (size_seqpoly p)).1.1.
 
 End seqpoly_op.
 
@@ -580,6 +582,10 @@ Proof. param_comp div_seqpoly_R. Qed.
 Global Instance RseqpolyC_mod :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) (@rmodp R) mod_op.
 Proof. param_comp mod_seqpoly_R. Qed.
+
+Global Instance RseqpolyC_scal :
+  refines (RseqpolyC ==> RseqpolyC ==> nat_R) (@rscalp R) scal_op.
+Proof. param_comp scal_seqpoly_R. Qed.
 
 Global Instance RseqpolyC_X : refines RseqpolyC 'X (shift_op 1 1)%C.
 Proof. rewrite -['X]mul1r; exact: RseqpolyC_mulX. Qed.
