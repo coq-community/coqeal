@@ -19,7 +19,7 @@ Require Import ProofIrrelevance. (* for opaque terms *)
 Parametricity option.
 Parametricity unit.
 Parametricity bool.
-Hint Resolve true_R false_R.
+Hint Resolve bool_R_true_R bool_R_false_R.
 Parametricity nat.
 Parametricity list.
 Parametricity prod.
@@ -29,8 +29,8 @@ Proof. by case: b. Qed.
 
 Lemma nat_Rxx n : nat_R n n.
 Proof.
-  elim: n=> [|n]; first by exact: O_R.
-  exact: S_R.
+  elim: n=> [|n];
+    [ exact: nat_R_O_R | exact: nat_R_S_R ].
 Qed.
 
 (** ssrfun *)

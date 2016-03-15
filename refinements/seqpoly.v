@@ -426,7 +426,7 @@ Definition RseqpolyC : {poly R} -> seq C -> Type :=
 
 Global Instance RseqpolyC_cons :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) (@cons_poly R) cons.
-Proof. param_comp cons_R. Qed.
+Proof. param_comp list_R_cons_R. Qed.
 
 Global Instance RseqpolyC_cast :
   refines (rAC ==> RseqpolyC) polyC cast_op.
@@ -471,7 +471,10 @@ Global Instance RseqpolyC_shift :
 Proof. param_comp shift_seqpoly_R. Qed.
 
 Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
-Proof. by rewrite refinesE; elim=> [|n]; [ exact: O_R | exact: S_R ]. Qed.
+Proof.
+  by rewrite refinesE; elim=> [|n];
+    [ exact: nat_R_O_R | exact: nat_R_S_R ].
+Qed.
 
 Global Instance RseqpolyC_mulXn p sp n :
   refines RseqpolyC p sp -> refines RseqpolyC (p * 'X^n) (shift_op n sp) | 1.

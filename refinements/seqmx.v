@@ -614,7 +614,7 @@ Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}.
 Definition RseqmxC {m n} := (@Rseqmx m n \o (list_R (list_R rAC)))%rel.
 
 Lemma refl_nat_R : forall m, nat_R m m.
-Proof. elim=> [|n]; [ exact: O_R | exact: S_R ]. Qed.
+Proof. elim=> [|n]; [ exact: nat_R_O_R | exact: nat_R_S_R ]. Qed.
 
 Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
 Proof. by rewrite refinesE; apply: refl_nat_R. Qed.
