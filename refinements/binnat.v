@@ -79,8 +79,13 @@ Proof. by move=> /RposE ->; rewrite pos_of_positiveK. Qed.
 Global Instance Rpos_spec_pos_r x : refines Rpos (spec x) x.
 Proof. by rewrite !refinesE. Qed.
 
-Global Instance Rpos_spec_pos_l : refines (Rpos ==> Logic.eq) spec_id spec.
-Proof. by rewrite !refinesE => x x' rx; rewrite [spec _]RposE. Qed.
+Global Instance Rpos_spec_pos_l : refines (Rpos ==> pos_R) spec_id spec.
+Proof.
+  rewrite refinesE=> x x'.
+  rewrite -[Rpos]refinesE=> rx.
+  rewrite [spec _]RposE [y in pos_of_positive y]RposI positive_of_posK /spec_id.
+  exact: pos_Rxx.
+Qed.
 
 Global Instance Rpos_1 : refines Rpos (pos1 : pos) (1%C : positive).
 Proof. by rewrite !refinesE; apply: val_inj; rewrite /= insubdK. Qed.
@@ -183,8 +188,12 @@ Proof. by rewrite refinesE. Qed.
 Global Instance Rnat_spec_r x : refines Rnat (spec x) x.
 Proof. by rewrite refinesE. Qed.
 
-Global Instance Rnat_spec_l : refines (Rnat ==> Logic.eq) spec_id spec.
-Proof. by rewrite !refinesE => x x' rx; rewrite [spec _]RnatE. Qed.
+Global Instance Rnat_spec_l : refines (Rnat ==> nat_R) spec_id spec.
+Proof.
+  rewrite refinesE=> x x' rx.
+  rewrite [spec _]RnatE /spec_id [y in nat_R y _]RnatE.
+  exact: nat_Rxx.
+Qed.
 
 Global Instance Rnat_implem : refines (Logic.eq ==> Rnat) implem_id implem.
 Proof.

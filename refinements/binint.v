@@ -132,6 +132,11 @@ Parametricity cast_NZ.
 Parametricity cast_PZ.
 Parametricity cast_ZN.
 Parametricity cast_ZP.
+Parametricity int.
+Parametricity sum.
+Definition specZ_simpl := Eval cbv in specZ.
+Parametricity specZ_simpl.
+Realizer specZ as specZ_R := specZ_simpl_R.
 
 (******************************************************************************)
 (** PART II: Proving correctness properties of the previously defined objects *)
@@ -283,11 +288,11 @@ have [->|y_neq0 /=] := (altP eqP); first by rewrite mulr0.
 by rewrite mulNr !insubdK -?topredE /= ?muln_gt0 ?valP ?andbT ?lt0n.
 Qed.
 
-Local Instance Rint_specZ x : refines Rint (spec x) x.
+Local Instance Rint_specZ_r x : refines Rint (spec x) x.
 Proof. by rewrite !refinesE; case: x. Qed.
 
-Local Instance Rint_specZ' :
-  refines (Rint ==> Logic.eq) id spec.
+Local Instance Rint_specZ_l :
+  refines (Rint ==> Logic.eq) spec_id spec.
 Proof. by rewrite refinesE => a a' ra; rewrite [spec _]RintE. Qed.
 
 Local Instance Rint_implem x : refines Rint x (implem x) | 999.
@@ -331,8 +336,8 @@ Context `{!refines (Rnat ==> Rnat ==> bool_R) eqtype.eq_op eq_op}.
 Context `{!refines (Rpos ==> Rpos ==> bool_R) eqtype.eq_op eq_op}.
 Context `{forall x, refines Rnat (spec x) x,
           forall x, refines Rpos (spec x) x}.
-Context `{!refines (Rnat ==> Logic.eq) spec_id spec,
-          !refines (Rpos ==> Logic.eq) spec_id spec}.
+Context `{!refines (Rnat ==> nat_R) spec_id spec,
+          !refines (Rpos ==> pos_R) spec_id spec}.
 
 Local Notation Z := (Z N P).
 
@@ -378,8 +383,8 @@ Proof. param_comp leqZ_R. Qed.
 (*   refines (RZNP ==> RZNP ==> Logic.eq) Num.lt (@Op.lt_op Z _). *)
 (* Proof. exact: refines_trans. Qed. *)
 
-(*Global Instance RZNP_specZ' : refines (RZNP ==> Logic.eq) spec_id spec.
-Proof. exact: refines_trans. Qed.*)
+Global Instance RZNP_specZ_l : refines (RZNP ==> int_R) spec_id spec.
+Proof. param_comp specZ_R. Qed.
 
 End binint_nat_pos.
 End binint_parametricity.

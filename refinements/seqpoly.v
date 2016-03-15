@@ -593,7 +593,7 @@ Proof. rewrite -['X]mul1r; exact: RseqpolyC_mulX. Qed.
 Global Instance RseqpolyC_Xn n : refines RseqpolyC 'X^n (shift_op n 1)%C | 1.
 Proof. rewrite -['X^_]mul1r; exact: RseqpolyC_mulXn. Qed.
 
-Global Instance RseqpolyC_Xn_rel  n rn :
+Global Instance RseqpolyC_Xn_rel n rn :
   refines nat_R n rn -> refines RseqpolyC 'X^n (shift_op rn 1)%C | 0.
 Proof.
   move=> hn; rewrite (refines_eq (refines_nat_eq hn)).

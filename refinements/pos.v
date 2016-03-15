@@ -20,6 +20,12 @@ Canonical pos_subType := [subType for val_of_pos].
 Definition pos_eqMixin := [eqMixin of pos by <:].
 Canonical pos_eqType := EqType pos pos_eqMixin.
 
+Parametricity pos.
+
+Lemma pos_Rxx p : pos_R p p.
+Proof.
+Admitted.
+
 Section pos.
 
 Import Refinements.Op.

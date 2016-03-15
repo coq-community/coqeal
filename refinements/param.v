@@ -27,6 +27,12 @@ Parametricity prod.
 Lemma bool_Rxx b : bool_R b b.
 Proof. by case: b. Qed.
 
+Lemma nat_Rxx n : nat_R n n.
+Proof.
+  elim: n=> [|n]; first by exact: O_R.
+  exact: S_R.
+Qed.
+
 (** ssrfun *)
 Parametricity simpl_fun.
 
@@ -45,6 +51,8 @@ Opaque eqn subn.
 Definition leqn := Eval cbv in leq.
 Parametricity leqn.
 Realizer leq as leq_R := leqn_R.
+
+Parametricity Logic.eq.
 
 (* geq, ltn and gtn use SimplRel, not sure how well they will work in
    proofs... *)
