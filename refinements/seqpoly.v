@@ -458,8 +458,8 @@ Local Instance Rseqpoly_edivp_rec :
 Proof.
 rewrite refinesE=> q sq hsq n m <- {m} p sp hsp r sr hsr m m' <- {m'} /=.
 apply refinesP; elim: m => [|m ih] /= in n p sp hsp q sq hsq r sr hsr *;
-rewrite -![size_seqpoly _]refines_eq -!sizepE -mul_polyC
-        -[_ * 'X^_]/(shiftp (sizep r - sizep q) _).
+rewrite -!sizepE ![sizep _]refines_eq -mul_polyC
+        -[_ * 'X^_]/(shiftp (size_op r - size_op q) _).
   case: ifP=> _; rewrite refinesE /prod_hrel //=; do ?split.
     exact: refinesP.
   rewrite /sub_op /sub_seqpoly; exact: refinesP.
@@ -473,7 +473,7 @@ Local Instance Rseqpoly_div :
   refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (@rdivp R) div_op.
 Proof.
   apply refines_abstr2; rewrite /rdivp unlock=> p sp hsp q sq hsq.
-  rewrite [(_ %/ _)%C]/div_seqpoly -sizepE -[(sq == 0)%C]refines_eq;
+  rewrite [(_ %/ _)%C]/div_seqpoly -sizepE [(_ == _)]refines_eq.
   case: ifP=> _ /=; rewrite refinesE; exact: refinesP.
 Qed.
 
@@ -481,7 +481,7 @@ Local Instance Rseqpoly_mod :
   refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (@rmodp R) mod_op.
 Proof.
   apply refines_abstr2; rewrite /rmodp unlock=> p sp hsp q sq hsq.
-  rewrite [(_ %% _)%C]/mod_seqpoly -[(sq == 0)%C]refines_eq;
+  rewrite [(_ %% _)%C]/mod_seqpoly [(_ == _)]refines_eq.
   case: ifP=> _ //; rewrite -sizepE refinesE.
   exact: refinesP.
 Qed.
@@ -490,7 +490,7 @@ Local Instance Rseqpoly_scal : refines (Rseqpoly ==> Rseqpoly ==> Logic.eq)
   (@rscalp R) (fun p => scal_seqpoly p).
 Proof.
   apply refines_abstr2; rewrite /rscalp unlock => p sp hsp q sq hsq.
-  rewrite /scal_seqpoly -sizepE -[(sq == 0)%C]refines_eq;
+  rewrite /scal_seqpoly -sizepE [(_ == _)]refines_eq.
   case: ifP=> _ /=; rewrite refinesE //.
   exact: refinesP.
 Qed.

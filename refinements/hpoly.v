@@ -334,24 +334,33 @@ rewrite [p]RhpolyE [q]RhpolyE refinesE /Rhpoly /fun_hrel {p q h1 h2}.
 by rewrite /add_op /add_hpoly addXnE expr0 mulr1.
 Qed.
 
+Lemma to_poly_scale a p : to_poly (a *: p)%C = a *: (to_poly p).
+Proof.
+  elim: p=> [b|b n p ih] /=;
+    rewrite /mul_op /mulA -mul_polyC polyC_mul //.
+  by rewrite ih -mul_polyC mulrDr mulrA /mul_op /mulA.
+Qed.
+
 Instance Rhpoly_mul : refines (Rhpoly ==> Rhpoly ==> Rhpoly) *%R (mul_hpoly (N:=nat)).
 Proof.
 apply refines_abstr2 => p hp h1 q hq h2.
 rewrite [p]RhpolyE [q]RhpolyE refinesE /Rhpoly /fun_hrel {p q h1 h2}.
-elim: hp hq => [a [b|b m q]|a n p ih [b|b m q]]; first by rewrite /= polyC_mul.
-    by rewrite /mul_op /mul_hpoly -[to_poly _]RhpolyE /= -mul_polyC.
-  by rewrite /mul_op /mul_hpoly -[to_poly _]RhpolyE /= [_ * b%:P]mulrC -mul_polyC.
-rewrite /= mulrDr !mulrDl mulrCA -!mulrA -exprD mulrCA !mulrA [_ * b%:P]mulrC.
+elim: hp hq => [a [b|b m l']|a n l ih [b|b m l']] /=;
+      first by rewrite polyC_mul.
+    by rewrite polyC_mul to_poly_scale -mul_polyC mulrDr mulrA.
+  by rewrite polyC_mul to_poly_scale -mul_polyC mulrDl -mulrA mulrC
+             [(_%:P * _%:P)]mulrC.
+rewrite mulrDr !mulrDl mulrCA -!mulrA -exprD mulrCA !mulrA [_ * b%:P]mulrC.
 rewrite -polyC_mul !mul_polyC !addXnE /= expr0 !mulr1 !addr0 ih scalerAl /cast.
-rewrite -?[to_poly (_ *: _)%C]RhpolyE /cast_pos_nat insubdK -?topredE //= addn_gt0.
-by case: n => /= x ->.
+rewrite !to_poly_scale /cast_pos_nat insubdK -?topredE //= addn_gt0.
+by case: n=> n /= ->.
 Qed.
 
 Instance Rhpoly_sub :
   refines (Rhpoly ==> Rhpoly ==> Rhpoly) (fun x y => x - y) (sub_hpoly (N:=nat)).
 Proof.
 apply refines_abstr2 => p hp h1 q hq h2.
-by rewrite refinesE /sub_hpoly /Rhpoly /fun_hrel -[to_poly _]RhpolyE.
+by rewrite refinesE /sub_hpoly /Rhpoly /fun_hrel [_ - _]RhpolyE.
 Qed.
 
 Instance Rhpoly_shift : refines (Logic.eq ==> Rhpoly ==> Rhpoly)
@@ -371,9 +380,9 @@ by case: (c == 0)=> //=; rewrite ltnS ltn_addl // size_poly_gt0.
 Qed.
 
 Instance Rhpoly_eq0 :
-  refines (Rhpoly ==> bool_R) (fun p => p == 0) eq0_hpoly.
+  refines (Rhpoly ==> bool_R) (fun p => 0 == p) eq0_hpoly.
 Proof.
-  rewrite refinesE => p hp rp; rewrite [p]RhpolyE {p rp}.
+  rewrite refinesE => p hp rp; rewrite [p]RhpolyE {p rp} eq_sym.
   have -> : (to_poly hp == 0) = (eq0_hpoly hp).
     elim: hp => [a|a n p ih] /=; first by rewrite polyC_eq0.
     rewrite /cast /cast_pos_nat /=; case: n=> n ngt0.
@@ -387,7 +396,7 @@ Instance Rhpoly_eq : refines (Rhpoly ==> Rhpoly ==> bool_R)
                              eqtype.eq_op (eq_hpoly (N:=nat)).
 Proof.
   apply refines_abstr2=> p hp h1 q hq h2.
-  rewrite /eq_hpoly refinesE -[eq0_hpoly _]refines_eq subr_eq0.
+  rewrite /eq_hpoly refinesE -subr_eq0 eq_sym [_ == _]refines_eq.
   exact: bool_Rxx.
 Qed.
 
@@ -396,8 +405,8 @@ Proof.
   apply refines_abstr=> p hp h1; rewrite [p]RhpolyE refinesE {p h1}.
   elim: hp=> [a|a n p ih] /=; first by rewrite size_polyC; simpC; case: eqP.
   rewrite /cast /cast_pos_nat /=; case: n=> n ngt0.
-  rewrite /val_of_pos -[n]prednK // size_MXnaddC ih prednK //
-          -[eq0_hpoly _]refines_eq.
+  rewrite /val_of_pos -[n]prednK // size_MXnaddC ih prednK // eq_sym
+          [_ == _]refines_eq.
   by case: ifP=> //=; simpC; rewrite size_polyC; case: ifP.
 Qed.
 
