@@ -132,11 +132,11 @@ Parametricity cast_NZ.
 Parametricity cast_PZ.
 Parametricity cast_ZN.
 Parametricity cast_ZP.
-Parametricity int.
-Parametricity sum.
-Definition specZ_simpl := Eval cbv in specZ.
-Parametricity specZ_simpl.
-Realizer specZ as specZ_R := specZ_simpl_R.
+(* Parametricity int. *)
+(* Parametricity sum. *)
+(* Definition specZ_simpl := Eval cbv in specZ. *)
+(* Parametricity specZ_simpl. *)
+(* Realizer specZ as specZ_R := specZ_simpl_R. *)
 
 (******************************************************************************)
 (** PART II: Proving correctness properties of the previously defined objects *)
@@ -336,8 +336,10 @@ Context `{!refines (Rnat ==> Rnat ==> bool_R) eqtype.eq_op eq_op}.
 Context `{!refines (Rpos ==> Rpos ==> bool_R) eqtype.eq_op eq_op}.
 Context `{forall x, refines Rnat (spec x) x,
           forall x, refines Rpos (spec x) x}.
-Context `{!refines (Rnat ==> nat_R) spec_id spec,
-          !refines (Rpos ==> pos_R) spec_id spec}.
+(* Context `{!refines (Rnat ==> nat_R) spec_id spec, *)
+(*           !refines (Rpos ==> pos_R) spec_id spec}. *)
+Context `{!refines (Rnat ==> Logic.eq) spec_id spec,
+          !refines (Rpos ==> Logic.eq) spec_id spec}.
 
 Local Notation Z := (Z N P).
 
@@ -368,7 +370,8 @@ Proof. param_comp mulZ_R. Qed.
 Global Instance RZNP_oppZ : refines (RZNP ==> RZNP) -%R -%C.
 Proof. param_comp oppZ_R. Qed.
 
-Global Instance RZNP_subZ : refines (RZNP ==> RZNP ==> RZNP) (fun x y => x - y) sub_op.
+Global Instance RZNP_subZ :
+  refines (RZNP ==> RZNP ==> RZNP) (fun x y => x - y) sub_op.
 Proof. param_comp subZ_R. Qed.
 
 Global Instance RZNP_eqZ :
@@ -383,8 +386,17 @@ Proof. param_comp leqZ_R. Qed.
 (*   refines (RZNP ==> RZNP ==> Logic.eq) Num.lt (@Op.lt_op Z _). *)
 (* Proof. exact: refines_trans. Qed. *)
 
-Global Instance RZNP_specZ_l : refines (RZNP ==> int_R) spec_id spec.
-Proof. param_comp specZ_R. Qed.
+(* Global Instance RZNP_specZ_l : refines (RZNP ==> int_R) spec_id spec. *)
+(* Proof. param_comp specZ_R. Qed. *)
+
+Global Instance RZNP_specZ : refines (RZNP ==> Logic.eq) spec_id spec.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE=> x y rxy.
+  case: rxy=> [n m rnm|p q rpq]; rewrite /spec /=; apply: congr1.
+    exact: refinesP.
+  apply: congr1; apply: congr1; exact: refinesP.
+Qed.
 
 End binint_nat_pos.
 End binint_parametricity.
@@ -410,6 +422,7 @@ by compute.
 Abort.
 
 Goal (10%:Z - 5%:Z == 1 + 4%:Z).
+rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.

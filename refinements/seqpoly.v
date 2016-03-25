@@ -56,6 +56,9 @@ Fixpoint add_seqpoly_fun (p q : seqpoly) : seqpoly := match p,q with
 Global Instance add_seqpoly : add_of seqpoly := add_seqpoly_fun.
 Global Instance sub_seqpoly : sub_of seqpoly := fun x y => (x + - y)%C.
 
+Lemma sub_seqpoly_0 (s : seqpoly) : s - 0 = s.
+Proof. by elim: s. Qed.
+
 Global Instance scale_seqpoly : scale_of A seqpoly := fun a => map ( *%C a).
 
 (* 0%C :: aux p = shift 1 (aux p) *)
@@ -129,6 +132,89 @@ Parametricity div_seqpoly.
 Parametricity mod_seqpoly.
 Parametricity scal_seqpoly.
 
+Section seqpoly_more_op.
+
+Variable R : ringType.
+
+Context (C : Type).
+Context `{zero_of C, one_of C, add_of C, opp_of C, eq_of C}.
+Context `{spec_of C R}.
+
+Fixpoint spec_seqpoly_aux n (s : seqpoly C) : {poly R} :=
+  match s with
+      | [::] => 0
+      | (hd :: tl) =>
+        if (hd == 0)%C then spec_seqpoly_aux n.+1 tl
+        else
+          let c := if (n == 0%N) then if (hd == 1)%C then 1 else (spec hd)%:P
+                   else let mon := if (n == 1%N) then 'X else 'X^n in
+                        if (hd == 1)%C then mon else (spec hd) *: mon
+          in
+          if (tl == 0)%C then c
+          else (spec_seqpoly_aux n.+1 tl) + c
+  end.
+
+Global Instance spec_seqpoly : spec_of (seqpoly C) {poly R}:=
+  spec_seqpoly_aux 0%N.
+
+Lemma spec_aux_shift n s :
+  spec_seqpoly_aux n s = spec_seqpoly_aux 0 s * 'X^n.
+Proof.
+  elim: s n=> [n|a s ih n] /=; first by rewrite mul0r.
+  simpC; case: ifP=> _.
+    by rewrite ih [in RHS]ih exprS expr1 mulrA.
+  have h : (if n == 0%N then if (a ==1)%C then 1 else (spec a)%:P else
+            if (a == 1)%C then if n == 1%N then 'X : {poly R} else 'X^n else
+              spec a *: (if n == 1%N then 'X else 'X^n)) =
+         (if (a == 1)%C then 1 else (spec a)%:P) * 'X^n.
+    case: n=> [|n] /=; simpC.
+    rewrite expr0 mulr1.
+    by case: ifP=> [/eqP a1|_].
+    case: ifP=> [/eqP a1|_].
+      rewrite mul1r.
+      by case: ifP; move/eqP=> // ->; rewrite expr1.
+    rewrite mul_polyC.
+    by case: ifP; move/eqP=> // ->; rewrite expr1.
+  case: ifP=> _; first by rewrite h.
+  rewrite ih [in RHS]ih mulrDl exprS expr1 mulrA.
+  exact: congr2.
+Qed.
+
+Lemma spec_aux_eq0 s :
+  (s == 0)%C -> spec_seqpoly_aux 0 s = 0.
+Proof.
+  elim: s=> [_|a s ih aseq0] //=.
+  have heq0 : (a == 0)%C /\ (s == 0)%C.
+    move/andP: aseq0=> aseq0.
+    split; first by rewrite (proj1 aseq0).
+    rewrite /eq_op /eq_seqpoly sub_seqpoly_0.
+    by rewrite (proj2 aseq0).
+  by rewrite (proj1 heq0) spec_aux_shift ih ?(proj2 heq0) // mul0r.
+Qed.
+
+End seqpoly_more_op.
+
+Arguments spec_seqpoly / : assert.
+
+(* (* translations for ringType *) *)
+(* Parametricity Logic.False. *)
+(* Parametricity reflect. *)
+(* Parametricity Equality.mixin_of as equality_mixin_of_R. *)
+(* Parametricity Logic.ex. *)
+(* Parametricity Choice.mixin_of as choice_mixin_of_R. *)
+(* Parametricity Choice.class_of as choice_class_of_R. *)
+(* Parametricity GRing.Zmodule.mixin_of as gRing_Zmodule_mixin_of_R. *)
+(* Parametricity GRing.Zmodule.class_of as gRing_Zmodule_class_of_R. *)
+(* Parametricity GRing.Zmodule.type as gRing_Zmodule_type_R. *)
+(* Parametricity Equality.type as equality_type_R. *)
+(* Parametricity GRing.Ring.mixin_of as gRing_Ring_mixin_of_R. *)
+(* Parametricity GRing.Ring.class_of as gRing_Ring_class_of_R. *)
+(* Parametricity GRing.Ring.type as gRing_Ring_type_R. *)
+
+(* (* translations for poly *) *)
+(* Parametricity phant. *)
+(* Parametricity polynomial. *)
+
 Section seqpoly_theory.
 
 Variable R : ringType.
@@ -140,6 +226,7 @@ Local Instance subR  : sub_of R  := fun x y => x - y.
 Local Instance mulR  : mul_of R  := *%R.
 Local Instance oppR  : opp_of R  := -%R.
 Local Instance eqR   : eq_of R   := eqtype.eq_op.
+Local Instance specR : spec_of R R := spec_id.
 
 Definition splitp : nat -> {poly R} -> {poly R} * {poly R} :=
   fun n p => (rdivp p 'X^n, rmodp p 'X^n).
@@ -229,7 +316,7 @@ Proof.
 Qed.
 
 Local Instance Rseqpoly_sub :
-    refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (fun x y => x - y) sub_op.
+  refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (fun x y => x - y) sub_op.
 Proof.
   rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <- _ sq <-.
   apply/polyP=> i.
@@ -408,18 +495,34 @@ Proof.
   exact: refinesP.
 Qed.
 
+Local Instance Rseqpoly_spec_l : refines (Rseqpoly ==> Logic.eq) spec_id spec.
+Proof.
+  rewrite refinesE=> _ sp <-.
+  rewrite /spec_id /spec /spec_seqpoly /poly_of_seqpoly.
+  elim: sp=> [|a p ih] /=.
+    by rewrite poly_def big_ord0.
+  rewrite spec_aux_shift expr1 poly_cons ih.
+  simpC.
+  case: ifP=> [/eqP a0|_]; first by rewrite a0 polyC0 add0r.
+  rewrite /spec /specR /spec_id addrC.
+  by case: ifP=> p0;
+    case: ifP=> [/eqP a1|_];
+    rewrite ?a1 ?polyC1 // spec_aux_eq0 // ?mul0r ?add0r.
+Qed.
+
 Section seqpoly_param.
 
 Context (C : Type) (rAC : R -> C -> Type).
 Context `{zero_of C, one_of C}.
 Context `{opp_of C, add_of C, sub_of C, mul_of C, eq_of C}.
-Context `{implem_of R C}.
+Context `{implem_of R C, spec_of C R}.
 Context `{!refines rAC 0%R 0%C, !refines rAC 1%R 1%C}.
 Context `{!refines (rAC ==> rAC) -%R -%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) +%R +%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) (fun x y => x - y) sub_op}.
 Context `{!refines (rAC ==> rAC ==> rAC) *%R *%C}.
 Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}.
+Context `{!refines (rAC ==> Logic.eq) spec_id spec}.
 
 Definition RseqpolyC : {poly R} -> seq C -> Type :=
   (Rseqpoly \o (list_R rAC)).
@@ -603,7 +706,33 @@ Proof.
   exact: RseqpolyC_Xn.
 Qed.
 
+(* Lemma gRing_Ring_type_Rxx r : gRing_Ring_type_R r r. *)
+(* Proof. *)
+(* Admitted. *)
+
+(* Global Instance RseqpolyC_spec_l : *)
+(*   refines (RseqpolyC ==> (@polynomial_R _ _ (gRing_Ring_type_Rxx R))) *)
+(*           spec_id spec. *)
+(* Proof. *)
+(* Admitted. *)
+
+Global Instance RseqpolyC_spec : refines (RseqpolyC ==> eq) spec_id spec.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE=> l l' rl.
+  elim: rl=> [|x y rx p q rp] {l l'};
+    rewrite /spec /spec_seqpoly //=.
+  rewrite ![spec_seqpoly_aux 1 _]spec_aux_shift=> ->.
+  have -> : (p == 0)%C = (q == 0)%C.
+    elim: rp=> [|a b ra l l' rl] {p q} //=.
+    rewrite /eq_op /eq_seqpoly /=.
+    by simpC; rewrite [(_ == _)]refines_eq !sub_seqpoly_0=> ->.
+  rewrite /spec /specR [spec_id _]refines_eq /spec [(_ == _)%C]refines_eq.
+  by rewrite [(_ == 1)%C]refines_eq.
+Qed.
+
 End seqpoly_param.
+
 End seqpoly_theory.
 
 (* Always simpl Poly. Maybe have refinement instance instead? Is this *)
@@ -638,6 +767,7 @@ Abort.
 
 Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
       == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
+rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
@@ -685,12 +815,14 @@ Abort.
 
 (* (1 + xy) * x = x + x^2y *)
 Goal ((1 + 'X * 'X%:P) * 'X == 'X + 'X^2 * 'X%:P :> {poly {poly int}}).
+rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
 Goal (Poly [:: Poly [:: 1; 0]; 1] * Poly [:: 1; 0]) ==
       Poly [:: Poly [:: 1; 0]; 1 ; 0] :> {poly {poly int}}.
+rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.

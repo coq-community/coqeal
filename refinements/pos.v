@@ -20,11 +20,19 @@ Canonical pos_subType := [subType for val_of_pos].
 Definition pos_eqMixin := [eqMixin of pos by <:].
 Canonical pos_eqType := EqType pos pos_eqMixin.
 
-Parametricity pos.
+(* Parametricity pos. *)
 
-Lemma pos_Rxx p : pos_R p p.
-Proof.
-Admitted.
+(* Lemma eq_bool_R x y (a b : bool_R x y) : a = b. *)
+(* Proof. Admitted. *)
+
+(* Lemma pos_Rxx p : pos_R p p. *)
+(* Proof. *)
+(*   case: p=> n ngt0. *)
+(*   apply: (@pos_R_pos_of_R _ _ (nat_Rxx _)). *)
+(*   case: _ / ngt0 (leq_R _ _) bool_R_true_R=> a b. *)
+(*   rewrite [a](eq_bool_R _ b). *)
+(*   by constructor. *)
+(* Qed. *)
 
 Section pos.
 
