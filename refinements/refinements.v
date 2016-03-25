@@ -80,7 +80,7 @@ Global Instance composable_bool_id1 B (R : bool -> B -> Type) :
   composable bool_R R R | 1.
 Proof. by rewrite composableE => x y [y' [[]]]. Qed.
 
-(* Global Instance composable_nat_id1 B (R : nat -> B -> Type) : 
+(* Global Instance composable_nat_id1 B (R : nat -> B -> Type) :
   composable nat_R R R | 1. *)
 (* Proof. by rewrite composableE => x y [y' [/nat_R_eq ->]]. Qed. *)
 
@@ -226,7 +226,7 @@ Class cast_of A B  := cast_op : A -> B.
 Hint Mode cast_of + + : typeclass_instances.
 
 End Op.
-End Refinements. 
+End Refinements.
 
 Import Refinements.Op.
 
@@ -273,4 +273,3 @@ Ltac simpC :=
 (* End testmx. *)
 (* Parametricity idmx. *)
 (* Print idmx_R. (* Here we get something too general! *) *)
-

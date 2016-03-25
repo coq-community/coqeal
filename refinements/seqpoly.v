@@ -1,34 +1,16 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
-From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
+From mathcomp Require Import path choice fintype tuple finset bigop poly polydiv.
 
-From CoqEAL Require Import hrel param refinements.
+From CoqEAL Require Import hrel param refinements poly_op.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
-Import Refinements.Op.
+Import Refinements.Op Poly.Op.
 
 Local Open Scope ring_scope.
-
-(* Specific classes for polynomials *)
-Section classes.
-
-Class shift_of polyA := shift_op : nat -> polyA -> polyA.
-Hint Mode shift_of + : typeclass_instances.
-Class split_of polyA := split_op : nat -> polyA -> polyA * polyA.
-Hint Mode split_of + : typeclass_instances.
-Class size_of polyA := size_op : polyA -> nat.
-Hint Mode size_of + : typeclass_instances.
-Class lead_coef_of A polyA := lead_coef_op : polyA -> A.
-Hint Mode lead_coef_of + + : typeclass_instances.
-Class scal_of polyA := scal_op : polyA -> polyA -> nat.
-Hint Mode scal_of + : typeclass_instances.
-
-End classes.
-
-Typeclasses Transparent shift_of split_of size_of lead_coef_of scal_of.
 
 Section seqpoly_op.
 
@@ -228,11 +210,6 @@ Local Instance oppR  : opp_of R  := -%R.
 Local Instance eqR   : eq_of R   := eqtype.eq_op.
 Local Instance specR : spec_of R R := spec_id.
 
-Definition splitp : nat -> {poly R} -> {poly R} * {poly R} :=
-  fun n p => (rdivp p 'X^n, rmodp p 'X^n).
-
-Definition shiftp n (p : {poly R}) := p * 'X^n.
-
 Definition seqpoly_of_poly (p : {poly R}) : seqpoly R :=
   polyseq p.
 
@@ -360,11 +337,6 @@ Proof.
   by rewrite !coef_poly_of_seqpoly.
 Qed.
 
-(* This definition hides the coercion which makes it possible for proof search
-   to find Rseqpoly_seqpoly_size *)
-Definition sizep : {poly R} -> nat := size.
-Lemma sizepE s : sizep s = size s. Proof. by []. Qed.
-
 Lemma poly_cons (p : seqpoly R) (a : R) :
   \poly_(i < size (a :: p)) (a :: p)`_i = a%:P + (\poly_(i < size p) p`_i) * 'X.
 Proof.
@@ -374,7 +346,7 @@ Proof.
 Qed.
 
 Local Instance Rseqpoly_size :
-  refines (Rseqpoly ==> eq) sizep size_op.
+  refines (Rseqpoly ==> eq) (sizep (R:=R)) size_op.
 Proof.
   rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <-.
   rewrite sizepE /size_op.
@@ -412,7 +384,7 @@ Qed.
 
 (* These can be done with eq instead of nat_R *)
 Local Instance Rseqpoly_shift :
-  refines (eq ==> Rseqpoly ==> Rseqpoly) shiftp shift_op.
+  refines (eq ==> Rseqpoly ==> Rseqpoly) (shiftp (R:=R)) shift_op.
 Proof.
   rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ n -> _ sp <-.
   apply/polyP=> i.
@@ -422,7 +394,7 @@ Qed.
 
 Local Instance Rseqpoly_split :
   refines (eq ==> Rseqpoly ==> prod_hrel Rseqpoly Rseqpoly)
-          splitp split_op.
+          (splitp (R:=R)) split_op.
 Proof.
   rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ n -> _ sp <-.
   rewrite /prod_hrel /split_op /split_seqpoly /splitp /=.
@@ -561,7 +533,7 @@ Global Instance RseqpolyC_mul :
 Proof. param_comp mul_seqpoly_R. Qed.
 
 Global Instance RseqpolyC_size :
-  refines (RseqpolyC ==> nat_R) sizep size_op.
+  refines (RseqpolyC ==> nat_R) (sizep (R:=R)) size_op.
 Proof. param_comp size_seqpoly_R. Qed.
 
 Global Instance RseqpolyC_eq :
@@ -570,7 +542,7 @@ Proof. param_comp eq_seqpoly_R. Qed.
 
 (* This should use nat_R and not eq *)
 Global Instance RseqpolyC_shift :
-  refines (nat_R ==> RseqpolyC ==> RseqpolyC) shiftp shift_op.
+  refines (nat_R ==> RseqpolyC ==> RseqpolyC) (shiftp (R:=R)) shift_op.
 Proof. param_comp shift_seqpoly_R. Qed.
 
 Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
@@ -642,7 +614,7 @@ Proof. rewrite -['X]expr1; exact: RseqpolyC_scaleXn. Qed.
 (* Uses composable_prod *)
 Global Instance RseqpolyC_split :
   refines (nat_R ==> RseqpolyC ==> prod_R RseqpolyC RseqpolyC)
-    splitp split_op.
+    (splitp (R:=R)) split_op.
 Proof. param_comp split_seqpoly_R. Qed.
 
 Global Instance RseqpolyC_splitn n p sp :

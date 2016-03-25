@@ -1,14 +1,14 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
-From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
+From mathcomp Require Import path choice fintype tuple finset bigop poly polydiv.
 
-From CoqEAL Require Import hrel param refinements seqpoly.
+From CoqEAL Require Import hrel param refinements poly_op.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
-Import Refinements.Op.
+Import Refinements.Op Poly.Op.
 
 Local Open Scope ring_scope.
 Local Open Scope rel.
@@ -53,17 +53,12 @@ Local Open Scope rel_scope.
 
 Variable R : ringType.
 
-Definition splitp : nat -> {poly R} -> {poly R} * {poly R} :=
-  fun n p => (rdivp p 'X^n, rmodp p 'X^n).
-
-Definition shiftp n (p : {poly R}) := p * 'X^n.
-
 Instance add_polyR : add_of {poly R} := +%R.
 Instance mul_polyR : mul_of {poly R} := *%R.
 Instance sub_polyR : sub_of {poly R} := fun x y => (x - y)%R.
 Instance size_polyR : size_of {poly R} := sizep (R:=R).
-Instance shift_polyR : shift_of {poly R} := shiftp.
-Instance split_polyR : split_of {poly R} := splitp.
+Instance shift_polyR : shift_of {poly R} := shiftp (R:=R).
+Instance split_polyR : split_of {poly R} := splitp (R:=R).
 
 Lemma karatsuba_recE n (p q : {poly R}) : karatsuba_rec n p q = p * q.
 Proof.
@@ -120,7 +115,7 @@ End karatsuba_correctness.
 Section karatsuba_test.
 
 From mathcomp Require Import ssrint.
-From CoqEAL Require Import binint.
+From CoqEAL Require Import binint seqpoly.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z%:P * 'X^2).
 rewrite [_ == _]refines_eq.

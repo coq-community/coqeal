@@ -1,5 +1,5 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
-From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly matrix.
+From mathcomp Require Import path choice fintype tuple finset bigop poly matrix.
 
 From CoqEAL Require Import hrel param refinements.
 
@@ -138,7 +138,7 @@ Global Instance add_seqmx : add_of seqmx := zipwith_seqmx +%C.
 Global Instance sub_seqmx : sub_of seqmx := fun a b => (a + - b)%C.
 
 Global Instance mul_seqmx : @hmul_of nat hseqmx :=
-  fun _ n p M N => 
+  fun _ n p M N =>
     let N := trseqmx N in
     if n is O then seqmx0 (size M) p else
       map (fun r => map (foldl2 (fun z x y => (x * y) + z) 0 r)%C N) M.
@@ -222,7 +222,7 @@ Parametricity dsubseqmx.
 Parametricity lsubseqmx.
 Parametricity rsubseqmx.
 Parametricity ulsubseqmx.
-Parametricity ursubseqmx. 
+Parametricity ursubseqmx.
 Parametricity dlsubseqmx.
 Parametricity drsubseqmx.
 Parametricity row_seqmx.
@@ -338,7 +338,7 @@ Qed.
 Lemma minSS (p q : nat) : minn p.+1 q.+1 = (minn p q).+1.
 Proof. by rewrite /minn ltnS; case:ifP. Qed.
 
-Lemma size_fold (s : seq (seq R)) k 
+Lemma size_fold (s : seq (seq R)) k
       (hs : forall i : nat, i < size s -> size (nth [::] s i) = k) :
   size (foldr (zipwith cons) (nseq k [::]) s) = k.
 Proof.
@@ -400,7 +400,7 @@ Qed.
 
 Instance Rseqmx_scale m n :
   refines (eq ==> Rseqmx ==> Rseqmx)
-          ( *:%R : _ -> 'M[R]_(m, n)  -> _) *:%C. 
+          ( *:%R : _ -> 'M[R]_(m, n)  -> _) *:%C.
 Proof.
   rewrite refinesE=> _ x -> _ _ [M sM h1 h2 h3].
   constructor=> [|i ltim|i j]; rewrite [(_ *: _)%C]/scale_seqmx /map_seqmx.
@@ -672,7 +672,7 @@ Proof. param_comp mul_seqmx_R. Qed.
 
 Global Instance RseqmxC_scale m n :
   refines (rAC ==> RseqmxC ==> RseqmxC)
-          ( *:%R : _ -> 'M[R]_(m,n)  -> _) *:%C. 
+          ( *:%R : _ -> 'M[R]_(m,n)  -> _) *:%C.
 Proof. param_comp scale_seqmx_R. Qed.
 
 Global Instance RseqmxC_eq m n :
@@ -808,8 +808,8 @@ Definition N := \matrix_(i,j < 2) 2%num%:Z.
 Definition P := \matrix_(i,j < 2) 14%num%:Z.
 
 Goal (M + N + M + N + M + N + N + M + N) *m
-   (M + N + M + N + M + N + N + M + N) = 
-  (P *m M + P *m N + P *m M + P *m N + 
+   (M + N + M + N + M + N + N + M + N) =
+  (P *m M + P *m N + P *m M + P *m N +
    P *m M + P *m N + P *m N + P *m M + P *m N).
 Proof.
 apply/eqP.

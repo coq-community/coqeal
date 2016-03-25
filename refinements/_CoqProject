@@ -4,6 +4,7 @@ refinements.v
 pos.v
 binnat.v
 binint.v
+poly_op.v
 seqpoly.v
 karatsuba.v
 seqmx.v
