@@ -191,12 +191,12 @@ Proof. by rewrite refinesE. Qed.
 Global Instance Rnat_spec_r x : refines Rnat (spec x) x.
 Proof. by rewrite refinesE. Qed.
 
-(* Global Instance Rnat_spec_l : refines (Rnat ==> nat_R) spec_id spec. *)
-(* Proof. *)
-(*   rewrite refinesE=> x x' rx. *)
-(*   rewrite [spec _]RnatE /spec_id [y in nat_R y _]RnatE. *)
-(*   exact: nat_Rxx. *)
-(* Qed. *)
+Global Instance Rnat_spec_l : refines (Rnat ==> nat_R) spec_id spec.
+Proof.
+  rewrite refinesE=> x x' rx.
+  rewrite [spec _]RnatE /spec_id [y in nat_R y _]RnatE.
+  exact: nat_Rxx.
+Qed.
 
 Global Instance Rnat_spec : refines (Rnat ==> Logic.eq) spec_id spec.
 Proof. by rewrite refinesE. Qed.
@@ -205,6 +205,13 @@ Global Instance Rnat_implem : refines (Logic.eq ==> Rnat) implem_id implem.
 Proof.
 rewrite !refinesE => x _ <-.
 by rewrite /Rnat /fun_hrel /implem /implem_N bin_of_natK.
+Qed.
+
+Global Instance Rnat_implem_nat : refines (nat_R ==> Rnat) implem_id implem.
+Proof.
+  rewrite refinesE=> x y rxy.
+  rewrite (nat_R_eq rxy).
+  by rewrite /Rnat /fun_hrel /implem /implem_N bin_of_natK.
 Qed.
 
 Global Instance Rnat_0 : refines Rnat 0 0%C.
