@@ -1,9 +1,9 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly.
+From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
 
-From CoqEAL Require Import param refinements pos hrel.
+From CoqEAL Require Import param refinements pos hrel poly_op.
 
 (******************************************************************************)
 (** This file implements sparse polynomials in sparse Horner normal form.     *)
@@ -16,7 +16,8 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory Refinements.Op.
+Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
+Import Refinements.Op Poly.Op.
 
 (******************************************************************************)
 (** PART I: Defining generic datastructures and programming with them         *)
@@ -102,14 +103,15 @@ Fixpoint addXn (n : N) p q {struct p} := match p, q with
 Global Instance add_hpoly : add_of (hpoly A) := addXn 0.
 Global Instance sub_hpoly : sub_of (hpoly A) := fun p q => p + - q.
 
-Definition shift_hpoly n (p : hpoly A) := PX 0 n p.
+Global Instance shift_hpoly : shift_of (hpoly A) N :=
+  fun n p => if (n == 0)%C then p else PX 0 (cast n) p.
 
 Global Instance mul_hpoly : mul_of (hpoly A) := fix f p q := match p, q with
   | Pc a, q => a *: q
   | p, Pc b => b *: p
   | PX a n p, PX b m q =>
-     shift_hpoly (n + m) (f p q) + shift_hpoly m (a *: q) +
-    (shift_hpoly n (b *: p) + Pc (a * b))
+     shift_hpoly (cast (n + m)) (f p q) + shift_hpoly (cast m) (a *: q) +
+    (shift_hpoly (cast n) (b *: p) + Pc (a * b))
   end.
 
 Fixpoint eq0_hpoly (p : hpoly A) : bool := match p with
@@ -126,11 +128,13 @@ Global Instance eq_hpoly : eq_of (hpoly A) := fun p q => eq0_hpoly (p - q).
 (*   | _, _ => false *)
 (*   end. *)
 
-Fixpoint size_hpoly (p : hpoly A) : N :=
-  if eq0_hpoly p then 0%C else match p with
-  | Pc a => 1%C
-  | PX a n p' => if eq0_hpoly p' then 1%C else (cast n + size_hpoly p')%C
-  end.
+Global Instance size_hpoly : size_of (hpoly A) N :=
+  fix f p :=
+    if eq0_hpoly p then 0%C else match p with
+                                 | Pc a => 1%C
+                                 | PX a n p' => if eq0_hpoly p' then 1%C
+                                                else (cast n + f p')%C
+                                 end.
 
 Fixpoint lead_coef_hpoly (p : hpoly A) :=
   match p with
@@ -139,11 +143,16 @@ Fixpoint lead_coef_hpoly (p : hpoly A) :=
                  if (b == 0)%C then a else b
   end.
 
-(* Fixpoint split_hpoly (m : N) p : hpoly A * hpoly A := match p with *)
-(*   | Pc a => (Pc a, Pc 0) *)
-(*   | PX a n p' => if (m == 0)%C then (Pc 0,p) *)
-(*     else let (p1,p2) := split_hpoly (m - cast n)%C p' in (PX a n p1, p2) *)
-(*   end. *)
+Global Instance split_hpoly : split_of (hpoly A) N :=
+  fix f m p:=
+    if (m == 0)%C then (p, Pc 0)%C else
+      match p with
+      | Pc a => (Pc 0, Pc a)
+      | PX a n p' => if (cast n <= m)%C
+                     then let (p1, p2) := f (m - cast n)%C p' in
+                          (p1, PX a n p2)
+                     else (shift_hpoly (cast n - m)%C p', Pc a)
+      end.
 
 End hpoly_op.
 End hpoly.
@@ -167,6 +176,7 @@ Parametricity eq0_hpoly.
 Parametricity eq_hpoly.
 Parametricity size_hpoly.
 Parametricity lead_coef_hpoly.
+Parametricity split_hpoly.
 
 (******************************************************************************)
 (** PART II: Proving correctness properties of the previously defined objects *)
@@ -183,23 +193,12 @@ Instance subA  : sub_of A  := fun x y => x - y.
 Instance mulA  : mul_of A  := *%R.
 Instance eqA   : eq_of A   := eqtype.eq_op.
 
-Instance one_pos : one_of pos := posS 0.
-Instance add_pos : add_of pos := fun m n => insubd (posS 0) (val m + val n)%N.
-Instance sub_pos : sub_of pos := fun m n => insubd (posS 0) (val m - val n)%N.
-Instance mul_pos : mul_of pos := fun m n => insubd (posS 0) (val m * val n)%N.
-Instance eq_pos  : eq_of pos  := eqtype.eq_op.
-(* Instance lt_pos  : lt pos  := fun m n => val m < val n. *)
-Instance leq_pos : leq_of pos := fun m n => val m <= val n.
-
 Instance zero_nat : zero_of nat := 0%N.
 Instance eq_nat   : eq_of nat   := eqtype.eq_op.
 (* Instance lt_nat   : lt nat   := ltn. *)
 Instance leq_nat  : leq_of nat  := ssrnat.leq.
 Instance add_nat  : add_of nat  := addn.
 Instance sub_nat  : sub_of nat  := subn.
-
-Instance cast_pos_nat : cast_of pos nat := val.
-Instance cast_nat_pos : cast_of nat pos := insubd 1%C.
 
 Fixpoint to_poly (p : hpoly A) := match p with
   | Pc c => c%:P
@@ -271,9 +270,6 @@ Proof. by rewrite refinesE. Qed.
 Instance Rhpoly_1 : refines Rhpoly 1%R 1%C.
 Proof. by rewrite refinesE. Qed.
 
-Lemma to_poly_shift : forall n p, to_poly p * 'X^(cast n) = to_poly (PX 0 n p).
-Proof. by case; elim => //= n ih h0 hp; rewrite addr0. Qed.
-
 Instance Rhpoly_opp : refines (Rhpoly ==> Rhpoly) -%R -%C.
 Proof.
 apply refines_abstr => p hp h1.
@@ -341,6 +337,11 @@ Proof.
   by rewrite ih -mul_polyC mulrDr mulrA /mul_op /mulA.
 Qed.
 
+Lemma cast_nat_posK n : n > 0 -> cast_pos_nat (cast_nat_pos n) = n.
+Proof.
+  by rewrite /cast_pos_nat /cast_nat_pos val_insubd=> ->.
+Qed.
+
 Instance Rhpoly_mul : refines (Rhpoly ==> Rhpoly ==> Rhpoly) *%R (mul_hpoly (N:=nat)).
 Proof.
 apply refines_abstr2 => p hp h1 q hq h2.
@@ -350,10 +351,13 @@ elim: hp hq => [a [b|b m l']|a n l ih [b|b m l']] /=;
     by rewrite polyC_mul to_poly_scale -mul_polyC mulrDr mulrA.
   by rewrite polyC_mul to_poly_scale -mul_polyC mulrDl -mulrA mulrC
              [(_%:P * _%:P)]mulrC.
+rewrite [in (cast _)]/add_op /add_pos.
+case: n=> n lt0n; case: m=> m lt0m /=.
+rewrite /cast cast_nat_posK /cast_pos_nat ?addn_gt0 ?lt0n //= /shift_hpoly.
+simpC; rewrite !gtn_eqF ?addn_gt0 ?lt0n //=.
 rewrite mulrDr !mulrDl mulrCA -!mulrA -exprD mulrCA !mulrA [_ * b%:P]mulrC.
 rewrite -polyC_mul !mul_polyC !addXnE /= expr0 !mulr1 !addr0 ih scalerAl /cast.
-rewrite !to_poly_scale /cast_pos_nat insubdK -?topredE //= addn_gt0.
-by case: n=> n /= ->.
+by rewrite !to_poly_scale !cast_nat_posK ?addn_gt0 ?lt0n.
 Qed.
 
 Instance Rhpoly_sub :
@@ -364,10 +368,12 @@ by rewrite refinesE /sub_hpoly /Rhpoly /fun_hrel [_ - _]RhpolyE.
 Qed.
 
 Instance Rhpoly_shift : refines (Logic.eq ==> Rhpoly ==> Rhpoly)
-  (fun n p => p * 'X^(cast n)) (fun n p => shift_hpoly n p).
+                                (shiftp (R:=A)) shift_op.
 Proof.
-rewrite refinesE => /= a n -> p hp h1.
-by rewrite [p]RhpolyE /Rhpoly /fun_hrel {a p h1} /= addr0.
+  rewrite refinesE=> _ n -> p hp h1.
+  rewrite [p]RhpolyE /Rhpoly /fun_hrel {p h1} /shiftp /shift_hpoly.
+  case: n=> [|n] /=; first by rewrite expr0 mulr1.
+  by rewrite addr0 /cast cast_nat_posK ?ltn0Sn.
 Qed.
 
 (* Add to ssr? *)
@@ -400,9 +406,10 @@ Proof.
   exact: bool_Rxx.
 Qed.
 
-Instance Rhpoly_size : refines (Rhpoly ==> Logic.eq) size size_hpoly.
+Instance Rhpoly_size : refines (Rhpoly ==> Logic.eq) (sizep (R:=A)) size_op.
 Proof.
-  apply refines_abstr=> p hp h1; rewrite [p]RhpolyE refinesE {p h1}.
+  apply refines_abstr=> p hp h1.
+  rewrite [p]RhpolyE refinesE {p h1} sizepE /size_op.
   elim: hp=> [a|a n p ih] /=; first by rewrite size_polyC; simpC; case: eqP.
   rewrite /cast /cast_pos_nat /=; case: n=> n ngt0.
   rewrite /val_of_pos -[n]prednK // size_MXnaddC ih prednK // eq_sym
@@ -431,6 +438,65 @@ Proof.
   elim: hp=> [a|a n p ih] /=; first by rewrite lead_coefC.
   rewrite -ih /cast /cast_pos_nat /=; case: n=> n ngt0.
   by rewrite /val_of_pos -[n]prednK // lead_coef_MXnaddC.
+Qed.
+
+Lemma rdivpXnSm (p : {poly A}) a n m :
+  rdivp (p * 'X^n + a%:P) 'X^m.+1 = if (n <= m.+1)%C then rdivp p 'X^(m.+1 - n)
+                                    else p * 'X^(n - m.+1).
+Proof.
+  have [leqnSm|gtnSm] := leqP n m.+1.
+    rewrite [(_ <= _)%C]leqnSm.
+    rewrite [p in LHS](@rdivp_eq _ 'X^(m.+1 - n)) ?monicXn //.
+    rewrite mulrDl -addrA -mulrA -exprD subnK ?rdivp_addl_mul_small //.
+      by rewrite monicXn.
+    rewrite size_polyXn (leq_ltn_trans (size_add _ _)) // gtn_max.
+    rewrite (leq_ltn_trans (size_mul_leq _ _)) /=.
+      by rewrite size_polyC; case: (a != 0).
+    rewrite size_polyXn addnS -pred_Sn addnC -ltn_subRL [X in (_ < X)]subSn //.
+    by rewrite -[X in (_ < X)](size_polyXn A) ltn_rmodp monic_neq0 ?monicXn.
+  rewrite ifN -?ltnNge // -[in LHS](subnK (ltnW gtnSm)) exprD mulrA.
+  by rewrite rdivp_addl_mul_small ?monicXn ?size_polyC ?size_polyXn;
+    case: (a != 0).
+Qed.
+
+Lemma rmodpXnSm (p : {poly A}) a n m :
+  rmodp (p * 'X^n + a%:P) 'X^m.+1 =
+  if (n <= m.+1)%C then (rmodp p 'X^(m.+1 - n)) * 'X^n + a%:P
+  else a%:P.
+Proof.
+  have [leqnSm|gtnSm] := leqP n m.+1.
+    rewrite [(_ <= _)%C]leqnSm.
+    rewrite [p in LHS](@rdivp_eq _ 'X^(m.+1 - n)) ?monicXn //.
+    rewrite mulrDl -addrA -mulrA -exprD subnK ?rmodp_addl_mul_small //.
+      by rewrite monicXn.
+    rewrite size_polyXn (leq_ltn_trans (size_add _ _)) // gtn_max.
+    rewrite (leq_ltn_trans (size_mul_leq _ _)) /=.
+      by rewrite size_polyC; case: (a != 0).
+    rewrite size_polyXn addnS -pred_Sn addnC -ltn_subRL [X in (_ < X)]subSn //.
+    by rewrite -[X in (_ < X)](size_polyXn A) ltn_rmodp monic_neq0 ?monicXn.
+  rewrite ifN -?ltnNge // -[in LHS](subnK (ltnW gtnSm)) exprD mulrA.
+  by rewrite rmodp_addl_mul_small ?monicXn ?size_polyC ?size_polyXn;
+    case: (a != 0).
+Qed.
+
+Instance Rhpoly_split :
+  refines (Logic.eq ==> Rhpoly ==> prod_hrel Rhpoly Rhpoly)
+          (splitp (R:=A)) split_op.
+Proof.
+  rewrite refinesE=> _ m -> p hp h1.
+  rewrite [p]RhpolyE /prod_hrel /Rhpoly /fun_hrel /splitp /split_op {p h1} /=.
+  elim: hp m=> [a [|m]|a n p ih [|m]] /=; first by rewrite expr0 rdivp1 rmodp1.
+      rewrite rdivp_small ?rmodp_small ?polyC0 // size_polyC size_polyXn;
+      by case: (a != 0).
+    by rewrite expr0 rdivp1 rmodp1.
+  rewrite rdivpXnSm rmodpXnSm.
+  case: ifP=> hnSm /=.
+    have -> /= := surjective_pairing (split_hpoly (m.+1 - cast n)%C p).
+    by have [-> ->] := ih (m.+1 - cast n)%C.
+  rewrite /shift_hpoly [(_ == _)%C]subn_eq0 ifN /=.
+  rewrite polyC0 addr0 /cast cast_nat_posK //.
+    by rewrite subn_gt0 ltnNge [(_ <= _)%N]hnSm.
+  by rewrite [(_ <= _)%N]hnSm.
 Qed.
 
 (*************************************************************************)
@@ -490,17 +556,21 @@ Global Instance RhpolyC_sub : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
                                       (fun x y => x - y) (sub_hpoly (N:=N)).
 Proof. param_comp sub_hpoly_R. Qed.
 
-Global Instance RhpolyC_shift : refines (rP ==> RhpolyC ==> RhpolyC)
-  (fun n p => p * 'X^(cast n)) (fun n (p : hpoly C) => shift_hpoly n p).
-Proof. param_comp shift_hpoly_R. Qed.
+Global Instance RhpolyC_shift : refines (rN ==> RhpolyC ==> RhpolyC)
+                                        (shiftp (R:=A)) shift_hpoly.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE; do ?move=> ?*.
+  eapply (shift_hpoly_R (N_R:=rN))=> // *;
+  exact: refinesP.
+Qed.
 
 Global Instance RhpolyC_mul :
   refines (RhpolyC ==> RhpolyC ==> RhpolyC) *%R (mul_hpoly (N:=N)).
 Proof. param_comp mul_hpoly_R. Qed.
 
-(* Global Instance RhpolyC_size : refines (RhpolyC ==> nat_R) size size_hpoly. *)
-(* Proof. admit. Qed. *)
-(* Proof. exact: param_trans. Qed. *)
+Global Instance RhpolyC_size : refines (RhpolyC ==> rN) (sizep (R:=A)) size_hpoly.
+Proof. param_comp size_hpoly_R. Qed.
 
 Global Instance RhpolyC_lead_coef :
   refines (RhpolyC ==> rAC) lead_coef lead_coef_hpoly.
@@ -513,6 +583,16 @@ Proof. param_comp cast_hpoly_R. Qed.
 Global Instance RhpolyC_eq : refines (RhpolyC ==> RhpolyC ==> bool_R)
                                      eqtype.eq_op (eq_hpoly (N:=N)).
 Proof. param_comp eq_hpoly_R. Qed.
+
+Global Instance RhpolyC_split :
+  refines (rN ==> RhpolyC ==> prod_R RhpolyC RhpolyC)
+          (splitp (R:=A)) split_op.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE; do ?move=> ?*.
+  eapply (split_hpoly_R (N_R:=rN))=> // *;
+    exact: refinesP.
+Qed.
 
 (* Global Instance RhpolyC_horner : param (RhpolyC ==> rAC ==> rAC) *)
 (*   (fun p x => p.[x]) (fun sp x => horner_seq sp x). *)
