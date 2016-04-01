@@ -304,7 +304,6 @@ Typeclasses Opaque nat_of_bin bin_of_nat.
 Global Opaque nat_of_bin bin_of_nat.
 
 Section test.
-Import Refinements.
 
 Lemma test : 10000%num * 10000%num * (99999999%num + 1) =
              10000000000000000%num.

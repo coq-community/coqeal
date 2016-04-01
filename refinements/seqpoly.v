@@ -805,19 +805,11 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-(* (* sizep gives a nat, should one handle it like this? *) *)
-(* Local Instance refines_eq_nat  : *)
-(*   refines (nat_R ==> nat_R ==> bool_R)%rel eqtype.eq_op eqn. *)
-(* Proof. *)
-(* rewrite refinesE /eqtype.eq_op /= => m n /nat_R_eq -> m' n' /nat_R_eq ->. *)
-(* by case: (eqn _ _). *)
-(* Qed. *)
-
-(* Goal (sizep ('X^2 : {poly int}) == *)
-(*       sizep (- 3%:Z *: 'X^(sizep ('X : {poly int})))). *)
-(* rewrite [_ == _]refines_eq. *)
-(* by compute. *)
-(* Abort. *)
+Goal (sizep ('X^2 : {poly int}) ==
+      sizep (- 3%:Z *: 'X^(sizep ('X : {poly int})))).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
 
 Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 3).
 rewrite [_ == _]refines_eq.
