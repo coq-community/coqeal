@@ -107,7 +107,7 @@ Global Instance cast_ZP : cast_of Z P := fun z => cast (cast_ZN z).
 Global Instance specZ : spec_of Z int :=
   fun x => (match x with
              | Zpos p => (spec p : nat)%:Z
-             | Zneg n => - (val (spec n : pos))%:Z
+             | Zneg n => - (spec (cast n : N): nat)%:Z
            end)%R.
 
 Global Instance implemZ : implem_of int Z :=
@@ -395,7 +395,7 @@ Proof.
   rewrite refinesE=> x y rxy.
   case: rxy=> [n m rnm|p q rpq]; rewrite /spec /=; apply: congr1.
     exact: refinesP.
-  apply: congr1; apply: congr1; exact: refinesP.
+  apply: congr1; exact: refinesP.
 Qed.
 
 End binint_nat_pos.
@@ -423,6 +423,13 @@ Abort.
 
 Goal (10%:Z - 5%:Z == 1 + 4%:Z).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (-(1 + 2%:Z * 4%:Z) == -(1 + 2%:Z * 4%:Z)).
+rewrite -[X in (X == _)]/(spec_id _).
+rewrite [spec_id _]refines_eq /=.
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
