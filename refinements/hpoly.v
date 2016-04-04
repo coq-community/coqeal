@@ -507,9 +507,9 @@ Section hpoly_parametricity.
 
 Import Refinements.Op.
 
-Context (C : Type) (rAC : A -> C -> Prop).
-Context (P : Type) (rP : pos -> P -> Prop).
-Context (N : Type) (rN : nat -> N -> Prop).
+Context (C : Type) (rAC : A -> C -> Type).
+Context (P : Type) (rP : pos -> P -> Type).
+Context (N : Type) (rN : nat -> N -> Type).
 Context `{zero_of C, one_of C, opp_of C, add_of C, sub_of C, mul_of C, eq_of C}.
 Context `{one_of P, add_of P, sub_of P, eq_of P(* , lt P *), leq_of P}.
 Context `{zero_of N, one_of N, eq_of N(* , lt N *), leq_of N, add_of N, sub_of N}.
@@ -550,21 +550,9 @@ Proof. param_comp add_hpoly_R. Qed.
 Global Instance RhpolyC_opp : refines (RhpolyC ==> RhpolyC) -%R -%C.
 Proof. param_comp opp_hpoly_R. Qed.
 
-Global Instance RhpolyC_scale : refines (rAC ==> RhpolyC ==> RhpolyC) *:%R *:%C.
-Proof. param_comp scale_hpoly_R. Qed.
-
 Global Instance RhpolyC_sub : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
                                       (fun x y => x - y) (sub_hpoly (N:=N)).
 Proof. param_comp sub_hpoly_R. Qed.
-
-Global Instance RhpolyC_shift : refines (rN ==> RhpolyC ==> RhpolyC)
-                                        (shiftp (R:=A)) shift_hpoly.
-Proof.
-  eapply refines_trans; tc.
-  rewrite refinesE; do ?move=> ?*.
-  eapply (shift_hpoly_R (N_R:=rN))=> // *;
-  exact: refinesP.
-Qed.
 
 Global Instance RhpolyC_mul :
   refines (RhpolyC ==> RhpolyC ==> RhpolyC) *%R (mul_hpoly (N:=N)).
@@ -588,6 +576,58 @@ Global Instance RhpolyC_eq : refines (RhpolyC ==> RhpolyC ==> bool_R)
                                      eqtype.eq_op (eq_hpoly (N:=N)).
 Proof. param_comp eq_hpoly_R. Qed.
 
+Global Instance RhpolyC_scale : refines (rAC ==> RhpolyC ==> RhpolyC) *:%R *:%C.
+Proof. param_comp scale_hpoly_R. Qed.
+
+Global Instance RhpolyC_shift : refines (rN ==> RhpolyC ==> RhpolyC)
+                                        (shiftp (R:=A)) shift_hpoly.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE; do ?move=> ?*.
+  eapply (shift_hpoly_R (N_R:=rN))=> // *;
+  exact: refinesP.
+Qed.
+
+Global Instance RhpolyC_mulXn p sp n rn :
+  refines rN n rn -> refines RhpolyC p sp ->
+  refines RhpolyC (p * 'X^n) (shift_op rn sp).
+Proof.
+  move=> hn hp; rewrite -[_ * 'X^_]/(shiftp _ _).
+  exact: refines_apply.
+Qed.
+
+Lemma mulXnC (p : {poly A}) n : p * 'X^n = 'X^n * p.
+Proof.
+  apply/polyP=> i.
+  by rewrite coefMXn coefXnM.
+Qed.
+
+Global Instance RhpolyC_Xnmul p sp n rn :
+  refines rN n rn -> refines RhpolyC p sp ->
+  refines RhpolyC ('X^n * p) (shift_op rn sp).
+Proof. rewrite -mulXnC; exact: RhpolyC_mulXn. Qed.
+
+Global Instance RhpolyC_scaleXn c rc n rn :
+  refines rN n rn -> refines rAC c rc ->
+  refines RhpolyC (c *: 'X^n) (shift_op rn (cast rc)).
+Proof.
+  move=> hn hc; rewrite -mul_polyC -[_ * 'X^_]/(shiftp _ _).
+  exact: refines_apply.
+Qed.
+
+Global Instance RhpolyC_mulX p sp :
+  refines RhpolyC p sp -> refines RhpolyC (p * 'X) (shift_op (1%C : N) sp).
+Proof. rewrite -['X]expr1; exact: RhpolyC_mulXn. Qed.
+
+Global Instance RhpolyC_Xmul p sp :
+  refines RhpolyC p sp -> refines RhpolyC ('X * p) (shift_op (1%C : N) sp).
+Proof. rewrite -['X]expr1 -mulXnC; exact: RhpolyC_mulX. Qed.
+
+Global Instance RhpolyC_scaleX c rc :
+  refines rAC c rc ->
+  refines RhpolyC (c *: 'X) (shift_op (1%C : N) (cast rc)).
+Proof. rewrite -['X]expr1; exact: RhpolyC_scaleXn. Qed.
+
 Global Instance RhpolyC_split :
   refines (rN ==> RhpolyC ==> prod_R RhpolyC RhpolyC)
           (splitp (R:=A)) split_op.
@@ -598,6 +638,36 @@ Proof.
     exact: refinesP.
 Qed.
 
+Global Instance RhpolyC_splitn n rn p sp :
+  refines rN n rn -> refines RhpolyC p sp ->
+  refines (prod_R RhpolyC RhpolyC) (splitp n p) (split_op rn sp).
+Proof. by move=> hn hp; exact: refines_apply. Qed.
+
+(* same as for seqpoly... maybe have a generic version + refinement instance in
+   another file? *)
+Definition eq_prod_hpoly (x y : (@hpoly P C * @hpoly P C)) :=
+  (eq_hpoly (N:=N) x.1 y.1) && (eq_hpoly (N:=N) x.2 y.2).
+
+Global Instance refines_prod_RhpolyC_eq :
+  refines (prod_R RhpolyC RhpolyC ==> prod_R RhpolyC RhpolyC ==> bool_R)
+          eqtype.eq_op eq_prod_hpoly.
+Proof.
+  rewrite refinesE=> x x' hx y y' hy.
+  rewrite /eqtype.eq_op /eq_prod_hpoly /=.
+  have -> : (x.1 == y.1) = (eq_hpoly (N:=N) x'.1 y'.1).
+    exact: refines_eq.
+  have -> : (x.2 == y.2) = (eq_hpoly (N:=N) x'.2 y'.2).
+    exact: refines_eq.
+  exact: bool_Rxx.
+Qed.
+
+Global Instance RhpolyC_X : refines RhpolyC 'X (shift_op (1%C : N) 1)%C.
+Proof. rewrite -['X]mul1r; exact: RhpolyC_mulX. Qed.
+
+Global Instance RhpolyC_Xn n rn :
+  refines rN n rn -> refines RhpolyC 'X^n (shift_op rn 1)%C.
+Proof. move=> hn; rewrite -['X^_]mul1r; exact: RhpolyC_mulXn. Qed.
+
 (* Global Instance RhpolyC_horner : param (RhpolyC ==> rAC ==> rAC) *)
 (*   (fun p x => p.[x]) (fun sp x => horner_seq sp x). *)
 (* Proof. admit. Qed. *)
@@ -605,3 +675,93 @@ Qed.
 
 End hpoly_parametricity.
 End hpoly_theory.
+
+Section testpoly.
+
+From mathcomp Require Import ssrint.
+From CoqEAL Require Import binnat binint.
+
+Goal (0 == 0 :> {poly int}).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+(* (* This one does not work, but it works with type {poly {poly int}}... *) *)
+(* Goal (0 == (0 : {poly {poly {poly int}}})). *)
+(* rewrite [_ == _]refines_eq. *)
+(* by compute. *)
+(* Abort. *)
+
+Goal (1 == 1 :> {poly int}).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+(* Goal (1 == (1 : {poly {poly {poly int}}})). *)
+(* rewrite [_ == _]refines_eq. *)
+(* by compute. *)
+(* Abort. *)
+
+Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
+      == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (- 1 == - (1: {poly {poly int}})).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (- (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2) == -1 - 2%:Z%:P * 'X - 3%:Z *: 'X^2).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 0).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z *: 'X^2).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+(* (1 + xy) * x = x + x^2y *)
+Goal ((1 + 'X * 'X%:P) * 'X == 'X + 'X^2 * 'X%:P :> {poly {poly int}}).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (sizep ('X^2 : {poly int}) ==
+      sizep (- 3%:Z *: 'X^(sizep ('X : {poly int})))).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 3).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))) ==
+      1 + 4%:Z *: 'X + 4%:Z *: 'X^(sizep (10%:Z *: 'X))).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (splitp 2 (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
+      (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+Goal (splitp (sizep ('X : {poly int}))
+             (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
+      (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
+End testpoly.
