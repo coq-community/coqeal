@@ -179,6 +179,82 @@ Parametricity size_hpoly.
 Parametricity lead_coef_hpoly.
 Parametricity split_hpoly.
 
+Section hpoly_more_op.
+
+Variable R : ringType.
+Context (pos N C: Type).
+Context `{zero_of C, one_of C, eq_of C}.
+Context `{spec_of C R, spec_of N nat}.
+Context `{cast_of pos N}.
+
+Fixpoint spec_hpoly_aux n (p : @hpoly pos C) : {poly R} :=
+  match p with
+  | Pc c => match n with
+            | O => if (c == 0)%C then 0 else if (c == 1)%C then 1
+                                             else (spec c)%:P
+            | S O => if (c == 0)%C then 0 else if (c == 1)%C then 'X
+                                               else (spec c) *: 'X
+            | S m => if (c == 0)%C then 0 else if (c == 1)%C then 'X^(S m)
+                                               else (spec c) *: 'X^(S m)
+            end
+  | PX a m p => let mon := match n with
+                           | O => if (a == 0)%C then 0
+                                  else if (a == 1)%C then 1 else (spec a)%:P
+                           | S O => if (a == 0)%C then 0
+                                    else if (a == 1)%C then 'X
+                                         else (spec a) *: 'X
+                           | S k => if (a == 0)%C then 0
+                                    else if (a == 1)%C then 'X^(S k)
+                                         else (spec a) *: 'X^(S k)
+                           end
+                in if (eq0_hpoly p) then mon
+                   else
+                     let k := if (n == 0)%N then (spec (cast m : N) : nat)
+                              else (spec (cast m : N) + n)%N
+                     in if (a == 0)%C then (spec_hpoly_aux k p) else
+                          (spec_hpoly_aux k p) + mon
+  end.
+
+Global Instance spec_hpoly : spec_of (hpoly C) {poly R} := spec_hpoly_aux 0%N.
+
+Lemma spec_aux_shift n p :
+  spec_hpoly_aux n p = spec_hpoly_aux 0%N p * 'X^n.
+Proof.
+  have shift_polyC (c : C) m :
+    match m with
+    | O => if (c == 0)%C then 0 else if (c == 1)%C then 1
+                                     else (spec c)%:P
+    | S O => if (c == 0)%C then 0 else if (c == 1)%C then 'X : {poly R}
+                                       else (spec c) *: 'X
+    | S m => if (c == 0)%C then 0 else if (c == 1)%C then 'X^(S m)
+                                       else (spec c) *: 'X^(S m)
+    end = (if (c == 0)%C then 0 else if (c == 1)%C then 1 else (spec c)%:P) *
+          'X^m.
+    case: m=> [|m] /=; first by rewrite expr0 mulr1.
+    by case: m=> [|m] /=; rewrite ?expr1 -mul_polyC;
+      case: ifP=> _; rewrite ?mul0r //;
+        case: ifP=> _; rewrite ?mul1r.
+  elim: p n=> [c n|c m p ih n] //=.
+  case: ifP=> _ //.
+  have -> : (if (n == 0)%N then (spec (cast m : N) : nat)
+             else (spec (cast m : N) + n)%N) = (spec (cast m : N) + n)%N.
+    by case: n=> [|n] /=; rewrite ?addn0.
+  rewrite shift_polyC ih [in RHS]ih.
+  by case: ifP=> c0;
+    rewrite ?mulrDl -mulrA -exprD // c0.
+Qed.
+
+Lemma spec_aux_eq0 p : eq0_hpoly p -> spec_hpoly_aux 0%N p = 0.
+Proof.
+  elim: p=> [c|c m p ih] /=; first by move->.
+  move/andP=> heq0.
+  by rewrite (proj1 heq0) (proj2 heq0).
+Qed.
+
+End hpoly_more_op.
+
+Arguments spec_hpoly / : assert.
+
 (******************************************************************************)
 (** PART II: Proving correctness properties of the previously defined objects *)
 (******************************************************************************)
@@ -186,27 +262,27 @@ Section hpoly_theory.
 
 Variable A : comRingType.
 
-Instance zeroA : zero_of A := 0%R.
-Instance oneA  : one_of A  := 1%R.
-Instance addA  : add_of A  := +%R.
-Instance oppA  : opp_of A  := -%R.
-Instance subA  : sub_of A  := fun x y => x - y.
-Instance mulA  : mul_of A  := *%R.
-Instance eqA   : eq_of A   := eqtype.eq_op.
+Instance zeroA : zero_of A   := 0%R.
+Instance oneA  : one_of A    := 1%R.
+Instance addA  : add_of A    := +%R.
+Instance oppA  : opp_of A    := -%R.
+Instance subA  : sub_of A    := fun x y => x - y.
+Instance mulA  : mul_of A    := *%R.
+Instance eqA   : eq_of A     := eqtype.eq_op.
+Instance specA : spec_of A A := spec_id.
 
-Instance zero_nat : zero_of nat := 0%N.
-Instance eq_nat   : eq_of nat   := eqtype.eq_op.
-(* Instance lt_nat   : lt nat   := ltn. *)
-Instance leq_nat  : leq_of nat  := ssrnat.leq.
-Instance add_nat  : add_of nat  := addn.
-Instance sub_nat  : sub_of nat  := subn.
+Instance zero_nat : zero_of nat     := 0%N.
+Instance eq_nat   : eq_of nat       := eqtype.eq_op.
+(* Instance lt_nat   : lt nat       := ltn. *)
+Instance leq_nat  : leq_of nat      := ssrnat.leq.
+Instance add_nat  : add_of nat      := addn.
+Instance sub_nat  : sub_of nat      := subn.
+Instance spec_nat : spec_of nat nat := spec_id.
 
 Fixpoint to_poly (p : hpoly A) := match p with
   | Pc c => c%:P
   | PX a n p => to_poly p * 'X^(cast (n : pos)) + a%:P
   end.
-
-(* Global Instance spec_hpoly : spec_of (hpoly A pos) {poly A} := to_poly. *)
 
 Definition to_hpoly : {poly A} -> (@hpoly pos A) := fun p => from_seq (polyseq p).
 
@@ -500,6 +576,25 @@ Proof.
   by rewrite [(_ <= _)%N]hnSm.
 Qed.
 
+Instance Rhpoly_spec_l :
+  refines (Rhpoly ==> Logic.eq) spec_id (spec_hpoly (N:=nat) (C:=A)).
+Proof.
+  rewrite refinesE /spec_id=> _ hp <-.
+  have simp_polyC a :
+    a%:P = (if a == 0 then 0 else if a == 1 then 1 else (specA a)%:P).
+    case: ifP=> [/eqP a0|_]; first by rewrite a0 polyC0.
+    case: ifP=> [/eqP a1|_]; first by rewrite a1 polyC1.
+    by rewrite /specA /spec_id.
+  elim: hp=> [a|a n p ih] /=; simpC.
+    exact: simp_polyC.
+  rewrite spec_aux_shift /spec_nat /spec_id ih /spec_hpoly.
+  case: ifP=> p0.
+    rewrite spec_aux_eq0 // mul0r add0r.
+    exact: simp_polyC.
+  case: ifP=> [/eqP a0|_]; first by rewrite a0 polyC0 addr0.
+  by rewrite [in LHS]simp_polyC.
+Qed.
+
 (*************************************************************************)
 (* PART III: Parametricity part                                          *)
 (*************************************************************************)
@@ -514,12 +609,14 @@ Context `{zero_of C, one_of C, opp_of C, add_of C, sub_of C, mul_of C, eq_of C}.
 Context `{one_of P, add_of P, sub_of P, eq_of P(* , lt P *), leq_of P}.
 Context `{zero_of N, one_of N, eq_of N(* , lt N *), leq_of N, add_of N, sub_of N}.
 Context `{cast_of N P, cast_of P N}.
+Context `{spec_of C A, spec_of N nat}.
 Context `{!refines rAC 0%R 0%C, !refines rAC 1%R 1%C}.
 Context `{!refines (rAC ==> rAC) -%R -%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) +%R +%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) (fun x y => x - y) sub_op}.
 Context `{!refines (rAC ==> rAC ==> rAC) *%R *%C}.
 Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}.
+Context `{!refines (rAC ==> Logic.eq) spec_id spec}.
 Context `{!refines rP pos1 1%C}.
 Context `{!refines (rP ==> rP ==> rP) add_pos +%C}.
 Context `{!refines (rP ==> rP ==> rP) sub_pos sub_op}.
@@ -534,6 +631,7 @@ Context `{!refines (rN ==> rN ==> bool_R) eqtype.eq_op eq_op}.
 Context `{!refines (rN ==> rN ==> bool_R) ssrnat.leq leq_op}.
 Context `{!refines (rN ==> rP) cast_nat_pos cast}.
 Context `{!refines (rP ==> rN) cast_pos_nat cast}.
+Context `{!refines (rN ==> Logic.eq) spec_id spec}.
 
 Definition RhpolyC := (Rhpoly \o (hpoly_R rP rAC)).
 
@@ -673,6 +771,20 @@ Proof. move=> hn; rewrite -['X^_]mul1r; exact: RhpolyC_mulXn. Qed.
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
 
+Global Instance RhpolyC_spec :
+  refines (RhpolyC ==> eq) spec_id (spec_hpoly (N:=N) (C:=C)).
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE=> hp hq rpq.
+  elim: rpq=> {hp hq} [a c rac|a c rac n m rnm hp hq rpq] /=;
+    rewrite ![(a == _)%C]refines_eq /specA [spec_id _]refines_eq //=.
+  have -> : eq0_hpoly hp = eq0_hpoly hq.
+    elim: rpq=> [x y rxy|x y rxy k l rkl p q rpq ih];
+      by rewrite /= [(_ == _)%C]refines_eq ?ih.
+  rewrite /spec_nat [spec_id _]refines_eq.
+  by rewrite ![spec_hpoly_aux (spec _) _]spec_aux_shift=> ->.
+Qed.
+
 End hpoly_parametricity.
 End hpoly_theory.
 
@@ -704,6 +816,7 @@ Abort.
 
 Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
       == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
+rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
@@ -719,6 +832,7 @@ by compute.
 Abort.
 
 Goal (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 0).
+rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
@@ -730,6 +844,7 @@ Abort.
 
 (* (1 + xy) * x = x + x^2y *)
 Goal ((1 + 'X * 'X%:P) * 'X == 'X + 'X^2 * 'X%:P :> {poly {poly int}}).
+rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
