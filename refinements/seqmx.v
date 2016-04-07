@@ -229,6 +229,28 @@ Parametricity row_seqmx.
 Parametricity col_seqmx.
 Parametricity block_seqmx.
 
+Section seqmx_more_op.
+
+Variable R : ringType.
+Context (C : Type).
+Context `{zero_of C, eq_of C, spec_of C R}.
+
+Fixpoint spec2 (s : seqmx C) : seqmx R :=
+  match s with
+  | [::] => [::]
+  | (hd :: tl) => (map spec hd) :: spec2 tl
+  end.
+
+Global Instance spec_seqmx m n : spec_of (seqmx C) 'M[R]_(m, n) :=
+  fun s =>
+    if (s == seqmx0 m n)%C then 0 else
+      matrix_of_fun matrix_key (fun (i : 'I_m) (j : 'I_n) =>
+                                  (nth 0 (nth [::] (spec2 s) i) j)).
+
+End seqmx_more_op.
+
+Arguments spec_seqmx / : assert.
+
 Section seqmx_theory.
 
 Variable R : ringType.
@@ -238,6 +260,7 @@ Local Instance oppR  : opp_of R := -%R.
 Local Instance addR  : add_of R := +%R.
 Local Instance mulR  : mul_of R := *%R.
 Local Instance eqR   : eq_of R   := eqtype.eq_op.
+Local Instance specR : spec_of R R := spec_id.
 
 CoInductive Rseqmx {m n} : 'M[R]_(m,n) -> seqmx R -> Type :=
   Rseqmx_spec (A : 'M[R]_(m,n)) M of
@@ -601,15 +624,40 @@ Proof.
   by rewrite addnC -addnBA ?subnn ?addn0.
 Qed.
 
+Instance Rseqmx_spec_l m n :
+  refines (Rseqmx ==> Logic.eq) (@spec_id 'M[R]_(m, n)) spec.
+Proof.
+  rewrite refinesE=> _ _ [M sM h1 h2 h3].
+  rewrite /spec /spec_seqmx /spec_id.
+  have -> : spec2 sM = sM.
+    move {h1 h2 h3}.
+    elim: sM=> [|a s ih] //=.
+    by rewrite ih map_id.
+  apply/matrixP=> i j.
+  case: ifP; rewrite h3 mxE //.
+  rewrite /eq_op /eq_seqmx eq_seqE /seqmx0 /const_seqmx ?size_nseq ?h1 //.
+  move/all_nthP=> heq.
+  have /implyP := heq ([::], [::]) i.
+  rewrite size_zip h1 size_nseq minnn ltn_ord implyTb.
+  rewrite eq_seqE nth_zip /= ?nth_nseq ?h1 ?h2 ?ltn_ord ?size_nseq //.
+  move/all_nthP=> heq'.
+  have /implyP := heq' (0, 0) j.
+  rewrite size_zip h2 ?size_nseq ?minnn ltn_ord // implyTb.
+  rewrite nth_zip /= ?nth_nseq ?h2 ?size_nseq ?ltn_ord //.
+  by move/eqP.
+Qed.
+
 Section seqmx_refines.
 
 Context (C : Type) (rAC : R -> C -> Type).
 Context `{zero_of C, opp_of C, add_of C, mul_of C, eq_of C}.
+Context `{spec_of C R}.
 Context `{!refines rAC 0%R 0%C}.
 Context `{!refines (rAC ==> rAC) -%R -%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) +%R +%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) *%R *%C}.
 Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}.
+Context `{!refines (rAC ==> Logic.eq) spec_id spec}.
 
 Definition RseqmxC {m n} := (@Rseqmx m n \o (list_R (list_R rAC)))%rel.
 
@@ -730,6 +778,35 @@ Global Instance RseqmxC_block_seqmx m1 m2 n1 n2 :
   refines (RseqmxC ==> RseqmxC ==> RseqmxC ==> RseqmxC ==> RseqmxC)
     (@matrix.block_mx R m1 m2 n1 n2) (@block_seqmx C m1 m2 n1 n2).
 Proof. param_comp block_seqmx_R. Qed.
+
+Lemma list_R_spec2 sM sN :
+  list_R (list_R rAC) sM sN -> spec2 sM = (spec2 sN : seqmx R).
+Proof.
+  move=> hMN.
+  elim: hMN=> [|a b ra p q rp ih] //=.
+  rewrite ih.
+  apply: congr2=> //.
+  elim: ra=> [|x y rxy l l' rl ihl] //=.
+  by rewrite ihl [specR _]refines_eq.
+Qed.
+
+Global Instance RseqmxC_spec m n :
+  refines (RseqmxC ==> Logic.eq) (@spec_id 'M[R]_(m, n)) spec.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE /spec /spec_seqmx /spec /specR=> l l' rl.
+  have -> : forall m n, (l' == seqmx0 m n)%C = (l == seqmx0 m n)%C.
+    elim: rl=> [i j|x y rx p q rp ih i j] {l l'} /=.
+      by case: i.
+    rewrite /eq_op /eq_seqmx /=.
+    case: i=> [|i] //=.
+    rewrite [eq_seq _ q _]ih.
+    apply: congr2=> //=.
+    elim: rx j=> [j|a b ra l l' rl ihl j] /=;
+    case: j=> [|j] //=.
+    by rewrite ihl [(a == _)%C]refines_eq.
+  by rewrite (list_R_spec2 rl).
+Qed.
 
 End seqmx_refines.
 End seqmx_theory.
