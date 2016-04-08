@@ -46,7 +46,7 @@ Global Instance sub_pos : sub_of pos := fun m n => insubd pos1 (val m - val n).
 Global Instance mul_pos : mul_of pos := fun m n => insubd pos1 (val m * val n).
 (*Instance exp_pos : exp_of pos pos := fun m n => insubd pos1 (val m ^ val n).*)
 Global Instance leq_pos : leq_of pos := fun m n => val m <= val n.
-(*Instance lt_pos  : lt_of pos  := fun m n => val m < val n.*)
+Global Instance lt_pos  : lt_of pos  := fun m n => val m < val n.
 Global Instance eq_pos  : eq_of pos  := eqtype.eq_op.
 
 Global Instance cast_pos_nat : cast_of pos nat := val.

@@ -22,7 +22,7 @@ Definition seqpoly := seq A.
 
 Context `{zero_of A, one_of A}.
 Context `{add_of A, opp_of A, sub_of A, mul_of A, eq_of A}.
-Context `{zero_of N, one_of N, add_of N, sub_of N, eq_of N, leq_of N}.
+Context `{zero_of N, one_of N, add_of N, sub_of N, eq_of N, lt_of N}.
 Context `{spec_of N nat}.
 
 Global Instance cast_seqpoly : cast_of A seqpoly := fun x => [:: x].
@@ -77,8 +77,7 @@ Definition div_rec_seqpoly (q : seqpoly) :=
   let sq := size_seqpoly q in
   let cq := (cast (lead_coef_seqpoly q) : seqpoly) in
   fix loop (k : N) (qq r : seqpoly) (n : nat) {struct n} :=
-    if (* (size_seqpoly r < sq)%nat *)
-      (size_seqpoly r <= sq)%C && ~~(size_seqpoly r == sq)%C
+    if (size_seqpoly r < sq)%C
     then (k, qq, r) else
       let m := shift_seqpoly (size_seqpoly r - sq)
                              (cast (lead_coef_seqpoly r) : seqpoly) in
@@ -220,8 +219,7 @@ Local Instance zero_nat : zero_of nat := 0%N.
 Local Instance one_nat  : one_of nat  := 1%N.
 Local Instance add_nat  : add_of nat  := addn.
 Local Instance sub_nat  : sub_of nat  := subn.
-Local Instance leq_nat  : leq_of nat  := ssrnat.leq.
-(*Local Instance lt_nat   : lt nat  := ssrnat.ltn.*)
+Local Instance lt_nat   : lt_of nat  := ssrnat.ltn.
 Local Instance eq_nat   : eq_of nat   := eqtype.eq_op.
 Local Instance spec_nat : spec_of nat nat := spec_id.
 
@@ -444,14 +442,11 @@ Local Instance Rseqpoly_edivp_rec :
            prod_hrel (prod_hrel Logic.eq Rseqpoly) Rseqpoly)
           (@redivp_rec R) (div_rec_seqpoly (N:=nat)).
 Proof.
-  have lt_ref (sr sq : seqpoly R)  :
-    (size_seqpoly sr <= (size_seqpoly sq : nat))%C &&
-    ~~(size_seqpoly sr == size_seqpoly sq :> nat)%C = (size_op sr < size_op sq).
-    by rewrite -[(_ <= _)%C]/((_ <= _)%N) ltn_neqAle andbC.
   rewrite refinesE=> q sq hsq n m <- {m} p sp hsp r sr hsr m m' <- {m'} /=.
   apply refinesP; elim: m => [|m ih] /= in n p sp hsp q sq hsq r sr hsr *;
   rewrite -!sizepE ![sizep _]refines_eq -mul_polyC
-          -[_ * 'X^_]/(shiftp (size_op r - size_op q) _) lt_ref.
+          -[_ * 'X^_]/(shiftp (size_op r - size_op q) _)
+          -[(size_seqpoly _ < _)%C]/((_ < _)%N).
     case: ifP=> _; rewrite refinesE /prod_hrel //=; do ?split.
         by rewrite [(_ + _)%C]addn1.
       exact: refinesP.
@@ -513,7 +508,7 @@ Context (N : Type) (rN : nat -> N -> Type).
 Context `{zero_of C, one_of C}.
 Context `{opp_of C, add_of C, sub_of C, mul_of C, eq_of C}.
 Context `{implem_of R C, spec_of C R}.
-Context `{zero_of N, one_of N, add_of N, sub_of N, eq_of N, leq_of N}.
+Context `{zero_of N, one_of N, add_of N, sub_of N, eq_of N, lt_of N}.
 Context `{spec_of N nat}.
 Context `{!refines rAC 0%R 0%C, !refines rAC 1%R 1%C}.
 Context `{!refines (rAC ==> rAC) -%R -%C}.
@@ -526,8 +521,7 @@ Context `{!refines rN 0%N 0%C, !refines rN 1%N 1%C}.
 Context `{!refines (rN ==> rN ==> rN) addn +%C}.
 Context `{!refines (rN ==> rN ==> rN) subn sub_op}.
 Context `{!refines (rN ==> rN ==> bool_R) eqtype.eq_op eq_op}.
-(* Context `{!refines (rN ==> rN ==> Logic.eq) ltn lt_op}. *)
-Context `{!refines (rN ==> rN ==> bool_R) ssrnat.leq leq_op}.
+Context `{!refines (rN ==> rN ==> bool_R) ltn lt_op}.
 Context `{!refines (rN ==> nat_R) spec_id spec}.
 
 Definition RseqpolyC : {poly R} -> seq C -> Type :=

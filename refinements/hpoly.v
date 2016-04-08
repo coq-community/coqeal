@@ -32,8 +32,8 @@ Inductive hpoly A := Pc : A -> hpoly A
 Section hpoly_op.
 
 Context `{zero_of A, one_of A, add_of A, sub_of A, opp_of A, mul_of A, eq_of A}.
-Context `{one_of pos, add_of pos, sub_of pos, eq_of pos, leq_of pos(*, lt_of pos*)}.
-Context `{zero_of N, one_of N, eq_of N, leq_of N(*, lt_of N*), add_of N, sub_of N}.
+Context `{one_of pos, add_of pos, sub_of pos, eq_of pos, lt_of pos}.
+Context `{zero_of N, one_of N, eq_of N, leq_of N, lt_of N, add_of N, sub_of N}.
 Context `{cast_of N pos, cast_of pos N}.
 
 Local Open Scope computable_scope.
@@ -70,10 +70,9 @@ Fixpoint addXn_const (n : N) a (q : hpoly A) := match q with
   | Pc b      => if (n == 0)%C then Pc (a + b) else PX b (cast n) (Pc a)
   | PX b m q' => let cn := cast n in
     if (n == 0)%C then PX (a + b) m q' else
-      if (n == cast m)%C    then PX b m (addXn_const 0 a q') else
-        if (*n < cast m*) (n <= cast m)%C && ~~(n == cast m)%C
-        then PX b cn (PX a (m - cn) q')
-                    else PX b m (addXn_const (n - cast m)%C a q')
+      if (n == cast m)%C then PX b m (addXn_const 0 a q') else
+        if (n < cast m)%C then PX b cn (PX a (m - cn) q')
+        else PX b m (addXn_const (n - cast m)%C a q')
   end.
 
 Fixpoint addXn (n : N) p q {struct p} := match p, q with
@@ -83,8 +82,7 @@ Fixpoint addXn (n : N) p q {struct p} := match p, q with
   | PX a n' p', PX b m q' =>
     if (n == 0)%C then
       if (n' == m)%C then PX (a + b) n' (addXn 0 p' q') else
-        if (*n' < m*) (n' <= m)%C && ~~(n' == m)%C
-        then PX (a + b) n' (addXn 0 p' (PX 0 (m - n') q'))
+        if (n' < m)%C then PX (a + b) n' (addXn 0 p' (PX 0 (m - n') q'))
         else PX (a + b) m (addXn (cast (n' - m)) p' q')
     else addXn (n + cast n') p' (addXn_const 0 b (addXn_const n a (PX 0 m q')))
   end.
@@ -273,7 +271,7 @@ Instance specA : spec_of A A := spec_id.
 
 Instance zero_nat : zero_of nat     := 0%N.
 Instance eq_nat   : eq_of nat       := eqtype.eq_op.
-(* Instance lt_nat   : lt nat       := ltn. *)
+Instance lt_nat   : lt_of nat       := ltn.
 Instance leq_nat  : leq_of nat      := ssrnat.leq.
 Instance add_nat  : add_of nat      := addn.
 Instance sub_nat  : sub_of nat      := subn.
@@ -371,13 +369,12 @@ elim: q n => [b [|n]|b m q' ih n] /=; simpC;
   by rewrite /cast /cast_pos_nat insubdK.
 case: eqP => [->|/eqP n0] /=; first by rewrite polyC_add expr0 mulr1 addrCA.
 case: eqP => [hn|hnc] /=; first by rewrite ih expr0 mulr1 -hn mulrDl -addrA.
-rewrite [(_ <= _)%C]/((_ <= _)%N) subn_eq0.
-have [hleq|hlt] /= := leqP n (cast m);
-  rewrite /cast /cast_nat_pos /cast_pos_nat.
+rewrite [(_ < _)%C]/((_ < _)%N) subn_eq0.
+case hnm: (n < cast m).
+  rewrite /= /cast /cast_nat_pos /cast_pos_nat.
   rewrite insubdK -?topredE /= ?lt0n // mulrDl -mulrA -exprD addrCA -addrA.
-  rewrite ?insubdK -?topredE /= ?subn_gt0 ?lt0n ?subnK // ltn_neqAle.
-  by move/eqP: hnc=> ->.
-by rewrite ih mulrDl -mulrA -exprD subnK ?addrA // ltnW.
+  by rewrite ?insubdK -?topredE /= ?subn_gt0 ?lt0n ?subnK // ltnW.
+by rewrite /= ih mulrDl -mulrA -exprD subnK ?addrA // leqNgt hnm.
 Qed.
 
 Arguments addXn_const _ _ _ _ _ _ _ _ _ _ _ n a q : simpl never.
@@ -392,15 +389,15 @@ case: eqP => [->|/eqP no].
   rewrite expr0 mulr1 /leq_op /leq_pos /eq_op /eq_pos.
   case: ifP => [/eqP ->|hneq] /=.
     by rewrite ih expr0 mulr1 mulrDl polyC_add -!addrA [_ + (a%:P + _)]addrCA.
-  rewrite hneq.
-  have [hlt|hleq] /= := leqP (val_of_pos n') (val_of_pos m);
-    rewrite ih polyC_add mulrDl -!addrA ?expr0.
+  rewrite -[(_ < _)%C]/((_ < _)%N).
+  case hnm: (val n' < val m);
+    rewrite /= ih polyC_add mulrDl -!addrA ?expr0.
     rewrite mulr1 /= addr0 -mulrA -exprD [_ + (a%:P + _)]addrCA /cast.
-    rewrite /cast_pos_nat insubdK ?subnK -?topredE /= ?subn_gt0 // ltn_neqAle.
-    by move/eqP/eqP: hneq=> ->.
+    by rewrite /cast_pos_nat insubdK ?subnK -?topredE /= ?subn_gt0 // ltnW.
   rewrite -mulrA -exprD [_ + (a%:P + _)]addrCA /cast /cast_pos_nat.
-  rewrite  insubdK ?subnK // -?topredE /=; first by rewrite ltnW.
-  by rewrite subn_gt0.
+  rewrite insubdK ?subnK // -?topredE /=; first by rewrite leqNgt hnm.
+  rewrite subn_gt0 ltnNge leq_eqVlt hnm Bool.orb_false_r {hnm}.
+  move/negbT: hneq; apply: contra; move/eqP=> heq; apply/eqP; exact: val_inj.
 rewrite !ih !addXn_constE expr0 mulr1 /= addr0 mulrDl -mulrA -exprD addnC.
 by rewrite -!addrA [b%:P + (_ + _)]addrCA [b%:P + _]addrC.
 Qed.
@@ -614,8 +611,8 @@ Context (C : Type) (rAC : A -> C -> Type).
 Context (P : Type) (rP : pos -> P -> Type).
 Context (N : Type) (rN : nat -> N -> Type).
 Context `{zero_of C, one_of C, opp_of C, add_of C, sub_of C, mul_of C, eq_of C}.
-Context `{one_of P, add_of P, sub_of P, eq_of P(* , lt P *), leq_of P}.
-Context `{zero_of N, one_of N, eq_of N(* , lt N *), leq_of N, add_of N, sub_of N}.
+Context `{one_of P, add_of P, sub_of P, eq_of P, lt_of P}.
+Context `{zero_of N, one_of N, eq_of N, lt_of N, leq_of N, add_of N, sub_of N}.
 Context `{cast_of N P, cast_of P N}.
 Context `{spec_of C A, spec_of N nat}.
 Context `{!refines rAC 0%R 0%C, !refines rAC 1%R 1%C}.
@@ -629,13 +626,12 @@ Context `{!refines rP pos1 1%C}.
 Context `{!refines (rP ==> rP ==> rP) add_pos +%C}.
 Context `{!refines (rP ==> rP ==> rP) sub_pos sub_op}.
 Context `{!refines (rP ==> rP ==> bool_R) eqtype.eq_op eq_op}.
-(* Context `{!refines (rP ==> rP ==> Logic.eq) lt_pos lt_op}. *)
-Context `{!refines (rP ==> rP ==> bool_R) leq_pos leq_op}.
+Context `{!refines (rP ==> rP ==> bool_R) lt_pos lt_op}.
 Context `{!refines rN 0%N 0%C, !refines rN 1%N 1%C}.
 Context `{!refines (rN ==> rN ==> rN) addn +%C}.
 Context `{!refines (rN ==> rN ==> rN) subn sub_op}.
 Context `{!refines (rN ==> rN ==> bool_R) eqtype.eq_op eq_op}.
-(* Context `{!refines (rN ==> rN ==> Logic.eq) ltn lt_op}. *)
+Context `{!refines (rN ==> rN ==> bool_R) ltn lt_op}.
 Context `{!refines (rN ==> rN ==> bool_R) ssrnat.leq leq_op}.
 Context `{!refines (rN ==> rP) cast_nat_pos cast}.
 Context `{!refines (rP ==> rN) cast_pos_nat cast}.

@@ -36,8 +36,9 @@ Inductive Z := Zpos of N | Zneg of P.
 Definition Zmatch T (n : Z) f g : T :=
    match n with Zpos p => f p | Zneg n => g n end.
 
-Context `{zero_of N, one_of N, sub_of N, add_of N, mul_of N, leq_of N(*, lt N*), eq_of N}.
-Context `{one_of P, sub_of P, add_of P, mul_of P, eq_of P, leq_of P(*, lt P*)}.
+Context `{zero_of N, one_of N, sub_of N, add_of N, mul_of N, leq_of N, lt_of N,
+          eq_of N}.
+Context `{one_of P, sub_of P, add_of P, mul_of P, eq_of P, leq_of P, lt_of P}.
 Context `{cast_of N P, cast_of P N}.
 Context `{spec_of N nat, spec_of P pos}.
 Context `{implem_of nat N, implem_of pos P}.
@@ -89,12 +90,12 @@ Global Instance leqZ : leq_of Z := fun x y : Z => match x, y with
   | Zpos _, Zneg _ => false
   end.
 
-(*Global Instance ltZ : lt Z := fun x y : Z => match x, y with
+Global Instance ltZ : lt_of Z := fun x y : Z => match x, y with
   | Zpos x, Zpos y => (x < y)
   | Zneg x, Zneg y => (y < x)
   | Zneg _, Zpos _ => true
   | Zpos _, Zneg _ => false
-  end.*)
+  end.
 
 Global Instance cast_NZ : cast_of N Z := fun n : N => Zpos n.
 
@@ -129,6 +130,7 @@ Parametricity subZ.
 Parametricity eqZ.
 Parametricity mulZ.
 Parametricity leqZ.
+Parametricity ltZ.
 Parametricity cast_NZ.
 Parametricity cast_PZ.
 Parametricity cast_ZN.
@@ -169,7 +171,7 @@ Local Instance add_nat  : add_of nat  := addn.
 Local Instance sub_nat  : sub_of nat  := subn.
 Local Instance mul_nat  : mul_of nat  := muln.
 Local Instance leq_nat  : leq_of nat  := ssrnat.leq.
-(*Local Instance lt_nat   : lt nat  := ssrnat.ltn.*)
+Local Instance lt_nat   : lt_of nat  := ssrnat.ltn.
 Local Instance eq_nat   : eq_of nat   := eqtype.eq_op.
 
 Local Instance spec_nat : spec_of nat nat := spec_id.
@@ -270,14 +272,16 @@ Proof.
   exact: bool_Rxx.
 Qed.
 
-(*Local Instance Rint_lt : refines (Rint ==> Rint ==> Logic.eq) Num.lt lt_op.
+Local Instance Rint_lt : refines (Rint ==> Rint ==> bool_R) Num.lt lt_op.
 Proof.
 rewrite refinesE /Rint /fun_hrel /eq_op => _ x <- _ y <-.
-case: x y => [x|x] [y|y] //=.
-- by rewrite ltrNge (@ler_trans _ 0) // oppr_le0.
-- by rewrite (@ltr_le_trans _ 0) // oppr_lt0; apply: valP.
-by rewrite ltr_opp2.
-Qed.*)
+have -> : (int_of_Z x < int_of_Z y) = (x < y)%C.
+  case: x y => [x|x] [y|y] //=.
+  - by rewrite ltrNge (@ler_trans _ 0) // oppr_le0.
+  - by rewrite (@ltr_le_trans _ 0) // oppr_lt0; apply: valP.
+  by rewrite ltr_opp2.
+exact: bool_Rxx.
+Qed.
 
 Local Instance Rint_mul : refines (Rint ==> Rint ==> Rint) *%R *%C.
 Proof.
@@ -313,8 +317,9 @@ Variables (Rnat : nat -> N -> Type) (Rpos : pos -> P -> Type).
 
 Definition RZNP := (Rint \o Z_R Rnat Rpos)%rel.
 
-Context `{zero_of N, one_of N, sub_of N, add_of N, mul_of N, leq_of N, eq_of N(*, lt N*)}.
-Context `{one_of P, sub_of P, add_of P, mul_of P, eq_of P, leq_of P(*, lt P*)}.
+Context `{zero_of N, one_of N, sub_of N, add_of N, mul_of N, leq_of N, eq_of N,
+          lt_of N}.
+Context `{one_of P, sub_of P, add_of P, mul_of P, eq_of P, leq_of P, lt_of P}.
 Context `{cast_of N P, cast_of P N}.
 Context `{spec_of N nat, spec_of P pos}.
 Context `{implem_of nat N, implem_of pos P}.
@@ -328,9 +333,9 @@ Context `{!refines (Rpos ==> Rpos ==> Rpos) sub_pos sub_op}.
 Context `{!refines (Rnat ==> Rnat ==> Rnat) muln *%C}.
 Context `{!refines (Rpos ==> Rpos ==> Rpos) mul_pos *%C}.
 Context `{!refines (Rnat ==> Rnat ==> bool_R) ssrnat.leq leq_op}.
-(*Context `{!refines (Rnat ==> Rnat ==> Logic.eq) ssrnat.ltn lt_op}.*)
+Context `{!refines (Rnat ==> Rnat ==> bool_R) ssrnat.ltn lt_op}.
 Context `{!refines (Rpos ==> Rpos ==> bool_R) leq_pos leq_op}.
-(*Context `{!refines (Rpos ==> Rpos ==> Logic.eq) lt_pos lt_op}.*)
+Context `{!refines (Rpos ==> Rpos ==> bool_R) lt_pos lt_op}.
 Context `{!refines (Rnat ==> Rpos) (insubd pos1) cast}.
 Context `{!refines (Rpos ==> Rnat) val cast}.
 Context `{!refines (Rnat ==> Rnat ==> bool_R) eqtype.eq_op eq_op}.
@@ -383,9 +388,9 @@ Global Instance RZNP_leqZ :
   refines (RZNP ==> RZNP ==> bool_R) Num.le (@Op.leq_op Z _).
 Proof. param_comp leqZ_R. Qed.
 
-(* Global Instance RZNP_ltZ : *)
-(*   refines (RZNP ==> RZNP ==> Logic.eq) Num.lt (@Op.lt_op Z _). *)
-(* Proof. exact: refines_trans. Qed. *)
+Global Instance RZNP_ltZ :
+  refines (RZNP ==> RZNP ==> bool_R) Num.lt (@Op.lt_op Z _).
+Proof. param_comp ltZ_R. Qed.
 
 (* Global Instance RZNP_specZ_l : refines (RZNP ==> int_R) spec_id spec. *)
 (* Proof. param_comp specZ_R. Qed. *)

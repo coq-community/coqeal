@@ -34,7 +34,7 @@ Global Instance add_positive    : add_of positive := Pos.add.
 Global Instance sub_positive    : sub_of positive := Pos.sub.
 Global Instance mul_positive    : mul_of positive := Pos.mul.
 Global Instance le_positive     : leq_of positive := Pos.leb.
-(*Global Instance lt_positive     : lt positive  := Pos.ltb.*)
+Global Instance lt_positive     : lt_of positive  := Pos.ltb.
 Global Instance eq_positive     : eq_of positive  := Pos.eqb.
 (*Global Instance exp_positive    : exp positive positive := Pos.pow.*)
 End positive_op.
@@ -129,12 +129,14 @@ Proof.
   [move ->|rewrite -eqbF_neg; move/eqP ->].
 Qed.
 
-(*Global Instance Rpos_lt : param (Rpos ==> Rpos ==> Logic.eq) lt_pos lt_op.
+Global Instance Rpos_lt : refines (Rpos ==> Rpos ==> bool_R) lt_pos lt_op.
 Proof.
-rewrite paramE => /= _ x <- _ y <-; rewrite /lt_pos !val_insubd.
+rewrite refinesE => /= _ x <- _ y <-; rewrite /lt_pos !val_insubd.
 move: (Pos2Nat.is_pos x) (Pos2Nat.is_pos y) => /leP -> /leP ->.
-by apply/ltP/idP => [|h]; rewrite -Pos2Nat.inj_lt -Pos.ltb_lt.
-Qed.*)
+have -> : (Pos.to_nat x < Pos.to_nat y) = (x < y)%C.
+  by apply/ltP/idP => [|h]; rewrite -Pos2Nat.inj_lt -Pos.ltb_lt.
+exact: bool_Rxx.
+Qed.
 
 Global Instance Rpos_eq : refines (Rpos ==> Rpos ==> bool_R) eq_pos eq_op.
 Proof.
@@ -171,7 +173,7 @@ Global Instance sub_N  : sub_of N := N.sub.
 Global Instance mul_N  : mul_of N := N.mul.
 Global Instance eq_N   : eq_of N  := N.eqb.
 Global Instance leq_N  : leq_of N := N.leb.
-(*Global Instance lt_N   : lt N  := N.ltb.*)
+Global Instance lt_N   : lt_of N  := N.ltb.
 
 Global Instance cast_positive_N : cast_of positive N := Npos.
 Global Instance cast_N_positive : cast_of N positive :=
@@ -280,12 +282,13 @@ Proof.
   by move/(can_inj nat_of_binK)/N.sub_0_le.
 Qed.
 
-(*Global Instance Rnat_lt : refines (Rnat ==> Rnat ==> Logic.eq) ltn lt_op.
+Global Instance Rnat_lt : refines (Rnat ==> Rnat ==> bool_R) ltn lt_op.
 Proof.
 apply refines_abstr2 => x x' rx y y' ry; rewrite refinesE /Rnat /fun_hrel.
-by rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge [y <= x]refines_eq.
+rewrite /lt_op /lt_N N.ltb_antisym /ltn /= ltnNge [(y <= x)%N]refines_eq.
+exact: bool_Rxx.
 (* Cyril: this was wrong to do it like that, we should come back and fix *)
-Qed.*)
+Qed.
 
 Global Instance Rnat_cast_positive_N :
   refines (Rpos ==> Rnat) val (cast : positive -> N).

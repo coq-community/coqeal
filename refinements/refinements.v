@@ -215,6 +215,8 @@ Class eq_of A := eq_op : A -> A -> bool.
 Hint Mode eq_of + : typeclass_instances.
 Class leq_of A := leq_op : A -> A -> bool.
 Hint Mode leq_of + : typeclass_instances.
+Class lt_of A := lt_op : A -> A -> bool.
+Hint Mode lt_of + : typeclass_instances.
 
 Class spec_of A B   := spec : A -> B.
 Hint Mode spec_of + + : typeclass_instances.
@@ -231,7 +233,7 @@ End Refinements.
 Import Refinements.Op.
 
 Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of div_of
-            mod_of scale_of eq_of leq_of spec_of implem_of cast_of.
+            mod_of scale_of eq_of leq_of lt_of spec_of implem_of cast_of.
 
 Arguments spec / : assert.
 
@@ -250,6 +252,7 @@ Notation "*:%C"   := scale_op.
 Notation "x *: y" := (scale_op x y) : computable_scope.
 Notation "x == y" := (eq_op x y)    : computable_scope.
 Notation "x <= y" := (leq_op x y)   : computable_scope.
+Notation "x < y"  := (lt_op x y)    : computable_scope.
 Notation cast     := (@cast_op _).
 
 Ltac simpC :=
