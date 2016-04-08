@@ -64,8 +64,9 @@ Global Instance subZ : sub_of Z := fun x y : Z => match x, y with
   | Zneg x, Zpos y => if (y == 0)%C then Zneg x else Zneg (x + cast y)
   | Zpos x, Zpos y => if (y <= x) then Zpos (x - y)
                                   else Zneg (cast (y - x))
-  | Zneg x, Zneg y => if ((cast x : N) <= (cast y : N)) then Zpos (cast y - cast x)
-                                            else Zneg (cast ((cast x : N) - cast y))
+  | Zneg x, Zneg y => if ((cast x : N) <= (cast y : N))
+                      then Zpos (cast y - cast x)
+                      else Zneg (cast ((cast x : N) - cast y))
   end.
 
 Global Instance eqZ : eq_of Z := fun x y : Z => match x, y with

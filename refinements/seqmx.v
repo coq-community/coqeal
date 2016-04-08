@@ -647,7 +647,7 @@ Proof.
   by move/eqP.
 Qed.
 
-Section seqmx_refines.
+Section seqmx_param.
 
 Context (C : Type) (rAC : R -> C -> Type).
 Context `{zero_of C, opp_of C, add_of C, mul_of C, eq_of C}.
@@ -735,43 +735,53 @@ Global Instance RseqmxC_top_left_seqmx m :
 Proof. param_comp top_left_seqmx_R. Qed.
 
 Global Instance RseqmxC_usubseqmx m1 m2 n :
-  refines (RseqmxC ==> RseqmxC) (@matrix.usubmx R m1 m2 n) (@usubseqmx C m1 m2 n).
+  refines (RseqmxC ==> RseqmxC) (@matrix.usubmx R m1 m2 n)
+          (@usubseqmx C m1 m2 n).
 Proof. param_comp usubseqmx_R. Qed.
 
 Global Instance RseqmxC_dsubseqmx m1 m2 n :
-  refines (RseqmxC ==> RseqmxC) (@matrix.dsubmx R m1 m2 n) (@dsubseqmx C m1 m2 n).
+  refines (RseqmxC ==> RseqmxC) (@matrix.dsubmx R m1 m2 n)
+          (@dsubseqmx C m1 m2 n).
 Proof. param_comp dsubseqmx_R. Qed.
 
 Global Instance RseqmxC_lsubseqmx m n1 n2 :
-  refines (RseqmxC ==> RseqmxC) (@matrix.lsubmx R m n1 n2) (@lsubseqmx C m n1 n2).
+  refines (RseqmxC ==> RseqmxC) (@matrix.lsubmx R m n1 n2)
+          (@lsubseqmx C m n1 n2).
 Proof. param_comp lsubseqmx_R. Qed.
 
 Global Instance RseqmxC_rsubseqmx m n1 n2 :
-  refines (RseqmxC ==> RseqmxC) (@matrix.rsubmx R m n1 n2) (@rsubseqmx C m n1 n2).
+  refines (RseqmxC ==> RseqmxC) (@matrix.rsubmx R m n1 n2)
+          (@rsubseqmx C m n1 n2).
 Proof. param_comp rsubseqmx_R. Qed.
 
 Global Instance RseqmxC_ulsubseqmx m1 m2 n1 n2 :
-  refines (RseqmxC ==> RseqmxC) (@matrix.ulsubmx R m1 m2 n1 n2) (@ulsubseqmx C m1 m2 n1 n2).
+  refines (RseqmxC ==> RseqmxC) (@matrix.ulsubmx R m1 m2 n1 n2)
+          (@ulsubseqmx C m1 m2 n1 n2).
 Proof. param_comp ulsubseqmx_R. Qed.
 
 Global Instance RseqmxC_ursubseqmx m1 m2 n1 n2 :
-  refines (RseqmxC ==> RseqmxC) (@matrix.ursubmx R m1 m2 n1 n2) (@ursubseqmx C m1 m2 n1 n2).
+  refines (RseqmxC ==> RseqmxC) (@matrix.ursubmx R m1 m2 n1 n2)
+          (@ursubseqmx C m1 m2 n1 n2).
 Proof. param_comp ursubseqmx_R. Qed.
 
 Global Instance RseqmxC_dlsubseqmx m1 m2 n1 n2 :
-  refines (RseqmxC ==> RseqmxC) (@matrix.dlsubmx R m1 m2 n1 n2) (@dlsubseqmx C m1 m2 n1 n2).
+  refines (RseqmxC ==> RseqmxC) (@matrix.dlsubmx R m1 m2 n1 n2)
+          (@dlsubseqmx C m1 m2 n1 n2).
 Proof. param_comp dlsubseqmx_R. Qed.
 
 Global Instance RseqmxC_drsubseqmx m1 m2 n1 n2 :
-  refines (RseqmxC ==> RseqmxC) (@matrix.drsubmx R m1 m2 n1 n2) (@drsubseqmx C m1 m2 n1 n2).
+  refines (RseqmxC ==> RseqmxC) (@matrix.drsubmx R m1 m2 n1 n2)
+          (@drsubseqmx C m1 m2 n1 n2).
 Proof. param_comp drsubseqmx_R. Qed.
 
 Global Instance RseqmxC_row_seqmx m n1 n2 :
-  refines (RseqmxC ==> RseqmxC ==> RseqmxC) (@matrix.row_mx R m n1 n2) (@row_seqmx C m n1 n2).
+  refines (RseqmxC ==> RseqmxC ==> RseqmxC) (@matrix.row_mx R m n1 n2)
+          (@row_seqmx C m n1 n2).
 Proof. param_comp row_seqmx_R. Qed.
 
 Global Instance RseqmxC_col_seqmx m1 m2 n :
-  refines (RseqmxC ==> RseqmxC ==> RseqmxC) (@matrix.col_mx R m1 m2 n) (@col_seqmx C m1 m2 n).
+  refines (RseqmxC ==> RseqmxC ==> RseqmxC) (@matrix.col_mx R m1 m2 n)
+          (@col_seqmx C m1 m2 n).
 Proof. param_comp col_seqmx_R. Qed.
 
 Global Instance RseqmxC_block_seqmx m1 m2 n1 n2 :
@@ -808,7 +818,7 @@ Proof.
   by rewrite (list_R_spec2 rl).
 Qed.
 
-End seqmx_refines.
+End seqmx_param.
 End seqmx_theory.
 
 Section testmx.
@@ -819,13 +829,6 @@ From CoqEAL Require Import binint seqpoly.
 Goal ((0 : 'M[int]_(2,2)) == 0).
 rewrite [_ == _]refines_eq.
 by compute.
-(* erewrite param_eq; last first. *)
-(* eapply param_bool_eq; tc. *)
-(* eapply param_apply; tc. *)
-(* eapply param_apply; tc. *)
-(* eapply RseqmxC_0; tc. *)
-(* eapply RseqmxC_0; tc. *)
-(* by compute. *)
 Abort.
 
 Goal ((- 0 : 'M[int]_(2,2)) == - - - 0).

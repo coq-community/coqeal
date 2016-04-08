@@ -53,7 +53,8 @@ Qed.
 (* Why is this not in ssrnat? *)
 Lemma to_natE : forall (p : positive), Pos.to_nat p = nat_of_pos p.
 Proof.
-by elim=> //= p <-; rewrite ?Pos2Nat.inj_xI ?Pos2Nat.inj_xO NatTrec.trecE -mul2n.
+by elim=> //= p <-;
+rewrite ?Pos2Nat.inj_xI ?Pos2Nat.inj_xO NatTrec.trecE -mul2n.
 Qed.
 
 Lemma to_nat_gt0 p : 0 < Pos.to_nat p.
@@ -70,10 +71,12 @@ Qed.
 
 Definition Rpos := fun_hrel pos_of_positive.
 
-Lemma RposE (p : pos) (x : positive) : refines Rpos p x -> p = pos_of_positive x.
+Lemma RposE (p : pos) (x : positive) :
+  refines Rpos p x -> p = pos_of_positive x.
 Proof. by rewrite refinesE. Qed.
 
-Lemma RposI (p : pos) (x : positive) : refines Rpos p x -> x = positive_of_pos p.
+Lemma RposI (p : pos) (x : positive) :
+  refines Rpos p x -> x = positive_of_pos p.
 Proof. by move=> /RposE ->; rewrite pos_of_positiveK. Qed.
 
 Global Instance Rpos_spec_pos_r x : refines Rpos (spec x) x.
@@ -226,7 +229,9 @@ by rewrite refinesE => _ x <- _ y <-; rewrite /Rnat /fun_hrel nat_of_add_bin.
 Qed.
 
 Global Instance Rnat_S : refines (Rnat ==> Rnat) S succN.
-Proof. by rewrite !refinesE => m n rmn; rewrite -add1n /succN; apply: refinesP. Qed.
+Proof.
+by rewrite !refinesE => m n rmn; rewrite -add1n /succN; apply: refinesP.
+Qed.
 
 Lemma nat_of_binK : forall x, N.of_nat (nat_of_bin x) = x.
 Proof.

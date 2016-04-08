@@ -332,7 +332,8 @@ Local Open Scope rel_scope.
 
 Instance Rhpoly_normalize : refines (Rhpoly ==> Rhpoly) normalize_id normalize.
 Proof.
-by rewrite refinesE => p hp rp; rewrite /Rhpoly /fun_hrel normalizeK normalize_idE.
+  by rewrite refinesE => p hp rp;
+    rewrite /Rhpoly /fun_hrel normalizeK normalize_idE.
 Qed.
 
 Instance Rhpoly_cast : refines (eq ==> Rhpoly) (fun x => x%:P) cast.
@@ -362,14 +363,17 @@ elim: hp => [a|a n p ih] /=; first by rewrite polyC_mul mul_polyC.
 by rewrite ih polyC_mul -!mul_polyC mulrDr mulrA.
 Qed.
 
-Lemma addXn_constE n a q : to_poly (addXn_const n a q) = a%:P * 'X^n + to_poly q.
+Lemma addXn_constE n a q :
+  to_poly (addXn_const n a q) = a%:P * 'X^n + to_poly q.
 Proof.
-elim: q n => [b [|n]|b m q' ih n] /=; simpC; first by rewrite polyC_add expr0 mulr1.
+elim: q n => [b [|n]|b m q' ih n] /=; simpC;
+  first by rewrite polyC_add expr0 mulr1.
   by rewrite /cast /cast_pos_nat insubdK.
 case: eqP => [->|/eqP n0] /=; first by rewrite polyC_add expr0 mulr1 addrCA.
 case: eqP => [hn|hnc] /=; first by rewrite ih expr0 mulr1 -hn mulrDl -addrA.
 rewrite [(_ <= _)%C]/((_ <= _)%N) subn_eq0.
-have [hleq|hlt] /= := leqP n (cast m); rewrite /cast /cast_nat_pos /cast_pos_nat.
+have [hleq|hlt] /= := leqP n (cast m);
+  rewrite /cast /cast_nat_pos /cast_pos_nat.
   rewrite insubdK -?topredE /= ?lt0n // mulrDl -mulrA -exprD addrCA -addrA.
   rewrite ?insubdK -?topredE /= ?subn_gt0 ?lt0n ?subnK // ltn_neqAle.
   by move/eqP: hnc=> ->.
@@ -380,7 +384,8 @@ Arguments addXn_const _ _ _ _ _ _ _ _ _ _ _ n a q : simpl never.
 
 Lemma addXnE n p q : to_poly (addXn n p q) = to_poly p * 'X^n + to_poly q.
 Proof.
-elim: p n q => [a n q|a n' p ih n [b|b m q]] /=; simpC; first by rewrite addXn_constE.
+elim: p n q => [a n q|a n' p ih n [b|b m q]] /=; simpC;
+  first by rewrite addXn_constE.
   case: eqP => [->|/eqP n0]; first by rewrite expr0 mulr1 /= polyC_add addrA.
   by rewrite /= /cast /cast_pos_nat /cast_nat_pos insubdK // -topredE /= lt0n.
 case: eqP => [->|/eqP no].
@@ -400,7 +405,8 @@ rewrite !ih !addXn_constE expr0 mulr1 /= addr0 mulrDl -mulrA -exprD addnC.
 by rewrite -!addrA [b%:P + (_ + _)]addrCA [b%:P + _]addrC.
 Qed.
 
-Instance Rhpoly_add : refines (Rhpoly ==> Rhpoly ==> Rhpoly) +%R (add_hpoly (N:=nat)).
+Instance Rhpoly_add :
+  refines (Rhpoly ==> Rhpoly ==> Rhpoly) +%R (add_hpoly (N:=nat)).
 Proof.
 apply refines_abstr2 => p hp h1 q hq h2.
 rewrite [p]RhpolyE [q]RhpolyE refinesE /Rhpoly /fun_hrel {p q h1 h2}.
@@ -419,7 +425,8 @@ Proof.
   by rewrite /cast_pos_nat /cast_nat_pos val_insubd=> ->.
 Qed.
 
-Instance Rhpoly_mul : refines (Rhpoly ==> Rhpoly ==> Rhpoly) *%R (mul_hpoly (N:=nat)).
+Instance Rhpoly_mul :
+  refines (Rhpoly ==> Rhpoly ==> Rhpoly) *%R (mul_hpoly (N:=nat)).
 Proof.
 apply refines_abstr2 => p hp h1 q hq h2.
 rewrite [p]RhpolyE [q]RhpolyE refinesE /Rhpoly /fun_hrel {p q h1 h2}.
@@ -438,7 +445,8 @@ by rewrite !to_poly_scale !cast_nat_posK ?addn_gt0 ?lt0n.
 Qed.
 
 Instance Rhpoly_sub :
-  refines (Rhpoly ==> Rhpoly ==> Rhpoly) (fun x y => x - y) (sub_hpoly (N:=nat)).
+  refines (Rhpoly ==> Rhpoly ==> Rhpoly) (fun x y => x - y)
+          (sub_hpoly (N:=nat)).
 Proof.
 apply refines_abstr2 => p hp h1 q hq h2.
 by rewrite refinesE /sub_hpoly /Rhpoly /fun_hrel [_ - _]RhpolyE.
@@ -656,7 +664,8 @@ Global Instance RhpolyC_mul :
   refines (RhpolyC ==> RhpolyC ==> RhpolyC) *%R (mul_hpoly (N:=N)).
 Proof. param_comp mul_hpoly_R. Qed.
 
-Global Instance RhpolyC_size : refines (RhpolyC ==> rN) (sizep (R:=A)) size_hpoly.
+Global Instance RhpolyC_size :
+  refines (RhpolyC ==> rN) (sizep (R:=A)) size_hpoly.
 Proof. param_comp size_hpoly_R. Qed.
 
 Global Instance RhpolyC_lead_coef :
