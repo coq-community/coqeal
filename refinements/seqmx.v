@@ -235,17 +235,12 @@ Variable R : ringType.
 Context (C : Type).
 Context `{zero_of C, eq_of C, spec_of C R}.
 
-Fixpoint spec2 (s : seqmx C) : seqmx R :=
-  match s with
-  | [::] => [::]
-  | (hd :: tl) => (map spec hd) :: spec2 tl
-  end.
-
 Global Instance spec_seqmx m n : spec_of (seqmx C) 'M[R]_(m, n) :=
   fun s =>
     if (s == seqmx0 m n)%C then 0 else
       matrix_of_fun matrix_key (fun (i : 'I_m) (j : 'I_n) =>
-                                  (nth 0 (nth [::] (spec2 s) i) j)).
+                                  (nth 0 (nth [::] (map (fun l => map spec l) s)
+                                              i) j)).
 
 End seqmx_more_op.
 
@@ -628,11 +623,9 @@ Instance Rseqmx_spec_l m n :
   refines (Rseqmx ==> Logic.eq) (@spec_id 'M[R]_(m, n)) spec.
 Proof.
   rewrite refinesE=> _ _ [M sM h1 h2 h3].
-  rewrite /spec /spec_seqmx /spec_id.
-  have -> : spec2 sM = sM.
-    move {h1 h2 h3}.
-    elim: sM=> [|a s ih] //=.
-    by rewrite ih map_id.
+  rewrite /spec /spec_seqmx /spec_id /spec /specR /spec_id.
+  rewrite map_id_in; last first.
+    by move=> x; rewrite map_id.
   apply/matrixP=> i j.
   case: ifP; rewrite h3 mxE //.
   rewrite /eq_op /eq_seqmx eq_seqE /seqmx0 /const_seqmx ?size_nseq ?h1 //.
@@ -789,17 +782,6 @@ Global Instance RseqmxC_block_seqmx m1 m2 n1 n2 :
     (@matrix.block_mx R m1 m2 n1 n2) (@block_seqmx C m1 m2 n1 n2).
 Proof. param_comp block_seqmx_R. Qed.
 
-Lemma list_R_spec2 sM sN :
-  list_R (list_R rAC) sM sN -> spec2 sM = (spec2 sN : seqmx R).
-Proof.
-  move=> hMN.
-  elim: hMN=> [|a b ra p q rp ih] //=.
-  rewrite ih.
-  apply: congr2=> //.
-  elim: ra=> [|x y rxy l l' rl ihl] //=.
-  by rewrite ihl [specR _]refines_eq.
-Qed.
-
 Global Instance RseqmxC_spec m n :
   refines (RseqmxC ==> Logic.eq) (@spec_id 'M[R]_(m, n)) spec.
 Proof.
@@ -815,7 +797,14 @@ Proof.
     elim: rx j=> [j|a b ra l l' rl ihl j] /=;
     case: j=> [|j] //=.
     by rewrite ihl [(a == _)%C]refines_eq.
-  by rewrite (list_R_spec2 rl).
+  have -> :
+    map (fun s => map spec s) l = (map (fun s => map spec s) l' : seqmx R).
+    elim: rl=> [|a b ra p q rp ih] //=.
+    rewrite ih.
+    apply: congr2=> //.
+    elim: ra=> [|x y rxy s t rst ihs] //=.
+    by rewrite ihs [specR _]refines_eq.
+  by [].
 Qed.
 
 End seqmx_param.
