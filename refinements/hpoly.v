@@ -106,10 +106,10 @@ Global Instance shift_hpoly : shift_of (hpoly A) N :=
 
 Global Instance mul_hpoly : mul_of (hpoly A) := fix f p q := match p, q with
   | Pc a, q => a *: q
-  | p, Pc b => b *: p
+  | p, Pc b => map_hpoly (fun x => (x * b)%C) p
   | PX a n p, PX b m q =>
      shift_hpoly (cast (n + m)) (f p q) + shift_hpoly (cast m) (a *: q) +
-    (shift_hpoly (cast n) (b *: p) + Pc (a * b))
+    (shift_hpoly (cast n) (map_hpoly (fun x => (x * b)%C) p) + Pc (a * b))
   end.
 
 Fixpoint eq0_hpoly (p : hpoly A) : bool := match p with
@@ -258,7 +258,7 @@ Arguments spec_hpoly / : assert.
 (******************************************************************************)
 Section hpoly_theory.
 
-Variable A : comRingType.
+Variable A : ringType.
 
 Instance zeroA : zero_of A   := 0%R.
 Instance oneA  : one_of A    := 1%R.
@@ -410,11 +410,25 @@ rewrite [p]RhpolyE [q]RhpolyE refinesE /Rhpoly /fun_hrel {p q h1 h2}.
 by rewrite /add_op /add_hpoly addXnE expr0 mulr1.
 Qed.
 
-Lemma to_poly_scale a p : to_poly (a *: p)%C = a *: (to_poly p).
+Lemma to_poly_scale_l a p : to_poly (a *: p)%C = a *: (to_poly p).
 Proof.
   elim: p=> [b|b n p ih] /=;
     rewrite /mul_op /mulA -mul_polyC polyC_mul //.
   by rewrite ih -mul_polyC mulrDr mulrA /mul_op /mulA.
+Qed.
+
+Lemma mulXnC (R : ringType) (p : {poly R}) n : p * 'X^n = 'X^n * p.
+Proof.
+  apply/polyP=> i.
+  by rewrite coefMXn coefXnM.
+Qed.
+
+Lemma to_poly_scale_r a p :
+  to_poly (map_hpoly (fun x => (x * a)%C) p) = to_poly p * a%:P.
+Proof.
+  elim: p=> [b|b n p ih] /=;
+    rewrite /mul_op /mulA polyC_mul //.
+  by rewrite ih mulrDl -mulrA mulXnC -mulrA.
 Qed.
 
 Lemma cast_nat_posK n : n > 0 -> cast_pos_nat (cast_nat_pos n) = n.
@@ -425,20 +439,20 @@ Qed.
 Instance Rhpoly_mul :
   refines (Rhpoly ==> Rhpoly ==> Rhpoly) *%R (mul_hpoly (N:=nat)).
 Proof.
-apply refines_abstr2 => p hp h1 q hq h2.
-rewrite [p]RhpolyE [q]RhpolyE refinesE /Rhpoly /fun_hrel {p q h1 h2}.
-elim: hp hq => [a [b|b m l']|a n l ih [b|b m l']] /=;
-      first by rewrite polyC_mul.
-    by rewrite polyC_mul to_poly_scale -mul_polyC mulrDr mulrA.
-  by rewrite polyC_mul to_poly_scale -mul_polyC mulrDl -mulrA mulrC
-             [(_%:P * _%:P)]mulrC.
-rewrite [in (cast _)]/add_op /add_pos.
-case: n=> n lt0n; case: m=> m lt0m /=.
-rewrite /cast cast_nat_posK /cast_pos_nat ?addn_gt0 ?lt0n //= /shift_hpoly.
-simpC; rewrite !gtn_eqF ?addn_gt0 ?lt0n //=.
-rewrite mulrDr !mulrDl mulrCA -!mulrA -exprD mulrCA !mulrA [_ * b%:P]mulrC.
-rewrite -polyC_mul !mul_polyC !addXnE /= expr0 !mulr1 !addr0 ih scalerAl /cast.
-by rewrite !to_poly_scale !cast_nat_posK ?addn_gt0 ?lt0n.
+  apply refines_abstr2=> p hp h1 q hq h2.
+  rewrite [p]RhpolyE [q]RhpolyE refinesE /Rhpoly /fun_hrel {p q h1 h2}.
+  elim: hp hq => [a [b|b m l']|a n l ih [b|b m l']] /=;
+        first by rewrite polyC_mul.
+      by rewrite polyC_mul to_poly_scale_l -mul_polyC mulrDr mulrA.
+    by rewrite polyC_mul to_poly_scale_r mulrDl -mulrA mulXnC mulrA.
+  rewrite [in (cast _)]/add_op /add_pos.
+  case: n=> n lt0n; case: m=> m lt0m /=.
+  rewrite /cast cast_nat_posK /cast_pos_nat ?addn_gt0 ?lt0n //= /shift_hpoly.
+  simpC; rewrite !gtn_eqF ?addn_gt0 ?lt0n //=.
+  rewrite mulrDr !mulrDl -mulrA -mulXnC -mulrA -exprD !mulrA !addXnE /= expr0.
+  rewrite !mulr1 !addr0 ih /cast !cast_nat_posK ?addn_gt0 ?lt0n //=.
+  rewrite to_poly_scale_l to_poly_scale_r -mul_polyC -[_ * b%:P * _]mulrA.
+  by rewrite [b%:P * _]mulXnC mulrA polyC_mul addnC.
 Qed.
 
 Instance Rhpoly_sub :
@@ -459,7 +473,7 @@ Proof.
 Qed.
 
 (* Add to ssr? *)
-Lemma size_MXnaddC (R : comRingType) (p : {poly R}) (c : R) n :
+Lemma size_MXnaddC (R : ringType) (p : {poly R}) (c : R) n :
   size (p * 'X^n.+1 + c%:P) = if (p == 0) then size c%:P else (n.+1 + size p)%N.
 Proof.
 have [->|/eqP hp0] := eqP; first by rewrite mul0r add0r.
@@ -499,7 +513,7 @@ Proof.
   by case: ifP=> //=; simpC; rewrite size_polyC; case: ifP.
 Qed.
 
-Lemma lead_coef_MXnaddC (R : comRingType) (p : {poly R}) (c : R) n :
+Lemma lead_coef_MXnaddC (R : ringType) (p : {poly R}) (c : R) n :
   lead_coef (p * 'X^n.+1 + c%:P) = if (lead_coef p == 0) then c
                                    else lead_coef p.
 Proof.
@@ -699,12 +713,6 @@ Proof.
   exact: refines_apply.
 Qed.
 
-Lemma mulXnC (p : {poly A}) n : p * 'X^n = 'X^n * p.
-Proof.
-  apply/polyP=> i.
-  by rewrite coefMXn coefXnM.
-Qed.
-
 Global Instance RhpolyC_Xnmul p sp n rn :
   refines rN n rn -> refines RhpolyC p sp ->
   refines RhpolyC ('X^n * p) (shift_op rn sp).
@@ -803,21 +811,20 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-(* (* This one does not work, but it works with type {poly {poly int}}... *) *)
-(* Goal (0 == (0 : {poly {poly {poly int}}})). *)
-(* rewrite [_ == _]refines_eq. *)
-(* by compute. *)
-(* Abort. *)
+Goal (0 == (0 : {poly {poly {poly int}}})).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
 
 Goal (1 == 1 :> {poly int}).
 rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
-(* Goal (1 == (1 : {poly {poly {poly int}}})). *)
-(* rewrite [_ == _]refines_eq. *)
-(* by compute. *)
-(* Abort. *)
+Goal (1 == (1 : {poly {poly {poly int}}})).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
 
 Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
       == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
