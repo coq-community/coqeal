@@ -486,6 +486,14 @@ Proof.
   exact: refinesP.
 Qed.
 
+Local Instance Rseqpoly_head :
+  refines (Rseqpoly ==> Logic.eq) (fun p => p`_0) (fun sp => nth 0%C sp 0).
+Proof.
+  rewrite refinesE=> _ sp <-.
+  rewrite /poly_of_seqpoly coef_poly_of_seqpoly.
+  by case: sp.
+Qed.
+
 Local Instance Rseqpoly_spec_l : refines (Rseqpoly ==> Logic.eq) spec_id spec.
 Proof.
   rewrite refinesE=> _ sp <-.
@@ -670,6 +678,17 @@ Proof. param_comp mod_seqpoly_R. Qed.
 Global Instance RseqpolyC_scal :
   refines (RseqpolyC ==> RseqpolyC ==> rN) (@rscalp R) scal_op.
 Proof. param_comp scal_seqpoly_R. Qed.
+
+Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
+Proof. by rewrite refinesE; apply: nat_Rxx. Qed.
+
+Global Instance RseqpolyC_head :
+  refines (RseqpolyC ==> rAC) (fun p => p`_0) (fun sp => nth 0%C sp 0).
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE=> l l' rl.
+  apply nth_R; exact: refinesP.
+Qed.
 
 Global Instance RseqpolyC_X : refines RseqpolyC 'X (shift_op (1%C : N) 1)%C.
 Proof. rewrite -['X]mul1r; exact: RseqpolyC_mulX. Qed.
