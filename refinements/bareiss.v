@@ -34,7 +34,7 @@ Context `{drsubmx : drsubmx_of mxpolyR}.
 Context `{!hmul_of mxpolyR}.
 Context `{forall m n, sub_of (mxpolyR m n)}.
 Context `{forall m n, scale_of polyR (mxpolyR m n)}.
-Context `{map_mx : forall m n, map_mx_of polyR (mxpolyR m n)}.
+Context `{map_mx : forall m n, map_mx_of polyR polyR (mxpolyR m n) (mxpolyR m n)}.
 Context `{top_left : forall m, top_left_of (mxpolyR (1 + m) (1 + m)) polyR}.
 Context `{divp : div_of polyR}.
 Variable char_poly_mx : forall n, mxR n n -> mxpolyR n n.
@@ -116,7 +116,8 @@ Instance : forall m n, sub_of (matrix {poly R} m n) :=
   fun m n (M N : 'M[{poly R}]_(m,n)) => M - N.
 Instance : forall m n, scale_of {poly R} (matrix {poly R} m n) :=
   @scalemx [ringType of {poly R}].
-Instance map_mx : forall m n, map_mx_of {poly R} (matrix {poly R} m n) :=
+Instance map_mx : forall m n, map_mx_of {poly R} {poly R} (matrix {poly R} m n)
+  (matrix {poly R} m n) :=
   fun m n f => @matrix.map_mx {poly R} {poly R} f m n.
 Instance top_left : forall m, top_left_of 'M[{poly R}]_(1 + m,1 + m) {poly R} :=
   fun m M => M ord0 ord0.
@@ -260,7 +261,7 @@ Context `{drsubmxC : drsubmx_of mxpolyC}.
 Context `{!hmul_of mxpolyC}.
 Context `{subC : forall m n, sub_of (mxpolyC m n)}.
 Context `{forall m n, scale_of polyC (mxpolyC m n)}.
-Context `{map_mxC : forall m n, map_mx_of polyC (mxpolyC m n)}.
+Context `{map_mxC : forall m n, map_mx_of polyC polyC (mxpolyC m n) (mxpolyC m n)}.
 Context `{top_leftC : forall m, top_left_of (mxpolyC (1 + m) (1 + m)) polyC}.
 Context `{divpC : div_of polyC}.
 Variable char_poly_mxC : forall n, mxC n n -> mxpolyC n n.
@@ -399,10 +400,15 @@ Proof. by rewrite refinesE => ? ? ?; apply: refinesP. Qed.
 Definition M : 'M[int]_(2,2) := \matrix_(i,j < 2) 3%:Z.
 
 Goal \det M == 0.
-  Typeclasses eauto := debug.
-  rewrite [_ == _]refines_eq.
+rewrite [_ == _]refines_eq.
+by compute.
 Abort.
-  
+
+Goal \det (1 : 'M[int]_(3)) == 1.
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
 End test_bareiss.
 
 (* Section poly_op. *)

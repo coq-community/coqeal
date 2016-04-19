@@ -9,3 +9,4 @@ seqpoly.v
 karatsuba.v
 seqmx.v
 hpoly.v
+bareiss.v
