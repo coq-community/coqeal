@@ -239,8 +239,7 @@ Global Instance spec_seqmx m n : spec_of (seqmx C) 'M[R]_(m, n) :=
   fun s =>
     if (s == seqmx0 m n)%C then 0 else
       matrix_of_fun matrix_key (fun (i : 'I_m) (j : 'I_n) =>
-                                  (nth 0 (nth [::] (map (fun l => map spec l) s)
-                                              i) j)).
+                                  (nth 0 (nth [::] (map (map spec) s) i) j)).
 
 End seqmx_more_op.
 
@@ -710,13 +709,6 @@ Proof. by rewrite refinesE; apply: nat_Rxx. Qed.
 (* Local Instance refines_eq_refl_nat : forall (m : nat), refines eq m m | 999.  *)
 (* Proof. by rewrite refinesE. Qed. *)
 
-(* Local Instance refines_ordinal_eq (m : nat) (i j : 'I_m) : *)
-(*   refines (ordinal_R (refl_nat_R m)) i j -> refines eq i j. *)
-(* Proof. *)
-(* rewrite !refinesE=> [[m0 m1 mR i0 i1 _]]. *)
-(* apply: ord_inj; exact: nat_R_eq. *)
-(* Qed. *)
-
 Local Instance refines_ordinal_eq (m : nat) (i j : 'I_m) :
   refines (ordinal_R (nat_Rxx m)) i j -> refines eq i j.
 Proof.
@@ -998,8 +990,7 @@ Proof.
     elim: rx j=> [j|a b ra l l' rl ihl j] /=;
     case: j=> [|j] //=.
     by rewrite ihl [(a == _)%C]refines_eq.
-  have -> :
-    map (fun s => map spec s) l = (map (fun s => map spec s) l' : seqmx R).
+  have -> : map (map spec) l = (map (map spec) l' : seqmx R).
     elim: rl=> [|a b ra p q rp ih] //=.
     rewrite ih.
     apply: congr2=> //.
