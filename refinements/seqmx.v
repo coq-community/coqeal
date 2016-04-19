@@ -68,6 +68,10 @@ Class map_mx_of A B :=
 
 End classes.
 
+Typeclasses Transparent hzero_of hmul_of heq_of top_left_of usubmx_of dsubmx_of
+            lsubmx_of rsubmx_of ulsubmx_of ursubmx_of dlsubmx_of drsubmx_of
+            row_mx_of col_mx_of block_mx_of const_mx_of map_mx_of.
+
 Notation "0" := hzero_op : hetero_computable_scope.
 (* Notation "- x" := (hopp_op x) : hetero_computable_scope. *)
 Notation "x == y" := (heq_op x y) : hetero_computable_scope.
