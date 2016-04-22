@@ -204,8 +204,12 @@ Class sub_of A := sub_op : A -> A -> A.
 Hint Mode sub_of + : typeclass_instances.
 Class mul_of A := mul_op : A -> A -> A.
 Hint Mode mul_of + : typeclass_instances.
+Class exp_of A B := exp_op : A -> B -> A.
+Hint Mode exp_of + + : typeclass_instances.
 Class div_of A := div_op : A -> A -> A.
 Hint Mode div_of + : typeclass_instances.
+Class inv_of A := inv_op : A -> A.
+Hint Mode inv_of + : typeclass_instances.
 Class mod_of A := mod_op : A -> A -> A.
 Hint Mode mod_of + : typeclass_instances.
 Class scale_of A B := scale_op : A -> B -> B.
@@ -232,8 +236,8 @@ End Refinements.
 
 Import Refinements.Op.
 
-Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of div_of
-            mod_of scale_of eq_of leq_of lt_of spec_of implem_of cast_of.
+Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of exp_of div_of
+            inv_of mod_of scale_of eq_of leq_of lt_of spec_of implem_of cast_of.
 
 Arguments spec / : assert.
 
@@ -246,7 +250,9 @@ Notation "x + y"  := (add_op x y)   : computable_scope.
 Notation "x - y"  := (sub_op x y)   : computable_scope.
 Notation "*%C"    := mul_op.
 Notation "x * y"  := (mul_op x y)   : computable_scope.
+Notation "x ^ y"  := (exp_op x y)   : computable_scope.
 Notation "x %/ y" := (div_op x y)   : computable_scope.
+Notation "x ^-1"  := (inv_op x)     : computable_scope.
 Notation "x %% y" := (mod_op x y)   : computable_scope.
 Notation "*:%C"   := scale_op.
 Notation "x *: y" := (scale_op x y) : computable_scope.

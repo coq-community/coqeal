@@ -10,3 +10,4 @@ karatsuba.v
 seqmx.v
 hpoly.v
 bareiss.v
+rational.v
