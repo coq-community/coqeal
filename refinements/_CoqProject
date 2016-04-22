@@ -11,3 +11,4 @@ seqmx.v
 hpoly.v
 bareiss.v
 rational.v
+boolF2.v
