@@ -393,20 +393,23 @@ Section test_bareiss.
 From mathcomp Require Import ssrint.
 From CoqEAL Require Import binint seqpoly.
 
-Instance refines_fun A B C D (R : A -> B -> Type) (Q : C -> D -> Type)
-  a b `{!refines Q a b} : refines (R ==> Q)%rel (fun _ => a) (fun _ => b).
-Proof. by rewrite refinesE => ? ? ?; apply: refinesP. Qed.
-
 Definition M : 'M[int]_(2,2) := \matrix_(i,j < 2) 3%:Z.
 
 Goal \det M == 0.
 rewrite [_ == _]refines_eq.
-by compute.
+by vm_compute.
 Abort.
 
 Goal \det (1 : 'M[int]_(3)) == 1.
 rewrite [_ == _]refines_eq.
-by compute.
+by vm_compute.
+Abort.
+
+Definition Madd := \matrix_(i,j < 20) (i + j)%:Z%:P.
+
+Goal \det Madd == 0.
+rewrite [_ == _]refines_eq.
+by vm_compute.
 Abort.
 
 End test_bareiss.

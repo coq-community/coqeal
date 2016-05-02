@@ -11,7 +11,6 @@ Import GRing.Theory.
 Import Refinements.Op.
 
 Local Open Scope ring_scope.
-Local Open Scope rel.
 
 Delimit Scope hetero_computable_scope with HC.
 
@@ -101,13 +100,20 @@ Parametricity foldl2.
 Section seqmx_op.
 
 Variable A B : Type.
+Variable I : nat -> Type.
 
 Definition seqmx {A} := seq (seq A).
 Definition hseqmx {A} := fun (_ _ : nat) => @seqmx A.
 
 Context `{zero_of A, one_of A, add_of A, opp_of A, mul_of A, eq_of A}.
+Context `{forall n, implem_of 'I_n (I n)}.
 
 Definition ord_enum_eq n : seq 'I_n := pmap (insub_eq _) (iota 0 n).
+
+Definition seqmx_of_fun m n (f : I m -> I n -> A) : hseqmx m n :=
+  let enum_n := map implem (ord_enum_eq n) in
+  let enum_m := map implem (ord_enum_eq m) in
+  map (fun i => map (f i) enum_n) enum_m.
 
 Definition mkseqmx_ord m n (f : 'I_m -> 'I_n -> A) : seqmx :=
   let enum_n := ord_enum_eq n in
@@ -221,10 +227,9 @@ Definition copid_seqmx m r := (seqmx1 m - pid_seqmx m m r)%C.
 
 End seqmx_op.
 
-Parametricity eq.
-Parametricity ordinal.
 Parametricity subType.
 Parametricity ord_enum_eq.
+Parametricity seqmx_of_fun.
 Parametricity mkseqmx_ord.
 Parametricity const_seqmx.
 Parametricity map_seqmx.
@@ -290,6 +295,11 @@ Local Instance mulR  : mul_of R := *%R.
 Local Instance eqR   : eq_of R   := eqtype.eq_op.
 Local Instance specR : spec_of R R := spec_id.
 
+Local Instance implem_ord : forall n, (implem_of 'I_n 'I_n) :=
+  fun _ => implem_id.
+
+Local Open Scope rel_scope.
+
 CoInductive Rseqmx {m1 m2} (rm : nat_R m1 m2) {n1 n2} (rn : nat_R n1 n2) :
   'M[R]_(m1,n1) -> hseqmx m2 n2 -> Type :=
   Rseqmx_spec (A : 'M[R]_(m1, n1)) M of
@@ -301,6 +311,27 @@ CoInductive Rseqmx {m1 m2} (rm : nat_R m1 m2) {n1 n2} (rn : nat_R n1 n2) :
 
 Lemma ord_enum_eqE p : ord_enum_eq p = enum 'I_p.
 Proof. by rewrite enumT unlock; apply:eq_pmap ; exact:insub_eqE. Qed.
+
+Instance Rseqmx_seqmx_of_fun m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2)
+         f g :
+  refines (eq ==> eq ==> eq) f g ->
+  refines (Rseqmx rm rn) (\matrix_(i, j) f i j)
+          (seqmx_of_fun (I:=(fun n => 'I_n)) g).
+Proof.
+  move=> h.
+  rewrite refinesE; constructor; rewrite -?(nat_R_eq rm) -?(nat_R_eq rn).
+      by rewrite !size_map ord_enum_eqE size_enum_ord.
+    move=> i ltim.
+    by rewrite (nth_map (Ordinal ltim)) !size_map ord_enum_eqE size_enum_ord.
+  move=> i j.
+  rewrite mxE /seqmx_of_fun !ord_enum_eqE /implem /implem_ord /implem_id.
+  rewrite !map_id (nth_map i) ?size_enum_ord // nth_ord_enum.
+  rewrite (nth_map j) ?size_enum_ord // nth_ord_enum.
+  apply refinesP; eapply refines_apply.
+    eapply refines_apply; tc.
+    by rewrite refinesE.
+  by rewrite refinesE.
+Qed.
 
 Instance Rseqmx_mkseqmx_ord m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
   refines (eq ==> Rseqmx rm rn) (matrix_of_fun matrix_key)
@@ -817,14 +848,19 @@ Qed.
 Section seqmx_param.
 
 Context (C : Type) (rAC : R -> C -> Type).
+Context (I : nat -> Type)
+        (rI : forall n1 n2, nat_R n1 n2 -> 'I_n1 -> I n2 -> Type).
 Context `{zero_of C, one_of C, opp_of C, add_of C, mul_of C, eq_of C}.
 Context `{spec_of C R}.
+Context `{forall n, implem_of 'I_n (I n)}.
 Context `{!refines rAC 0%R 0%C, !refines rAC 1%R 1%C}.
 Context `{!refines (rAC ==> rAC) -%R -%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) +%R +%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) *%R *%C}.
 Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}.
 Context `{!refines (rAC ==> Logic.eq) spec_id spec}.
+Context `{forall n1 n2 (rn : nat_R n1 n2),
+             refines (ordinal_R rn ==> rI rn) implem_id implem}.
 
 Definition RseqmxC {m1 m2} (rm : nat_R m1 m2) {n1 n2} (rn : nat_R n1 n2) :
   'M[R]_(m1, n1) -> hseqmx m2 n2 -> Type :=
@@ -845,6 +881,35 @@ Proof.
 rewrite !refinesE=> [[m0 m1 mR i0 i1 _]].
 apply: ord_inj; exact: nat_R_eq.
 Qed.
+
+Local Instance refines_fun_refl m n (f : 'I_m -> 'I_n -> R) :
+  refines (eq ==> eq ==> eq) f f.
+Proof.
+  by rewrite refinesE=> _ x -> _ y ->.
+Qed.
+
+Global Instance RseqmxC_seqmx_of_fun m1 m2 (rm : nat_R m1 m2) n1 n2
+       (rn : nat_R n1 n2) f g
+       `{forall x y, refines (rI rm) x y ->
+         forall z t, refines (rI rn) z t ->
+         refines (rAC \o (@unify _)) (f x z) (g y t)} :
+  refines (RseqmxC rm rn)
+          (\matrix_(i, j) f i j) (seqmx_of_fun (I:=I) g).
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE.
+  eapply (seqmx_of_fun_R (I_R:=rI))=> // *; apply refinesP.
+    eapply refines_apply; tc.
+  eapply refines_comp_unify; tc.
+Qed.
+
+Global Instance refine_seqmx_of_fun m n f g
+       `{forall x y, refines (rI (nat_Rxx m)) x y ->
+         forall z t, refines (rI (nat_Rxx n)) z t ->
+         refines (rAC \o (@unify _)) (f x z) (g y t)} :
+  refines (RseqmxC (nat_Rxx m) (nat_Rxx n))
+          (\matrix_(i, j) f i j) (seqmx_of_fun (I:=I) g).
+Proof. exact: RseqmxC_seqmx_of_fun. Qed.
 
 Global Instance RseqmxC_mkseqmx_ord m1 m2 (rm : nat_R m1 m2) n1 n2
        (rn : nat_R n1 n2) :
@@ -1213,6 +1278,8 @@ End seqmx.
 
 Section seqmx2.
 
+Local Open Scope rel_scope.
+
 Variable R R' : ringType.
 
 Instance Rseqmx_map_seqmx m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
@@ -1248,6 +1315,8 @@ End seqmx2_param.
 End seqmx2.
 
 Section seqmx_poly.
+
+Local Open Scope rel_scope.
 
 Variable R : ringType.
 Context (C : Type) (rAC : R -> C -> Type).
@@ -1291,7 +1360,7 @@ End seqmx_theory.
 Section testmx.
 
 From mathcomp Require Import ssrint poly.
-From CoqEAL Require Import binint seqpoly.
+From CoqEAL Require Import binint seqpoly binord.
 
 Goal ((0 : 'M[int]_(2,2)) == 0).
 rewrite [_ == _]refines_eq.
@@ -1328,14 +1397,16 @@ rewrite [_ == _]refines_eq.
 by compute.
 Abort.
 
+Definition Maddm : 'M[int]_(2) := \matrix_(i, j < 2) (i + j * i)%:Z.
+
+Goal (Maddm == Maddm).
+rewrite [_ == _]refines_eq.
+by compute.
+Abort.
+
 Definition M3 : 'M[int]_(2,2) := \matrix_(i,j < 2) 3%:Z.
 Definition Mn3 : 'M[int]_(2,2) := \matrix_(i,j < 2) - 3%:Z.
 Definition M6 : 'M[int]_(2,2) := \matrix_(i,j < 2) 6%:Z.
-
-(* This works... *)
-Instance refines_fun A B C D (R : A -> B -> Type) (Q : C -> D -> Type)
-  a b `{!refines Q a b} : refines (R ==> Q) (fun _ => a) (fun _ => b).
-Proof. by rewrite refinesE => ? ? ?; apply: refinesP. Qed.
 
 Definition V : 'rV[int]_(3) := \matrix_(i < 1, j < 3) 3%:Z.
 

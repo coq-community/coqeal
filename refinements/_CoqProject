@@ -7,6 +7,7 @@ binint.v
 poly_op.v
 seqpoly.v
 karatsuba.v
+binord.v
 seqmx.v
 hpoly.v
 bareiss.v

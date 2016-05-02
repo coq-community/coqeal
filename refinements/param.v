@@ -1,4 +1,4 @@
-From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq fintype.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -124,3 +124,6 @@ Parametricity shape.
 Parametricity reshape.
 Parametricity allpairs.
 
+(* fintype *)
+
+Parametricity ordinal.
