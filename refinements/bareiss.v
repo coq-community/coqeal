@@ -391,7 +391,7 @@ End bareiss_correctness.
 Section test_bareiss.
 
 From mathcomp Require Import ssrint.
-From CoqEAL Require Import binint seqpoly.
+From CoqEAL Require Import binint seqpoly binord.
 
 Definition M : 'M[int]_(2,2) := \matrix_(i,j < 2) 3%:Z.
 
@@ -411,6 +411,18 @@ Goal \det Madd == 0.
 rewrite [_ == _]refines_eq.
 by vm_compute.
 Abort.
+
+Definition ctmat1 := \matrix_(i < 3, j < 3)
+  (nth [::] [:: [:: 1%:Z ; 1 ; 1 ]
+              ; [:: -1   ; 1 ; 1 ]
+              ; [::  0   ; 0 ; 1 ] ] i)`_j.
+
+Lemma det_ctmat1 : \det ctmat1 = 2.
+Proof.
+  apply/eqP.
+  rewrite [_ == _]refines_eq.
+  by vm_compute.
+Qed.
 
 End test_bareiss.
 

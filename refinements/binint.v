@@ -300,9 +300,10 @@ Local Instance Rint_specZ_l :
   refines (Rint ==> Logic.eq) spec_id spec.
 Proof. by rewrite refinesE => a a' ra; rewrite [spec _]RintE. Qed.
 
-Local Instance Rint_implem x : refines Rint x (implem x) | 999.
+Local Instance Rint_implem : refines (Logic.eq ==> Rint) implem_id implem.
 Proof.
-  by rewrite refinesE; case: x.
+  rewrite refinesE=> _ x ->.
+  by case: x.
 Qed.
 
 (*************************************************************************)
@@ -346,6 +347,8 @@ Context `{forall x, refines Rnat (spec x) x,
 (*           !refines (Rpos ==> pos_R) spec_id spec}. *)
 Context `{!refines (Rnat ==> Logic.eq) spec_id spec,
           !refines (Rpos ==> Logic.eq) spec_id spec}.
+Context `{!refines (Logic.eq ==> Rnat) implem_id implem,
+          !refines (Logic.eq ==> Rpos) implem_id implem}.
 
 Local Notation Z := (Z N P).
 
@@ -402,6 +405,19 @@ Proof.
   case: rxy=> [n m rnm|p q rpq]; rewrite /spec /=; apply: congr1.
     exact: refinesP.
   apply: congr1; exact: refinesP.
+Qed.
+
+Global Instance RZNP_implemZ : refines (Logic.eq ==> RZNP) implem_id implem.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE=> _ x ->.
+  case: x=> n /=.
+    apply: Z_R_Zpos_R.
+    have heq : refines eq n n by rewrite refinesE.
+    exact: refinesP.
+  apply: Z_R_Zneg_R.
+  have heq : refines eq (posS n) (posS n) by rewrite refinesE.
+  exact: refinesP.
 Qed.
 
 End binint_nat_pos.

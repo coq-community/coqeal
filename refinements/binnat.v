@@ -93,6 +93,13 @@ Proof. by rewrite !refinesE. Qed.
 Global Instance Rpos_spec : refines (Rpos ==> Logic.eq) spec_id spec.
 Proof. by rewrite refinesE. Qed.
 
+Global Instance Rpos_implem : refines (Logic.eq ==> Rpos) implem_id implem.
+Proof.
+  rewrite refinesE=> _ x ->.
+  case: x=> n ngt0.
+  by rewrite /Rpos /fun_hrel positive_of_posK.
+Qed.
+
 Global Instance Rpos_1 : refines Rpos (pos1 : pos) (1%C : positive).
 Proof. by rewrite !refinesE; apply: val_inj; rewrite /= insubdK. Qed.
 

@@ -9,7 +9,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import Refinements.Op.
+Import Refinements.Op zmodp.
 
 Local Open Scope ring_scope.
 
@@ -26,7 +26,7 @@ Section binord_theory.
 Local Open Scope rel_scope.
 
 Definition Rord n1 n2 (rn : nat_R n1 n2) : 'I_n1 -> binord n2 -> Type :=
-  fun x m => bin_of_nat x = m.
+  fun_hrel nat_of_bin.
 
 Lemma ordinal_R_eq n1 n2 (rn : nat_R n1 n2) x y :
   ordinal_R rn x y -> x = y :> nat.
@@ -39,8 +39,8 @@ Global Instance Rord_implem n1 n2 (rn : nat_R n1 n2) :
   refines (ordinal_R rn ==> Rord rn) implem_id implem.
 Proof.
   rewrite refinesE=> x y rxy.
-  rewrite /Rord /implem_id /implem /implem_ord.
-  by rewrite (@ordinal_R_eq n1 n2 rn x y rxy).
+  rewrite /Rord /fun_hrel /implem_id /implem /implem_ord.
+  by rewrite (@ordinal_R_eq n1 n2 rn x y rxy) bin_of_natK.
 Qed.
 
 Variable (N : Type) (Rnat : nat -> N -> Type).
@@ -53,7 +53,7 @@ Global Instance Rnat_nat_of_ord n1 n2 (rn : nat_R n1 n2) :
   refines (Rord rn ==> Rnat) (@nat_of_ord n1) (implem \o nat_of_bin).
 Proof.
   rewrite refinesE /funcomp=> x y hxy.
-  rewrite -hxy bin_of_natK -{1}[_ x]/(implem_id _).
+  rewrite hxy -{1}[_ x]/(implem_id _).
   have hx : refines eq (nat_of_ord x) (nat_of_ord x) by rewrite refinesE.
   exact: refinesP.
 Qed.
