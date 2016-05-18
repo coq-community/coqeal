@@ -178,6 +178,8 @@ Definition succN (n : N) : N := (1 + n)%C.
 Global Instance sub_N  : sub_of N := N.sub.
 (*Global Instance exp_N  : exp N N := N.pow.*)
 Global Instance mul_N  : mul_of N := N.mul.
+Global Instance div_N  : div_of N := N.div.
+Global Instance mod_N  : mod_of N := N.modulo.
 Global Instance eq_N   : eq_of N  := N.eqb.
 Global Instance leq_N  : leq_of N := N.leb.
 Global Instance lt_N   : lt_of N  := N.ltb.
@@ -257,6 +259,42 @@ Global Instance Rnat_mul : refines (Rnat ==> Rnat ==> Rnat) muln mul_op.
 Proof.
 rewrite refinesE => _ x <- _ y <-; rewrite /Rnat /fun_hrel /=.
 by rewrite nat_of_mul_bin.
+Qed.
+
+Global Instance Rnat_div_eucl :
+  refines (Rnat ==> Rnat ==> prod_hrel Rnat Rnat) edivn N.div_eucl.
+Proof.
+  rewrite refinesE /prod_hrel /Rnat /fun_hrel=> _ x <- _ y <-.
+  rewrite edivn_def /=.
+  case: x=> [|x] /=; first by rewrite div0n mod0n.
+  case: y=> [|y] //=.
+  have hspec := N.pos_div_eucl_spec x (N.pos y).
+  have hrem := N.pos_div_eucl_remainder x (N.pos y).
+  destruct N.pos_div_eucl.
+  rewrite -[nat_of_pos _]/(nat_of_bin (N.pos _)) hspec /= {hspec}.
+  rewrite nat_of_add_bin nat_of_mul_bin.
+  have rem_lt_div : (n0 < N.pos y)%N.
+    have pos_ne0 : N.pos y <> 0%num by [].
+    have /= := hrem pos_ne0.
+    rewrite /N.lt Nnat.N2Nat.inj_compare /= to_natE.
+    move/nat_compare_lt/ltP.
+    case: n0 {hrem}=> //= p.
+    by rewrite to_natE.
+  rewrite modnMDl modn_small ?rem_lt_div // divnMDl /= -?to_natE ?to_nat_gt0 //.
+  by rewrite divn_small ?addn0 // ?to_natE.
+Qed.
+
+Global Instance Rnat_div : refines (Rnat ==> Rnat ==> Rnat) divn div_op.
+Proof.
+  apply refines_abstr2; rewrite /divn /div_op /div_N /N.div=> x x' rx y y' ry.
+  exact: refines_apply.
+Qed.
+
+Global Instance Rnat_mod : refines (Rnat ==> Rnat ==> Rnat) modn mod_op.
+Proof.
+  apply refines_abstr2; rewrite /mod_op /mod_N /N.modulo=> x x' rx y y' ry.
+  rewrite modn_def.
+  exact: refines_apply.
 Qed.
 
 (* Global Instance Rnat_exp : refines (Rnat ==> Rnat ==> Rnat) expn exp_op. *)
