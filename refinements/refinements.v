@@ -170,7 +170,7 @@ Global Instance refines_snd_R
   refines (prod_R rA rB ==> rB)%rel (@snd _ _) (@snd _ _).
 Proof. by rewrite !refinesE=> [??] [??]. Qed.
 
-Class unify A (x y : A) := unify_op : x = y.
+Class unify A (x y : A) := unify_rel : x = y.
 Global Instance unifyxx A (x : A) : unify x x := erefl.
 
 Global Instance refines_of_unify A x y : unify x y -> refines (@unify A) x y.

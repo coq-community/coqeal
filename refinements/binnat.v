@@ -221,13 +221,6 @@ rewrite !refinesE => x _ <-.
 by rewrite /Rnat /fun_hrel /implem /implem_N bin_of_natK.
 Qed.
 
-Global Instance Rnat_implem_nat : refines (nat_R ==> Rnat) implem_id implem.
-Proof.
-  rewrite refinesE=> x y rxy.
-  rewrite (nat_R_eq rxy).
-  by rewrite /Rnat /fun_hrel /implem /implem_N bin_of_natK.
-Qed.
-
 Global Instance Rnat_0 : refines Rnat 0 0%C.
 Proof. by rewrite refinesE. Qed.
 
