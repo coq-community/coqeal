@@ -153,6 +153,12 @@ Global Instance split_hpoly : split_of (hpoly A) N :=
                      else (shift_hpoly (cast n - m)%C p', Pc a)
       end.
 
+Definition head_hpoly (p : hpoly A) :=
+  match p with
+  | Pc a => a
+  | PX a n p' => a
+  end.
+
 End hpoly_op.
 End hpoly.
 
@@ -176,6 +182,7 @@ Parametricity eq_hpoly.
 Parametricity size_hpoly.
 Parametricity lead_coef_hpoly.
 Parametricity split_hpoly.
+Parametricity head_hpoly.
 
 Section hpoly_more_op.
 
@@ -595,6 +602,15 @@ Proof.
   by rewrite [(_ <= _)%N]hnSm.
 Qed.
 
+Instance Rhpoly_head : refines (Rhpoly ==> Logic.eq) (fun p => p`_0) head_hpoly.
+Proof.
+  rewrite refinesE=> _ hp <-.
+  elim: hp=> [a|a n p ih]; rewrite [to_poly _]/=; first by rewrite coefC.
+  rewrite coefD coefMXn coefC /cast /cast_pos_nat.
+  case: n=> n ngt0 /=.
+  by rewrite ngt0 add0r.
+Qed.
+
 Instance Rhpoly_spec_l :
   refines (Rhpoly ==> Logic.eq) spec_id (spec_hpoly (N:=nat) (C:=A)).
 Proof.
@@ -783,6 +799,10 @@ Proof. move=> hn; rewrite -['X^_]mul1r; exact: RhpolyC_mulXn. Qed.
 (*   (fun p x => p.[x]) (fun sp x => horner_seq sp x). *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
+
+Global Instance RhpolyC_head :
+  refines (RhpolyC ==> rAC) (fun p => p`_0) head_hpoly.
+Proof. param_comp head_hpoly_R. Qed.
 
 Global Instance RhpolyC_spec :
   refines (RhpolyC ==> eq) spec_id (spec_hpoly (N:=N) (C:=C)).
