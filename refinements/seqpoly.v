@@ -21,8 +21,8 @@ Variable A N : Type.
 Definition seqpoly := seq A.
 
 Context `{zero_of A, one_of A}.
-Context `{add_of A, opp_of A, sub_of A, mul_of A, eq_of A}.
-Context `{zero_of N, one_of N, add_of N, sub_of N, eq_of N, lt_of N}.
+Context `{add_of A, opp_of A, mul_of A, eq_of A}.
+Context `{zero_of N, one_of N, add_of N, eq_of N}.
 Context `{spec_of N nat}.
 
 Global Instance cast_seqpoly : cast_of A seqpoly := fun x => [:: x].
@@ -72,33 +72,6 @@ Global Instance split_seqpoly : split_of seqpoly N :=
 Global Instance lead_coef_seqpoly : lead_coef_of A seqpoly :=
   fun p => nth 0 p (spec (size_seqpoly p)).-1.
 
-(* pseudo-division *)
-Definition div_rec_seqpoly (q : seqpoly) :=
-  let sq := size_seqpoly q in
-  let cq := (cast (lead_coef_seqpoly q) : seqpoly) in
-  fix loop (k : N) (qq r : seqpoly) (n : nat) {struct n} :=
-    if (size_seqpoly r < sq)%C
-    then (k, qq, r) else
-      let m := shift_seqpoly (size_seqpoly r - sq)
-                             (cast (lead_coef_seqpoly r) : seqpoly) in
-      let qq1 := (qq * cq + m)%C in
-      let r1 := (r * cq - m * q)%C in
-      if n is n1.+1 then loop (k + 1)%C qq1 r1 n1 else ((k + 1)%C, qq1, r1).
-
-Global Instance div_seqpoly : div_of seqpoly :=
-  fun p q => (if (q == 0)%C
-                 then (0%C, 0%C, p)
-                 else div_rec_seqpoly q 0 0%C p (spec (size_seqpoly p))).1.2.
-
-Global Instance mod_seqpoly : mod_of seqpoly :=
-  fun p q => (if (q == 0)%C
-                 then (0%C, 0%C, p)
-                 else div_rec_seqpoly q 0 0%C p (spec (size_seqpoly p))).2.
-
-Global Instance scal_seqpoly : scal_of seqpoly N :=
-  fun p q => (if (q == 0)%C then (0%C, 0%C, p)
-              else div_rec_seqpoly q 0 0%C p (spec (size_seqpoly p))).1.1.
-
 End seqpoly_op.
 
 Parametricity cast_seqpoly.
@@ -114,10 +87,6 @@ Parametricity eq_seqpoly.
 Parametricity shift_seqpoly.
 Parametricity split_seqpoly.
 Parametricity lead_coef_seqpoly.
-Parametricity div_rec_seqpoly.
-Parametricity div_seqpoly.
-Parametricity mod_seqpoly.
-Parametricity scal_seqpoly.
 
 Section seqpoly_more_op.
 
@@ -209,7 +178,6 @@ Variable R : ringType.
 Local Instance zeroR : zero_of R := 0%R.
 Local Instance oneR  : one_of R  := 1%R.
 Local Instance addR  : add_of R  := +%R.
-Local Instance subR  : sub_of R  := fun x y => x - y.
 Local Instance mulR  : mul_of R  := *%R.
 Local Instance oppR  : opp_of R  := -%R.
 Local Instance eqR   : eq_of R   := eqtype.eq_op.
@@ -218,8 +186,6 @@ Local Instance specR : spec_of R R := spec_id.
 Local Instance zero_nat : zero_of nat := 0%N.
 Local Instance one_nat  : one_of nat  := 1%N.
 Local Instance add_nat  : add_of nat  := addn.
-Local Instance sub_nat  : sub_of nat  := subn.
-Local Instance lt_nat   : lt_of nat  := ssrnat.ltn.
 Local Instance eq_nat   : eq_of nat   := eqtype.eq_op.
 Local Instance spec_nat : spec_of nat nat := spec_id.
 
@@ -434,58 +400,6 @@ Proof.
   by rewrite coef_poly_of_seqpoly.
 Qed.
 
-Local Instance refines_eq_refl A (n : A) : refines Logic.eq n n | 999.
-Proof. by rewrite refinesE. Qed.
-
-Local Instance Rseqpoly_edivp_rec :
-  refines (Rseqpoly ==> Logic.eq ==> Rseqpoly ==> Rseqpoly ==> Logic.eq ==>
-           prod_hrel (prod_hrel Logic.eq Rseqpoly) Rseqpoly)
-          (@redivp_rec R) (div_rec_seqpoly (N:=nat)).
-Proof.
-  rewrite refinesE=> q sq hsq n m <- {m} p sp hsp r sr hsr m m' <- {m'} /=.
-  apply refinesP; elim: m => [|m ih] /= in n p sp hsp q sq hsq r sr hsr *;
-  rewrite -!sizepE ![sizep _]refines_eq -mul_polyC
-          -[_ * 'X^_]/(shiftp (size_op r - size_op q) _)
-          -[(size_seqpoly _ < _)%C]/((_ < _)%N).
-    case: ifP=> _; rewrite refinesE /prod_hrel //=; do ?split.
-        by rewrite [(_ + _)%C]addn1.
-      exact: refinesP.
-    rewrite /sub_op /sub_seqpoly; exact: refinesP.
-  case: ifP=> _; first by rewrite refinesE /prod_hrel.
-  rewrite [(_ + _)%C]addn1.
-  apply: ih=> //.
-    exact: refinesP.
-  rewrite /sub_op /sub_seqpoly; exact: refinesP.
-Qed.
-
-Local Instance Rseqpoly_div :
-  refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (@rdivp R)
-          (div_seqpoly (N:=nat)).
-Proof.
-  apply refines_abstr2; rewrite /rdivp unlock=> p sp hsp q sq hsq.
-  rewrite /div_seqpoly -sizepE [(_ == _)]refines_eq.
-  case: ifP=> _ /=; rewrite refinesE /spec_nat /spec_id; exact: refinesP.
-Qed.
-
-Local Instance Rseqpoly_mod :
-  refines (Rseqpoly ==> Rseqpoly ==> Rseqpoly) (@rmodp R)
-          (mod_seqpoly (N:=nat)).
-Proof.
-  apply refines_abstr2; rewrite /rmodp unlock=> p sp hsp q sq hsq.
-  rewrite /mod_seqpoly [(_ == _)]refines_eq.
-  case: ifP=> _ //=; rewrite -sizepE refinesE /spec_nat /spec_id.
-  exact: refinesP.
-Qed.
-
-Local Instance Rseqpoly_scal : refines (Rseqpoly ==> Rseqpoly ==> Logic.eq)
-  (@rscalp R) (fun p => scal_seqpoly p).
-Proof.
-  apply refines_abstr2; rewrite /rscalp unlock => p sp hsp q sq hsq.
-  rewrite /scal_seqpoly -sizepE [(_ == _)]refines_eq.
-  case: ifP=> _ /=; rewrite refinesE // /spec_nat /spec_id.
-  exact: refinesP.
-Qed.
-
 Local Instance Rseqpoly_head :
   refines (Rseqpoly ==> Logic.eq) (fun p => p`_0) (fun sp => nth 0%C sp 0).
 Proof.
@@ -514,22 +428,19 @@ Section seqpoly_param.
 Context (C : Type) (rAC : R -> C -> Type).
 Context (N : Type) (rN : nat -> N -> Type).
 Context `{zero_of C, one_of C}.
-Context `{opp_of C, add_of C, sub_of C, mul_of C, eq_of C}.
+Context `{opp_of C, add_of C, mul_of C, eq_of C}.
 Context `{implem_of R C, spec_of C R}.
-Context `{zero_of N, one_of N, add_of N, sub_of N, eq_of N, lt_of N}.
+Context `{zero_of N, one_of N, add_of N, eq_of N}.
 Context `{spec_of N nat}.
 Context `{!refines rAC 0%R 0%C, !refines rAC 1%R 1%C}.
 Context `{!refines (rAC ==> rAC) -%R -%C}.
 Context `{!refines (rAC ==> rAC ==> rAC) +%R +%C}.
-Context `{!refines (rAC ==> rAC ==> rAC) (fun x y => x - y) sub_op}.
 Context `{!refines (rAC ==> rAC ==> rAC) *%R *%C}.
 Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}.
 Context `{!refines (rAC ==> Logic.eq) spec_id spec}.
 Context `{!refines rN 0%N 0%C, !refines rN 1%N 1%C}.
 Context `{!refines (rN ==> rN ==> rN) addn +%C}.
-Context `{!refines (rN ==> rN ==> rN) subn sub_op}.
 Context `{!refines (rN ==> rN ==> bool_R) eqtype.eq_op eq_op}.
-Context `{!refines (rN ==> rN ==> bool_R) ltn lt_op}.
 Context `{!refines (rN ==> nat_R) spec_id spec}.
 
 Definition RseqpolyC : {poly R} -> seq C -> Type :=
@@ -664,20 +575,6 @@ Global Instance RseqpolyC_lead_coef :
 Proof.
 param_comp lead_coef_seqpoly_R.
 Qed.
-
-Global Instance RseqpolyC_div :
-  refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) (@rdivp R)
-          (div_seqpoly (N:=N)).
-Proof. param_comp div_seqpoly_R. Qed.
-
-Global Instance RseqpolyC_mod :
-  refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) (@rmodp R)
-          (mod_seqpoly (N:=N)).
-Proof. param_comp mod_seqpoly_R. Qed.
-
-Global Instance RseqpolyC_scal :
-  refines (RseqpolyC ==> RseqpolyC ==> rN) (@rscalp R) scal_op.
-Proof. param_comp scal_seqpoly_R. Qed.
 
 Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
 Proof. by rewrite refinesE; apply: nat_Rxx. Qed.

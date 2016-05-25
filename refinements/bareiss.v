@@ -391,7 +391,7 @@ End bareiss_correctness.
 Section test_bareiss.
 
 From mathcomp Require Import ssrint.
-From CoqEAL Require Import binint seqpoly binord.
+From CoqEAL Require Import binint seqpoly poly_div binord.
 
 Definition M : 'M[int]_(2,2) := \matrix_(i,j < 2) 3%:Z.
 
