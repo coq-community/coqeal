@@ -36,7 +36,7 @@ Global Instance mul_positive    : mul_of positive := Pos.mul.
 Global Instance le_positive     : leq_of positive := Pos.leb.
 Global Instance lt_positive     : lt_of positive  := Pos.ltb.
 Global Instance eq_positive     : eq_of positive  := Pos.eqb.
-(*Global Instance exp_positive    : exp positive positive := Pos.pow.*)
+Global Instance exp_positive    : exp_of positive positive := Pos.pow.
 End positive_op.
 
 Section positive_theory.
@@ -155,12 +155,27 @@ Proof.
   by apply/negP=> [/eqP /(can_inj pos_of_positiveK)].
 Qed.
 
-(* Global Instance Rpos_exp : param (Rpos ==> Rpos ==> Rpos) exp_pos exp_op.  *)
-(* Proof. *)
-(* rewrite /exp_op /exp_positive /Pos.pow /exp_pos. *)
-(* apply param_abstr2 => [] [x x_gt0] a rx [y y_gt0] b ry. *)
-(* rewrite paramE /= [a]RposI [b]RposI [1%positive]RposI. *)
-(* Admitted. *)
+Lemma pos2nat_inj_exp x y : Pos.to_nat (x ^ y) = Pos.to_nat x ^ Pos.to_nat y.
+Proof.
+  have pos2nat_pow_xO a b
+       (hab : Pos.to_nat (a ^ b) = Pos.to_nat a ^ Pos.to_nat b) :
+    Pos.to_nat (a ^ b~0) = (Pos.to_nat a ^ Pos.to_nat b) ^ 2.
+    by rewrite -Z2Nat.inj_pos Pos2Z.inj_pow Pos2Z.inj_xO Z.mul_comm Z.pow_mul_r
+               // Z.pow_2_r -Pos2Z.inj_pow Z2Nat.inj_mul // Z2Nat.inj_pos multE
+               hab mulnn.
+  elim: y=> [y ihy|y ihy|].
+      by rewrite Pos2Nat.inj_xI multE expnS [in _ ^ _]mulnC expnM Pos.xI_succ_xO
+                 Pos.pow_succ_r Pos2Nat.inj_mul multE pos2nat_pow_xO.
+    by rewrite Pos2Nat.inj_xO multE mulnC expnM pos2nat_pow_xO.
+  by rewrite Pos2Nat.inj_1 expn1 Pos.pow_1_r.
+Qed.
+
+Global Instance Rpos_exp : refines (Rpos ==> Rpos ==> Rpos) exp_pos exp_op.
+Proof.
+  rewrite refinesE /exp_op /exp_positive=> _ x <- _ y <-.
+  apply: val_inj.
+  by rewrite !val_insubd expn_gt0 !to_nat_gt0 pos2nat_inj_exp.
+Qed.
 
 End positive_theory.
 
@@ -176,7 +191,7 @@ Global Instance add_N  : add_of N  := N.add.
 Definition succN (n : N) : N := (1 + n)%C.
 
 Global Instance sub_N  : sub_of N := N.sub.
-(*Global Instance exp_N  : exp N N := N.pow.*)
+Global Instance exp_N  : exp_of N N := N.pow.
 Global Instance mul_N  : mul_of N := N.mul.
 Global Instance div_N  : div_of N := N.div.
 Global Instance mod_N  : mod_of N := N.modulo.
@@ -290,14 +305,19 @@ Proof.
   exact: refines_apply.
 Qed.
 
-(* Global Instance Rnat_exp : refines (Rnat ==> Rnat ==> Rnat) expn exp_op. *)
-(* Proof. *)
-(* rewrite refinesE => _ x <- _ y <-; rewrite /Rnat /fun_hrel /=. *)
-(* rewrite /exp_op /exp_N /N.pow. *)
-(* case: x y => [|x] [|y] //. *)
-(*   rewrite exp0n //=; elim: y => //= p. *)
-(*   by rewrite natTrecE double_gt0. *)
-(* Admitted. *)
+Global Instance Rnat_exp : refines (Rnat ==> Rnat ==> Rnat) expn exp_op.
+Proof.
+  rewrite refinesE => _ x <- _ y <-; rewrite /Rnat /fun_hrel /=.
+  rewrite /exp_op /exp_N /N.pow.
+  case: x y => [|x] [|y] //.
+    rewrite exp0n //=; elim: y => //= p.
+    by rewrite natTrecE double_gt0.
+  have nat_of_binposE p : nat_of_bin (N.pos p) = Pos.to_nat p.
+    elim: p=> [p ihp|p ihp|] /=; last (by rewrite Pos2Nat.inj_1);
+      by rewrite ?(Pos2Nat.inj_xI, Pos2Nat.inj_xO) multE NatTrec.doubleE to_natE
+                 mul2n.
+  by rewrite !nat_of_binposE pos2nat_inj_exp.
+Qed.
 
 Global Instance Rnat_eq : refines (Rnat ==> Rnat ==> bool_R) eqtype.eq_op eq_op.
 Proof.

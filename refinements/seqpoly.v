@@ -51,6 +51,9 @@ Global Instance mul_seqpoly : mul_of seqpoly := fun p q =>
       if p is a :: p then (a *: q + (0%C :: aux p))%C else 0
   in aux p.
 
+Global Instance exp_seqpoly : exp_of seqpoly N :=
+  fun p n => iter (spec n) (mul_seqpoly p) 1.
+
 Global Instance size_seqpoly : size_of seqpoly N :=
   let fix aux p :=
       if p is a :: p then
@@ -82,6 +85,7 @@ Parametricity add_seqpoly.
 Parametricity sub_seqpoly.
 Parametricity scale_seqpoly.
 Parametricity mul_seqpoly.
+Parametricity exp_seqpoly.
 Parametricity size_seqpoly.
 Parametricity eq_seqpoly.
 Parametricity shift_seqpoly.
@@ -316,6 +320,15 @@ Proof.
   by rewrite !coef_poly_of_seqpoly.
 Qed.
 
+Local Instance Rseqpoly_exp :
+  refines (Rseqpoly ==> Logic.eq ==> Rseqpoly) (@GRing.exp _) exp_op.
+Proof.
+  apply refines_abstr2=> p sp hp m n; rewrite refinesE=> -> {m}.
+  rewrite /exp_op /exp_seqpoly.
+  elim: n=> [|n ihn] /=;
+    by rewrite ?(expr0, exprS); tc.
+Qed.
+
 Lemma poly_cons (p : seqpoly R) (a : R) :
   \poly_(i < size (a :: p)) (a :: p)`_i = a%:P + (\poly_(i < size p) p`_i) * 'X.
 Proof.
@@ -478,6 +491,15 @@ Proof. param_comp scale_seqpoly_R. Qed.
 Global Instance RseqpolyC_mul :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) *%R *%C.
 Proof. param_comp mul_seqpoly_R. Qed.
+
+Global Instance RseqpolyC_exp :
+  refines (RseqpolyC ==> rN ==> RseqpolyC) (@GRing.exp _) exp_op.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE; do ?move=> ?*.
+  eapply (exp_seqpoly_R (N_R:=rN))=> // *;
+    exact: refinesP.
+Qed.
 
 Global Instance RseqpolyC_size :
   refines (RseqpolyC ==> rN) (sizep (R:=R)) size_op.

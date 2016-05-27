@@ -36,9 +36,10 @@ Inductive Z := Zpos of N | Zneg of P.
 Definition Zmatch T (n : Z) f g : T :=
    match n with Zpos p => f p | Zneg n => g n end.
 
-Context `{zero_of N, one_of N, sub_of N, add_of N, mul_of N, leq_of N, lt_of N,
-          eq_of N}.
-Context `{one_of P, sub_of P, add_of P, mul_of P, eq_of P, leq_of P, lt_of P}.
+Context `{zero_of N, one_of N, sub_of N, add_of N, mul_of N, exp_of N N,
+          mod_of N, leq_of N, lt_of N, eq_of N}.
+Context `{one_of P, sub_of P, add_of P, mul_of P, exp_of P P, eq_of P, leq_of P,
+          lt_of P}.
 Context `{cast_of N P, cast_of P N}.
 Context `{spec_of N nat, spec_of P pos}.
 Context `{implem_of nat N, implem_of pos P}.
@@ -82,6 +83,14 @@ Global Instance mulZ : mul_of Z := fun x y : Z => match x, y with
   | Zpos x, Zneg y => if (x == 0)%C then 0%C else Zneg (cast x * y)
   | Zneg x, Zneg y => Zpos (cast x * cast y)
   end.
+
+Global Instance expZ : exp_of Z N := fun x n =>
+  if (n == 0)%C then 1%C else
+    match x with
+    | Zpos x => Zpos (x ^ n)
+    | Zneg x => if (n %% (1 + 1) == 0)%C then Zpos (cast (x ^ (cast n : P)))
+                else Zneg (x ^ (cast n : P))
+    end.
 
 Global Instance leqZ : leq_of Z := fun x y : Z => match x, y with
   | Zpos x, Zpos y => (x <= y)
@@ -129,6 +138,7 @@ Parametricity oppZ.
 Parametricity subZ.
 Parametricity eqZ.
 Parametricity mulZ.
+Parametricity expZ.
 Parametricity leqZ.
 Parametricity ltZ.
 Parametricity cast_NZ.
@@ -170,6 +180,8 @@ Local Instance one_nat  : one_of nat  := 1%N.
 Local Instance add_nat  : add_of nat  := addn.
 Local Instance sub_nat  : sub_of nat  := subn.
 Local Instance mul_nat  : mul_of nat  := muln.
+Local Instance exp_nat  : exp_of nat nat := expn.
+Local Instance mod_nat  : mod_of nat := modn.
 Local Instance leq_nat  : leq_of nat  := ssrnat.leq.
 Local Instance lt_nat   : lt_of nat  := ssrnat.ltn.
 Local Instance eq_nat   : eq_of nat   := eqtype.eq_op.
@@ -293,6 +305,25 @@ have [->|y_neq0 /=] := (altP eqP); first by rewrite mulr0.
 by rewrite mulNr !insubdK -?topredE /= ?muln_gt0 ?valP ?andbT ?lt0n.
 Qed.
 
+Local Instance Rint_exp : refines (Rint ==> eq ==> Rint) (@GRing.exp _) exp_op.
+Proof.
+  rewrite refinesE /Rint /fun_hrel /exp_op /expZ=> _ x <- _ n ->.
+  case: n=> [|n] //=.
+  rewrite /exp_op /exp_nat /exp_pos.
+  case: x=> [x|[x xgt0]] //=; first by rewrite -natz natrX natz.
+  rewrite /cast /cast_pos_nat val_insubd /cast_nat_pos val_insubd /=.
+  rewrite expn_gt0 xgt0 /=.
+  have expn_opp1 :
+    (- 1) ^+ n.+1 = (if (n.+1 %% (1 + 1) == 0)%C then 1 else - 1) :> int.
+    rewrite /eq_op /eq_nat /mod_op /mod_nat /add_op /add_nat /one_op /one_nat.
+    rewrite addn1 modn2 -signr_odd.
+    by case: (odd n.+1).
+  case: ifP=> [neven|nodd] /=.
+    by rewrite exprNn -natz natrX natz expn_opp1 neven mul1r.
+  by rewrite val_insubd expn_gt0 xgt0 /= exprNn -natz natrX natz expn_opp1 nodd
+             mulN1r.
+Qed.
+
 Local Instance Rint_specZ_r x : refines Rint (spec x) x.
 Proof. by rewrite !refinesE; case: x. Qed.
 
@@ -318,9 +349,10 @@ Variables (Rnat : nat -> N -> Type) (Rpos : pos -> P -> Type).
 
 Definition RZNP := (Rint \o Z_R Rnat Rpos)%rel.
 
-Context `{zero_of N, one_of N, sub_of N, add_of N, mul_of N, leq_of N, eq_of N,
-          lt_of N}.
-Context `{one_of P, sub_of P, add_of P, mul_of P, eq_of P, leq_of P, lt_of P}.
+Context `{zero_of N, one_of N, sub_of N, add_of N, mul_of N, exp_of N N,
+          mod_of N, leq_of N, eq_of N, lt_of N}.
+Context `{one_of P, sub_of P, add_of P, mul_of P, exp_of P P, eq_of P, leq_of P,
+          lt_of P}.
 Context `{cast_of N P, cast_of P N}.
 Context `{spec_of N nat, spec_of P pos}.
 Context `{implem_of nat N, implem_of pos P}.
@@ -333,6 +365,9 @@ Context `{!refines (Rnat ==> Rnat ==> Rnat) subn sub_op}.
 Context `{!refines (Rpos ==> Rpos ==> Rpos) sub_pos sub_op}.
 Context `{!refines (Rnat ==> Rnat ==> Rnat) muln *%C}.
 Context `{!refines (Rpos ==> Rpos ==> Rpos) mul_pos *%C}.
+Context `{!refines (Rnat ==> Rnat ==> Rnat) expn exp_op}.
+Context `{!refines (Rpos ==> Rpos ==> Rpos) exp_pos exp_op}.
+Context `{!refines (Rnat ==> Rnat ==> Rnat) modn mod_op}.
 Context `{!refines (Rnat ==> Rnat ==> bool_R) ssrnat.leq leq_op}.
 Context `{!refines (Rnat ==> Rnat ==> bool_R) ssrnat.ltn lt_op}.
 Context `{!refines (Rpos ==> Rpos ==> bool_R) leq_pos leq_op}.
@@ -382,6 +417,10 @@ Proof. param_comp oppZ_R. Qed.
 Global Instance RZNP_subZ :
   refines (RZNP ==> RZNP ==> RZNP) (fun x y => x - y) sub_op.
 Proof. param_comp subZ_R. Qed.
+
+Global Instance RZNP_expZ :
+  refines (RZNP ==> Rnat ==> RZNP) (@GRing.exp _) exp_op.
+Proof. param_comp expZ_R. Qed.
 
 Global Instance RZNP_eqZ :
   refines (RZNP ==> RZNP ==> bool_R) eqtype.eq_op (@Op.eq_op Z _).

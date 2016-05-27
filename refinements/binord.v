@@ -34,6 +34,9 @@ Global Instance sub_ord n : sub_of (binord n) :=
 Global Instance mul_ord n : mul_of (binord n) :=
   fun x y => N.modulo (x * y) (implem n).
 
+Global Instance exp_ord n : exp_of (binord n) N :=
+  fun x y => N.modulo (x ^ y) (implem n).
+
 Global Instance eq_ord n : eq_of (binord n) := N.eqb.
 
 Global Instance leq_ord n : leq_of (binord n) := N.leb.

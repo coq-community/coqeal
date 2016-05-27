@@ -35,6 +35,7 @@ Context `{zero_of A, one_of A, add_of A, sub_of A, opp_of A, mul_of A, eq_of A}.
 Context `{one_of pos, add_of pos, sub_of pos, eq_of pos, lt_of pos}.
 Context `{zero_of N, one_of N, eq_of N, leq_of N, lt_of N, add_of N, sub_of N}.
 Context `{cast_of N pos, cast_of pos N}.
+Context `{spec_of N nat}.
 
 Local Open Scope computable_scope.
 
@@ -112,6 +113,9 @@ Global Instance mul_hpoly : mul_of (hpoly A) := fix f p q := match p, q with
     (shift_hpoly (cast n) (map_hpoly (fun x => (x * b)%C) p) + Pc (a * b))
   end.
 
+Global Instance exp_hpoly : exp_of (hpoly A) N :=
+  fun p n => iter (spec n) (mul_hpoly p) 1.
+
 Fixpoint eq0_hpoly (p : hpoly A) : bool := match p with
   | Pc a      => (a == 0)%C
   | PX a n p' => (eq0_hpoly p') && (a == 0)%C
@@ -177,6 +181,7 @@ Parametricity add_hpoly.
 Parametricity sub_hpoly.
 Parametricity shift_hpoly.
 Parametricity mul_hpoly.
+Parametricity exp_hpoly.
 Parametricity eq0_hpoly.
 Parametricity eq_hpoly.
 Parametricity size_hpoly.
@@ -462,6 +467,15 @@ Proof.
   by rewrite [b%:P * _]mulXnC mulrA polyC_mul addnC.
 Qed.
 
+Instance Rhpoly_exp :
+  refines (Rhpoly ==> Logic.eq ==> Rhpoly) (@GRing.exp _) exp_op.
+Proof.
+  apply refines_abstr2=> p sp hp m n; rewrite refinesE=> -> {m}.
+  rewrite /exp_op /exp_hpoly.
+  elim: n=> [|n ihn] /=;
+    by rewrite ?(expr0, exprS); tc.
+Qed.
+
 Instance Rhpoly_sub :
   refines (Rhpoly ==> Rhpoly ==> Rhpoly) (fun x y => x - y)
           (sub_hpoly (N:=nat)).
@@ -665,7 +679,7 @@ Context `{!refines (rN ==> rN ==> bool_R) ltn lt_op}.
 Context `{!refines (rN ==> rN ==> bool_R) ssrnat.leq leq_op}.
 Context `{!refines (rN ==> rP) cast_nat_pos cast}.
 Context `{!refines (rP ==> rN) cast_pos_nat cast}.
-Context `{!refines (rN ==> Logic.eq) spec_id spec}.
+Context `{!refines (rN ==> nat_R) spec_id spec}.
 
 Definition RhpolyC := (Rhpoly \o (hpoly_R rP rAC)).
 
@@ -689,6 +703,15 @@ Proof. param_comp sub_hpoly_R. Qed.
 Global Instance RhpolyC_mul :
   refines (RhpolyC ==> RhpolyC ==> RhpolyC) *%R (mul_hpoly (N:=N)).
 Proof. param_comp mul_hpoly_R. Qed.
+
+Global Instance RhpolyC_exp :
+  refines (RhpolyC ==> rN ==> RhpolyC) (@GRing.exp _) exp_op.
+Proof.
+  eapply refines_trans; tc.
+  rewrite refinesE; do ?move=> ?*.
+  eapply (exp_hpoly_R (N_R:=rN))=> // *;
+    exact: refinesP.
+Qed.
 
 Global Instance RhpolyC_size :
   refines (RhpolyC ==> rN) (sizep (R:=A)) size_hpoly.
