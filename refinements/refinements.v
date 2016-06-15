@@ -174,7 +174,7 @@ Proof. by rewrite !refinesE=> [??] [??]. Qed.
 Class unify A (x y : A) := unify_rel : x = y.
 Global Instance unifyxx A (x : A) : unify x x := erefl.
 
-Global Instance refines_of_unify A x y : unify x y -> refines (@unify A) x y.
+Global Instance refines_of_unify A x y : unify x y -> refines (@unify A) x y | 100.
 Proof. by rewrite refinesE. Qed.
 
 Lemma refines_comp_unify A B (R : A -> B -> Type) x y :
