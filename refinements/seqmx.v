@@ -1,7 +1,7 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
 From mathcomp Require Import path choice fintype tuple finset bigop poly matrix mxpoly.
 
-From CoqEAL Require Import hrel param refinements.
+From CoqEAL Require Import hrel param refinements trivial_seq.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -1356,53 +1356,6 @@ Proof. exact: RseqmxC_char_poly_mx. Qed.
 End seqmx_poly.
 
 End seqmx_theory.
-
-Section seq_tools.
-
-Local Open Scope rel_scope.
-
-Variable (A C : Type) (rAC : A -> C -> Type).
-Variable (N : Type) (rN : nat -> N -> Type).
-Context `{implem_of A C}.
-Context `{spec_of N nat}.
-Context `{!refines (Logic.eq ==> rAC) implem_id implem}.
-Context `{!refines (rN ==> nat_R) spec_id spec}.
-
-Global Instance refine_nth1 :
-  refines (rAC ==> list_R rAC ==> rN ==> rAC)
-          nth (fun x s (n : N) => nth x s (spec n)).
-Proof.
-  param nth_R.
-  rewrite -[X in refines _ X _]/(spec_id _); exact: refines_apply.
-Qed.
-
-Global Instance refine_nth2 :
-  refines (list_R (list_R rAC) ==> rN ==> list_R rAC)
-          (nth [::]) (fun s (n : N) => nth [::] s (spec n)).
-Proof.
-  param nth_R.
-    rewrite refinesE; exact: list_R_nil_R.
-  rewrite -[X in refines _ X _]/(spec_id _); exact: refines_apply.
-Qed.
-
-Global Instance refine_list_R2_implem s :
-  refines (list_R (list_R rAC)) s (map (map implem) s).
-Proof.
-  rewrite refinesE.
-  elim: s=> [|a s ihs] /=.
-    exact: list_R_nil_R.
-  apply: list_R_cons_R.
-    elim: a=> [|hd tl ih] /=.
-      exact: list_R_nil_R.
-      apply: list_R_cons_R.
-      have heq : refines eq hd hd by rewrite refinesE.
-      rewrite -[X in rAC X _]/(implem_id _).
-      exact: refinesP.
-    exact: ih.
-  exact: ihs.
-Qed.
-
-End seq_tools.
 
 Section testmx.
 

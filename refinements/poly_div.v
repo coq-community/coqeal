@@ -66,7 +66,7 @@ Local Instance one_nat : one_of nat := 1%N.
 Local Instance zero_nat : zero_of nat := 0%N.
 Local Instance spec_nat : spec_of nat nat := spec_id.
 
-Local Instance size_poly : size_of {poly R} nat := sizep (R:=R).
+Local Instance size_of_poly : size_of {poly R} nat := sizep (R:=R).
 Local Instance lead_coef_poly : lead_coef_of R {poly R} := lead_coef.
 Local Instance cast_poly : cast_of R {poly R} := polyC.
 Local Instance shift_poly : shift_of {poly R} nat := shiftp (R:=R).
@@ -124,7 +124,7 @@ Context `{!refines (rN ==> rN ==> rN) subn sub_op}.
 Context `{!refines (rN ==> rN ==> rN) addn add_op}.
 Context `{!refines rN 1%N 1%C, !refines rN 0%N 0%C}.
 Context `{!refines (rN ==> nat_R) spec_id spec}.
-Context `{!refines (RpolyC ==> rN) size_poly size_op}.
+Context `{!refines (RpolyC ==> rN) size_op size_op}.
 Context `{!refines (RpolyC ==> rC) lead_coef_poly lead_coef_op}.
 Context `{!refines (rC ==> RpolyC) cast_poly cast}.
 Context `{!refines (rN ==> RpolyC ==> RpolyC) shift_poly shift_op}.

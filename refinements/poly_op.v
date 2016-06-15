@@ -15,8 +15,6 @@ Class shift_of polyA N := shift_op : N -> polyA -> polyA.
 Hint Mode shift_of + + : typeclass_instances.
 Class split_of polyA N := split_op : N -> polyA -> polyA * polyA.
 Hint Mode split_of + + : typeclass_instances.
-Class size_of polyA N := size_op : polyA -> N.
-Hint Mode size_of + + : typeclass_instances.
 Class lead_coef_of A polyA := lead_coef_op : polyA -> A.
 Hint Mode lead_coef_of + + : typeclass_instances.
 Class scal_of polyA N := scal_op : polyA -> polyA -> N.
@@ -27,7 +25,7 @@ End Poly.
 
 Import Poly.Op.
 
-Typeclasses Transparent shift_of split_of size_of lead_coef_of scal_of.
+Typeclasses Transparent shift_of split_of lead_coef_of scal_of.
 
 Section poly_op.
 

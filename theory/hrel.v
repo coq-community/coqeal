@@ -17,7 +17,7 @@ Section hrel.
 Definition sub_hrel A B (R R' : A -> B -> Type) :=
   forall (x : A) (y : B), R x y -> R' x y.
 
-Notation "X <= Y" := (sub_hrel X Y) : rel_scope.
+Notation "X <= Y" := (sub_hrel X%rel Y%rel) : rel_scope.
 
 Inductive eq_hrel A B (R R' : A -> B -> Type) :=
   EqHrel of (R <= R')%rel & (R' <= R)%rel.
@@ -60,7 +60,7 @@ Definition hrespectful (A B C D : Type)
   (R : A -> B -> Type) (R' : C -> D -> Type) : (A -> C) -> (B -> D) -> Type :=
   fun f g => forall (x : A) (y : B), R x y -> R' (f x) (g y).
 
-Notation " R ==> S " := (@hrespectful _ _ _ _ R S)
+Notation " R ==> S " := (@hrespectful _ _ _ _ R%rel S%rel)
     (right associativity, at level 55) : rel_scope.
 
 Lemma sub_hresp_comp A B C (R1 R1' : A -> B -> Prop) (R2 R2' : B -> C -> Prop) :
@@ -72,9 +72,9 @@ Qed.
 
 End hrel.
 
-Notation "X \o Y" := (comp_hrel X Y) : rel_scope.
-Notation "X <= Y" := (sub_hrel X Y) : rel_scope.
-Notation "X <=> Y" := (eq_hrel X Y) (format "X  <=>  Y", at level 95) : rel_scope.
-Notation " R ==> S " := (@hrespectful _ _ _ _ R S)
+Notation "X \o Y" := (comp_hrel X%rel Y%rel) : rel_scope.
+Notation "X <= Y" := (sub_hrel X%rel Y%rel) : rel_scope.
+Notation "X <=> Y" := (eq_hrel X%rel Y%rel) (format "X  <=>  Y", at level 95) : rel_scope.
+Notation " R ==> S " := (@hrespectful _ _ _ _ R%rel S%rel)
     (right associativity, at level 55) : rel_scope.
 
