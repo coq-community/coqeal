@@ -850,88 +850,73 @@ From mathcomp Require Import ssrint.
 From CoqEAL Require Import binnat binint.
 
 Goal (0 == 0 :> {poly int}).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (0 == (0 : {poly {poly {poly int}}})).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (1 == 1 :> {poly int}).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (1 == (1 : {poly {poly {poly int}}})).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
       == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (- 1 == - (1: {poly {poly int}})).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (- (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2) == -1 - 2%:Z%:P * 'X - 3%:Z *: 'X^2).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 0).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z *: 'X^2).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 (* (1 + xy) * x = x + x^2y *)
 Goal ((1 + 'X * 'X%:P) * 'X == 'X + 'X^2 * 'X%:P :> {poly {poly int}}).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (sizep ('X^2 : {poly int}) ==
       sizep (- 3%:Z *: 'X^(sizep ('X : {poly int})))).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 3).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))) ==
       1 + 4%:Z *: 'X + 4%:Z *: 'X^(sizep (10%:Z *: 'X))).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (splitp 2 (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
       (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (splitp (sizep ('X : {poly int}))
              (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
       (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 End testpoly.

@@ -139,13 +139,11 @@ From mathcomp Require Import ssrint.
 From CoqEAL Require Import binnat binint seqpoly.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z%:P * 'X^2).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (Poly [:: 1; 2%:Z] * Poly [:: 1; 2%:Z]) == Poly [:: 1; 4%:Z; 4%:Z].
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Fixpoint bigseq (x : int) (n : nat) : seq int := match n with
@@ -167,13 +165,11 @@ Let q2 := Eval simpl in bigpoly 2 10.
 
 (* TODO: Translate Poly directly? *)
 Goal (Poly p1 * Poly p2 == Poly p2 * Poly p1).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (q1 * q2 == q2 * q1).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 End karatsuba_test.

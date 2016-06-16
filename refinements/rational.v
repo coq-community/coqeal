@@ -362,38 +362,31 @@ Section tests.
 Require Import binnat binint.
 
 Goal (0 == 0 :> rat).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (1 == 1 :> rat).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (3%:~R / 4%:~R == - (- (3 * 10)%:Z)%:~R / (2 * 20)%N%:~R :> rat).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal ((3%:~R / 4%:~R) * (20%:~R / 15%:~R) == 1 :> rat).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal ((1 / 2%:~R)^+3 == (1 / 2%:~R) - (3%:~R / 8%:~R) :> rat).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal ((1 / 10%:~R)^-1 == 10%:~R :> rat).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal ((1 / 15%:~R) / (2%:~R / 21%:~R) == 7%:~R / 10%:~R :> rat).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 (* Lemma foo (P : bool -> Type) : *)

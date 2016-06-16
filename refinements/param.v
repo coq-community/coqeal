@@ -38,6 +38,12 @@ Parametricity simpl_fun.
 
 (** ssrbool *)
 Parametricity SimplRel.
+Parametricity orb.
+Parametricity andb.
+Parametricity implb.
+Parametricity negb.
+Parametricity addb.
+Parametricity eqb.
 
 (** ssrnat *)
 Parametricity subn_rec.

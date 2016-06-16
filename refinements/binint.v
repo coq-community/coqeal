@@ -467,42 +467,37 @@ Section testint.
 
 From CoqEAL Require Import binnat.
 
+
 Goal (0 == 0 :> int).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
+
 Goal (1 == 1 :> int).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (- 1%:Z == - 1%:Z).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (10%:Z - 5%:Z == 1 + 4%:Z).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (-(1 + 2%:Z * 4%:Z) == -(1 + 2%:Z * 4%:Z)).
 rewrite -[X in (X == _)]/(spec_id _).
 rewrite [spec_id _]refines_eq /=.
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (1000%:Z == 998%:Z + 2%:Z).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 Goal (1000%:Z == 2%:Z * 500%:Z).
-rewrite [_ == _]refines_eq.
-by compute.
+by CoqEAL.
 Abort.
 
 End testint.

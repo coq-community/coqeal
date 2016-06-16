@@ -4,7 +4,7 @@ Require Import ssrfun ssrbool eqtype ssrnat seq choice fintype tuple.
 From mathcomp
 Require Import bigop binomial finset finfun zmodp ssralg countalg finalg poly polydiv.
 From mathcomp
-Require Import perm.
+Require Import perm fingroup.
 
 From CoqEAL
 Require Import hrel pos param refinements binnat boolF2 seqpoly poly_op trivial_seq poly_div boolF2.
@@ -117,6 +117,8 @@ Definition npoly0 := Npolynomial (size_npoly0).
 
 Definition NPoly (p : {poly R}) : {poly_n R} := insubd npoly0 p.
 
+Definition npoly_of_seq := NPoly \o Poly.
+
 End fin_npoly.
 
 Section Irreducible.
@@ -197,10 +199,6 @@ Definition card' (P' : pred T') : N := size_op [seq s <- enumT' | P' s].
 End card.
 Parametricity card'.
 
-(* Check card'_R. *)
-
-(* Lemma card'_permR : @card_type_R (card' (seq  card'  _ _ perm_eq. *)
-
 Lemma size_seqE T (s : seq T) : (@size_seq _ _ 0%N 1%N addn) s = size s.
 Proof. by elim: s => //= x s ->; rewrite [(_ + _)%C]addn1. Qed.
 
@@ -216,47 +214,19 @@ Proof.
 rewrite cardE.
 by rewrite -filter_index_enum /index_enum /card' /size_op /= size_seqE.
 Qed.
+Lemma refines_split T T' T'' (R1 : T -> T' -> Type) (R2 : T' -> T'' -> Type) x z:
+  refines (R1 \o R2) x z -> {y : T' & (refines R1 x y * refines R2 y z)%type}. 
+Proof. by rewrite !refinesE. Qed.
 
-Definition perm_seq (T : Type) (s : seq T) (p : 'S_(size s)) :=
-  [tuple tnth (in_tuple s) (p i) | i < size s].
-
-Definition prop_perm_eq {T} (s1 s2 : seq T) := {p | @perm_seq _ s1 p = s2 :> seq T}.
-
-(* Fixpoint prop_count T (P : T -> Prop) (l : seq T) (k : nat -> Prop) : Prop :=  *)
-(*   if l is x :: l  *)
-(*   then (P x /\ prop_count P l (fun n => k n.+1)) \/ ((~ P x) /\ prop_count P l k) *)
-(*   else k 0%N.  *)
-
-(* Lemma prop_countP (T : eqType) (b : pred T) (P : T -> Prop) *)
-(*       (l : seq T) (k : nat -> Prop) : *)
-(*   (forall x, reflect (P x) (b x)) -> *)
-(*   ((prop_count P l k) <-> (k (count b l))). *)
-(* Proof. *)
-(* move=> bP; elim: l => //= a l IHl in k *; rewrite !IHl !(rwP (bP _)). *)
-(* have [Pa|nPa] := boolP (b a) => /=; rewrite ?add1n ?add0n; *)
-(* by split=> [[] [] //|]; intuition. *)
-(* Qed. *)
-
-(* Definition list_perm T T' (RT : T -> T' -> Type) *)
-(*            (l1 : seq T) (l2 : seq T') := forall x y, RT x y ->  *)
-(*   prop_count (eq^~ x) l1 (fun n1 => prop_count (eq^~ y) l2 (fun n2 => n1 = n2)). *)
-
-(* Lemma list_permP (T : eqType) (l1 l2 : seq T) : *)
-(*   reflect (list_perm eq l1 l2) (perm_eq l1 l2). *)
-(* Proof. *)
-(* rewrite /perm_eq; apply: (iffP allP) => /= [Hl x _ <-|Hl x _]. *)
-(*   rewrite ?(@prop_countP _ (pred1 x)); do ?by move=> y /=; apply: eqP. *)
-(*   have [/Hl /eqP //|] := boolP (x \in l1 ++ l2). *)
-(*   by rewrite mem_cat => /norP[? ?]; rewrite !(count_memPn _). *)
-(* apply/eqP; have /= := Hl x x erefl. *)
-(* by rewrite ?(@prop_countP _ (pred1 x)); do ?by move=> y /=; apply: eqP. *)
-(* Qed. *)
+Lemma refines_split2 T T' T'' (R1 : T -> T' -> Type) (R2 : T' -> T'' -> Type) x z:
+  refines (R1 \o R2) x z -> {y : T' & (R1 x y * refines R2 y z)%type}. 
+Proof. by rewrite !refinesE. Qed.
 
 Section enumerable.
 Context (T : finType) (T' : Type) (RT : T -> T' -> Type).
 Variable (N : Type) (rN : nat -> N -> Type).
 Context (enumT' : seq T')
-  {enumR : refines (prop_perm_eq \o (list_R RT)) (@Finite.enum T) enumT'}.
+  {enumR : refines (perm_eq \o (list_R RT)) (@Finite.enum T) enumT'}.
 Context `{zero_of N} `{one_of N} `{add_of N}.
 Context `{!refines rN 0%N 0%C}.
 Context `{!refines rN 1%N 1%C}.
@@ -267,14 +237,9 @@ Global Instance refines_card :
   (forall x x' `{!refines RT x x'}, refines (bool_R \o (@unify _)) (P x) (P' x')) ->
   refines rN #|[pred x | P x]| (card' enumT' P').
 Proof.
-move=> RP; rewrite -card'E.
-have := enumR; rewrite refinesE => /= -[_ [[p <-]] /(@trivial_refines _ _ _ _ _)] Hp.
-rewrite (@card'_perm _ _ (perm_seq p)); last first.
-  rewrite perm_eq_sym -[Finite.enum T]/(val (in_tuple _)).
-  by apply/tuple_perm_eqP; exists p.
-param card'_R.
-rewrite refinesE => x x'; rewrite -[RT]refinesE => /RP.
-by move=> /(@refines_comp_unify _ _ _ _ _); rewrite refinesE.
+move=> RP; have := refines_comp_unify (RP _ _ _) => /refines_abstr => {RP} RP.
+have [s [rs1 rs2]] := refines_split2 enumR.
+by rewrite -card'E (@card'_perm _ _ s) //; param card'_R.
 Qed.
 
 End enumerable.
@@ -290,8 +255,10 @@ End enum_boolF2.
 Parametricity enum_boolF2.
 
 Global Instance refines_enum_boolF2 :
-  refines (prop_perm_eq \o list_R Rbool) (Finite.enum [finType of 'F_2]) (enum_boolF2).
+  refines (perm_eq \o list_R Rbool) (Finite.enum [finType of 'F_2]) (enum_boolF2).
 Proof.
+eapply refines_trans; tc.
+  
 Admitted.
 
 Section enum_npoly.
@@ -307,9 +274,9 @@ Definition enum_npoly : seq P :=
 End enum_npoly.
 
 Lemma enum_npolyE (n : nat) (R : finRingType) s :
-  prop_perm_eq (Finite.enum R) s ->
-  prop_perm_eq (Finite.enum [finType of {poly_n R}])
-               (enum_npoly n iter s ((@NPoly _ _) \o Poly)%FUN).
+  perm_eq (Finite.enum R) s ->
+  perm_eq (Finite.enum [finType of {poly_n R}])
+               (enum_npoly n iter s (@npoly_of_seq _ _)).
 Proof.
 Admitted.
 
@@ -320,30 +287,12 @@ Section RnpolyC.
 Context (A : finRingType).
 Context (C : Type) (rAC : A -> C -> Type).
 Context (N : Type) (rN : nat -> N -> Type).
-(* Context `{zero_of C, one_of C, opp_of C, add_of C, sub_of C, mul_of C, eq_of C}. *)
-(* Context `{zero_of N, one_of N, eq_of N, lt_of N, leq_of N, add_of N, sub_of N}. *)
-(* Context `{spec_of C A, spec_of N nat}. *)
-(* Context `{!refines rAC 0%R 0%C, !refines rAC 1%R 1%C}. *)
-(* Context `{!refines (rAC ==> rAC) -%R -%C}. *)
-(* Context `{!refines (rAC ==> rAC ==> rAC) +%R +%C}. *)
-(* Context `{!refines (rAC ==> rAC ==> rAC) (fun x y => x - y) sub_op}. *)
-(* Context `{!refines (rAC ==> rAC ==> rAC) *%R *%C}. *)
-(* Context `{!refines (rAC ==> rAC ==> bool_R) eqtype.eq_op eq_op}. *)
-(* Context `{!refines (rAC ==> Logic.eq) spec_id spec}. *)
-(* Context `{!refines rN 0%N 0%C, !refines rN 1%N 1%C}. *)
-(* Context `{!refines (rN ==> rN ==> rN) addn +%C}. *)
-(* Context `{!refines (rN ==> rN ==> rN) subn sub_op}. *)
-(* Context `{!refines (rN ==> rN ==> bool_R) eqtype.eq_op eq_op}. *)
-(* Context `{!refines (rN ==> rN ==> bool_R) ltn lt_op}. *)
-(* Context `{!refines (rN ==> rN ==> bool_R) ssrnat.leq leq_op}. *)
-(* Context `{!refines (rP ==> rN) cast_pos_nat cast}. *)
-(* Context `{!refines (rN ==> nat_R) spec_id spec}. *)
 Context (n : nat) (n' : N) `{!refines rN n n'}.
 Context (iter' : forall T, N -> (T -> T) -> T -> T)
   {iterR : forall T T' RT, 
     refines (rN ==> (RT ==> RT) ==> RT ==> RT) (@iter T) (@iter' T')}.
 Context (enumC : seq C)
-  {enumR : refines (prop_perm_eq \o (list_R rAC)) (@Finite.enum A) enumC}.
+  {enumR : refines (perm_eq \o (list_R rAC)) (@Finite.enum A) enumC}.
 
 Definition Rnpoly : {poly_n A} -> {poly A} -> Type :=
   fun p q => p = q :> {poly A}.
@@ -352,19 +301,17 @@ Definition RnpolyC : {poly_n A} -> seqpoly C -> Type :=
   (Rnpoly \o (RseqpolyC rAC))%rel.
 
 Global Instance refines_enum_npoly :
-   refines (prop_perm_eq \o list_R RnpolyC)
+   refines (perm_eq \o list_R RnpolyC)
            (Finite.enum [finType of {poly_n A}]) (enum_npoly n' iter' enumC id).
 Proof.
-have := enumR; rewrite refinesE => /= -[s [p /(@trivial_refines _ _ _ _ _)]] Hp.
+have [s [sP ?]] := refines_split2 enumR.
 eapply refines_trans; tc.
-  rewrite refinesE; exact: (enum_npolyE _ p).
-have ? := nat_Rxx.
+  by rewrite refinesE; apply/enum_npolyE/sP.
 param enum_npoly_R.
-eapply refines_trans; tc.
 Admitted.
 
 Global Instance refines_RnpolyCpoly (x : {poly_n A}) (y : seqpoly C)
-       `{!refines RnpolyC x y} : refines (RseqpolyC rAC) x y.
+       `{!refines RnpolyC x y} : refines (RseqpolyC rAC) (poly_of_npoly x) y.
 Admitted.
 
 End RnpolyC.
@@ -383,21 +330,17 @@ Section LaurentsProblem.
 Global Instance refines_predn : refines (Rnat ==> Rnat) predn (fun n => (n - 1)%C).
 Admitted.
 
-Global Instance refines_negb : refines (bool_R ==> bool_R) negb negb.
-Proof. Admitted.
-Global Instance refines_implyb : refines (bool_R ==> bool_R ==> bool_R) implb implb.
-Proof. Admitted.
+(* Lemma refines_forgetR (T T' : Type) (R R' : T -> T' -> Type) x y : *)
+(*    refines R x y -> unify R' R -> refines R' x y. *)
+(* Proof. by rewrite !refinesE => ? ->. Qed. *)
 
-Lemma refines_forgetR (T T' : Type) (R R' : T -> T' -> Type) x y :
-   refines R x y -> unify R' R -> refines R' x y.
-Proof. by rewrite !refinesE => ? ->. Qed.
 
 Lemma test_irred : irreducible_poly ('X^5 + 'X^2 + 1 : {poly 'F_2}).
 Proof.
 apply/irreducibleP; rewrite /irreducibleb -[size _]/(sizep _).
-rewrite  ![_ < sizep _]refines_eq /=.
 rewrite -[[forall _, _]]/(_ == _) /= /Pdiv.Ring.rdvdp.
-by rewrite [_ == _]refines_eq.
+by CoqEAL.
 Qed.
+
 
 End LaurentsProblem.
