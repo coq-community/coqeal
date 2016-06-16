@@ -409,15 +409,13 @@ Goal \det Madd == 0.
 by CoqEAL.
 Abort.
 
-From mathcomp Require Import tuple.
-
 Definition ctmat1 : 'M[int]__ := \matrix_(i < 3, j < 3)
   (nth [::] [:: [::  1 ; 1 ; 1 ]
               ; [:: -1 ; 1 ; 1 ]
               ; [::  0 ; 0 ; 1 ] ] i)`_j.
 
-Lemma det_ctmat1 : \det ctmat1 = 2.
-Proof. Time by CoqEAL. Qed.
+Definition det_ctmat1 := refine_value (\det ctmat1).
+Definition char_poly_ctmat1 := refine_value_for (char_poly ctmat1) (\det _).
 
 End test_bareiss.
 

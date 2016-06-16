@@ -126,6 +126,27 @@ case=> [[/= rab rab']] /prod_hrel_R [/= rbc rbc'].
 by split; [ apply: h1; exists b | apply: h2; exists b'].
 Qed.
 
+Section refines_split.
+Context {T} {Y} {Z} {R1 : T -> Y -> Type} {R2 : Y -> Z -> Type} {x : T} {z : Z}.
+
+Lemma refines_split :
+  refines (R1 \o R2) x z -> {y : Y & (refines R1 x y * refines R2 y z)%type}.
+Proof. by rewrite !refinesE. Qed.
+
+Lemma refines_split1 :
+  refines (R1 \o R2) x z -> {y : Y & (refines R1 x y * R2 y z)%type}.
+Proof. by rewrite !refinesE. Qed.
+
+Lemma refines_split2 :
+  refines (R1 \o R2) x z -> {y : Y & (R1 x y * refines R2 y z)%type}.
+Proof. by rewrite !refinesE. Qed.
+
+Lemma refines_split12 :
+  refines (R1 \o R2) x z -> {y : Y & (R1 x y * R2 y z)%type}.
+Proof. by rewrite !refinesE. Qed.
+
+End refines_split.
+
 Lemma refines_abstr A B C D (R : A -> B -> Type) (R' : C -> D -> Type)
       (c : A -> C) (d : B -> D):
         (forall (a :  A) (b : B), refines R a b -> refines R' (c a) (d b)) ->
@@ -337,3 +358,17 @@ Ltac simpC :=
 (* Parametricity idmx. *)
 (* Print idmx_R. (* Here we get something too general! *) *)
 
+Class reduce_in_spec {T} (x y : T) := Reduce : x = y.
+Hint Mode reduce_in_spec - + - : typeclass_instances.
+
+Hint Extern 0 (reduce_in_spec (spec _) _) =>
+let x := fresh "x" in set x := (X in spec X);
+vm_compute in (value of x); simpl; reflexivity : typeclass_instances.
+
+Lemma refine_value_of {T} (x : T) {y y' : T}
+      {rxy : refines eq (spec_id x) y} {rr : reduce_in_spec y y'} : x = y'.
+Proof. by rewrite -rr; apply: refines_eq. Qed.
+
+Notation refine_value x := (@refine_value_of _ x _ _ _ _).
+
+Notation refine_value_for x x' := (@refine_value_of _ x' _ _ _ _ : x = _).
