@@ -46,6 +46,7 @@ Fact composable_lock : unit. Proof. done. Qed.
 Class composable A B C
   (rAB : A -> B -> Type) (rBC : B -> C -> Type) (rAC : A -> C -> Type) :=
   Composable : locked_with composable_lock (rAB \o rBC <= rAC).
+Arguments composable A B C rAB%rel rBC%rel rAC%rel.
 
 Lemma composableE A B C
  (rAB : A -> B -> Type) (rBC : B -> C -> Type) (rAC : A -> C -> Type) :
@@ -108,9 +109,17 @@ apply: R123; exists (fB a); split; [ exact: RfAB | exact: RfBC ].
 Qed.
 
 (* Composable and pairs *)
-Lemma prod_hrel_R A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
+Lemma prod_RE A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
   prod_R rA rB x y -> prod_hrel rA rB x y.
 Proof. by case; split. Qed.
+
+Lemma prod_RI A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
+  prod_hrel rA rB x y -> prod_R rA rB x y.
+Proof. by move: x y => [x1 x2] [y1 y2] [] /=; constructor. Qed.
+
+Lemma refines_prod_R A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
+  refines rA x.1 y.1 -> refines rB x.2 y.2 -> refines (prod_R rA rB) x y.
+Proof. by rewrite !refinesE => *; apply: prod_RI; split. Qed.
 
 Global Instance composable_prod A A' B B' C C'
   (rAB : A -> B -> Type) (rAB' : A' -> B' -> Type)
@@ -118,11 +127,11 @@ Global Instance composable_prod A A' B B' C C'
   (rAC : A -> C -> Type) (rAC' : A' -> C' -> Type) :
     composable rAB rBC rAC ->
     composable rAB' rBC' rAC' ->
-    composable (prod_hrel rAB rAB') (prod_R rBC rBC')
+    composable (prod_R rAB rAB') (prod_R rBC rBC')
                (prod_R rAC rAC') | 1.
 Proof.
 rewrite !composableE=> h1 h2 [a a'] [c c'] [[b b']].
-case=> [[/= rab rab']] /prod_hrel_R [/= rbc rbc'].
+move=> [/prod_RE [/= ??] /prod_RE [/= ??]].
 by split; [ apply: h1; exists b | apply: h2; exists b'].
 Qed.
 
@@ -162,21 +171,6 @@ Lemma refines_abstr2 A B A' B' A'' B''
         refines (R ==> R' ==> R'') f g.
 Proof. by move=> H; do 2![eapply refines_abstr => *]; apply: H. Qed.
 
-Global Instance refines_pair
-  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
-  refines (rA ==> rB ==> prod_hrel rA rB)%rel (@pair _ _) (@pair _ _).
-Proof. by rewrite refinesE. Qed.
-
-Global Instance refines_fst
-  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
-  refines (prod_hrel rA rB ==> rA)%rel (@fst _ _) (@fst _ _).
-Proof. by rewrite !refinesE=> [??] [??]. Qed.
-
-Global Instance refines_snd
-  A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
-  refines (prod_hrel rA rB ==> rB)%rel (@snd _ _) (@snd _ _).
-Proof. by rewrite !refinesE=> [??] [??]. Qed.
-
 Global Instance refines_pair_R
   A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
   refines (rA ==> rB ==> prod_R rA rB)%rel (@pair _ _) (@pair _ _).
@@ -200,7 +194,7 @@ Proof. by rewrite refinesE. Qed.
 
 Lemma refines_comp_unify A B (R : A -> B -> Type) x y :
   refines (R \o (@unify B))%rel x y -> refines R x y.
-Proof.
+Proof. move=> /refines_split12.
   rewrite !refinesE=> H.
   case: H=> ? h.
   case: h=> ? h2.
@@ -258,7 +252,7 @@ Global Instance refines_leibniz_eq (T : eqType) (x y : T) b :
   refines bool_R (x == y) b -> refines (fun T' T => T -> T') (x = y) b.
 Proof. by move=> /refines_bool_eq; rewrite !refinesE => <- /eqP. Qed.
 
-Ltac CoqEAL := apply: refines_goal; vm_compute.
+Ltac coqeal := apply: refines_goal; vm_compute.
 
 Module Refinements.
 
@@ -361,14 +355,26 @@ Ltac simpC :=
 Class reduce_in_spec {T} (x y : T) := Reduce : x = y.
 Hint Mode reduce_in_spec - + - : typeclass_instances.
 
-Hint Extern 0 (reduce_in_spec (spec _) _) =>
-let x := fresh "x" in set x := (X in spec X);
-vm_compute in (value of x); simpl; reflexivity : typeclass_instances.
+(* Workaround because casts are not retained for hypothesis, so we
+design this elimination lemma to abstract the context and vm_compute in the goal *)
+Lemma abstract_context T (P : T -> Type) x : (forall Q, Q = P -> Q x) -> P x.
+Proof. by move=> /(_ P); apply. Qed.
 
-Lemma refine_value_of {T} (x : T) {y y' : T}
+Hint Extern 0 (reduce_in_spec (spec _) _) =>
+let Q := fresh "Q" in let eqQ := fresh "eqQ" in
+elim/abstract_context : (X in reduce_in_spec (spec X)) => Q eqQ; vm_compute;
+rewrite eqQ /=; reflexivity :  typeclass_instances.
+
+Lemma coqeal_vm_compute_of {T} (x : T) {y y' : T}
       {rxy : refines eq (spec_id x) y} {rr : reduce_in_spec y y'} : x = y'.
 Proof. by rewrite -rr; apply: refines_eq. Qed.
 
-Notation refine_value x := (@refine_value_of _ x _ _ _ _).
+Notation coqeal_vm_compute x := (@coqeal_vm_compute_of _ x _ _ _ _).
 
-Notation refine_value_for x x' := (@refine_value_of _ x' _ _ _ _ : x = _).
+Notation coqeal_vm_compute_for x x' := (@coqeal_vm_compute_of _ x' _ _ _ _ : x = _).
+
+Ltac refines_apply1 := eapply refines_apply; tc.
+Ltac refines_abstr1 := eapply refines_abstr=> ???; tc.
+Ltac refines_apply := do ![refines_apply1].
+Ltac refines_abstr := do ![refines_abstr1].
+Ltac refines_trans :=  eapply refines_trans; tc.

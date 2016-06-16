@@ -386,16 +386,17 @@ Proof.
 Qed.
 
 Local Instance Rseqpoly_split :
-  refines (eq ==> Rseqpoly ==> prod_hrel Rseqpoly Rseqpoly)
+  refines (eq ==> Rseqpoly ==> prod_R Rseqpoly Rseqpoly)
           (splitp (R:=R)) (split_op (N:=nat)).
 Proof.
   rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ n -> _ sp <-.
-  rewrite /prod_hrel /split_op /split_seqpoly /splitp /=.
+  rewrite /split_op /split_seqpoly /splitp /=.
+  apply: prod_RI; rewrite /prod_hrel /=.
   elim: sp n=> [n|a p ihp [|n]].
       by rewrite poly_def big_ord0 rdiv0p rmod0p.
     by rewrite expr0 rdivp1 rmodp1 [\poly_(_ < 0) _]poly_def big_ord0.
   rewrite !poly_cons [\poly_(i < size p) p`_i](@rdivp_eq _ 'X^n) ?monicXn //.
-  have [-> ->] := ihp n.
+  have [/= -> ->] := ihp n.
   rewrite mulrDl -mulrA -exprSr addrC -addrA.
   suff htnp :
     size (rmodp (\poly_(i < size p) p`_i) 'X^n * 'X + a%:P) <
@@ -656,99 +657,99 @@ From mathcomp Require Import ssrint.
 From CoqEAL Require Import binnat binint.
 
 Goal (0 == 0 :> {poly int}).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (0 == (0 : {poly {poly {poly int}}})).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (1 == 1 :> {poly int}).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (1 == (1 : {poly {poly {poly int}}})).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
       == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (Poly [:: 1; 2%:Z; 3%:Z] + Poly [:: 1; 2%:Z; 3%:Z]) ==
       Poly [:: 1 + 1; 2%:Z + 2%:Z; 2%:Z + 4%:Z].
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (- 1 == - (1: {poly {poly int}})).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (- (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2) == -1 - 2%:Z%:P * 'X - 3%:Z *: 'X^2).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (- Poly [:: 1; 2%:Z; 3%:Z]) == Poly [:: - 1; - 2%:Z; - 3%:Z].
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 0).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (Poly [:: 1; 2%:Z; 3%:Z] - Poly [:: 1; 2%:Z; 3%:Z]) == 0.
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z *: 'X^2).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (Poly [:: 1; 2%:Z] * Poly [:: 1; 2%:Z]) == Poly [:: 1; 4%:Z; 4%:Z].
-by CoqEAL.
+by coqeal.
 Abort.
 
 (* (1 + xy) * x = x + x^2y *)
 Goal ((1 + 'X * 'X%:P) * 'X == 'X + 'X^2 * 'X%:P :> {poly {poly int}}).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (Poly [:: Poly [:: 1; 0]; 1] * Poly [:: 1; 0]) ==
       Poly [:: Poly [:: 1; 0]; 1 ; 0] :> {poly {poly int}}.
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (sizep ('X^2 : {poly int}) ==
       sizep (- 3%:Z *: 'X^(sizep ('X : {poly int})))).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 3).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (sizep (Poly [:: 1; 2%:Z; 3%:Z]) == 3%nat).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))) ==
       1 + 4%:Z *: 'X + 4%:Z *: 'X^(sizep (10%:Z *: 'X))).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (splitp 2 (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
       (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (splitp (sizep ('X : {poly int}))
              (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
       (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (splitp 2%nat (Poly [:: 1; 2%:Z; 3%:Z; 4%:Z]) ==
@@ -759,7 +760,7 @@ Abort.
 
 (* Test shiftp *)
 Goal (2%:Z *: shiftp 2%nat 1 == Poly [:: 0; 0; 2%:Z]).
-by CoqEAL.
+by coqeal.
 Abort.
 
 End testpoly.

@@ -150,47 +150,23 @@ Qed.
 
 End Irreducible.
 
-(* Section IrreducibleP. *)
+Module nat_ops.
 
-(* Variable R : idomainType. *)
+Instance zero_nat : zero_of nat := 0%N.
+Instance one_nat  : one_of nat  := 1%N.
+Instance add_nat  : add_of nat  := addn.
+Instance sub_nat  : sub_of nat  := subn.
+Instance mul_nat  : mul_of nat  := muln.
+Instance exp_nat  : exp_of nat nat := expn.
+Instance leq_nat  : leq_of nat  := ssrnat.leq.
+Instance lt_nat   : lt_of nat  := ssrnat.ltn.
+Instance eq_nat   : eq_of nat   := eqtype.eq_op.
 
-(* Implicit Types p q : {poly R}. *)
+Instance spec_nat : spec_of nat nat := spec_id.
 
-(* Lemma irreducible_poly_eq p q : irreducible_poly p -> p %= q -> irreducible_poly q. *)
-(* Proof. *)
-(* move=> [Sp Ip] pEq; split=> [|r Sr Dr]; first by rewrite -(eqp_size pEq). *)
-(* apply: eqp_trans (pEq). *)
-(* by apply: Ip ; rewrite ?(eqp_dvdr _ pEq). *)
-(* Qed. *)
+Instance implem_nat : implem_of nat nat := implem_id.
 
-(* Lemma irreducible_polyZ p k : *)
-(*    k != 0 -> irreducible_poly p -> irreducible_poly (k *: p). *)
-(* Proof. *)
-(* by move=> /eqp_scale H /irreducible_poly_eq; apply; rewrite eqp_sym. *)
-(* Qed. *)
-
-(* End IrreducibleP.  *)
-
-
-Local Instance zero_nat : zero_of nat := 0%N.
-Local Instance one_nat  : one_of nat  := 1%N.
-Local Instance add_nat  : add_of nat  := addn.
-Local Instance sub_nat  : sub_of nat  := subn.
-Local Instance mul_nat  : mul_of nat  := muln.
-Local Instance exp_nat  : exp_of nat nat := expn.
-Local Instance leq_nat  : leq_of nat  := ssrnat.leq.
-Local Instance lt_nat   : lt_of nat  := ssrnat.ltn.
-Local Instance eq_nat   : eq_of nat   := eqtype.eq_op.
-
-Local Instance spec_nat : spec_of nat nat := spec_id.
-
-Local Instance implem_nat : implem_of nat nat := implem_id.
-
-Arguments refines A B R%rel m n.
-
-(* Definition card_type := *)
-(*   forall  (S : Type) (T' : Type) (N : Type) (enumT' : S) `{zero_of N} `{one_of N} `{add_of N}, N. *)
-(* Parametricity card_type. *)
+End nat_ops.
 
 Section card.
 Context (T' : Type) (N : Type).
@@ -214,13 +190,8 @@ Proof.
 rewrite cardE.
 by rewrite -filter_index_enum /index_enum /card' /size_op /= size_seqE.
 Qed.
-Lemma refines_split T T' T'' (R1 : T -> T' -> Type) (R2 : T' -> T'' -> Type) x z:
-  refines (R1 \o R2) x z -> {y : T' & (refines R1 x y * refines R2 y z)%type}. 
-Proof. by rewrite !refinesE. Qed.
 
-Lemma refines_split2 T T' T'' (R1 : T -> T' -> Type) (R2 : T' -> T'' -> Type) x z:
-  refines (R1 \o R2) x z -> {y : T' & (R1 x y * refines R2 y z)%type}. 
-Proof. by rewrite !refinesE. Qed.
+Local Open Scope rel_scope.
 
 Section enumerable.
 Context (T : finType) (T' : Type) (RT : T -> T' -> Type).
@@ -238,9 +209,10 @@ Global Instance refines_card :
   refines rN #|[pred x | P x]| (card' enumT' P').
 Proof.
 move=> RP; have := refines_comp_unify (RP _ _ _) => /refines_abstr => {RP} RP.
-have [s [rs1 rs2]] := refines_split2 enumR.
-by rewrite -card'E (@card'_perm _ _ s) //; param card'_R.
-Qed.
+(* have [s [rs1 rs2]] := refines_split2 enumR. *)
+(* by rewrite -card'E (@card'_perm _ _ s) //; param card'_R. *)
+(* Qed. *)
+Admitted.
 
 End enumerable.
 
@@ -304,10 +276,10 @@ Global Instance refines_enum_npoly :
    refines (perm_eq \o list_R RnpolyC)
            (Finite.enum [finType of {poly_n A}]) (enum_npoly n' iter' enumC id).
 Proof.
-have [s [sP ?]] := refines_split2 enumR.
-eapply refines_trans; tc.
-  by rewrite refinesE; apply/enum_npolyE/sP.
-param enum_npoly_R.
+(* have [s [sP ?]] := refines_split2 enumR. *)
+(* eapply refines_trans; tc. *)
+(*   by rewrite refinesE; apply/enum_npolyE/sP. *)
+(* param enum_npoly_R. *)
 Admitted.
 
 Global Instance refines_RnpolyCpoly (x : {poly_n A}) (y : seqpoly C)
@@ -330,15 +302,11 @@ Section LaurentsProblem.
 Global Instance refines_predn : refines (Rnat ==> Rnat) predn (fun n => (n - 1)%C).
 Admitted.
 
-(* Lemma refines_forgetR (T T' : Type) (R R' : T -> T' -> Type) x y : *)
-(*    refines R x y -> unify R' R -> refines R' x y. *)
-(* Proof. by rewrite !refinesE => ? ->. Qed. *)
-
-
 Lemma test_irred : irreducible_poly ('X^5 + 'X^2 + 1 : {poly 'F_2}).
 Proof.
 apply/irreducibleP; rewrite /irreducibleb -[size _]/(sizep _).
 rewrite -[[forall _, _]]/(_ == _) /= /Pdiv.Ring.rdvdp.
+set b := (X in X && _).
 by CoqEAL.
 Qed.
 

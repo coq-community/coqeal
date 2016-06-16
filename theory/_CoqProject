@@ -4,7 +4,6 @@ coherent.v
 dvdring.v
 edr.v
 fpmod.v
-hrel.v
 kaplansky.v
 minor.v
 mxstructure.v

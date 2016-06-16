@@ -1,4 +1,5 @@
 -R . CoqEAL.refinements
+hrel.v
 param.v
 refinements.v
 pos.v

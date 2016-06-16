@@ -597,11 +597,12 @@ Proof.
 Qed.
 
 Instance Rhpoly_split :
-  refines (Logic.eq ==> Rhpoly ==> prod_hrel Rhpoly Rhpoly)
+  refines (Logic.eq ==> Rhpoly ==> prod_R Rhpoly Rhpoly)
           (splitp (R:=A)) split_op.
 Proof.
   rewrite refinesE=> _ m -> p hp h1.
-  rewrite [p]RhpolyE /prod_hrel /Rhpoly /fun_hrel /splitp /split_op {p h1} /=.
+  rewrite [p]RhpolyE /Rhpoly /fun_hrel /splitp /split_op {p h1} /=.
+  apply: prod_RI; rewrite /prod_hrel /=.
   elim: hp m=> [a [|m]|a n p ih [|m]] /=; first by rewrite expr0 rdivp1 rmodp1.
       rewrite rdivp_small ?rmodp_small ?polyC0 // size_polyC size_polyXn;
       by case: (a != 0).
@@ -747,10 +748,7 @@ Qed.
 Global Instance RhpolyC_mulXn p sp n rn :
   refines rN n rn -> refines RhpolyC p sp ->
   refines RhpolyC (p * 'X^n) (shift_op rn sp).
-Proof.
-  move=> hn hp; rewrite -[_ * 'X^_]/(shiftp _ _).
-  exact: refines_apply.
-Qed.
+Proof. by move=> hn hp; rewrite -[_ * 'X^_]/(shiftp _ _); tc. Qed.
 
 Global Instance RhpolyC_Xnmul p sp n rn :
   refines rN n rn -> refines RhpolyC p sp ->
@@ -782,7 +780,7 @@ Global Instance RhpolyC_split :
   refines (rN ==> RhpolyC ==> prod_R RhpolyC RhpolyC)
           (splitp (R:=A)) split_op.
 Proof.
-  eapply refines_trans; tc.
+refines_trans.
   rewrite refinesE; do ?move=> ?*.
   eapply (split_hpoly_R (N_R:=rN))=> // *;
     exact: refinesP.
@@ -850,73 +848,85 @@ From mathcomp Require Import ssrint.
 From CoqEAL Require Import binnat binint.
 
 Goal (0 == 0 :> {poly int}).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (0 == (0 : {poly {poly {poly int}}})).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (1 == 1 :> {poly int}).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (1 == (1 : {poly {poly {poly int}}})).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
       == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (- 1 == - (1: {poly {poly int}})).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (- (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2) == -1 - 2%:Z%:P * 'X - 3%:Z *: 'X^2).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 0).
-rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-by CoqEAL.
+by rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
 Abort.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z *: 'X^2).
-by CoqEAL.
+by coqeal.
 Abort.
 
 (* (1 + xy) * x = x + x^2y *)
 Goal ((1 + 'X * 'X%:P) * 'X == 'X + 'X^2 * 'X%:P :> {poly {poly int}}).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (sizep ('X^2 : {poly int}) ==
       sizep (- 3%:Z *: 'X^(sizep ('X : {poly int})))).
-by CoqEAL.
+by coqeal.
 Abort.
 
+Definition test := coqeal_vm_compute (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2)).
+
 Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 3).
-by CoqEAL.
+by coqeal.
 Abort.
+
+(* Hint Extern 999 (refines _ _ _) => *)
+(*   tryif eapply refines_apply then fail 1 *)
+(*   else (tryif tc then fail 2 *)
+(*        else (idtac "cannot find refinement"; *)
+(*                once lazymatch goal with |- ?g => idtac g end; fail 3)) : typeclass_instances. *)
+
+
+(* Typeclasses eauto :=  debug. *)
+(* Definition test' :=  *)
+(*   coqeal_vm_compute ('X : {poly int}). *)
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))) ==
       1 + 4%:Z *: 'X + 4%:Z *: 'X^(sizep (10%:Z *: 'X))).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (splitp 2 (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
       (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
-by CoqEAL.
+by coqeal.
 Abort.
 
 Goal (splitp (sizep ('X : {poly int}))
              (1 + 2%:Z *: 'X + 3%:Z%:P * 'X^2 + 4%:Z *: 'X^3) ==
       (3%:Z%:P + 4%:Z *: 'X, 1 + 2%:Z%:P * 'X)).
-by CoqEAL.
+by coqeal.
 Abort.
 
 End testpoly.

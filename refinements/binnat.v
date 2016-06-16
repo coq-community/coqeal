@@ -270,9 +270,9 @@ by rewrite nat_of_mul_bin.
 Qed.
 
 Global Instance Rnat_div_eucl :
-  refines (Rnat ==> Rnat ==> prod_hrel Rnat Rnat) edivn N.div_eucl.
+  refines (Rnat ==> Rnat ==> prod_R Rnat Rnat) edivn N.div_eucl.
 Proof.
-  rewrite refinesE /prod_hrel /Rnat /fun_hrel=> _ x <- _ y <-.
+  rewrite refinesE /Rnat /fun_hrel=> _ x <- _ y <-.
   rewrite edivn_def /=.
   case: x=> [|x] /=; first by rewrite div0n mod0n.
   case: y=> [|y] //=.
@@ -294,8 +294,7 @@ Qed.
 
 Global Instance Rnat_div : refines (Rnat ==> Rnat ==> Rnat) divn div_op.
 Proof.
-  apply refines_abstr2; rewrite /divn /div_op /div_N /N.div=> x x' rx y y' ry.
-  exact: refines_apply.
+by apply refines_abstr2; rewrite /divn /div_op /div_N /N.div=> x x' rx y y' ry; tc.
 Qed.
 
 Global Instance Rnat_mod : refines (Rnat ==> Rnat ==> Rnat) modn mod_op.
