@@ -27,7 +27,7 @@ Variable R : ringType.
 
 Record npolynomial : predArgType := Npolynomial {
   poly_of_npoly :> {poly R};
-  _ : (size poly_of_npoly <= n.+1)%N
+  _ : (size poly_of_npoly <= n)%N
 }.
 
 Canonical npoly_subType := [subType for poly_of_npoly].
@@ -49,15 +49,38 @@ End npoly.
 Notation "'{poly_' n R }" := (npoly_of n (Phant R))
   (at level 0, n at level 1, format "'{poly_' n  R }").
 
-Section npoly_theory.
-Variable n : nat.
-Variable R : ringType.
 
-Lemma size_npoly (p : {poly_n R}) : (size p <= n.+1)%N. Proof. exact: valP p. Qed.
+Section npoly_theory.
+Context {n : nat} (R : ringType).
+
+Lemma size_npoly (p : {poly_n R}) : (size p <= n)%N. Proof. exact: valP p. Qed.
+Hint Resolve size_npoly.
 Lemma npoly_inj : injective (@poly_of_npoly n R). Proof. exact: val_inj. Qed.
+Hint Resolve npoly_inj.
+
+Canonical npoly (E : nat -> R) : {poly_n R} :=
+  @Npolynomial _ _ (\poly_(i < n) E i) (size_poly _ _).
+
+Fact size_npoly0 : size (0 : {poly R}) <= n.
+Proof. by rewrite size_poly0. Qed.
+
+Definition npoly0 := Npolynomial (size_npoly0).
+
+Definition NPoly (p : {poly R}) : {poly_n R} := npoly (nth 0 p).
+
+Definition npoly_of_seq := NPoly \o Poly.
+
+Lemma npolyP (p q : {poly_n R}) : nth 0 p =1 nth 0 q <-> p = q.
+Proof. by split => [/polyP/val_inj|->]. Qed.
+
+Lemma coef_NPoly (p : {poly R}) i : (NPoly p)`_i = if i < n then p`_i else 0.
+Proof. by rewrite /= coef_poly. Qed.
+
+Lemma big_coef_npoly (p : {poly_n R}) i : n <= i -> p`_i = 0.
+Proof. by move=> i_big; rewrite nth_default // (leq_trans _ i_big). Qed.
 
 End npoly_theory.
-Hint Resolve size_npoly.
+Hint Resolve size_npoly npoly_inj.
 
 Section fin_npoly.
 
@@ -74,10 +97,12 @@ Canonical npoly_subCountType := [subCountType of (npolynomial n R)].
 Canonical npoly_of_subCountType := [subCountType of {poly_n R}].
 
 Definition npoly_enum : seq {poly_n R} :=
-  pmap insub [seq \poly_(i < n.+1) (f : (R^(_))) (inord i) | f <- enum (R^n.+1)%type].
+  if n isn't n.+1 then [:: npoly0 _] else
+  pmap insub [seq \poly_(i < n.+1) c (inord i) | c : (R ^ n.+1)%type].
 
 Lemma npoly_enum_uniq : uniq npoly_enum.
 Proof.
+rewrite /npoly_enum; case: n=> [|k] //.
 rewrite pmap_sub_uniq // map_inj_uniq => [|f g eqfg]; rewrite ?enum_uniq //.
 apply/ffunP => /= i; have /(congr1 (fun p : {poly _} => p`_i)) := eqfg.
 by rewrite !coef_poly ltn_ord inord_val.
@@ -85,6 +110,8 @@ Qed.
 
 Lemma mem_npoly_enum p : p \in npoly_enum.
 Proof.
+rewrite /npoly_enum; case: n => [|k] // in p *.
+  by case: p => [p sp] /=; rewrite in_cons -val_eqE /= -size_poly_leq0 sp.
 rewrite mem_pmap_sub; apply/mapP.
 eexists [ffun i : 'I__ => p`_i]; first by rewrite mem_enum.
 apply/polyP => i; rewrite coef_poly.
@@ -99,25 +126,13 @@ Canonical npoly_subFinType := Eval hnf in [subFinType of npolynomial n R].
 Canonical npoly_of_finType := [finType of {poly_n R}].
 Canonical npoly_of_subFinType := [subFinType of {poly_n R}].
 
-Lemma card_npoly : #|{poly_n R}| = (#|R| ^ n.+1)%N.
+Lemma card_npoly : #|{poly_n R}| = (#|R| ^ n)%N.
 Proof.
-rewrite cardE enumT unlock /= size_pmap_sub.
-rewrite (@eq_in_count _ _ predT) ?count_predT; last first.
+rewrite cardE enumT unlock /= /npoly_enum; case: n => [|k] //=.
+rewrite  size_pmap_sub (@eq_in_count _ _ predT) ?count_predT; last first.
   by move=> _ /mapP /= [f _ ->]; rewrite size_poly.
 by rewrite size_map -cardE card_ffun card_ord.
 Qed.
-
-Canonical npoly (E : nat -> R) : {poly_n R} :=
-  @Npolynomial _ _ (\poly_(i < n.+1) E i) (size_poly _ _).
-
-Fact size_npoly0 : size (0 : {poly R}) <= n.+1.
-Proof. by rewrite size_poly0. Qed.
-
-Definition npoly0 := Npolynomial (size_npoly0).
-
-Definition NPoly (p : {poly R}) : {poly_n R} := insubd npoly0 p.
-
-Definition npoly_of_seq := NPoly \o Poly.
 
 End fin_npoly.
 
@@ -127,7 +142,7 @@ Variable R : finIdomainType.
 Variable p : {poly R}.
 
 Definition irreducibleb :=
-  ((1 < size p) && [forall q : {poly_((size p).-2) R}, (Pdiv.Ring.rdvdp q p)%R ==> (sizep q <= 1)])%N.
+  ((1 < size p) && [forall q : {poly_((size p).-1) R}, (Pdiv.Ring.rdvdp q p)%R ==> (sizep q <= 1)])%N.
 
 Lemma irreducibleP : reflect (irreducible_poly p) irreducibleb.
 Proof.
@@ -137,7 +152,7 @@ apply: (iffP idP) => [/andP[sp /'forall_implyP /= Fp]|[sp Fpoly]].
   have p_neq0 : p != 0 by rewrite -size_poly_eq0; case: size sp.
   split => // q sq_neq1 dvd_qp; rewrite -dvdp_size_eqp // eqn_leq dvdp_leq //=.
   apply: contraNT sq_neq1; rewrite -ltnNge => sq_lt_sp.
-  have q_small: (size q <= (size p).-2.+1)%N by rewrite prednK -ltnS prednK.
+  have q_small: (size q <= (size p).-1)%N by rewrite -ltnS prednK.
   rewrite Pdiv.Idomain.dvdpE in dvd_qp.
   have /= := Fp (Npolynomial q_small) dvd_qp.
   rewrite leq_eqVlt ltnS => /orP[//|]; rewrite size_poly_leq0 => /eqP q_eq0.
@@ -145,7 +160,7 @@ apply: (iffP idP) => [/andP[sp /'forall_implyP /= Fp]|[sp Fpoly]].
 have sp_gt0 : size p > 0 by case: size sp.
 rewrite sp /=; apply/'forall_implyP => /= q; rewrite -Pdiv.Idomain.dvdpE=> dvd_qp.
 have [/eqP->//|/Fpoly/(_ dvd_qp)/eqp_size sq_eq_sp] := boolP (sizep q == 1%N).
-by have := size_npoly q; rewrite sq_eq_sp prednK -ltnS prednK ?ltnn.
+by have := size_npoly q; rewrite sq_eq_sp -ltnS prednK ?ltnn.
 Qed.
 
 End Irreducible.
@@ -209,10 +224,9 @@ Global Instance refines_card :
   refines rN #|[pred x | P x]| (card' enumT' P').
 Proof.
 move=> RP; have := refines_comp_unify (RP _ _ _) => /refines_abstr => {RP} RP.
-(* have [s [rs1 rs2]] := refines_split2 enumR. *)
-(* by rewrite -card'E (@card'_perm _ _ s) //; param card'_R. *)
-(* Qed. *)
-Admitted.
+have [s [rs1 rs2]] := refines_split2 enumR.
+by rewrite -card'E (@card'_perm _ _ s) //; param card'_R.
+Qed.
 
 End enumerable.
 
@@ -229,9 +243,11 @@ Parametricity enum_boolF2.
 Global Instance refines_enum_boolF2 :
   refines (perm_eq \o list_R Rbool) (Finite.enum [finType of 'F_2]) (enum_boolF2).
 Proof.
-eapply refines_trans; tc.
-  
-Admitted.
+rewrite -enumT; refines_trans; last first.
+  by rewrite refinesE; do !constructor.
+rewrite refinesE /= uniq_perm_eq ?enum_uniq //.
+by move=> i; rewrite mem_enum /= !inE; case: i => [[|[|[]]] ?].
+Qed.
 
 Section enum_npoly.
 
@@ -240,7 +256,7 @@ Context (iter : forall T, N -> (T -> T) -> T -> T).
 Context (enum : seq A) (poly_of_seq : seq A -> P).
 
 Definition enum_npoly : seq P :=
- let extend e := flatten [seq map (cons x) e | x <- enum] in
+ let extend e := e ++ flatten [seq map (cons x) e | x <- enum] in
  map poly_of_seq (iter n extend [::[::]]).
 
 End enum_npoly.
@@ -250,6 +266,16 @@ Lemma enum_npolyE (n : nat) (R : finRingType) s :
   perm_eq (Finite.enum [finType of {poly_n R}])
                (enum_npoly n iter s (@npoly_of_seq _ _)).
 Proof.
+rewrite -!enumT => Rs; rewrite uniq_perm_eq ?enum_uniq //=.
+  admit.
+move=> /= p; symmetry; rewrite mem_enum inE /=.
+apply/mapP => /=; exists p; last first.
+  apply/npolyP => i; rewrite coef_poly /= coef_Poly.
+  by case: ltnP => // ?; rewrite big_coef_npoly.
+elim: n => [|n IHn] in p *.
+  rewrite inE; case: p => [p /=]; rewrite size_poly_leq0 => /eqP->.
+  by rewrite polyseq0.
+rewrite /= mem_cat.
 Admitted.
 
 Parametricity enum_npoly.
@@ -261,7 +287,7 @@ Context (C : Type) (rAC : A -> C -> Type).
 Context (N : Type) (rN : nat -> N -> Type).
 Context (n : nat) (n' : N) `{!refines rN n n'}.
 Context (iter' : forall T, N -> (T -> T) -> T -> T)
-  {iterR : forall T T' RT, 
+  {iterR : forall T T' RT,
     refines (rN ==> (RT ==> RT) ==> RT ==> RT) (@iter T) (@iter' T')}.
 Context (enumC : seq C)
   {enumR : refines (perm_eq \o (list_R rAC)) (@Finite.enum A) enumC}.
@@ -276,10 +302,11 @@ Global Instance refines_enum_npoly :
    refines (perm_eq \o list_R RnpolyC)
            (Finite.enum [finType of {poly_n A}]) (enum_npoly n' iter' enumC id).
 Proof.
-(* have [s [sP ?]] := refines_split2 enumR. *)
-(* eapply refines_trans; tc. *)
-(*   by rewrite refinesE; apply/enum_npolyE/sP. *)
-(* param enum_npoly_R. *)
+have [s [sP ?]] := refines_split2 enumR.
+eapply refines_trans; tc.
+  by rewrite refinesE; apply/enum_npolyE/sP.
+param enum_npoly_R.
+
 Admitted.
 
 Global Instance refines_RnpolyCpoly (x : {poly_n A}) (y : seqpoly C)
@@ -307,7 +334,7 @@ Proof.
 apply/irreducibleP; rewrite /irreducibleb -[size _]/(sizep _).
 rewrite -[[forall _, _]]/(_ == _) /= /Pdiv.Ring.rdvdp.
 set b := (X in X && _).
-by CoqEAL.
+by coqeal.
 Qed.
 
 

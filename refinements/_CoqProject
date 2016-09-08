@@ -16,3 +16,4 @@ bareiss.v
 rational.v
 boolF2.v
 trivial_seq.v
+examples/irred.v
