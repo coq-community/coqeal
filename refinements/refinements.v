@@ -16,31 +16,28 @@ Local Open Scope rel.
 (* Shortcut for triggering typeclass resolution *)
 Ltac tc := do 1?typeclasses eauto.
 
-Section refinements.
+(**************************)
+(* Linking param and hrel *)
+(**************************)
 
-Fact refines_key : unit. Proof. done. Qed.
-Class refines A B (R : A -> B -> Type) (m : A) (n : B) :=
-  refines_rel : (locked_with refines_key R) m n.
-Arguments refines A B R%rel m n.
+Lemma prod_RE A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
+  prod_R rA rB x y -> prod_hrel rA rB x y.
+Proof. by case; split. Qed.
 
-Lemma refinesE A B (R : A -> B -> Type) : refines R = R.
-Proof. by rewrite /refines unlock. Qed.
+Lemma prod_RI A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
+  prod_hrel rA rB x y -> prod_R rA rB x y.
+Proof. by move: x y => [x1 x2] [y1 y2] [] /=; constructor. Qed.
 
-Lemma refines_eq T (x y : T) : refines eq x y -> x = y.
-Proof. by rewrite refinesE. Qed.
+(*****************************)
+(* General unification class *)
+(*****************************)
 
-Global Instance refines_bool_eq x y : refines bool_R x y -> refines eq x y.
-Proof. by rewrite !refinesE=> [[]]. Qed.
+Class unify A (x y : A) := unify_rel : x = y.
+Global Instance unifyxx A (x : A) : unify x x := erefl.
 
-Lemma nat_R_eq x y : nat_R x y -> x = y.
-Proof. by elim=> // m n _ ->. Qed.
-
-Global Instance refines_nat_eq x y : refines nat_R x y -> refines eq x y.
-Proof. rewrite !refinesE; exact: nat_R_eq. Qed.
-
-Lemma refinesP T T' (R : T -> T' -> Type) (x : T) (y : T') :
-  refines R x y -> R x y.
-Proof. by rewrite refinesE. Qed.
+(*********************************)
+(* Compositionality of relations *)
+(*********************************)
 
 Fact composable_lock : unit. Proof. done. Qed.
 Class composable A B C
@@ -52,39 +49,6 @@ Lemma composableE A B C
  (rAB : A -> B -> Type) (rBC : B -> C -> Type) (rAC : A -> C -> Type) :
   composable rAB rBC rAC = (rAB \o rBC <= rAC).
 Proof. by rewrite /composable unlock. Qed.
-
-Lemma refines_trans A B C
-  (rAB : A -> B -> Type) (rBC : B -> C -> Type) (rAC : A -> C -> Type)
-  (a : A) (b : B) (c : C) : composable rAB rBC rAC ->
-  refines rAB a b -> refines rBC b c -> refines rAC a c.
-Proof.
-by rewrite !refinesE composableE => rABC rab rbc; apply: rABC; exists b.
-Qed.
-
-Lemma trivial_refines T T' (R : T -> T' -> Type) (x : T) (y : T') :
-  R x y -> refines R x y.
-Proof. by rewrite refinesE. Qed.
-
-Global Instance refines_apply
-  A B (R : A -> B -> Type) C D (R' : C -> D -> Type) :
-  forall (c : A -> C) (d : B -> D), refines (R ==> R') c d ->
-  forall (a : A) (b : B), refines R a b -> refines R' (c a) (d b) | 99.
-Proof. by rewrite !refinesE => c d rcd a b rab; apply: rcd. Qed.
-
-Global Instance composable_rid1 A B (R : A -> B -> Type) :
-  composable eq R R | 1.
-Proof.
-rewrite composableE; apply: eq_hrelRL.
-by split; [ apply: comp_eql | move=> x y hxy; exists x ].
-Qed.
-
-Global Instance composable_bool_id1 B (R : bool -> B -> Type) :
-  composable bool_R R R | 1.
-Proof. by rewrite composableE => x y [y' [[]]]. Qed.
-
-(* Global Instance composable_nat_id1 B (R : nat -> B -> Type) :
-  composable nat_R R R | 1. *)
-(* Proof. by rewrite composableE => x y [y' [/nat_R_eq ->]]. Qed. *)
 
 Global Instance composable_comp A B C (rAB : A -> B -> Type)
   (rBC : B -> C -> Type) : composable rAB rBC (rAB \o rBC).
@@ -108,18 +72,20 @@ rewrite !composableE => R123 fA fC [fB [RfAB RfBC]] a c rABac.
 apply: R123; exists (fB a); split; [ exact: RfAB | exact: RfBC ].
 Qed.
 
-(* Composable and pairs *)
-Lemma prod_RE A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
-  prod_R rA rB x y -> prod_hrel rA rB x y.
-Proof. by case; split. Qed.
+Global Instance composable_rid1 A B (R : A -> B -> Type) :
+  composable eq R R | 1.
+Proof.
+rewrite composableE; apply: eq_hrelRL.
+by split; [ apply: comp_eql | move=> x y hxy; exists x ].
+Qed.
 
-Lemma prod_RI A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
-  prod_hrel rA rB x y -> prod_R rA rB x y.
-Proof. by move: x y => [x1 x2] [y1 y2] [] /=; constructor. Qed.
+Global Instance composable_bool_id1 B (R : bool -> B -> Type) :
+  composable bool_R R R | 1.
+Proof. by rewrite composableE => x y [y' [[]]]. Qed.
 
-Lemma refines_prod_R A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
-  refines rA x.1 y.1 -> refines rB x.2 y.2 -> refines (prod_R rA rB) x y.
-Proof. by rewrite !refinesE => *; apply: prod_RI; split. Qed.
+(* Global Instance composable_nat_id1 B (R : nat -> B -> Type) :
+  composable nat_R R R | 1. *)
+(* Proof. by rewrite composableE => x y [y' [/nat_R_eq ->]]. Qed. *)
 
 Global Instance composable_prod A A' B B' C C'
   (rAB : A -> B -> Type) (rAB' : A' -> B' -> Type)
@@ -134,6 +100,49 @@ rewrite !composableE=> h1 h2 [a a'] [c c'] [[b b']].
 move=> [/prod_RE [/= ??] /prod_RE [/= ??]].
 by split; [ apply: h1; exists b | apply: h2; exists b'].
 Qed.
+
+(************************)
+(* Refinement typeclass *)
+(************************)
+
+Module Import RefinesKeys.
+Fact symbol : unit. Proof. done. Qed.
+Fact recursive : unit. Proof. done. Qed.
+End RefinesKeys.
+
+Class refines_ key A B (R : A -> B -> Type) (m : A) (n : B) :=
+  refines_rel : (locked_with key R) m n.
+Arguments refines_ key {A B} R%rel m n : simpl never.
+Hint Mode refines_ + - - - + - : typeclass_instances.
+
+Section refinements.
+Variable key : unit.
+Notation refines := (@refines_ key _ _).
+
+Lemma refinesE A B (R : A -> B -> Type) : refines R = R.
+Proof. by rewrite /refines unlock. Qed.
+
+Lemma refines_eq T (x y : T) : refines eq x y -> x = y.
+Proof. by rewrite refinesE. Qed.
+
+Lemma nat_R_eq x y : nat_R x y -> x = y.
+Proof. by elim=> // m n _ ->. Qed.
+
+Lemma refinesP T T' (R : T -> T' -> Type) (x : T) (y : T') :
+  refines R x y -> R x y.
+Proof. by rewrite refinesE. Qed.
+
+Lemma refines_trans A B C
+  (rAB : A -> B -> Type) (rBC : B -> C -> Type) (rAC : A -> C -> Type)
+  (a : A) (b : B) (c : C) : composable rAB rBC rAC ->
+  refines rAB a b -> refines rBC b c -> refines rAC a c.
+Proof.
+by rewrite !refinesE composableE => rABC rab rbc; apply: rABC; exists b.
+Qed.
+
+Lemma trivial_refines T T' (R : T -> T' -> Type) (x : T) (y : T') :
+  R x y -> refines R x y.
+Proof. by rewrite refinesE. Qed.
 
 Section refines_split.
 Context {T} {Y} {Z} {R1 : T -> Y -> Type} {R2 : Y -> Z -> Type} {x : T} {z : Z}.
@@ -156,6 +165,18 @@ Proof. by rewrite !refinesE. Qed.
 
 End refines_split.
 
+Lemma refines_apply
+  A B (R : A -> B -> Type) C D (R' : C -> D -> Type) :
+  forall (c : A -> C) (d : B -> D), refines (R ==> R') c d ->
+  forall (a : A) (b : B), refines R a b -> refines R' (c a) (d b).
+Proof. by rewrite !refinesE => c d rcd a b rab; apply: rcd. Qed.
+
+(* Composable and pairs *)
+Lemma refines_prod_R A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) x y :
+  refines rA x.1 y.1 -> refines rB x.2 y.2 -> refines (prod_R rA rB) x y.
+Proof. by rewrite !refinesE => *; apply: prod_RI; split. Qed.
+
+
 Lemma refines_abstr A B C D (R : A -> B -> Type) (R' : C -> D -> Type)
       (c : A -> C) (d : B -> D):
         (forall (a :  A) (b : B), refines R a b -> refines R' (c a) (d b)) ->
@@ -170,6 +191,64 @@ Lemma refines_abstr2 A B A' B' A'' B''
         refines R'' (f a a') (g b b')) ->
         refines (R ==> R' ==> R'') f g.
 Proof. by move=> H; do 2![eapply refines_abstr => *]; apply: H. Qed.
+
+Lemma refines_comp_unify A B (R : A -> B -> Type) x y :
+  refines (R \o (@unify B))%rel x y -> refines R x y.
+Proof. move=> /refines_split12.
+  rewrite !refinesE=> H.
+  case: H=> ? h.
+  case: h=> ? h2.
+  by rewrite -h2.
+Qed.
+
+Lemma refines_bool_eq x y : refines bool_R x y -> refines eq x y.
+Proof. by rewrite !refinesE=> [[]]. Qed.
+
+Lemma refines_nat_eq x y : refines nat_R x y -> refines eq x y.
+Proof. rewrite !refinesE; exact: nat_R_eq. Qed.
+
+End refinements.
+
+Definition refines_recursive_apply := @refines_apply recursive.
+Global Existing Instance refines_recursive_apply | 99.
+
+Definition refines_recursive_bool_eq := @refines_bool_eq recursive. 
+Global Existing Instance refines_recursive_bool_eq.
+
+Definition refines_recursive_nat_eq := @refines_nat_eq recursive.
+Global Existing Instance refines_recursive_nat_eq.
+
+Lemma refines_change key2 key1 A B (R : A -> B -> Prop) :
+  refines_ key1 R = refines_ key2 R.
+Proof. by rewrite !refinesE. Qed.
+
+Hint Extern 0 (refines_ recursive _ _ _) =>
+(once lazymatch goal with |- ?g => idtac "trying shortcut for" g end);
+tryif by [rewrite (@refines_change symbol); typeclasses eauto] then idtac
+else (tryif eapply refines_apply then idtac "no shortcut"
+   else (once lazymatch goal with |- ?g
+       => idtac "cannot find refinement for" g end; fail 1))  : typeclass_instances.
+
+Hint Extern 0 (refines_ symbol _ _)
+  => apply trivial_refines; eassumption : typeclass_instances.
+
+Hint Extern 0 (refines_ recursive (_ \o (@unify _))%rel _ _)
+  => eapply refines_trans : typeclass_instances.
+
+(* Tactic for doing parametricity proofs, it takes a parametricity
+   theorem generated by the Parametricity plugin as argument *)
+Ltac param x :=
+  rewrite ?refinesE; do?move=> ?*;
+  eapply x=> *; eapply refinesP;
+  do ?eapply refines_apply; tc.
+
+(* Special tactic when relation is defined using \o *)
+Ltac param_comp x := eapply refines_trans; tc; param x.
+
+Notation refines := (@refines_ symbol _ _).
+Notation refines_in := (@refines_ recursive _ _).
+
+Section global_refinements.
 
 Global Instance refines_pair_R
   A A' B B' (rA : A -> A' -> Type) (rB : B -> B' -> Type) :
@@ -186,46 +265,11 @@ Global Instance refines_snd_R
   refines (prod_R rA rB ==> rB)%rel (@snd _ _) (@snd _ _).
 Proof. by rewrite !refinesE=> [??] [??]. Qed.
 
-Class unify A (x y : A) := unify_rel : x = y.
-Global Instance unifyxx A (x : A) : unify x x := erefl.
+Global Instance refines_true : refines _ true _ :=
+  trivial_refines _ bool_R_true_R.
 
-Global Instance refines_of_unify A x y : unify x y -> refines (@unify A) x y | 100.
-Proof. by rewrite refinesE. Qed.
-
-Lemma refines_comp_unify A B (R : A -> B -> Type) x y :
-  refines (R \o (@unify B))%rel x y -> refines R x y.
-Proof. move=> /refines_split12.
-  rewrite !refinesE=> H.
-  case: H=> ? h.
-  case: h=> ? h2.
-  by rewrite -h2.
-Qed.
-
-End refinements.
-
-Hint Mode refines - - - + - : typeclass_instances.
-
-Hint Extern 0 (refines _ _ _)
-  => apply trivial_refines; eassumption : typeclass_instances.
-
-Hint Extern 0 (refines (_ \o (@unify _))%rel _ _)
-  => eapply refines_trans : typeclass_instances.
-
-(* Tactic for doing parametricity proofs, it takes a parametricity
-   theorem generated by the Parametricity plugin as argument *)
-Ltac param x :=
-  rewrite ?refinesE; do?move=> ?*;
-  eapply x=> *; eapply refinesP;
-  do ?eapply refines_apply; tc.
-
-(* Special tactic when relation is defined using \o *)
-Ltac param_comp x := eapply refines_trans; tc; param x.
-
-Global Instance refines_true : refines _ _ _ :=
-  trivial_refines bool_R_true_R.
-
-Global Instance refines_false : refines _ _ _ :=
-  trivial_refines bool_R_false_R.
+Global Instance refines_false : refines _ false _ :=
+  trivial_refines _ bool_R_false_R.
 
 Global Instance refines_negb : refines (bool_R ==> bool_R) negb negb.
 Proof. exact/trivial_refines/negb_R. Qed.
@@ -252,43 +296,43 @@ Global Instance refines_leibniz_eq (T : eqType) (x y : T) b :
   refines bool_R (x == y) b -> refines (fun T' T => T -> T') (x = y) b.
 Proof. by move=> /refines_bool_eq; rewrite !refinesE => <- /eqP. Qed.
 
-Ltac coqeal := apply: refines_goal; vm_compute.
+End global_refinements.
 
 Module Refinements.
 
 (* Generic operations *)
 Module Op.
 
-Class zero_of A := zero_op : A.
+Class zero_of A := zero : A.
 Hint Mode zero_of + : typeclass_instances.
-Class one_of A := one_op : A.
+Class one_of A := one : A.
 Hint Mode one_of + : typeclass_instances.
-Class opp_of A := opp_op : A -> A.
+Class opp_of A := opp : A -> A.
 Hint Mode opp_of + : typeclass_instances.
-Class add_of A := add_op : A -> A -> A.
+Class add_of A := add : A -> A -> A.
 Hint Mode add_of + : typeclass_instances.
-Class sub_of A := sub_op : A -> A -> A.
+Class sub_of A := sub : A -> A -> A.
 Hint Mode sub_of + : typeclass_instances.
-Class mul_of A := mul_op : A -> A -> A.
+Class mul_of A := mul : A -> A -> A.
 Hint Mode mul_of + : typeclass_instances.
-Class exp_of A B := exp_op : A -> B -> A.
+Class exp_of A B := exp : A -> B -> A.
 Hint Mode exp_of + + : typeclass_instances.
-Class div_of A := div_op : A -> A -> A.
+Class div_of A := div : A -> A -> A.
 Hint Mode div_of + : typeclass_instances.
-Class inv_of A := inv_op : A -> A.
+Class inv_of A := inv : A -> A.
 Hint Mode inv_of + : typeclass_instances.
-Class mod_of A := mod_op : A -> A -> A.
+Class mod_of A := mod : A -> A -> A.
 Hint Mode mod_of + : typeclass_instances.
-Class scale_of A B := scale_op : A -> B -> B.
+Class scale_of A B := scale : A -> B -> B.
 Hint Mode scale_of + + : typeclass_instances.
 
-Class eq_of A := eq_op : A -> A -> bool.
+Class eq_of A := eq : A -> A -> bool.
 Hint Mode eq_of + : typeclass_instances.
-Class leq_of A := leq_op : A -> A -> bool.
+Class leq_of A := leq : A -> A -> bool.
 Hint Mode leq_of + : typeclass_instances.
-Class lt_of A := lt_op : A -> A -> bool.
+Class lt_of A := lt : A -> A -> bool.
 Hint Mode lt_of + : typeclass_instances.
-Class size_of A N := size_op : A -> N.
+Class size_of A N := size : A -> N.
 Hint Mode size_of + + : typeclass_instances.
 
 Class spec_of A B   := spec : A -> B.
@@ -297,38 +341,66 @@ Definition spec_id {A : Type} : spec_of A A := id.
 Class implem_of A B := implem : A -> B.
 Hint Mode implem_of + + : typeclass_instances.
 Definition implem_id {A : Type} : implem_of A A := id.
-Class cast_of A B  := cast_op : A -> B.
+Class cast_of A B  := cast : A -> B.
 Hint Mode cast_of + + : typeclass_instances.
 
-End Op.
-End Refinements.
-
-Import Refinements.Op.
+Module Exports.
 
 Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of exp_of div_of
             inv_of mod_of scale_of size_of eq_of leq_of lt_of spec_of implem_of cast_of.
 
 Arguments spec / : assert.
 
-Notation "0"      := zero_op        : computable_scope.
-Notation "1"      := one_op         : computable_scope.
-Notation "-%C"    := opp_op.
-Notation "- x"    := (opp_op x)     : computable_scope.
-Notation "+%C"    := add_op.
-Notation "x + y"  := (add_op x y)   : computable_scope.
-Notation "x - y"  := (sub_op x y)   : computable_scope.
-Notation "*%C"    := mul_op.
-Notation "x * y"  := (mul_op x y)   : computable_scope.
-Notation "x ^ y"  := (exp_op x y)   : computable_scope.
-Notation "x %/ y" := (div_op x y)   : computable_scope.
-Notation "x ^-1"  := (inv_op x)     : computable_scope.
-Notation "x %% y" := (mod_op x y)   : computable_scope.
-Notation "*:%C"   := scale_op.
-Notation "x *: y" := (scale_op x y) : computable_scope.
-Notation "x == y" := (eq_op x y)    : computable_scope.
-Notation "x <= y" := (leq_op x y)   : computable_scope.
-Notation "x < y"  := (lt_op x y)    : computable_scope.
-Notation cast     := (@cast_op _).
+Notation "0"      := zero        : computable_scope.
+Notation "1"      := one         : computable_scope.
+Notation "-%C"    := opp.
+Notation "- x"    := (opp x)     : computable_scope.
+Notation "+%C"    := add.
+Notation "x + y"  := (add x y)   : computable_scope.
+Notation "x - y"  := (sub x y)   : computable_scope.
+Notation "*%C"    := mul.
+Notation "x * y"  := (mul x y)   : computable_scope.
+Notation "x ^ y"  := (exp x y)   : computable_scope.
+Notation "x %/ y" := (div x y)   : computable_scope.
+Notation "x ^-1"  := (inv x)     : computable_scope.
+Notation "x %% y" := (mod x y)   : computable_scope.
+Notation "*:%C"   := scale.
+Notation "x *: y" := (scale x y) : computable_scope.
+Notation "x == y" := (eq x y)    : computable_scope.
+Notation "x <= y" := (leq x y)   : computable_scope.
+Notation "x < y"  := (lt x y)    : computable_scope.
+Notation cast     := (@cast _).
+
+End Exports.
+
+Module Compat.
+
+Notation zero_op := zero.
+Notation one_op := one.
+Notation opp_op := opp.
+Notation add_op := add.
+Notation sub_op := sub.
+Notation mul_op := mul.
+Notation exp_op := exp.
+Notation div_op := div.
+Notation inv_op := inv.
+Notation mod_op := mod.
+Notation scale_op := scale.
+Notation size_op := size.
+Notation eq_op := eq.
+Notation leq_op := leq.
+Notation lt_op := lt.
+Notation spec := spec.
+Notation implem := implem.
+Notation cast_op := cast.
+
+End Compat.
+End Op.
+End Refinements.
+
+Import Refinements.
+Export Op.Exports.
+Export Op.Compat.
 
 Ltac simpC :=
   do ?[ rewrite -[0%C]/0%R
@@ -345,12 +417,6 @@ Ltac simpC :=
       | rewrite -[(_ == _)%C]/(_ == _)%bool
       ].
 
-(* Section testmx. *)
-(* Variable mxA : nat -> nat -> Type. *)
-(* Definition idmx (m n : nat) (mx : mxA m n) : mxA m n := mx. *)
-(* End testmx. *)
-(* Parametricity idmx. *)
-(* Print idmx_R. (* Here we get something too general! *) *)
 
 Class reduce_in_spec {T} (x y : T) := Reduce : x = y.
 Hint Mode reduce_in_spec - + - : typeclass_instances.
@@ -360,13 +426,13 @@ design this elimination lemma to abstract the context and vm_compute in the goal
 Lemma abstract_context T (P : T -> Type) x : (forall Q, Q = P -> Q x) -> P x.
 Proof. by move=> /(_ P); apply. Qed.
 
-Hint Extern 0 (reduce_in_spec (spec _) _) =>
+Hint Extern 0 (reduce_in_spec (Op.spec _) _) =>
 let Q := fresh "Q" in let eqQ := fresh "eqQ" in
-elim/abstract_context : (X in reduce_in_spec (spec X)) => Q eqQ; vm_compute;
+elim/abstract_context : (X in reduce_in_spec (Op.spec X)) => Q eqQ; vm_compute;
 rewrite eqQ /=; reflexivity :  typeclass_instances.
 
 Lemma coqeal_vm_compute_of {T} (x : T) {y y' : T}
-      {rxy : refines eq (spec_id x) y} {rr : reduce_in_spec y y'} : x = y'.
+      {rxy : refines_ recursive eq (Op.spec_id x) y} {rr : reduce_in_spec y y'} : x = y'.
 Proof. by rewrite -rr; apply: refines_eq. Qed.
 
 Notation coqeal_vm_compute x := (@coqeal_vm_compute_of _ x _ _ _ _).

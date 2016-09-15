@@ -214,7 +214,7 @@ Local Open Scope rel_scope.
 
 Definition Rnat : nat -> N -> Type := fun_hrel nat_of_bin.
 
-Lemma RnatE (n : nat) (x : N) : refines Rnat n x -> n = x.
+Lemma RnatE (n : nat) (x : N) : refines_in Rnat n x -> n = x.
 Proof. by rewrite refinesE. Qed.
 
 Global Instance Rnat_spec_r x : refines Rnat (spec x) x.
@@ -223,7 +223,13 @@ Proof. by rewrite refinesE. Qed.
 Global Instance Rnat_spec_l : refines (Rnat ==> nat_R) spec_id spec.
 Proof.
   rewrite refinesE=> x x' rx.
-  rewrite [spec _]RnatE /spec_id [y in nat_R y _]RnatE.
+evar (n : N).
+have : refines_in Rnat (Refinements.Op.Compat.spec x') n.
+
+
+  Typeclasses eauto := debug.
+  
+  rewrite [spec _]RnatE. /spec_id [y in nat_R y _]RnatE.
   exact: nat_Rxx.
 Qed.
 
