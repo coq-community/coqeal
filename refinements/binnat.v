@@ -223,13 +223,7 @@ Proof. by rewrite refinesE. Qed.
 Global Instance Rnat_spec_l : refines (Rnat ==> nat_R) spec_id spec.
 Proof.
   rewrite refinesE=> x x' rx.
-evar (n : N).
-have : refines_in Rnat (Refinements.Op.Compat.spec x') n.
-
-
-  Typeclasses eauto := debug.
-  
-  rewrite [spec _]RnatE. /spec_id [y in nat_R y _]RnatE.
+  rewrite [spec _]RnatE /spec_id [y in nat_R y _]RnatE.
   exact: nat_Rxx.
 Qed.
 
@@ -254,9 +248,7 @@ by rewrite refinesE => _ x <- _ y <-; rewrite /Rnat /fun_hrel nat_of_add_bin.
 Qed.
 
 Global Instance Rnat_S : refines (Rnat ==> Rnat) S succN.
-Proof.
-by rewrite !refinesE => m n rmn; rewrite -add1n /succN; apply: refinesP.
-Qed.
+Proof. by refines_abstrE; rewrite -add1n; apply/spec_refines. Qed.
 
 Lemma nat_of_binK : forall x, N.of_nat (nat_of_bin x) = x.
 Proof.
@@ -271,44 +263,38 @@ Qed.
 
 Global Instance Rnat_mul : refines (Rnat ==> Rnat ==> Rnat) muln mul_op.
 Proof.
-rewrite refinesE => _ x <- _ y <-; rewrite /Rnat /fun_hrel /=.
-by rewrite nat_of_mul_bin.
+rewrite refinesE => _ x <- _ y <-.
+by rewrite /Rnat /fun_hrel /= nat_of_mul_bin.
 Qed.
 
 Global Instance Rnat_div_eucl :
   refines (Rnat ==> Rnat ==> prod_R Rnat Rnat) edivn N.div_eucl.
 Proof.
-  rewrite refinesE /Rnat /fun_hrel=> _ x <- _ y <-.
-  rewrite edivn_def /=.
-  case: x=> [|x] /=; first by rewrite div0n mod0n.
-  case: y=> [|y] //=.
-  have hspec := N.pos_div_eucl_spec x (N.pos y).
-  have hrem := N.pos_div_eucl_remainder x (N.pos y).
-  destruct N.pos_div_eucl.
-  rewrite -[nat_of_pos _]/(nat_of_bin (N.pos _)) hspec /= {hspec}.
-  rewrite nat_of_add_bin nat_of_mul_bin.
-  have rem_lt_div : (n0 < N.pos y)%N.
-    have pos_ne0 : N.pos y <> 0%num by [].
-    have /= := hrem pos_ne0.
-    rewrite /N.lt Nnat.N2Nat.inj_compare /= to_natE.
-    move/nat_compare_lt/ltP.
-    case: n0 {hrem}=> //= p.
-    by rewrite to_natE.
-  rewrite modnMDl modn_small ?rem_lt_div // divnMDl /= -?to_natE ?to_nat_gt0 //.
-  by rewrite divn_small ?addn0 // ?to_natE.
+rewrite refinesE /Rnat /fun_hrel=> _ x <- _ y <-.
+rewrite edivn_def /=.
+case: x=> [|x] /=; first by rewrite div0n mod0n.
+case: y=> [|y] //=.
+have hspec := N.pos_div_eucl_spec x (N.pos y).
+have hrem := N.pos_div_eucl_remainder x (N.pos y).
+destruct N.pos_div_eucl.
+rewrite -[nat_of_pos _]/(nat_of_bin (N.pos _)) hspec /= {hspec}.
+rewrite nat_of_add_bin nat_of_mul_bin.
+have rem_lt_div : (n0 < N.pos y)%N.
+  have pos_ne0 : N.pos y <> 0%num by [].
+  have /= := hrem pos_ne0.
+  rewrite /N.lt Nnat.N2Nat.inj_compare /= to_natE.
+  move/nat_compare_lt/ltP.
+  case: n0 {hrem}=> //= p.
+  by rewrite to_natE.
+rewrite modnMDl modn_small ?rem_lt_div // divnMDl /= -?to_natE ?to_nat_gt0 //.
+by rewrite divn_small ?addn0 // ?to_natE.
 Qed.
 
 Global Instance Rnat_div : refines (Rnat ==> Rnat ==> Rnat) divn div_op.
-Proof.
-by apply refines_abstr2; rewrite /divn /div_op /div_N /N.div=> x x' rx y y' ry; tc.
-Qed.
+Proof. by refines_abstrE; rewrite /divn; apply/spec_refines. Qed.
 
 Global Instance Rnat_mod : refines (Rnat ==> Rnat ==> Rnat) modn mod_op.
-Proof.
-  apply refines_abstr2; rewrite /mod_op /mod_N /N.modulo=> x x' rx y y' ry.
-  rewrite modn_def.
-  exact: refines_apply.
-Qed.
+Proof. by refines_abstrE; rewrite modn_def; apply/spec_refines. Qed.
 
 Global Instance Rnat_exp : refines (Rnat ==> Rnat ==> Rnat) expn exp_op.
 Proof.
@@ -336,13 +322,14 @@ Qed.
 
 Global Instance Rnat_leq : refines (Rnat ==> Rnat ==> bool_R) ssrnat.leq leq_op.
 Proof.
-  rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leq_N /leq.
-  case: (N.leb_spec0 _ _)=> [/N.sub_0_le|]=> h.
-    by rewrite [x - y]RnatE [(_ - _)%C]h /= eqxx.
-  suff H : (nat_of_bin x - nat_of_bin y == 0) = false.
-    by rewrite H.
-  apply/negP=> /eqP; rewrite [x - y]RnatE [0]RnatE.
-  by move/(can_inj nat_of_binK)/N.sub_0_le.
+rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leq_N /leq.
+case: (N.leb_spec0 _ _)=> [/N.sub_0_le|] h.
+  rewrite /(_ <= _)%N [_ == _](@refines_eq RefinesKeys.recursive) /=.
+  by rewrite [sub_op _ _]h.
+suff H : (nat_of_bin x - nat_of_bin y == 0) = false.
+  by rewrite /(_ <= _)%N H.
+apply/negP=> /eqP; rewrite [x - y]RnatE [0]RnatE.
+by move/(can_inj nat_of_binK)/N.sub_0_le.
 Qed.
 
 Global Instance Rnat_lt : refines (Rnat ==> Rnat ==> bool_R) ltn lt_op.

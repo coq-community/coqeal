@@ -115,12 +115,12 @@ Class refines_ key A B (R : A -> B -> Type) (m : A) (n : B) :=
 Arguments refines_ key {A B} R%rel m n : simpl never.
 Hint Mode refines_ + - - - + - : typeclass_instances.
 
+Lemma refinesE key A B (R : A -> B -> Type) : refines_ key R = R.
+Proof. by rewrite /refines_ unlock. Qed.
+
 Section refinements.
 Variable key : unit.
 Notation refines := (@refines_ key _ _).
-
-Lemma refinesE A B (R : A -> B -> Type) : refines R = R.
-Proof. by rewrite /refines unlock. Qed.
 
 Lemma refines_eq T (x y : T) : refines eq x y -> x = y.
 Proof. by rewrite refinesE. Qed.
@@ -128,9 +128,9 @@ Proof. by rewrite refinesE. Qed.
 Lemma nat_R_eq x y : nat_R x y -> x = y.
 Proof. by elim=> // m n _ ->. Qed.
 
-Lemma refinesP T T' (R : T -> T' -> Type) (x : T) (y : T') :
-  refines R x y -> R x y.
-Proof. by rewrite refinesE. Qed.
+Lemma refinesP_ key2 T T' (R : T -> T' -> Type) (x : T) (y : T') :
+  refines R x y -> refines_ key2 R x y.
+Proof. by rewrite !refinesE. Qed.
 
 Lemma refines_trans A B C
   (rAB : A -> B -> Type) (rBC : B -> C -> Type) (rAC : A -> C -> Type)
@@ -209,6 +209,8 @@ Proof. rewrite !refinesE; exact: nat_R_eq. Qed.
 
 End refinements.
 
+Definition refinesP := @refinesP_ recursive tt.
+
 Definition refines_recursive_apply := @refines_apply recursive.
 Global Existing Instance refines_recursive_apply | 99.
 
@@ -218,18 +220,21 @@ Global Existing Instance refines_recursive_bool_eq.
 Definition refines_recursive_nat_eq := @refines_nat_eq recursive.
 Global Existing Instance refines_recursive_nat_eq.
 
-Lemma refines_change key2 key1 A B (R : A -> B -> Prop) :
+Lemma refines_change key2 key1 A B (R : A -> B -> Type) :
   refines_ key1 R = refines_ key2 R.
 Proof. by rewrite !refinesE. Qed.
 
-Hint Extern 0 (refines_ recursive _ _ _) =>
-(once lazymatch goal with |- ?g => idtac "trying shortcut for" g end);
+Ltac refines_symbol :=
+(* (once lazymatch goal with |- ?g => idtac "trying " g end); *)
 tryif by [rewrite (@refines_change symbol); typeclasses eauto] then idtac
-else (tryif eapply refines_apply then idtac "no shortcut"
+else (tryif eapply refines_apply then idtac (* "no shortcut" *)
    else (once lazymatch goal with |- ?g
-       => idtac "cannot find refinement for" g end; fail 1))  : typeclass_instances.
+       => idtac "cannot find refinement for" g end; fail 1)).
 
-Hint Extern 0 (refines_ symbol _ _)
+Hint Extern 0 (refines_ recursive _ _ _) =>
+  refines_symbol : typeclass_instances.
+
+Hint Extern 0 (refines_ symbol _ _ _)
   => apply trivial_refines; eassumption : typeclass_instances.
 
 Hint Extern 0 (refines_ recursive (_ \o (@unify _))%rel _ _)
@@ -444,3 +449,24 @@ Ltac refines_abstr1 := eapply refines_abstr=> ???; tc.
 Ltac refines_apply := do ![refines_apply1].
 Ltac refines_abstr := do ![refines_abstr1].
 Ltac refines_trans :=  eapply refines_trans; tc.
+
+Lemma spec_refines_ key A B R a a' b `{Op.spec_of B A} :
+  refines_in (R ==> Logic.eq) Op.spec_id Op.spec ->
+  refines_in R a a' ->
+  refines_in R (Op.spec a') b -> refines_ key R a b.
+Proof. by rewrite !refinesE /= => specP /specP <-. Qed.
+
+Lemma spec_refinesP_ key A B R a a' b `{Op.spec_of B A} :
+  refines_in (R ==> Logic.eq) Op.spec_id spec ->
+  refines_in R a a' ->
+  R (Op.spec a') b -> refines_ key R a b.
+Proof. by move=> *; apply/spec_refines_. Qed.
+
+Definition spec_refines : forall A B R a a' b H, _ -> _ -> _ -> R a b :=
+  @spec_refines_ tt.
+Definition spec_refinesP : forall A B R a a' b H, _ -> _ -> _ -> R a b :=
+  @spec_refinesP_ tt.
+
+Ltac refines_abstrE := refines_abstr; rewrite !refinesE.
+
+Ltac coqeal := apply: refines_goal; vm_compute.
