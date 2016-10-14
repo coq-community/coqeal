@@ -1,5 +1,6 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg ssrint.
 From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
+From mathcomp Require Import zmodp.
 
 From CoqEAL Require Import hrel param refinements binint poly_op hpoly karatsuba.
 
@@ -21,15 +22,6 @@ Ltac simplify y p := let l := fresh "to_rewrite" in
 
 Tactic Notation (at level 0) "pose_simpl" ident(x) ":=" constr(p) :=
   simplify x p.
-
-Ltac polyType n :=
-  let rec aux n :=
-      match n with
-      | O => uconstr:{poly int}
-      | (S ?n) => let A := aux n in
-                  uconstr:{poly A}
-      end in
-  let A := aux n in constr:A.
 
 Ltac in_seq s t :=
   let rec aux s :=
@@ -62,14 +54,95 @@ Ltac freeVars t A :=
   let n := (eval compute in (size s)) in
   constr:(s, n).
 
-Ltac makeX n :=
-  let rec aux n :=
-      match n with
-      | O => uconstr:('X)
-      | (S ?n) => let x := aux n in
-                  uconstr:(x%:P)
-      end in
-  aux n.
+Inductive PExpr :=
+  | PEc : int -> PExpr
+  | PEX : nat -> PExpr
+  | PEadd : PExpr -> PExpr -> PExpr
+  | PEmul : PExpr -> PExpr -> PExpr
+  | PEopp : PExpr -> PExpr
+  | PEpow : PExpr -> nat -> PExpr.
+
+
+Definition Npoly (R : ringType) : nat -> ringType := fix aux n :=
+  if n is n.+1 then  poly_ringType (aux n) else R.
+
+
+Fixpoint NpolyC (R : ringType) N : R -> Npoly R N :=
+  if N isn't N'.+1 return R -> Npoly R N 
+  then fun x => x
+  else fun x => (NpolyC N' x)%:P.
+
+Fixpoint NpolyX (R : ringType) N : nat -> Npoly R N :=
+  if N isn't N'.+1 return nat -> Npoly R N 
+  then fun=> 0
+  else fun n => if n is n.+1 then (NpolyX R N' n)%:P
+                else 'X.
+
+Fixpoint Nmap_poly (R R' : ringType) (f : R -> R') : forall N, Npoly R N -> Npoly R' N:=
+  fix aux N := 
+  if N isn't N'.+1 return Npoly R N -> Npoly R' N 
+  then f else map_poly (aux N').
+
+Fact horner_key : unit. Proof. exact: tt. Qed.
+
+Fixpoint NhornerR (R : ringType) N : seq R -> Npoly R N -> R :=
+      if N isn't N'.+1 return seq R -> Npoly R N -> R
+      then fun _ p => p
+      else fun env p => if env is a :: env then NhornerR env p.[NpolyC N' a]
+                        else NhornerR [::] p.[0].
+
+Definition Nhorner (R : ringType) N (env : seq R) (p : Npoly [ringType of int] N) : R 
+  := locked_with horner_key (@NhornerR _ _) env (Nmap_poly intr p).
+
+Lemma NhornerRS (R : ringType) N (a : R) (env : seq R) (p : Npoly R N.+1) :
+  N = size env ->
+  NhornerR (a :: env) p = NhornerR env p.[NpolyC N a].
+Admitted.
+
+
+Definition PExpr_to_poly N : PExpr -> Npoly [ringType of int] N :=
+  fix aux p := match p with
+  | PEc n => n%:~R
+  | PEX n => NpolyX _ N n
+  | PEadd p q => aux p + aux q
+  | PEmul p q => aux p * aux q
+  | PEopp p => - aux p
+  | PEpow p n => aux p ^+ n
+end.
+
+Definition PExpr_to_Expr (R : ringType) (env : seq R) : PExpr -> R :=
+  fix aux p := match p with
+  | PEc n => n%:~R
+  | PEX n => env`_n
+  | PEadd p q => aux p + aux q
+  | PEmul p q => aux p * aux q
+  | PEopp p => - aux p
+  | PEpow p n => aux p ^+ n
+end.
+
+Tactic Notation "evalHorner" :=
+  rewrite /Nhorner /=; case: horner_key; rewrite /NhornerR /=;
+  do ?[rewrite ?(rmorph0, rmorphN, rmorphD, rmorphB,
+                rmorph1, rmorphM, map_polyC,
+                map_polyX, map_polyZ) /=]; rewrite ?hornerE.
+
+Lemma PExprP (R : ringType) (env : seq R) N p : size env == N ->
+  PExpr_to_Expr env p = Nhorner env (PExpr_to_poly N p).
+Proof.
+move: env; elim: N => //= [|N IHN].
+  elim: p => //= [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] //= [] //= _; evalHorner.
+  - by rewrite rmorph_int.
+  - by rewrite nth_nil.
+  - by rewrite IHp ?IHq //; evalHorner.
+  - by rewrite IHp ?IHq //; evalHorner.
+  - by rewrite IHp ?IHq //; evalHorner.
+  - by rewrite IHp // rmorphX; evalHorner.
+elim: p => [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] //= in IHN *.
+(* bug: should complain when I add "_" after //= *)
+move=> [|a env] //=.
+   rewrite /Nhorner unlock.
+   rewrite NhornerRS //.
+Admitted.
 
 Ltac getIndex t fv :=
   let rec aux s n :=
@@ -82,85 +155,31 @@ Ltac getIndex t fv :=
       end in
   aux fv O.
 
-Ltac const n A :=
-  let rec aux A :=
-      match A with
-      | {poly ?A} => let c := aux A in
-                     uconstr:(c%:P)
-      | _ => uconstr:(n%:Z)
-      end in
-  aux A.
-
-Ltac toPoly t fv T :=
+Ltac toPExpr t fv N :=
   let rec aux t :=
       match t with
-      | 0 => uconstr:0
-      | 1 => uconstr:1
+      | 0 => uconstr:(PEc 0)
+      | 1 => uconstr:(PEc 1)
       | (?t1 + ?t2) => let e1 := aux t1 in
                        let e2 := aux t2 in
-                       uconstr:(e1 + e2)
-      | (?t1 - ?t2) => let e1 := aux t1 in
-                       let e2 := aux t2 in
-                       uconstr:(e1 - e2)
+                       uconstr:(PEadd e1 e2)
       | (?t1 * ?t2) => let e1 := aux t1 in
                        let e2 := aux t2 in
-                       uconstr:(e1 * e2)
+                       uconstr:(PEmul e1 e2)
       | (- ?t) => let e := aux t in
-                  uconstr:(- e)
-      | ?n%:~R => const n T
-      | _ => let n := getIndex t fv in
-             makeX n
+                  uconstr:(PEopp e)
+      | ?n%:~R => uconstr:(PEc n)
+      | _ => let n := getIndex t fv in uconstr:(PEX n)
       end in
-  let e := aux t in constr:(e : T).
-
-Ltac lift n t :=
-  let rec aux n :=
-      match n with
-      | O => t
-      | (S ?n) => let e := aux n in
-                  uconstr:(e%:P)
-      | _ => fail "lift"
-      end in
-  let e := aux n in constr:e.
-
-Ltac cast p T :=
-  let rec aux T :=
-      match T with
-      | {poly ?T} => let f := aux T in
-                     uconstr:(map_poly f)
-      | _ => uconstr:(intr)
-      end in
-  let f := aux T in
-  uconstr:(f p).
-
-Ltac haveHorner p s n t T :=
-  let rec aux s n acc :=
-      match s with
-      | [::] => uconstr:(acc.[0])
-      | (?h :: ?t) => let e := lift n h in
-                      let p' := uconstr:(acc.[e]) in
-                      let n' := (eval compute in n.-1) in
-                      aux t n' p'
-      end in
-  let p' := cast p T in
-  let e := aux s n p' in
-  have : (t = e)
-    by rewrite ![map_poly_rmorphism _ _](rmorph0, rmorphN, rmorphD, rmorphB,
-                                         rmorph1, rmorphM, map_polyC,
-                                         map_polyX)
-               ?[GRing.Additive.apply _ _](map_polyC, map_polyX) !hornerE.
+  let e := aux t in constr:(e : PExpr).
 
 Tactic Notation (at level 0) "translate" constr(t) :=
   let A := type of t in
   let c := freeVars t A in
   let fv := (eval simpl in (c.1)) in
   let n := (eval simpl in (c.2)) in
-  let T := polyType n in
-  let p := toPoly t fv T in
-  let pol := fresh "P" in
-  pose pol := p;
-  haveHorner pol fv n t T;
-  move: @pol.
+  let p := toPExpr t fv n in
+  have /= := @PExprP _ fv n p isT.
 
 Tactic Notation "translateEq" :=
   match goal with
@@ -169,82 +188,55 @@ Tactic Notation "translateEq" :=
     let c := freeVars (lhs + rhs) A in
     let fv := (eval simpl in (c.1)) in
     let n := (eval simpl in (c.2)) in
-    let T := polyType n in
-    let pl := toPoly lhs fv T in
-    let pol := fresh "Pl" in
-    pose pol := pl;
-    haveHorner pol fv n lhs T;
-    let heq := fresh "to_rewrite" in
-    move=> heq;
-    rewrite [LHS]heq;
-    clear heq;
-    move: @pol;
-    let pr := toPoly rhs fv T in
-    let pol := fresh "Pr" in
-    pose pol := pr;
-    haveHorner pol fv n rhs T;
-    let heq := fresh "to_rewrite" in
-    move=> heq;
-    rewrite [X in let _ := _ in _ = X]heq;
-    clear heq;
-    move: @pol
-  | _ => fail "bad goal"
+    let pl := toPExpr lhs fv n in
+    let pr := toPExpr rhs fv n in
+    let rwl := fresh "rwl" in
+    let rwr := fresh "rwr" in
+    have /= rwl := @PExprP _ fv n pl isT; rewrite [LHS]rwl {rwl};
+    have /= rwr := @PExprP _ fv n pr isT; rewrite [RHS]rwr {rwr}
+  | _ => fail "goal not an equation"
   end.
 
 Tactic Notation "simplPoly" :=
-  rewrite -[X in let _ := _ in let _ := X in _]/(spec_id _)
-          -[X in let _ := X in _]/(spec_id _)
+  rewrite -1?[X in Nhorner _ X = _]/(spec_id _)
+          -1?[X in _ = Nhorner _ X]/(spec_id _)
           ![spec_id _]refines_eq /=.
-
-Tactic Notation "evalHorner" :=
-  do ?[rewrite ![map_poly_rmorphism _ _](rmorph0, rmorphN, rmorphD, rmorphB,
-                                        rmorph1, rmorphM, map_polyC,
-                                        map_polyX, map_polyZ)
-      |rewrite ![GRing.Additive.apply _ _](rmorph0, rmorphN, rmorphD, rmorphB,
-                                         rmorph1, rmorphM, map_polyC,
-                                         map_polyX, map_polyZ)
-      |rewrite ![GRing.Rmorphism.apply _ _](rmorph0, rmorphN, rmorphD, rmorphB,
-                                         rmorph1, rmorphM, map_polyC,
-                                         map_polyX, map_polyZ)];
-  rewrite !hornerE.
 
 Tactic Notation "CoqEALRing" :=
   by translateEq; simplPoly; evalHorner.
 
 Goal true.
-  
-  pose_simpl h0 := (- (1 + 'X%:P * 'X) : {poly {poly int}}).
-  pose_simpl h1 := (2%:Z%:P + 'X - 1 * 2%:Z%:P).
-  pose_simpl h2 :=
-    ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int})))).
-  pose_simpl h3 :=
-    (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (3%:Z *: 'X^2 + 1 + 2%:Z *: 'X)).
-  pose_simpl h4 := ('X + 'X^2 * 'X%:P : {poly {poly int}}).
+   
+  assert (h0 := coqeal_vm_compute (- (1 + 'X%:P * 'X) : {poly {poly int}})).
+  assert (h1 := coqeal_vm_compute (- (1 + 'X%:P * 'X) : {poly {poly int}})).
+  assert (h2 := coqeal_vm_compute 
+    ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))))).
+  assert (h3 := coqeal_vm_compute
+    (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (3%:Z *: 'X^2 + 1 + 2%:Z%:P * 'X))).
+  assert (h4 := coqeal_vm_compute ('X + 'X^2 * 'X%:P : {poly {poly int}})).
 
   have (a b c : int) : a * (b + c) = a * b + a * c.
-  Time CoqEALRing.
+  Time by CoqEALRing.
   move=> _.
 
   have (a b c : {poly int}) : (b + c) * a = b * a + c * a.
-  Time CoqEALRing.
+  Time by CoqEALRing.
   move=> _.
 
   have (a : {poly int}) : a * 0 = 0.
-  Time CoqEALRing.
+  Time by CoqEALRing.
   move=> _.
 
-  have (a : zmodp.Zp_ringType 7) : 0 = a * 0.
-  Time CoqEALRing.
+  have (a : Zp_ringType 7) : 0 = a * 0.
+  Time by CoqEALRing.
   move=> _.
 
   have (a : {poly {poly {poly int}}}) : a * 0 = 0.
-  Time CoqEALRing.
+  Time by CoqEALRing.
   move=> _.
 
   have (R : comRingType) (a b c : R) : a + b - (1 * b + c * 0) = a.
-  Time translateEq. (* 28.4 *)
-  Time simplPoly. (* 14.6 *)
-  Time evalHorner. (* 0.6 *)
-  by [].
-  (* Time CoqEALRing. *)
+  Time by CoqEALRing.
   move=> _.
+by[].
+Qed.
