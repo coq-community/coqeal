@@ -120,7 +120,7 @@ Definition PExpr_to_Expr (R : ringType) (env : seq R) : PExpr -> R :=
   | PEpow p n => aux p ^+ n
 end.
 
-Tactic Notation "evalHorner" :=
+Tactic Notation "eval_poly" :=
   rewrite /Nhorner /=; case: horner_key; rewrite /NhornerR /=;
   do ?[rewrite ?(rmorph0, rmorphN, rmorphD, rmorphB,
                 rmorph1, rmorphM, map_polyC,
@@ -130,13 +130,13 @@ Lemma PExprP (R : ringType) (env : seq R) N p : size env == N ->
   PExpr_to_Expr env p = Nhorner env (PExpr_to_poly N p).
 Proof.
 move: env; elim: N => //= [|N IHN].
-  elim: p => //= [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] //= [] //= _; evalHorner.
+  elim: p => //= [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] //= [] //= _; eval_poly.
   - by rewrite rmorph_int.
   - by rewrite nth_nil.
-  - by rewrite IHp ?IHq //; evalHorner.
-  - by rewrite IHp ?IHq //; evalHorner.
-  - by rewrite IHp ?IHq //; evalHorner.
-  - by rewrite IHp // rmorphX; evalHorner.
+  - by rewrite IHp ?IHq //; eval_poly.
+  - by rewrite IHp ?IHq //; eval_poly.
+  - by rewrite IHp ?IHq //; eval_poly.
+  - by rewrite IHp // rmorphX; eval_poly.
 elim: p => [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] //= in IHN *.
 (* bug: should complain when I add "_" after //= *)
 move=> [|a env] //=.
@@ -181,7 +181,7 @@ Tactic Notation (at level 0) "translate" constr(t) :=
   let p := toPExpr t fv n in
   have /= := @PExprP _ fv n p isT.
 
-Tactic Notation "translateEq" :=
+Tactic Notation "polyfication" :=
   match goal with
   | |- (eq ?lhs ?rhs) =>
     let A := type of lhs in
@@ -197,17 +197,16 @@ Tactic Notation "translateEq" :=
   | _ => fail "goal not an equation"
   end.
 
-Tactic Notation "simplPoly" :=
+Tactic Notation "coqeal_simpl" :=
   rewrite -1?[X in Nhorner _ X = _]/(spec_id _)
           -1?[X in _ = Nhorner _ X]/(spec_id _)
           ![spec_id _]refines_eq /=.
 
 Tactic Notation "CoqEALRing" :=
-  by translateEq; simplPoly; evalHorner.
+  by polyfication; coqeal_simpl; eval_poly.
 
 Goal true.
    
-  assert (h0 := coqeal_vm_compute (- (1 + 'X%:P * 'X) : {poly {poly int}})).
   assert (h1 := coqeal_vm_compute (- (1 + 'X%:P * 'X) : {poly {poly int}})).
   assert (h2 := coqeal_vm_compute 
     ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))))).
