@@ -62,26 +62,49 @@ Inductive PExpr :=
   | PEopp : PExpr -> PExpr
   | PEpow : PExpr -> nat -> PExpr.
 
-
 Definition Npoly (R : ringType) : nat -> ringType := fix aux n :=
   if n is n.+1 then  poly_ringType (aux n) else R.
 
-
 Fixpoint NpolyC (R : ringType) N : R -> Npoly R N :=
-  if N isn't N'.+1 return R -> Npoly R N 
+  if N isn't N'.+1 return R -> Npoly R N
   then fun x => x
   else fun x => (NpolyC N' x)%:P.
 
 Fixpoint NpolyX (R : ringType) N : nat -> Npoly R N :=
-  if N isn't N'.+1 return nat -> Npoly R N 
+  if N isn't N'.+1 return nat -> Npoly R N
   then fun=> 0
   else fun n => if n is n.+1 then (NpolyX R N' n)%:P
                 else 'X.
 
-Fixpoint Nmap_poly (R R' : ringType) (f : R -> R') : forall N, Npoly R N -> Npoly R' N:=
-  fix aux N := 
-  if N isn't N'.+1 return Npoly R N -> Npoly R' N 
-  then f else map_poly (aux N').
+Fixpoint Nmap_poly (R R' : ringType) (f : R -> R') N :
+  Npoly R N -> Npoly R' N :=
+  if N isn't N'.+1 return Npoly R N -> Npoly R' N
+  then f else map_poly (@Nmap_poly _ _ f N').
+
+Section Nmap_poly_morphism.
+
+  Variable R R' : ringType.
+  Variable g : {additive R -> R'}.
+  Variable f : {rmorphism R -> R'}.
+  Variable N : nat.
+
+  Fact Nmap_poly_is_additive : additive (Nmap_poly g (N:=N)).
+  Proof.
+    elim: N=> [|N' IHN] /=.
+      exact: raddfB.
+    exact: map_poly_is_additive (Additive IHN).
+  Qed.
+  Canonical Nmap_poly_additive := Additive Nmap_poly_is_additive.
+
+  Fact Nmap_poly_is_rmorphism : rmorphism (Nmap_poly f (N:=N)).
+  Proof.
+    elim: N=> [|N' IHN] /=.
+      exact: rmorphismP.
+    exact: map_poly_is_rmorphism (RMorphism IHN).
+  Qed.
+  Canonical Nmap_poly_rmorphism := RMorphism Nmap_poly_is_rmorphism.
+
+End Nmap_poly_morphism.
 
 Fact horner_key : unit. Proof. exact: tt. Qed.
 
@@ -91,14 +114,15 @@ Fixpoint NhornerR (R : ringType) N : seq R -> Npoly R N -> R :=
       else fun env p => if env is a :: env then NhornerR env p.[NpolyC N' a]
                         else NhornerR [::] p.[0].
 
-Definition Nhorner (R : ringType) N (env : seq R) (p : Npoly [ringType of int] N) : R 
+Definition Nhorner (R : ringType) N (env : seq R) (p : Npoly [ringType of int] N) : R
   := locked_with horner_key (@NhornerR _ _) env (Nmap_poly intr p).
 
 Lemma NhornerRS (R : ringType) N (a : R) (env : seq R) (p : Npoly R N.+1) :
-  N = size env ->
+  (* N = size env -> *)
   NhornerR (a :: env) p = NhornerR env p.[NpolyC N a].
-Admitted.
-
+Proof.
+  by elim: N p.
+Qed.
 
 Definition PExpr_to_poly N : PExpr -> Npoly [ringType of int] N :=
   fix aux p := match p with
@@ -123,25 +147,64 @@ end.
 Tactic Notation "eval_poly" :=
   rewrite /Nhorner /=; case: horner_key; rewrite /NhornerR /=;
   do ?[rewrite ?(rmorph0, rmorphN, rmorphD, rmorphB,
-                rmorph1, rmorphM, map_polyC,
+                rmorph1, rmorphM, rmorphX, map_polyC,
                 map_polyX, map_polyZ) /=]; rewrite ?hornerE.
+
+Lemma NhornerRD (R : ringType) N (env : seq R) (p q : Npoly R N) :
+  NhornerR env (p + q) = NhornerR env p + NhornerR env q.
+Proof.
+  elim: N p q env=> [|N IHN] p q env //=.
+  case: env=> [|a env];
+    by rewrite hornerD.
+Qed.
+
+Lemma NhornerRC (R : ringType) N (env : seq R) (a : R) :
+  NhornerR env (NpolyC N a) = a.
+Proof.
+  elim: N env=> [|N IHN] env //=.
+  case: env=> [|b env];
+    by rewrite hornerC.
+Qed.
+
+Lemma NhornerRN (R : ringType) N (env : seq R) (p : Npoly R N) :
+  NhornerR env (- p) = - NhornerR env p.
+Proof.
+  elim: N p env=> [|N IHN] p env //=.
+  case: env=> [|b env];
+    by rewrite hornerN.
+Qed.
 
 Lemma PExprP (R : ringType) (env : seq R) N p : size env == N ->
   PExpr_to_Expr env p = Nhorner env (PExpr_to_poly N p).
 Proof.
-move: env; elim: N => //= [|N IHN].
-  elim: p => //= [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] //= [] //= _; eval_poly.
-  - by rewrite rmorph_int.
-  - by rewrite nth_nil.
-  - by rewrite IHp ?IHq //; eval_poly.
-  - by rewrite IHp ?IHq //; eval_poly.
-  - by rewrite IHp ?IHq //; eval_poly.
-  - by rewrite IHp // rmorphX; eval_poly.
-elim: p => [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] //= in IHN *.
-(* bug: should complain when I add "_" after //= *)
-move=> [|a env] //=.
-   rewrite /Nhorner unlock.
-   rewrite NhornerRS //.
+elim: p=> [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] /=.
+- eval_poly.
+  rewrite rmorph_int.
+  elim: N env=> [|N IHN] [|a env] //=.
+  rewrite horner_int eqSS.
+  exact: IHN.
+- eval_poly.
+  elim: N env n=> [|N IHN] [|a env] [|n] //=;
+  rewrite eqSS.
+    by rewrite map_polyX hornerX [RHS]NhornerRC.
+  rewrite map_polyC hornerC.
+  exact: IHN.
+- move=> size_env.
+  rewrite (IHp size_env) (IHq size_env).
+  eval_poly.
+  by rewrite [RHS]NhornerRD.
+- move=> size_env.
+  rewrite (IHp size_env) (IHq size_env).
+  eval_poly.
+  admit.
+- move=> size_env.
+  rewrite (IHp size_env).
+  eval_poly.
+  by rewrite [RHS]NhornerRN.
+- move=> size_env.
+  rewrite (IHp size_env).
+  eval_poly.
+  admit.
 Admitted.
 
 Ltac getIndex t fv :=
@@ -206,9 +269,9 @@ Tactic Notation "CoqEALRing" :=
   by polyfication; coqeal_simpl; eval_poly.
 
 Goal true.
-   
+
   assert (h1 := coqeal_vm_compute (- (1 + 'X%:P * 'X) : {poly {poly int}})).
-  assert (h2 := coqeal_vm_compute 
+  assert (h2 := coqeal_vm_compute
     ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))))).
   assert (h3 := coqeal_vm_compute
     (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (3%:Z *: 'X^2 + 1 + 2%:Z%:P * 'X))).
