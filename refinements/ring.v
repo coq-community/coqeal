@@ -52,28 +52,28 @@ Inductive PExpr :=
   | PEopp : PExpr -> PExpr
   | PEpow : PExpr -> nat -> PExpr.
 
-Definition Npoly (R : ringType) : nat -> ringType := fix aux n :=
-  if n is n.+1 then  poly_ringType (aux n) else R.
+Definition Npoly (R : comRingType) : nat -> comRingType := fix aux n :=
+  if n is n.+1 then poly_comRingType (aux n) else R.
 
-Fixpoint NpolyC (R : ringType) N : R -> Npoly R N :=
+Fixpoint NpolyC (R : comRingType) N : R -> Npoly R N :=
   if N isn't N'.+1 return R -> Npoly R N
   then fun x => x
   else fun x => (NpolyC N' x)%:P.
 
-Fixpoint NpolyX (R : ringType) N : nat -> Npoly R N :=
+Fixpoint NpolyX (R : comRingType) N : nat -> Npoly R N :=
   if N isn't N'.+1 return nat -> Npoly R N
   then fun=> 0
   else fun n => if n is n.+1 then (NpolyX R N' n)%:P
                 else 'X.
 
-Fixpoint Nmap_poly (R R' : ringType) (f : R -> R') N :
+Fixpoint Nmap_poly (R R' : comRingType) (f : R -> R') N :
   Npoly R N -> Npoly R' N :=
   if N isn't N'.+1 return Npoly R N -> Npoly R' N
   then f else map_poly (@Nmap_poly _ _ f N').
 
 Section Nmap_poly_morphism.
 
-  Variable R R' : ringType.
+  Variable R R' : comRingType.
   Variable g : {additive R -> R'}.
   Variable f : {rmorphism R -> R'}.
   Variable N : nat.
@@ -98,23 +98,24 @@ End Nmap_poly_morphism.
 
 Fact horner_key : unit. Proof. exact: tt. Qed.
 
-Fixpoint NhornerR (R : ringType) N : seq R -> Npoly R N -> R :=
+Fixpoint NhornerR (R : comRingType) N : seq R -> Npoly R N -> R :=
       if N isn't N'.+1 return seq R -> Npoly R N -> R
       then fun _ p => p
       else fun env p => if env is a :: env then NhornerR env p.[NpolyC N' a]
                         else NhornerR [::] p.[0].
 
-Definition Nhorner (R : ringType) N (env : seq R) (p : Npoly [ringType of int] N) : R
+Definition Nhorner (R : comRingType) N (env : seq R)
+           (p : Npoly [comRingType of int] N) : R
   := locked_with horner_key (@NhornerR _ _) env (Nmap_poly intr p).
 
-Lemma NhornerRS (R : ringType) N (a : R) (env : seq R) (p : Npoly R N.+1) :
+Lemma NhornerRS (R : comRingType) N (a : R) (env : seq R) (p : Npoly R N.+1) :
   (* N = size env -> *)
   NhornerR (a :: env) p = NhornerR env p.[NpolyC N a].
 Proof.
   by elim: N p.
 Qed.
 
-Definition PExpr_to_poly N : PExpr -> Npoly [ringType of int] N :=
+Definition PExpr_to_poly N : PExpr -> Npoly [comRingType of int] N :=
   fix aux p := match p with
   | PEc n => n%:~R
   | PEX n => NpolyX _ N n
@@ -124,7 +125,7 @@ Definition PExpr_to_poly N : PExpr -> Npoly [ringType of int] N :=
   | PEpow p n => aux p ^+ n
 end.
 
-Definition PExpr_to_Expr (R : ringType) (env : seq R) : PExpr -> R :=
+Definition PExpr_to_Expr (R : comRingType) (env : seq R) : PExpr -> R :=
   fix aux p := match p with
   | PEc n => n%:~R
   | PEX n => env`_n
@@ -140,7 +141,7 @@ Tactic Notation "eval_poly" :=
                 rmorph1, rmorphM, rmorphX, map_polyC,
                 map_polyX, map_polyZ) /=]; rewrite ?hornerE.
 
-Lemma NhornerRD (R : ringType) N (env : seq R) (p q : Npoly R N) :
+Lemma NhornerRD (R : comRingType) N (env : seq R) (p q : Npoly R N) :
   NhornerR env (p + q) = NhornerR env p + NhornerR env q.
 Proof.
   elim: N p q env=> [|N IHN] p q env //=.
@@ -148,7 +149,7 @@ Proof.
     by rewrite hornerD.
 Qed.
 
-Lemma NhornerRC (R : ringType) N (env : seq R) (a : R) :
+Lemma NhornerRC (R : comRingType) N (env : seq R) (a : R) :
   NhornerR env (NpolyC N a) = a.
 Proof.
   elim: N env=> [|N IHN] env //=.
@@ -156,7 +157,15 @@ Proof.
     by rewrite hornerC.
 Qed.
 
-Lemma NhornerRN (R : ringType) N (env : seq R) (p : Npoly R N) :
+Lemma NhornerRM (R : comRingType) N (env : seq R) (p q : Npoly R N) :
+  NhornerR env (p * q) = NhornerR env p * NhornerR env q.
+Proof.
+  elim: N env p q=> [|N IHN] env p q //=.
+  case: env=> [|a env];
+    by rewrite hornerM.
+Qed.
+
+Lemma NhornerRN (R : comRingType) N (env : seq R) (p : Npoly R N) :
   NhornerR env (- p) = - NhornerR env p.
 Proof.
   elim: N p env=> [|N IHN] p env //=.
@@ -164,7 +173,15 @@ Proof.
     by rewrite hornerN.
 Qed.
 
-Lemma PExprP (R : ringType) (env : seq R) N p : size env == N ->
+Lemma NhornerR_exp (R : comRingType) N (env : seq R) (p : Npoly R N) n :
+  NhornerR env (p ^+ n) = NhornerR env p ^+ n.
+Proof.
+  elim: N p env=> [|N IHN] p env //=.
+  case: env=> [|a env];
+    by rewrite horner_exp.
+Qed.
+
+Lemma PExprP (R : comRingType) (env : seq R) N p : size env == N ->
   PExpr_to_Expr env p = Nhorner env (PExpr_to_poly N p).
 Proof.
 elim: p=> [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] /=.
@@ -186,7 +203,7 @@ elim: p=> [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] /=.
 - move=> size_env.
   rewrite (IHp size_env) (IHq size_env).
   eval_poly.
-  admit.
+  by rewrite [RHS]NhornerRM.
 - move=> size_env.
   rewrite (IHp size_env).
   eval_poly.
@@ -194,8 +211,8 @@ elim: p=> [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] /=.
 - move=> size_env.
   rewrite (IHp size_env).
   eval_poly.
-  admit.
-Admitted.
+  by rewrite [RHS]NhornerR_exp.
+Qed.
 
 Ltac getIndex t fv :=
   let rec aux s n :=
