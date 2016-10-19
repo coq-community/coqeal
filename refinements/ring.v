@@ -13,16 +13,6 @@ Import Refinements.Op Poly.Op.
 
 Local Open Scope ring_scope.
 
-Ltac simplify y p := let l := fresh "to_rewrite" in
-                   pose (l := p); generalize (eq_refl l);
-                   rewrite -[X in (_ == X)]/(spec_id _) [spec_id _]refines_eq /=
-                                           /l;
-                   move/eqP=> y;
-                   clear l.
-
-Tactic Notation (at level 0) "pose_simpl" ident(x) ":=" constr(p) :=
-  simplify x p.
-
 Ltac in_seq s t :=
   let rec aux s :=
       match s with
