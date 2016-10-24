@@ -81,7 +81,9 @@ Parametricity ltQ.
 Parametricity invQ.
 Parametricity subQ.
 Parametricity divQ.
-Parametricity expQnat.
+Definition expQnat' := Eval compute in expQnat.
+Parametricity expQnat'.
+Realizer expQnat as expQnat_R := expQnat'_R.
 Parametricity cast_ZQ.
 Parametricity cast_PQ.
 

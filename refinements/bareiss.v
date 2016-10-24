@@ -396,25 +396,26 @@ From CoqEAL Require Import binint seqpoly poly_div binord.
 Definition M : 'M[int]_(2,2) := \matrix_(i,j < 2) 3%:Z.
 
 Goal \det M == 0.
-by coqeal.
+by coqeal [(\det _)%pattern] vm_compute.
 Qed.
 
-Definition detM := coqeal_vm_compute (\det M).
+Definition detM := [coqeal vm_compute of \det M].
 
-Goal \det (1 : 'M[int]_(3)) == 1.
+Goal \det (1 : 'M[int]_(3)) = 1.
 by coqeal.
 Abort.
 
-Definition Madd := \matrix_(i,j < 20) (i + j)%:Z%:P.
-Time Definition det_Madd := coqeal_vm_compute (\det Madd).
+Definition Madd := \matrix_(i,j < 29) (i + j)%:Z%:P.
+Time Definition det_Madd := [coqeal vm_compute of \det Madd].
 
 Definition ctmat1 : 'M[int]__ := \matrix_(i < 3, j < 3)
   (nth [::] [:: [::  1 ; 1 ; 1 ]
               ; [:: -1 ; 1 ; 1 ]
               ; [::  0 ; 0 ; 1 ] ] i)`_j.
 
-Definition det_ctmat1 := coqeal_vm_compute (\det ctmat1).
-Definition char_poly_ctmat1 := coqeal_vm_compute_for (char_poly ctmat1) (\det _).
+Definition det_ctmat1 := [coqeal vm_compute of \det ctmat1].
+Definition char_poly_ctmat1 :=
+  [coqeal vm_compute of \det _ for char_poly ctmat1].
 
 End test_bareiss.
 

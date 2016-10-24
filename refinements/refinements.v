@@ -8,6 +8,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Declare ML Module "ssreflect".
+
 (* Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic. *)
 
 Delimit Scope computable_scope with C.
@@ -252,8 +254,6 @@ Global Instance refines_leibniz_eq (T : eqType) (x y : T) b :
   refines bool_R (x == y) b -> refines (fun T' T => T -> T') (x = y) b.
 Proof. by move=> /refines_bool_eq; rewrite !refinesE => <- /eqP. Qed.
 
-Ltac coqeal := apply: refines_goal; vm_compute.
-
 Module Refinements.
 
 (* Generic operations *)
@@ -352,26 +352,68 @@ Ltac simpC :=
 (* Parametricity idmx. *)
 (* Print idmx_R. (* Here we get something too general! *) *)
 
-Class reduce_in_spec {T} (x y : T) := Reduce : x = y.
-Hint Mode reduce_in_spec - + - : typeclass_instances.
+
 
 (* Workaround because casts are not retained for hypothesis, so we
 design this elimination lemma to abstract the context and vm_compute in the goal *)
 Lemma abstract_context T (P : T -> Type) x : (forall Q, Q = P -> Q x) -> P x.
 Proof. by move=> /(_ P); apply. Qed.
 
-Hint Extern 0 (reduce_in_spec (spec _) _) =>
-let Q := fresh "Q" in let eqQ := fresh "eqQ" in
-elim/abstract_context : (X in reduce_in_spec (spec X)) => Q eqQ; vm_compute;
-rewrite eqQ /=; reflexivity :  typeclass_instances.
+Tactic Notation  "context" "[" ssrpatternarg(pat) "]" tactic3(tac) :=
+  let H := fresh "H" in let Q := fresh "Q" in let eqQ := fresh "eqQ" in
+  ssrpattern pat => H;
+  elim/abstract_context : (H) => Q eqQ; rewrite /H {H};
+  tac; rewrite eqQ {Q eqQ}.
 
-Lemma coqeal_vm_compute_of {T} (x : T) {y y' : T}
-      {rxy : refines eq (spec_id x) y} {rr : reduce_in_spec y y'} : x = y'.
-Proof. by rewrite -rr; apply: refines_eq. Qed.
+Class strategy_class (C : forall T, T -> T -> Prop) :=
+   StrategyClass : C = @eq.
+Hint Mode strategy_class + : typeclass_instances.
 
-Notation coqeal_vm_compute x := (@coqeal_vm_compute_of _ x _ _ _ _).
+Class native_compute T (x y : T) := NativeCompute : x = y.
+Hint Mode native_compute - + - : typeclass_instances.
+Hint Extern 0 (native_compute _ _) =>
+  context [(X in native_compute X)%pattern] native_compute; reflexivity :
+  typeclass_instances.
+Instance strategy_class_native_compute : strategy_class native_compute := erefl.
 
-Notation coqeal_vm_compute_for x x' := (@coqeal_vm_compute_of _ x' _ _ _ _ : x = _).
+Class vm_compute T (x y : T) := VmCompute : x = y.
+Hint Mode vm_compute - + - : typeclass_instances.
+Hint Extern 0 (vm_compute _ _) =>
+  context [(X in vm_compute X)%pattern] vm_compute; reflexivity :
+  typeclass_instances.
+Instance strategy_class_vm_compute : strategy_class vm_compute := erefl.
+
+Class compute T (x y : T) := Compute : x = y.
+Hint Mode compute - + - : typeclass_instances.
+Hint Extern 0 (compute _ _) =>
+  context [(X in compute X)%pattern] compute; reflexivity :
+  typeclass_instances.
+Instance strategy_class_compute : strategy_class compute := erefl.
+
+Class simpl T (x y : T) := Simpl : x = y.
+Hint Mode simpl - + - : typeclass_instances.
+Hint Extern 0 (simpl _ _) =>
+  context [(X in simpl X)%pattern] simpl; reflexivity :
+  typeclass_instances.
+Instance strategy_class_simpl : strategy_class simpl := erefl.
+
+Lemma coqeal_eq C {eqC : strategy_class C} {T T'} spec (x x' : T) {y y' : T'}
+   {rxy : refines eq (spec_id x) (spec y)}  {ry : C _ y y'}
+   {rx : simpl (spec y') x'} : x = x'.
+Proof. by rewrite eqC in ry; rewrite -rx -ry; apply: refines_eq. Qed.
+
+Notation "'[' 'coqeal'  strategy  'of'  x ']'" :=
+  (@coqeal_eq strategy _ _ _ _ x _ _ _ _ _ _).
+Notation coqeal strategy := [coqeal strategy of _].
+Notation "'[' 'coqeal'  strategy  'of'  x  'for'  y ']'" :=
+  ([coqeal strategy of x] : y = _).
+
+Ltac coqeal := apply: refines_goal; vm_compute.
+Tactic Notation "coqeal_" tactic3(tac) :=  apply: refines_goal; tac.
+Tactic Notation "coqeal" "[" ssrpatternarg(pat) "]" open_constr(strategy) :=
+  let H := fresh "H" in let Q := fresh "Q" in let eqQ := fresh "eqQ" in
+  ssrpattern pat => H; elim/abstract_context : (H) => Q eqQ;
+  rewrite /H {H} [(X in Q X)%pattern](coqeal strategy) eqQ {Q eqQ}.
 
 Ltac refines_apply1 := eapply refines_apply; tc.
 Ltac refines_abstr1 := eapply refines_abstr=> ???; tc.

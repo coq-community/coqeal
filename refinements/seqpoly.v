@@ -85,7 +85,9 @@ Parametricity add_seqpoly.
 Parametricity sub_seqpoly.
 Parametricity scale_seqpoly.
 Parametricity mul_seqpoly.
-Parametricity exp_seqpoly.
+Definition exp_seqpoly' := Eval compute in exp_seqpoly.
+Parametricity exp_seqpoly'.
+Realizer exp_seqpoly as exp_seqpoly_R := exp_seqpoly'_R.
 Parametricity size_seqpoly.
 Parametricity eq_seqpoly.
 Parametricity shift_seqpoly.

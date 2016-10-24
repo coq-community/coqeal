@@ -467,7 +467,6 @@ Section testint.
 
 From CoqEAL Require Import binnat.
 
-
 Goal (0 == 0 :> int).
 by coqeal.
 Abort.

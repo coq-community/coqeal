@@ -315,14 +315,11 @@ Admitted.
 
 End RnpolyC.
 
-Parametricity iter.
-
 Global Instance refines_iter T T' RT :
   refines (Rnat ==> (RT ==> RT) ==> RT ==> RT) (@iter T) (@iter T').
 Proof.
 param iter_R.
 Admitted.
-
 
 Section LaurentsProblem.
 
@@ -333,9 +330,7 @@ Lemma test_irred : irreducible_poly ('X^5 + 'X^2 + 1 : {poly 'F_2}).
 Proof.
 apply/irreducibleP; rewrite /irreducibleb -[size _]/(sizep _).
 rewrite -[[forall _, _]]/(_ == _) /= /Pdiv.Ring.rdvdp.
-set b := (X in X && _).
 by coqeal.
 Qed.
-
 
 End LaurentsProblem.

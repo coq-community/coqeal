@@ -226,45 +226,44 @@ Tactic Notation "depolyfication" :=
                 rmorph1, rmorphM, rmorphX, map_polyC,
                 map_polyX, map_polyZ) /=]; rewrite ?hornerE.
 
-Tactic Notation "coqeal_simpl" :=
-  rewrite -1?[X in Nhorner _ X = _]/(spec_id _)
-          -1?[X in _ = Nhorner _ X]/(spec_id _)
-          ![spec_id _]refines_eq /=.
+Tactic Notation "coqeal_vm_compute_eq2" :=
+  do 1?coqeal [(X in Nhorner _ X = _)%pattern] vm_compute;
+  do 1?coqeal [(X in _ = Nhorner _ X)%pattern] vm_compute.
 
-Tactic Notation "CoqEALRing" :=
-  by polyfication; coqeal_simpl; depolyfication.
+Tactic Notation "coqeal_ring" :=
+  by polyfication; coqeal_vm_compute_eq2; depolyfication.
 
 Goal true.
 
-  assert (h1 := coqeal_vm_compute (- (1 + 'X%:P * 'X) : {poly {poly int}})).
-  assert (h2 := coqeal_vm_compute
-    ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))))).
-  assert (h3 := coqeal_vm_compute
-    (1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (3%:Z *: 'X^2 + 1 + 2%:Z%:P * 'X))).
-  assert (h4 := coqeal_vm_compute ('X + 'X^2 * 'X%:P : {poly {poly int}})).
+  assert (h1 := [coqeal vm_compute of - (1 + 'X%:P * 'X) : {poly {poly int}}]).
+  assert (h2 := [coqeal vm_compute of
+    (1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int})))]).
+  assert (h3 := [coqeal vm_compute of
+    1 + 2%:Z *: 'X + 3%:Z *: 'X^2 - (3%:Z *: 'X^2 + 1 + 2%:Z%:P * 'X)]).
+  assert (h4 := [coqeal vm_compute of 'X + 'X^2 * 'X%:P : {poly {poly int}}]).
 
   have (a b c : int) : a * (b + c) = a * b + a * c.
-  Time by CoqEALRing.
+  Time by coqeal_ring.
   move=> _.
 
   have (a b c : {poly int}) : (b + c) * a = b * a + c * a.
-  Time by CoqEALRing.
+  Time by coqeal_ring.
   move=> _.
 
   have (a : {poly int}) : a * 0 = 0.
-  Time by CoqEALRing.
+  Time by coqeal_ring.
   move=> _.
 
   have (a : Zp_ringType 7) : 0 = a * 0.
-  Time by CoqEALRing.
+  Time by coqeal_ring.
   move=> _.
 
   have (a : {poly {poly {poly int}}}) : a * 0 = 0.
-  Time by CoqEALRing.
+  Time by coqeal_ring.
   move=> _.
 
   have (R : comRingType) (a b c : R) : a + b - (1 * b + c * 0) = a.
-  Time by CoqEALRing.
+  Time by coqeal_ring.
   move=> _.
 by[].
 Qed.

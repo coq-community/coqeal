@@ -181,7 +181,9 @@ Parametricity add_hpoly.
 Parametricity sub_hpoly.
 Parametricity shift_hpoly.
 Parametricity mul_hpoly.
-Parametricity exp_hpoly.
+Definition exp_hpoly' := Eval compute in @exp_hpoly.
+Parametricity exp_hpoly'.
+Realizer @exp_hpoly as exp_hpoly_R := exp_hpoly'_R.
 Parametricity eq0_hpoly.
 Parametricity eq_hpoly.
 Parametricity size_hpoly.
@@ -896,22 +898,11 @@ Goal (sizep ('X^2 : {poly int}) ==
 by coqeal.
 Abort.
 
-Definition test := coqeal_vm_compute (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2)).
+Definition test := [coqeal simpl of sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2)].
 
-Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) == 3).
+Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) = 3).
 by coqeal.
-Abort.
-
-(* Hint Extern 999 (refines _ _ _) => *)
-(*   tryif eapply refines_apply then fail 1 *)
-(*   else (tryif tc then fail 2 *)
-(*        else (idtac "cannot find refinement"; *)
-(*                once lazymatch goal with |- ?g => idtac g end; fail 3)) : typeclass_instances. *)
-
-
-(* Typeclasses eauto :=  debug. *)
-(* Definition test' :=  *)
-(*   coqeal_vm_compute ('X : {poly int}). *)
+Qed.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X^(sizep (1 : {poly int}))) ==
       1 + 4%:Z *: 'X + 4%:Z *: 'X^(sizep (10%:Z *: 'X))).
