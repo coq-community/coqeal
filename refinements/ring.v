@@ -104,16 +104,18 @@ Fixpoint NhornerR (R : comRingType) N : seq R -> Npoly R N -> R :=
       else fun env p => if env is a :: env then NhornerR env p.[NpolyC N' a]
                         else NhornerR [::] p.[0].
 
+Lemma NhornerRS (R : comRingType) N (a : R) (env : seq R) (p : Npoly R N.+1) :
+  NhornerR (a :: env) p = NhornerR env p.[NpolyC N a].
+Proof. by elim: N p. Qed.
+
 Definition Nhorner (R : comRingType) N (env : seq R)
            (p : Npoly [comRingType of int] N) : R
   := locked_with horner_key (@NhornerR _ _) env (Nmap_poly intr p).
 
-Lemma NhornerRS (R : comRingType) N (a : R) (env : seq R) (p : Npoly R N.+1) :
-  (* N = size env -> *)
-  NhornerR (a :: env) p = NhornerR env p.[NpolyC N a].
-Proof.
-  by elim: N p.
-Qed.
+Lemma NhornerE (R : comRingType) N (env : seq R)
+          (p : Npoly [comRingType of int] N) :
+  Nhorner env p = (@NhornerR _ _) env (Nmap_poly intr p).
+Proof. by rewrite /Nhorner; case: horner_key. Qed.
 
 Definition PExpr_to_poly N : PExpr -> Npoly [comRingType of int] N :=
   fix aux p := match p with
@@ -135,83 +137,34 @@ Definition PExpr_to_Expr (R : comRingType) (env : seq R) : PExpr -> R :=
   | PEpow p n => aux p ^+ n
 end.
 
-Tactic Notation "eval_poly" :=
-  rewrite /Nhorner /=; case: horner_key; rewrite /NhornerR /=;
-  do ?[rewrite ?(rmorph0, rmorphN, rmorphD, rmorphB,
-                rmorph1, rmorphM, rmorphX, map_polyC,
-                map_polyX, map_polyZ) /=]; rewrite ?hornerE.
-
-Lemma NhornerRD (R : comRingType) N (env : seq R) (p q : Npoly R N) :
-  NhornerR env (p + q) = NhornerR env p + NhornerR env q.
-Proof.
-  elim: N p q env=> [|N IHN] p q env //=.
-  case: env=> [|a env];
-    by rewrite hornerD.
-Qed.
-
 Lemma NhornerRC (R : comRingType) N (env : seq R) (a : R) :
   NhornerR env (NpolyC N a) = a.
+Proof. by elim: N env=> [|N IHN] [|b env] //=; rewrite hornerC. Qed.
+
+Lemma Nhorner_is_rmorphism (R : comRingType) (N : nat) (env : seq R) :
+  rmorphism (@NhornerR R N env).
 Proof.
-  elim: N env=> [|N IHN] env //=.
-  case: env=> [|b env];
-    by rewrite hornerC.
+do !split.
+- by elim: N env=> [|N IHN] [|a env] p q //=; rewrite hornerD hornerN IHN.
+- by elim: N env=> [|N IHN] [|a env] p q //=; rewrite hornerM IHN.
+by elim: N env=> [|N IHN] [|b env] //=; rewrite hornerC.
 Qed.
 
-Lemma NhornerRM (R : comRingType) N (env : seq R) (p q : Npoly R N) :
-  NhornerR env (p * q) = NhornerR env p * NhornerR env q.
-Proof.
-  elim: N env p q=> [|N IHN] env p q //=.
-  case: env=> [|a env];
-    by rewrite hornerM.
-Qed.
+Canonical Nhorner_rmorphism (R : comRingType) (N : nat) (env : seq R) :=
+  RMorphism (Nhorner_is_rmorphism N env).
 
-Lemma NhornerRN (R : comRingType) N (env : seq R) (p : Npoly R N) :
-  NhornerR env (- p) = - NhornerR env p.
-Proof.
-  elim: N p env=> [|N IHN] p env //=.
-  case: env=> [|b env];
-    by rewrite hornerN.
-Qed.
-
-Lemma NhornerR_exp (R : comRingType) N (env : seq R) (p : Npoly R N) n :
-  NhornerR env (p ^+ n) = NhornerR env p ^+ n.
-Proof.
-  elim: N p env=> [|N IHN] p env //=.
-  case: env=> [|a env];
-    by rewrite horner_exp.
-Qed.
-
-Lemma PExprP (R : comRingType) (env : seq R) N p : size env == N ->
+Lemma polyficationP (R : comRingType) (env : seq R) N p : size env == N ->
   PExpr_to_Expr env p = Nhorner env (PExpr_to_poly N p).
 Proof.
 elim: p=> [n|n|p IHp q IHq|p IHp q IHq|p IHp|p IHp n] /=.
-- eval_poly.
-  rewrite rmorph_int.
-  elim: N env=> [|N IHN] [|a env] //=.
-  rewrite horner_int eqSS.
-  exact: IHN.
-- eval_poly.
-  elim: N env n=> [|N IHN] [|a env] [|n] //=;
-  rewrite eqSS.
+- by rewrite NhornerE !rmorph_int.
+- rewrite NhornerE; elim: N env n=> [|N IHN] [|a env] [|n] //= senv.
     by rewrite map_polyX hornerX [RHS]NhornerRC.
-  rewrite map_polyC hornerC.
-  exact: IHN.
-- move=> size_env.
-  rewrite (IHp size_env) (IHq size_env).
-  eval_poly.
-  by rewrite [RHS]NhornerRD.
-- move=> size_env.
-  rewrite (IHp size_env) (IHq size_env).
-  eval_poly.
-  by rewrite [RHS]NhornerRM.
-- move=> size_env.
-  rewrite (IHp size_env).
-  eval_poly.
-  by rewrite [RHS]NhornerRN.
-- move=> size_env.
-  rewrite (IHp size_env).
-  eval_poly.
-  by rewrite [RHS]NhornerR_exp.
+  by rewrite map_polyC hornerC !IHN.
+- by move=> senv; rewrite (IHp senv) (IHq senv) !NhornerE !rmorphD.
+- by move=> senv; rewrite (IHp senv) (IHq senv) !NhornerE !rmorphM.
+- by move=> senv; rewrite (IHp senv) !NhornerE !rmorphN.
+- by move=> senv; rewrite (IHp senv) !NhornerE !rmorphX.
 Qed.
 
 Ltac getIndex t fv :=
@@ -249,7 +202,7 @@ Tactic Notation (at level 0) "translate" constr(t) :=
   let fv := (eval simpl in (c.1)) in
   let n := (eval simpl in (c.2)) in
   let p := toPExpr t fv n in
-  have /= := @PExprP _ fv n p isT.
+  have /= := @polyficationP _ fv n p isT.
 
 Tactic Notation "polyfication" :=
   match goal with
@@ -262,10 +215,16 @@ Tactic Notation "polyfication" :=
     let pr := toPExpr rhs fv n in
     let rwl := fresh "rwl" in
     let rwr := fresh "rwr" in
-    have /= rwl := @PExprP _ fv n pl isT; rewrite [LHS]rwl {rwl};
-    have /= rwr := @PExprP _ fv n pr isT; rewrite [RHS]rwr {rwr}
+    have /= rwl := @polyficationP _ fv n pl isT; rewrite [LHS]rwl {rwl};
+    have /= rwr := @polyficationP _ fv n pr isT; rewrite [RHS]rwr {rwr}
   | _ => fail "goal not an equation"
   end.
+
+Tactic Notation "depolyfication" :=
+  rewrite NhornerE /NhornerR /=;
+  do ?[rewrite ?(rmorph0, rmorphN, rmorphD, rmorphB,
+                rmorph1, rmorphM, rmorphX, map_polyC,
+                map_polyX, map_polyZ) /=]; rewrite ?hornerE.
 
 Tactic Notation "coqeal_simpl" :=
   rewrite -1?[X in Nhorner _ X = _]/(spec_id _)
@@ -273,7 +232,7 @@ Tactic Notation "coqeal_simpl" :=
           ![spec_id _]refines_eq /=.
 
 Tactic Notation "CoqEALRing" :=
-  by polyfication; coqeal_simpl; eval_poly.
+  by polyfication; coqeal_simpl; depolyfication.
 
 Goal true.
 
