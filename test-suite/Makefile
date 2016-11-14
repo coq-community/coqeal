@@ -1,4 +1,4 @@
-COQBIN := ../../coq/bin/
+#COQBIN := ../../coq/bin/
 COQC := $(COQBIN)coqc 
 .PHONY: coq clean
 

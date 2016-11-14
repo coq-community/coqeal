@@ -1,5 +1,6 @@
-Declare ML Module "paramcoq".
+
 Require Import List.
+Require Import Parametricity.
 
 Parametricity nat.
 

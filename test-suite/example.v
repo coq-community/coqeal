@@ -27,6 +27,7 @@ Parametricity myneg arity 1.
 
 Print myneg_P.
 
+Parametricity Recursive bool.
 
 (* Prints:  
 Inductive bool_R : bool -> bool -> Set :=  
@@ -171,12 +172,12 @@ Parametricity length2.
 Check length2_R.
 Print length2_R.
 
+
 Print sum_rect.
 
-Parametricity sum_rect.
+Parametricity Recursive sum_rect.
 Check sum_rect.
 Check sum_rect_R.
-Print Datatypes_R.sum_rect_R.
 
 
 
