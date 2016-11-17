@@ -106,12 +106,75 @@ Definition two : nat := 1+1.
 
 Polymorphic Inductive prod (A B : Type) : Type :=  pair : A -> B -> prod A B.
 
-Inductive list (A : Type) : Type :=  
+
+Inductive list (A : Set) : Set :=  
 | nil : list A 
-| cons : (prod A  (list A)) -> list A.
+| cons : A -> list A -> list A.
+
+Inductive listT (A : Type) : Type :=  
+| nilT : listT A 
+| consT : A -> listT A -> listT A.
+
+Parametricity list.
+
+(*
+App(Rel(4),[|Rel(3);Rel(2);Rel(1);App(MutConstruct((Top.list,0),,1),[|Rel(3)|])
+;App(MutConstruct((Top.list,0),,1),[|Rel(2)|])
+|])
+
+Prod(Anonymous,Rel(3),Prod(Anonymous,Rel(3),Prod(Anonymous,App(Rel(3),[|Rel(2);Rel(1)|])
+,Prod(Anonymous,App(MutInd(Top.list,0,),[|Rel(6)|])
+,Prod(Anonymous,App(MutInd(Top.list,0,),[|Rel(6)|])
+,Prod(Anonymous,App(Rel(9),[|Rel(8);Rel(7);Rel(6);Rel(2);Rel(1)|])
+,App(Rel(10),[|Rel(9);Rel(8);Rel(7);App(MutConstruct((Top.list,0),,2),[|Rel(9);Rel(6);Rel(3)|])
+;App(MutConstruct((Top.list,0),,2),[|Rel(8);Rel(5);Rel(2)|])
+|])
+)
+*)
+
+Parametricity listT.
+
+(*
+App(Rel(4),[|Rel(3);Rel(2);Rel(1);App(MutConstruct((Top.listT,0),,1),[|Rel(3)|])
+;App(MutConstruct((Top.listT,0),,1),[|Rel(2)|])
+|])
+
+Prod(Anonymous,Rel(3),Prod(Anonymous,Rel(3),Prod(Anonymous,App(Rel(3),[|Rel(2);Rel(1)|])
+,Prod(Anonymous,App(MutInd(Top.listT,0,),[|Rel(6)|])
+,Prod(Anonymous,App(MutInd(Top.listT,0,),[|Rel(6)|])
+,Prod(Anonymous,App(Rel(9),[|Rel(8);Rel(7);Rel(6);Rel(2);Rel(1)|])
+,App(Rel(10),[|Rel(9);Rel(8);Rel(7);App(MutConstruct((Top.listT,0),,2),[|Rel(9);Rel(6);Rel(3)|])
+;App(MutConstruct((Top.listT,0),,2),[|Rel(8);Rel(5);Rel(2)|])
+|])
+)
+)
+)
+)
+)
+)
+
+*)
 
 Parametricity Recursive prod.
+
+Print True.
+
+Parametricity Recursive True.
+
+Print True_R.
+Parametricity Recursive nat. 
+Print nat_R.
+
+
+Print unit.
+
+Parametricity unit.
+Print unit_R.
+
+Set Parametricity Debug.
 Parametricity Recursive list.
+
+Print  list.
 
 (* as always, no context *)
 *)
