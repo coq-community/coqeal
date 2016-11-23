@@ -13,6 +13,7 @@ The easy (and long) way to test the plugin is to follow the following steps:
         git clone https://github.com/aa755/paramcoq.git
         cd paramcoq 
         make
+        sudo make install
 
 To test the plugin:
 
