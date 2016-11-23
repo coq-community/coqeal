@@ -10,7 +10,7 @@ The easy (and long) way to test the plugin is to follow the following steps:
 
 * Retrieve the plugin and compile it:
 
-        git clone https://github.com/aa755/paramcoq.git
+        git clone https://github.com/mlasson/paramcoq.git
         cd paramcoq 
         make
         sudo make install
