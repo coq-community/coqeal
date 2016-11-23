@@ -212,9 +212,8 @@ let debug_mutual_inductive_entry =
       str (String.concat ";" (List.map Id.to_string entry.mind_entry_consnames))
     in 
     let mind_entry_lc_pp = 
-      let _ = (List.map Top_printers.constr_display entry.mind_entry_lc) in
       List.fold_left app (str "") 
-      (List.map ( Printer.safe_pr_constr_env arities_params_env Evd.empty ) entry.mind_entry_lc)
+      (List.map (Printer.safe_pr_constr_env arities_params_env Evd.empty) entry.mind_entry_lc)
     in 
     let fields = 
        [ "mind_entry_typename", mind_entry_typename_pp;
