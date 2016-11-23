@@ -1,6 +1,5 @@
 Declare ML Module "paramcoq".
 
-
 Ltac destruct_reflexivity := 
   intros ; repeat match goal with 
     | [ x : _ |- _ = _ ] => destruct x; reflexivity; fail
@@ -49,83 +48,11 @@ Global Parametricity Tactic := ((destruct_reflexivity; fail)
                             ||  auto). 
 
 
-Require Import ProofIrrelevance.
+Require Import ProofIrrelevance. (* for opaque terms *)
 
-
-(* for opaque terms 
-
-Parametricity and .
-Set Parametricity Debug.
-Parametricity and_assoc .
-Parametricity and_cancel_l .
-Parametricity and_cancel_r .
-Parametricity and_comm .
-Parametricity and_iff_compat_l .
-Parametricity and_iff_compat_r .
-Parametricity and_ind .
-Parametricity and_rec .
-Parametricity and_rect .
-Parametricity ex .
-Parametricity ex2 .
-Parametricity ex2_ind .
-Parametricity ex_ind .
-Parametricity False .
-Parametricity False_ind .
-Parametricity False_rec .
-Parametricity False_rect .
-Parametricity iff .
-Parametricity iff_and .
-Parametricity iff_refl .
-Parametricity iff_sym .
-Parametricity iff_to_and .
-Parametricity iff_trans .
-Parametricity or .
-Parametricity or_assoc .
-Parametricity or_cancel_l .
-Parametricity or_cancel_r .
-Parametricity or_comm .
-Parametricity or_iff_compat_l .
-Parametricity or_iff_compat_r .
-Parametricity or_ind .
-Parametricity proj1 .
-Parametricity proj2 .
-Parametricity True .
-Parametricity True_ind .
-Parametricity True_rec .
-Parametricity True_rect .
-Parametricity IF_then_else .
-Parametricity neg_false .
-Parametricity not .
-Parametricity all.
-Parametricity inst.
-
-*)
-
-Set Parametricity Debug.
-Definition two : nat := 1+1.
-
-Polymorphic Inductive prod (A B : Type) : Type :=  pair : A -> B -> prod A B.
-
-Inductive list (A : Type) : Type :=  
-| nil : list A 
-| cons : (prod A  (list A)) -> list A.
-
-Parametricity Recursive prod.
-Parametricity Recursive list.
-
-(* as always, no context *)
-*)
-(*
 (*
 Parametricity Module Logic.
-
-Print Logic.
-Parametricity Recursive inst.
-Parametricity Recursive gen.
-
-
-*)
-
+Parametricity Module Datatypes.
 
 
 Parametricity Module Logic_Type.
