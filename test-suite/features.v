@@ -4,7 +4,8 @@ Require Import Parametricity.
 (** Separate compilation: *)
 Parametricity nat as test.
 Require List.
-Parametricity List.rev.
+
+Parametricity Recursive List.rev.
 Check rev_R.
 
 (** Module translation *)
@@ -15,11 +16,12 @@ Module A.
   End B.
 End A.
 
+Parametricity Recursive bool.
 Parametricity Module A.
 Print Module A_R.
 Print Module A_R.B_R.
 
-Parametricity Module Bool.
+(* Parametricity Module Bool. *)
 Print Module Bool_R.
 
 (** Unary parametricity *)
@@ -35,6 +37,8 @@ Defined.
 
 Parametricity nat arity 10.
 Print nat_R_10.
+
+Set Universe Polymorphism.
 
 (** Realizing axioms and section variables. *)
 Section Test.
@@ -52,7 +56,7 @@ Require ProofIrrelevance.
 Lemma opaque : True.
 trivial.
 Qed.
-Parametricity opaque.
+Parametricity Recursive opaque.
 Eval compute in opaque.
 Eval compute in opaque_R.
 
@@ -61,7 +65,7 @@ Lemma opaqueunit : unit.
 exact tt.
 Qed.
 
-Parametricity opaqueunit.
+Parametricity Recursive opaqueunit.
 destruct opaqueunit.
 reflexivity.
 Parametricity Done.

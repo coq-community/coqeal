@@ -17,5 +17,7 @@ Definition C := c1.
 
 Set Parametricity Debug.
 
+Parametricity Recursive nat.
+
 Parametricity Recursive I1.
 

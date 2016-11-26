@@ -1,7 +1,3 @@
-ifndef COQBIN
-COQBIN = ../coq/bin/
-endif
-
 .PHONY: coq clean
 
 coq:: Makefile.coq
@@ -21,3 +17,6 @@ clean:: Makefile.coq
 
 distclean:
 	rm -f Makefile.coq Makefile.coq.bak .depend
+
+install:
+	$(MAKE) -f Makefile.coq install

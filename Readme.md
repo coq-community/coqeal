@@ -5,32 +5,22 @@ But is useable enough to "translate" a large chunck of standard library.
 Compilation 
 ===========
 
-The plugin currently works on a branch of coq (hopefully, in the future, it will also work on a stable official release). 
+The plugin currently works with Coq 8.5pl1.
 The easy (and long) way to test the plugin is to follow the following steps:
-* Create a fresh directory and move into it:
-
-        mkdir testplugin && cd testplugin 
-
-* Retrieve my branch of coq and compile it (and go take a coffee, or may be 5 coffees):
- 
-        git clone -b paramcoq https://github.com/mlasson/coq.git
-        cd coq
-        ./configure -local 
-        make -j 4 
-        cd ..
 
 * Retrieve the plugin and compile it:
 
         git clone https://github.com/mlasson/paramcoq.git
         cd paramcoq 
         make
+        sudo make install
 
 To test the plugin:
 
         cd test-suite
         make ide
 
-It will compile Parametricity.vo which loads the plugin and contains a translation of the initial modules. 
+It will compile Parametricity.vo which loads the plugin. 
 Then, it launches coq-ide with some simple examples. 
 
 Available commands

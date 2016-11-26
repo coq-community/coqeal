@@ -1,4 +1,4 @@
-COQBIN := ../../coq/bin/
+#COQBIN := ../../coq/bin/
 COQC := $(COQBIN)coqc 
 .PHONY: coq clean
 
@@ -30,7 +30,7 @@ features.vo: features.v Parametricity.vo
 wadler.vo: wadler.v Parametricity.vo 
 	$(COQC) -I ../src $<
 
-ide:: 
+ide:: Parametricity.vo 
 	$(COQBIN)coqide -debug -I ../src *.v 
 
 top:: Parametricity.vo

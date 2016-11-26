@@ -76,6 +76,8 @@ Definition DListQueue := {|
     end
 |}.
 
+Parametricity Recursive nat.
+
 Print nat_R.
 
 Lemma nat_R_equal : 
@@ -87,6 +89,8 @@ Lemma equal_nat_R :
 intros x y H; subst.
 induction y; constructor; trivial.
 Defined.
+
+Parametricity Recursive option.
 
 Lemma option_nat_R_equal : 
   forall x y, option_R nat nat nat_R x y -> x = y.
@@ -100,7 +104,8 @@ intros x y H; subst.
 destruct y; constructor; apply equal_nat_R; reflexivity.
 Defined.
 
-Parametricity Queue.
+Parametricity Recursive prod.
+Parametricity Recursive Queue.
 
 Print Queue_R.
 Check Queue_R.
@@ -152,7 +157,7 @@ Defined.
 
 
 Lemma bisim_list_dlist : Bisimilar ListQueue DListQueue.
-apply (Build_Queue_R _ _ R).
+apply (Queue_R_Build_Queue_R _ _ R).
 
 * reflexivity.
 
@@ -208,7 +213,7 @@ Print program.
 Check program.
 Parametricity Recursive program.
 Check program_R.
-Prigi
+
 Lemma program_independent : 
  forall n, 
   program ListQueue n = program DListQueue n.
