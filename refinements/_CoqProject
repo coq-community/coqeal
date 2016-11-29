@@ -11,6 +11,7 @@ karatsuba.v
 poly_div.v
 binord.v
 seqmx.v
+seqmx_complements.v
 hpoly.v
 bareiss.v
 rational.v
