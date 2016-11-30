@@ -13,6 +13,15 @@ Global Ltac destruct_reflexivity :=
 
 Global Parametricity Tactic := destruct_reflexivity.
 
+(** Automation: for turning [sth_R a b] goals into mere [a = b] goals,
+do [suff_eq sth_Rxx]. *)
+Ltac suff_eq Rxx :=
+  match goal with
+  | [ |- ?R ?a ?b ] =>
+    let H := fresh in
+    suff H : a = b; first (rewrite H; eapply Rxx =>//)
+  end.
+
 Require Import ProofIrrelevance. (* for opaque terms *)
 
 (* data types *)
@@ -32,6 +41,17 @@ Proof.
   elim: n=> [|n];
     [ exact: nat_R_O_R | exact: nat_R_S_R ].
 Qed.
+
+Lemma list_Rxx T (rT : T -> T -> Type) l :
+  (forall x, rT x x) -> list_R rT l l.
+Proof.
+move=> Hr; elim: l=> [|h t IH]; [exact: list_R_nil_R|].
+exact: list_R_cons_R.
+Qed.
+
+Lemma option_Rxx T (rT : T -> T -> Type) l :
+  (forall x, rT x x) -> option_R rT l l.
+Proof. by move=> Hr; case: l => *; constructor. Qed.
 
 (** ssrfun *)
 Parametricity simpl_fun.

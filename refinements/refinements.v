@@ -422,3 +422,45 @@ Ltac refines_abstr1 := eapply refines_abstr=> ???; tc.
 Ltac refines_apply := do ![refines_apply1].
 Ltac refines_abstr := do ![refines_abstr1].
 Ltac refines_trans :=  eapply refines_trans; tc.
+
+(** Automation: for proving refinement lemmas involving if-then-else's
+do [rewrite !ifE; apply refines_if_expr]. *)
+Lemma refines_if_expr
+  (A C : Type) (b1 b2 : bool) (vt1 vf1 : A) (vt2 vf2 : C) (R : A -> C -> Type) :
+  refines bool_R b1 b2 -> (b1 -> b2 -> R vt1 vt2) -> (~~ b1 -> ~~ b2 -> R vf1 vf2) ->
+  refines R (if_expr b1 vt1 vf1) (if_expr b2 vt2 vf2).
+Proof.
+move/refines_bool_eq/refinesP=> Hb; rewrite -!{}Hb => Ht Hf.
+rewrite /if_expr !refinesE; case: b1 Ht Hf => Ht Hf.
+exact: Ht.
+exact: Hf.
+Qed.
+
+Lemma optionE (A B : Type) (o : option A) (b : B) (f : A -> B) :
+  match o with
+  | Some a => f a
+  | None => b
+  end = oapp f b o.
+Proof. by []. Qed.
+
+(** Automation: for proving refinement lemmas involving options,
+do [rewrite !optionE; apply refines_option]. *)
+Lemma refines_option
+  (A B : Type) (o1 o2 : option A) (b1 b2 : B) (f1 f2 : A -> B)
+  (rA : A -> A -> Type) (rB : B -> B -> Type) :
+  refines (option_R rA) o1 o2 ->
+  refines (rA ==> rB) f1 f2 ->
+  refines rB b1 b2 ->
+  refines rB (oapp f1 b1 o1) (oapp f2 b2 o2).
+Proof.
+rewrite /oapp.
+rewrite -!/(oapp _ _ _).
+case: o1 => [a1|]; case: o2 => [a2|].
+{ move=> HA HAB HB /=.
+  refines_apply.
+  rewrite !refinesE in HA *.
+  by inversion_clear HA. }
+{ move=> /refinesP K; inversion K. }
+{ move=> /refinesP K; inversion K. }
+by move=> _ /=.
+Qed.
