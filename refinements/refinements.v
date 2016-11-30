@@ -205,6 +205,8 @@ Qed.
 
 End refinements.
 
+Arguments refinesP {T T' R x y} _.
+
 Hint Mode refines - - - + - : typeclass_instances.
 
 Hint Extern 0 (refines _ _ _)
