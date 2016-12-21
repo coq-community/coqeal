@@ -18,6 +18,8 @@
 DECLARE PLUGIN "parametricity"
 open Parametricity
 open Declare_translation
+open Constrarg
+open Stdarg
 
 VERNAC COMMAND EXTEND SetParametricityTactic CLASSIFIED AS SIDEFF
 | [ "Parametricity" "Tactic" ":=" tactic(t) ] -> [
@@ -34,7 +36,7 @@ END
 
 VERNAC COMMAND EXTEND ShowParametricityTactic CLASSIFIED AS QUERY
 | [ "Show" "Parametricity" "Tactic" ] -> [
-   Pp.(msg_info (str "Paramericity obligation tactic is " ++ Relations.print_parametricity_tactic ())) ]
+   Pp.(Feedback.msg_info (str "Paramericity obligation tactic is " ++ Relations.print_parametricity_tactic ())) ]
 END
 
 VERNAC COMMAND EXTEND ParametricityDefined CLASSIFIED AS SIDEFF

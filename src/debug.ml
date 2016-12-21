@@ -20,6 +20,7 @@ open Constr
 open Environ
 open Context
 open Environ
+open Context.Rel.Declaration
 
 let all = [`ProofIrrelevance; 
            `Abstraction; 
@@ -54,33 +55,31 @@ let debug_rename_env env =
 
 let debug_message flags s e = 
   if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
-    Pp.msg_notice Pp.(str s ++ e)
+    Feedback.msg_notice Pp.(str s ++ e)
 
 let debug_env flags (s : string) env evd = 
   if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
     let env = debug_rename_env env in 
-    Pp.(msg_notice (str s ++ Printer.pr_context_of env evd)) 
-
-
+    Pp.(Feedback.msg_notice (str s ++ Printer.pr_context_of env evd)) 
 
 let debug flags (s : string) env evd c = 
   if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then 
     try 
       let env = debug_rename_env env in 
-      Pp.(msg_notice (str s
+      Pp.(Feedback.msg_notice (str s
        ++ Printer.pr_context_of env evd));
-      Pp.(msg_notice (str "" 
+      Pp.(Feedback.msg_notice (str "" 
          ++ str "\n |-"
          ++ Printer.safe_pr_constr_env env evd c)) 
-    with e -> Pp.(msg_notice (str (Printf.sprintf "Caught exception while debugging '%s'" (Printexc.to_string e))))
+    with e -> Pp.(Feedback.msg_notice (str (Printf.sprintf "Caught exception while debugging '%s'" (Printexc.to_string e))))
 
 let debug_evar_map flags s evd = 
   if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then (
-    Pp.msg_info Pp.(str s ++ Evd.pr_evar_universe_context (Evd.evar_universe_context evd)))
+    Feedback.msg_info Pp.(str s ++ Evd.pr_evar_universe_context (Evd.evar_universe_context evd)))
 
 let debug_string flags s =
   if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
-    Pp.msg_notice (Pp.str ("--->\t"^s))
+    Feedback.msg_notice (Pp.str ("--->\t"^s))
 
 let debug_case_info flags ci = 
   if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
@@ -110,7 +109,7 @@ let debug_case_info flags ci =
 
 let debug_rel_context flags s env l = 
   if !debug_mode && List.exists (fun x -> List.mem x flags) debug_flag then
-    Pp.msg_notice Pp.(str s ++ (Termops.print_rel_context (push_rel_context l env)))
+    Feedback.msg_notice Pp.(str s ++ (Termops.print_rel_context (push_rel_context l env)))
 
 let not_implemented ?(reason = "no reason") env evd t = 
   debug [`Not_implemented] (Printf.sprintf "not implemented (%s):" reason) env evd t;
@@ -140,14 +139,18 @@ let debug_mutual_inductive_entry =
     in 
     debug_string all "env_params:";
     let env_params = 
-      List.fold_left (fun acc -> function (id, LocalAssum typ) -> 
-         debug_env all "acc = " acc evd;
-         debug all "typ = " acc evd typ;
-       Environ.push_rel (Name id, None, typ) acc | (id, LocalDef def) -> 
-         debug_env all "acc = " acc evd;
-         debug all "def = " acc evd def;
-         Environ.push_rel (Name id, Some def, Typing.unsafe_type_of acc evd def) acc) 
-       (Global.env ()) (List.rev entry.mind_entry_params)
+      List.fold_left (fun acc->
+          function
+          | (id, LocalAssumEntry typ) -> 
+             debug_env all "acc = " acc evd;
+             debug all "typ = " acc evd typ;
+             Environ.push_rel (LocalAssum (Name id, typ)) acc 
+          | (id, LocalDefEntry def) -> 
+             debug_env all "acc = " acc evd;
+             debug all "def = " acc evd def;
+             Environ.push_rel (LocalDef (Name id, def, Typing.unsafe_type_of acc evd def))
+                              acc)
+                     (Global.env ()) (List.rev entry.mind_entry_params)
     in 
     debug_string all "arities:";
     let mind_entry_params_pp = Printer.pr_context_of env_params Evd.empty in 
@@ -181,7 +184,7 @@ let debug_mutual_inductive_entry =
     let res = (str "{") ++ hb 140 ++
     List.fold_left (fun acc (name, pp) -> 
         field name pp acc) (close () ++ str "}") fields in 
-    Pp.msg_notice res;
+    Feedback.msg_notice res;
     let sorts = List.fold_left (fun accu ind -> 
       sorts accu ind.mind_entry_arity) SortSet.empty entry.mind_entry_inds
     in 
@@ -189,14 +192,14 @@ let debug_mutual_inductive_entry =
       SortSet.fold (fun sort accu -> 
        accu ++ (Printer.pr_sort evd sort) ++ fnl ()) sorts (hb 100) 
     in 
-    Pp.msg_notice (sorts_pp ++ close ())
+    Feedback.msg_notice (sorts_pp ++ close ())
     
   and pp_one_inductive_entry arities env_params entry = 
     let params = rel_context env_params in 
     let arities = List.map (fun (x, y) -> (x, it_mkProd_or_LetIn y params)) arities in 
     let arities_params_env =  
       let env_arities = 
-        List.fold_left (fun acc (id, arity) -> push_rel (Name id, None, arity) acc)
+        List.fold_left (fun acc (id, arity) -> push_rel (LocalAssum (Name id, arity)) acc)
                        Environ.empty_env (List.rev arities)
       in 
       push_rel_context params env_arities 
