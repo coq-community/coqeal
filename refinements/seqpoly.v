@@ -142,21 +142,21 @@ Proof.
   exact: congr2.
 Qed.
 
+(* Cyril: fix this *)
 Lemma spec_aux_eq0 s :
   (s == 0)%C -> spec_seqpoly_aux 0 s = 0.
 Proof.
-  elim: s=> [_|a s ih aseq0] //=.
-  have heq0 : (a == 0)%C /\ (s == 0)%C.
-    move/andP: aseq0=> aseq0.
-    split; first by rewrite (proj1 aseq0).
-    rewrite /eq_op /eq_seqpoly sub_seqpoly_0.
-    by rewrite (proj2 aseq0).
-  by rewrite (proj1 heq0) spec_aux_shift ih ?(proj2 heq0) // mul0r.
+elim: s=> [_|a s ih aseq0] //=.
+have heq0 : (a == 0)%C /\ (s == 0)%C.
+  move: aseq0; rewrite /(_ == _)%C /eq_seqpoly /= => /andP [a0 s0].
+  split => //; rewrite /eq_op /eq_seqpoly sub_seqpoly_0.
+  by rewrite s0.
+by rewrite (proj1 heq0) spec_aux_shift ih ?(proj2 heq0) // mul0r.
 Qed.
 
 End seqpoly_more_op.
 
-Arguments spec_seqpoly / : assert.
+Arguments spec_seqpoly / _ _ _ _ _ _ _ _ _ : assert.
 
 (* (* translations for ringType *) *)
 (* Parametricity Logic.False. *)

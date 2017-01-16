@@ -247,12 +247,16 @@ Context (mxC : nat -> nat -> Type)
         (RmxC : forall m1 m2, nat_R m1 m2 ->
                 forall n1 n2, nat_R n1 n2 ->
                 'M[R]_(m1, n1) -> mxC m2 n2 -> Type).
-Arguments RmxC {_ _ _ _ _ _} _ _.
+Arguments RmxC {_ _} _ {_ _} _ _ _.
+(* Cyril: bug *)
+(*Arguments RmxC {_ _ _ _ _ _} _ _. *)
 Context (mxpolyC : nat -> nat -> Type)
         (RmxpolyC : forall m1 m2, nat_R m1 m2 ->
                     forall n1 n2, nat_R n1 n2 ->
                     'M[{poly R}]_(m1, n1) -> mxpolyC m2 n2 -> Type).
-Arguments RmxpolyC {_ _ _ _ _ _} _ _.
+Arguments RmxpolyC {_ _} _ {_ _} _ _ _.
+(* Cyril: bug *)
+(* Arguments RmxpolyC {_ _ _ _ _ _} _ _. *)
 Context `{zero_of C, one_of polyC}.
 Context `{forall m n, opp_of (mxC m n)}.
 Context `{ursubmxC : ursubmx_of mxpolyC}.

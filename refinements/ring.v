@@ -16,9 +16,9 @@ Local Open Scope ring_scope.
 Ltac in_seq s t :=
   let rec aux s :=
       match s with
-      | [::] => constr:false
+      | [::] => constr:(false)
       | (?hd :: ?tl) => match hd with
-                        | t => constr:true
+                        | t => constr:(true)
                         | _ => aux tl
                         end
       end in
@@ -42,7 +42,7 @@ Ltac freeVars t A :=
       end in
   let s := aux t ([::] : seq A) in
   let n := (eval compute in (size s)) in
-  constr:(s, n).
+  constr:((s, n)).
 
 Inductive PExpr :=
   | PEc : int -> PExpr

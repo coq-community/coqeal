@@ -4,11 +4,11 @@ From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssra
 
 From CoqEAL Require Import hrel param.
 
+Require Import ssrmatching.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-
-Declare ML Module "ssreflect".
 
 (* Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic. *)
 
@@ -308,7 +308,7 @@ Import Refinements.Op.
 Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of exp_of div_of
             inv_of mod_of scale_of size_of eq_of leq_of lt_of spec_of implem_of cast_of.
 
-Arguments spec / : assert.
+Arguments spec / A B spec_of _: assert.
 
 Notation "0"      := zero_op        : computable_scope.
 Notation "1"      := one_op         : computable_scope.
@@ -372,28 +372,28 @@ Hint Mode strategy_class + : typeclass_instances.
 Class native_compute T (x y : T) := NativeCompute : x = y.
 Hint Mode native_compute - + - : typeclass_instances.
 Hint Extern 0 (native_compute _ _) =>
-  context [(X in native_compute X)%pattern] native_compute; reflexivity :
+  context [(X in native_compute X)] native_compute; reflexivity :
   typeclass_instances.
 Instance strategy_class_native_compute : strategy_class native_compute := erefl.
 
 Class vm_compute T (x y : T) := VmCompute : x = y.
 Hint Mode vm_compute - + - : typeclass_instances.
 Hint Extern 0 (vm_compute _ _) =>
-  context [(X in vm_compute X)%pattern] vm_compute; reflexivity :
+  context [(X in vm_compute X)] vm_compute; reflexivity :
   typeclass_instances.
 Instance strategy_class_vm_compute : strategy_class vm_compute := erefl.
 
 Class compute T (x y : T) := Compute : x = y.
 Hint Mode compute - + - : typeclass_instances.
 Hint Extern 0 (compute _ _) =>
-  context [(X in compute X)%pattern] compute; reflexivity :
+  context [(X in compute X)] compute; reflexivity :
   typeclass_instances.
 Instance strategy_class_compute : strategy_class compute := erefl.
 
 Class simpl T (x y : T) := Simpl : x = y.
 Hint Mode simpl - + - : typeclass_instances.
 Hint Extern 0 (simpl _ _) =>
-  context [(X in simpl X)%pattern] simpl; reflexivity :
+  context [(X in simpl X)] simpl; reflexivity :
   typeclass_instances.
 Instance strategy_class_simpl : strategy_class simpl := erefl.
 
@@ -413,7 +413,7 @@ Tactic Notation "coqeal_" tactic3(tac) :=  apply: refines_goal; tac.
 Tactic Notation "coqeal" "[" ssrpatternarg(pat) "]" open_constr(strategy) :=
   let H := fresh "H" in let Q := fresh "Q" in let eqQ := fresh "eqQ" in
   ssrpattern pat => H; elim/abstract_context : (H) => Q eqQ;
-  rewrite /H {H} [(X in Q X)%pattern](coqeal strategy) eqQ {Q eqQ}.
+  rewrite /H {H} [(X in Q X)](coqeal strategy) eqQ {Q eqQ}.
 
 Ltac refines_apply1 := eapply refines_apply; tc.
 Ltac refines_abstr1 := eapply refines_abstr=> ???; tc.

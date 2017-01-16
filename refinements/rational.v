@@ -87,7 +87,7 @@ Realizer expQnat as expQnat_R := expQnat'_R.
 Parametricity cast_ZQ.
 Parametricity cast_PQ.
 
-Arguments specQ / : assert.
+Arguments specQ / _ _ _ _ _ : assert.
 
 (***********************************************************)
 (* PART II: Proving the properties of the previous objects *)

@@ -265,7 +265,7 @@ Qed.
 
 End hpoly_more_op.
 
-Arguments spec_hpoly / : assert.
+Arguments spec_hpoly / _ _ _ _ _ _ _ _ _ _ _ : assert.
 
 (******************************************************************************)
 (** PART II: Proving correctness properties of the previously defined objects *)
