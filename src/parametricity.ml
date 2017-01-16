@@ -195,20 +195,6 @@ let set_program_mode =
 
 let default_arity = 2
 
-(* Stores the depths of the Local Assumptions *)
-let hyps_from_rel_context env =
-  let rctx = Environ.rel_context env in
-  let rec aux acc depth = function
-      [] -> acc
-    | LocalAssum (_, _) :: tl -> aux (depth :: acc) (depth + 1) tl
-    | _ :: tl -> aux acc (depth + 1) tl
-  in
-  aux [] 1 rctx
-
-
-let compose_prod_assum rel_context init = it_mkProd_or_LetIn init rel_context
-let compose_lam_assum rel_context init = it_mkLambda_or_LetIn init rel_context
-
 let decompose_prod_n_assum_by_prod n =
   if n < 0 then
     failwith "decompose_prod_n_assum_by_prod: integer parameter must be positive";
@@ -407,20 +393,20 @@ let rec relation :
         debug_string [`Relation] (Printf.sprintf "t_R lifted has cast : %b" (has_cast t_R));
         Sigma (apply_head_variables t_R order, evd, p)
   in
-  let Sigma (env_R, evd, q) = translate_env order env evd in
   if !debug_mode && List.exists (fun x -> List.mem x [`Relation]) debug_flag then begin
       debug_string [`Relation] (Printf.sprintf "exit relation %d env t evd" order);
       debug_evar_map [`Relation]  "evd =" (Sigma.to_evar_map evd);
       debug [`Relation] "input =" env (Sigma.to_evar_map evd) t;
       debug_string [`Relation] (Printf.sprintf "input has cast : %b" (has_cast t));
       debug_mode := false;
+      let Sigma (env_R, _, _) = translate_env order env evd in
       let lams = range (fun k -> LocalAssum (Anonymous, lift k (prime order k t))) order in
       let env_R = Environ.push_rel_context lams env_R in
       debug_mode := true;
       debug [`Relation] "output =" env_R (Sigma.to_evar_map evd) res;
       debug_string [`Relation] (Printf.sprintf "output has cast : %b" (has_cast res))
     end;
-  Sigma (res, evd, p +> q)
+  Sigma (res, evd, p)
 
 (* G |- t ---> |G| |- |t| *)
 and translate : type r. _ -> _ -> _ -> r Sigma.t -> (constr, r) sigma_ =
@@ -474,7 +460,7 @@ and translate : type r. _ -> _ -> _ -> r Sigma.t -> (constr, r) sigma_ =
                                                  lift k (prime order k b),
                                                  lift k (prime order k t), acc))
                           (mkLetIn (translate_name order x,
-                                    lift order b, rt, tc))
+                                    lift order tb, rt, tc))
                           order in
        Sigma (res, evd, p1 +> p2 +> p3)
 
@@ -506,7 +492,7 @@ and translate : type r. _ -> _ -> _ -> r Sigma.t -> (constr, r) sigma_ =
         debug [`Case] "t_R" Environ.empty_env (Sigma.to_evar_map evd) t_R;
         let Sigma (lams_R, evd, p2) =
           translate_rel_context order env lams evd in
-        let p_R = compose_lam_assum lams_R t_R in
+        let p_R = it_mkLambda_or_LetIn t_R lams_R in
         let Sigma (c_R, evd, p3) = translate order env c evd in
         let Sigma (bl_R, evd, p4) =
           sigma_array_map
@@ -721,7 +707,8 @@ and translate_cofix :
                      Array.map (prime order k) (Rel.to_extended_vect 0 ft)))
                order
      in
-     compose_prod_assum (Termops.lift_rel_context (nfun * order) ft_R) (substl sub bk_R)) ftbk_R
+     it_mkProd_or_LetIn (substl sub bk_R)
+       (Termops.lift_rel_context (nfun * order) ft_R)) ftbk_R
   in
 
   (* env_rec is the environement under fipoints. *)
@@ -746,7 +733,7 @@ and translate_cofix :
                           theta bk bk_R body_R evd in
     let Sigma (lams_R, evd, p3) =
       translate_rel_context order env_rec lams evd in
-    let res = compose_lam_assum lams_R body_R in
+    let res = it_mkLambda_or_LetIn body_R lams_R in
     if List.exists (fun x -> List.mem x [`Fix]) debug_flag then begin
       let Sigma (env_R, _, _) = translate_env order env_rec evd in
       debug [`Fix] "res = " env_R (Sigma.to_evar_map evd) res;
@@ -826,8 +813,8 @@ and translate_fix :
                      Array.map (prime order k) (Rel.to_extended_vect 0 ft)))
                order
      in
-     compose_prod_assum (Termops.lift_rel_context (nfun * order) ft_R)
-                        (substl sub bk_R)) ftbk_R
+     it_mkProd_or_LetIn (substl sub bk_R)
+     (Termops.lift_rel_context (nfun * order) ft_R)) ftbk_R
   in
   (* env_rec is the environement under fipoints. *)
   let env_rec = push_rec_types (lna, tl, bl) env in
@@ -926,7 +913,7 @@ and translate_fix :
         let env_lams = Environ.push_rel_context lams env in
         let Sigma (typ_R, evd, p3) = relation order env_lams typ evd in
         let p_R = substl sub typ_R in
-        let p_R = compose_lam_assum lams_R p_R in
+        let p_R = it_mkLambda_or_LetIn p_R lams_R in
         debug [`Fix] "predicate_R = " Environ.empty_env (Sigma.to_evar_map evd) p_R;
         let Sigma (bl_R, evd, p4) =
           debug_string [`Fix] (Printf.sprintf "dest_rel = %d" (destRel c));
@@ -968,7 +955,7 @@ and translate_fix :
                let Sigma (b_R, evd, p3) =
                  traverse_cases env (depth + nrealdecls)
                                 fun_args typ typ_R b evd in
-               Sigma (compose_lam_assum realdecls_R b_R, evd, p1 +> p2 +> p3)
+               Sigma (it_mkLambda_or_LetIn b_R realdecls_R, evd, p1 +> p2 +> p3)
                              }) bl evd
           end
         in
@@ -983,7 +970,7 @@ and translate_fix :
     let bk_R = liftn (nfun_letins * (order + 1)) ((order + 1) * narg + order + 1) bk_R in
     let Sigma (body_R, evd, p2) =
       traverse_cases env_lams 0 args bk bk_R body evd in
-    let res = compose_lam_assum lams_R body_R in
+    let res = it_mkLambda_or_LetIn body_R lams_R in
     if List.exists (fun x -> List.mem x [`Fix]) debug_flag then begin
       let Sigma (env_R, _, _) = translate_env order env_rec evd in
       debug [`Fix] "res = " env_R (Sigma.to_evar_map evd) res;
