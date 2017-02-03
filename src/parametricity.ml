@@ -296,16 +296,15 @@ let range f order =
   in
   aux 0 []
 
-(* [rev_range f n] computes [f 0; f 1; ...; f n-1] *)
+(* [rev_range f n] computes [f 0; f 1; ...; f (n - 1)] *)
 let rev_range f order =
   List.rev (range f order)
 
-(* the iterator for natural numbers. *)
+(* the iterator for natural numbers *)
+(* [fold_nat f x n] computes [f 0 (f 1 (...(f (n - 1))...))] *)
 let fold_nat f x =
   let rec aux acc n =
-    if n = 0 then acc else
-      let n = n - 1 in
-      aux (f n acc) n
+    if n = 0 then acc else let n = n - 1 in  aux (f n acc) n
   in aux x
 
 (* [first n l] returns the first [n] elements of [l]. *)
@@ -456,9 +455,10 @@ and translate : type r. _ -> _ -> _ -> r Sigma.t -> (constr, r) sigma_ =
        let Sigma (rt, evd, p2) = relation order env t evd in
        let env = push_rel (LocalDef (x, b, t)) env in
        let Sigma (tc, evd, p3) = translate order env c evd in
-       let res = fold_nat (fun k acc -> mkLetIn (prime_name order k x,
-                                                 lift k (prime order k b),
-                                                 lift k (prime order k t), acc))
+       let res = fold_nat (fun k acc ->
+                     mkLetIn (prime_name order k x,
+                              lift k (prime order k b),
+                              lift k (prime order k t), acc))
                           (mkLetIn (translate_name order x,
                                     lift order tb, rt, tc))
                           order in
@@ -766,6 +766,7 @@ and translate_fix :
   fun order env t evd ->
   let ((ri, i) as ln, (lna, tl, bl)) as fix = destFix t in
   let nfun = Array.length lna in
+(* do one "let fix ... := ... in ..." *)
   let rec letfix name fix typ n k acc =
     if k = 0 then acc
     else
@@ -776,6 +777,7 @@ and translate_fix :
                            fix_k, typ_k, acc) in
       letfix name fix typ n k acc
   in
+(* do every let fix *)
   let rec letfixs n acc =
     if n = 0 then acc
     else
