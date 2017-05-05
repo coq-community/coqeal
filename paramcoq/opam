@@ -1,0 +1,17 @@
+opam-version: "1.2"
+name: "coq-parametricity"
+version: "dev"
+maintainer: ""
+
+homepage: ""
+bug-reports: ""
+license: ""
+
+build: [ make "-j" "%{jobs}%" ]
+install: [ make "install" ]
+remove: [ "sh" "-c" "rm -rf '%{lib}%/coq/user-contrib/Param'" ]
+depends: [ "coq" { = "8.6" } ]
+
+tags: [ "keyword:parametricity" "keyword:coq" "keyword:realisability"]
+authors: [ "Chantal Keller <Chantal.Keller@lri.fr>"
+	 "Marc Lasson <marc.lasson@gmail.com>" ]
