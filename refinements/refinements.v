@@ -444,23 +444,15 @@ Lemma optionE (A B : Type) (o : option A) (b : B) (f : A -> B) :
 Proof. by []. Qed.
 
 (** Automation: for proving refinement lemmas involving options,
-do [rewrite !optionE; apply refines_option]. *)
+do [rewrite !optionE; refines_apply; apply refines_option]. *)
 Lemma refines_option
-  (A B : Type) (o1 o2 : option A) (b1 b2 : B) (f1 f2 : A -> B)
-  (rA : A -> A -> Type) (rB : B -> B -> Type) :
-  refines (option_R rA) o1 o2 ->
-  refines (rA ==> rB) f1 f2 ->
-  refines rB b1 b2 ->
-  refines rB (oapp f1 b1 o1) (oapp f2 b2 o2).
+  (A B : Type) (rA : A -> A -> Type) (rB : B -> B -> Type) :
+  refines ((rA ==> rB) ==> rB ==> option_R rA ==> rB) (@oapp _ _) (@oapp _ _).
 Proof.
-rewrite /oapp.
-rewrite -!/(oapp _ _ _).
-case: o1 => [a1|]; case: o2 => [a2|].
-{ move=> HA HAB HB /=.
-  refines_apply.
-  rewrite !refinesE in HA *.
-  by inversion_clear HA. }
-{ move=> /refinesP K; inversion K. }
-{ move=> /refinesP K; inversion K. }
-by move=> _ /=.
+rewrite refinesE => f1 f2 Hf b1 b2 Hb o1 o2 Ho.
+case: o1 Ho => [a1|]; case: o2 => [a2|] Ho //=.
+{ eapply refinesP; refines_apply; rewrite refinesE in Ho *.
+  by inversion_clear Ho. }
+{ by eapply refinesP; inversion_clear Ho. }
+{ by eapply refinesP; inversion_clear Ho. }
 Qed.
