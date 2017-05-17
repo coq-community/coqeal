@@ -3,7 +3,7 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 From mathcomp Require Import choice fintype bigop matrix.
 
-Require Import hrel param refinements seqmx.
+From CoqEAL Require Import hrel param refinements seqmx.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -16,6 +16,8 @@ Import Refinements.Op.
 (** * Extra material about CoqEAL *)
 
 Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
+
+Arguments refinesP {T T' R x y} _.
 
 Hint Resolve list_R_nil_R.
 
@@ -205,9 +207,9 @@ match goal with
 end.
 apply/idP/idP.
 { move/forallP=> H1; apply/all_nthP=> i; rewrite SzAs=> Hi.
-  rewrite (nth_zip [::] [::]) ?hb1 //= eq_seqE ?ha2 ?hb2 //.
+  erewrite (nth_zip [::] [::]); rewrite ?hb1 //= eq_seqE ?ha2 ?hb2 //.
   apply/all_nthP=> j.
-  rewrite (nth_zip 0%C 0%C) ?ha2 ?hb2 //= size1_zip ?ha2 ?hb2 // => Hj.
+  erewrite (nth_zip 0%C 0%C); rewrite ?ha2 ?hb2 //= size1_zip ?ha2 ?hb2 // => Hj.
   rewrite -(nat_R_eq rm) in Hi; rewrite -(nat_R_eq rn) in Hj.
   move: (H1 (Ordinal Hi)); move/forallP => H2; move: (H2 (Ordinal Hj)).
   by rewrite ha3 hb3. }
@@ -219,9 +221,6 @@ move: (H2 (ltn_ord i)); rewrite nth_zip ?ha1 ?hb1 //= eq_seqE ?ha2 ?hb2 //.
 move/all_nthP=>H3; move: (H3 (zero_of0, zero_of0) j).
 rewrite nth_zip ?ha2 ?hb2 //=; apply.
 by rewrite size1_zip ha2 ?hb2 // -(nat_R_eq rn).
-Unshelve.
-exact ([::], [::]).
-exact (zero_of0, zero_of0).
 Qed.
 
 (** ** Parametricity *)
@@ -245,11 +244,12 @@ Lemma RseqmxC_spec_seqmx m n (M : @seqmx C) :
   RseqmxC rAC (nat_Rxx m) (nat_Rxx n) (spec_seqmx m n M) M.
 Proof.
 move=> /andP [] /eqP Hm /all_nthP Hn Hc; apply refinesP.
-eapply (refines_trans (b:=map_seqmx spec M)); [by tc| |by rewrite refinesE].
-rewrite refinesE; split; [by rewrite size_map| |].
-{ move=> i Hi; rewrite (nth_map 0%C) ?Hm // size_map.
-  by apply/eqP/Hn; rewrite Hm. }
-by move=> i j; rewrite mxE.
+eapply (refines_trans (b:=map_seqmx spec M)); [by tc| |].
+{  rewrite refinesE; split; [by rewrite size_map| |].
+  { move=> i Hi; rewrite (nth_map 0%C) ?Hm // size_map.
+    by apply/eqP/Hn; rewrite Hm. }
+  by move=> i j; rewrite mxE. }
+by rewrite refinesE.
 Qed.
 
 Lemma nth_R_lt (T1 T2 : Type) (T_R : T1 -> T2 -> Type) x01 x02 s1 s2 :
@@ -279,6 +279,19 @@ Global Instance refine_fun_of_seqmx m n :
     ((@fun_of_matrix A m n) : matrix A m n -> ordinal m -> ordinal n -> A)
     (@fun_of_seqmx C _ m n).
 Proof. exact: RseqmxC_fun_of_seqmx. Qed.
+
+Global Instance refine_foldl
+  (T1 T2 : Type) (rT : T1 -> T2 -> Type) (R1 R2 : Type) (rR : R1 -> R2 -> Type) :
+  refines ((rR ==> rT ==> rR) ==> rR ==> list_R rT ==> rR)
+    (@foldl T1 R1) (@foldl T2 R2).
+Proof.
+rewrite refinesE=> f f' rf z z' rz s' s'' rs'.
+elim: s' s'' rs' z z' rz=> [|h t IH] s'' rs' z z' rz.
+{ case: s'' rs'=> [//|h' t'] rs'; inversion rs'. }
+case: s'' rs'=> [|h' t'] rs' /=; [by inversion rs'|].
+apply IH; [by inversion rs'|].
+by apply refinesP; refines_apply; rewrite refinesE; inversion rs'.
+Qed.
 
 End seqmx_param.
 
