@@ -444,8 +444,8 @@ Lemma optionE (A B : Type) (o : option A) (b : B) (f : A -> B) :
 Proof. by []. Qed.
 
 (** Automation: for proving refinement lemmas involving options,
-do [rewrite !optionE; refines_apply; apply refines_option]. *)
-Lemma refines_option
+do [rewrite !optionE; refines_apply]. *)
+Global Instance refines_option
   (A B : Type) (rA : A -> A -> Type) (rB : B -> B -> Type) :
   refines ((rA ==> rB) ==> rB ==> option_R rA ==> rB) (@oapp _ _) (@oapp _ _).
 Proof.
