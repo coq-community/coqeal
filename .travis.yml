@@ -30,6 +30,7 @@ matrix:
   allow_failures:
   - env: COQ_VERSION="8.5.3" MATHCOMP_VERSION="1.6.1" PARAMCOQ_VERSION="956d77ff6269159be5828fe8235d2e0dfb1b5987"
   # (refinements.v + Coq 8.5 => "Error: Unable to locate library ssrmatching.")
+  fast_finish: true
 
 install:
 - opam init -j ${NJOBS} --compiler=${COMPILER} -n -y
