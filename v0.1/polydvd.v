@@ -10,7 +10,7 @@ Import Pdiv.Ring Pdiv.Idomain Pdiv.RingComRreg dvdring.Notations.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Unset Printing Implicit Defensives.
+Unset Printing Implicit Defensive.
 
 (* Local fix for poly notations *)
 Delimit Scope poly_scope with P.

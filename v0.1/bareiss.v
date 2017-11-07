@@ -10,7 +10,7 @@ Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Unset Printing Implicit Defensives.
+Unset Printing Implicit Defensive.
 
 Open Scope ring_scope.
 
