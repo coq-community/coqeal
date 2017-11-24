@@ -11,7 +11,7 @@ Close Scope Q_scope.
 Set   Implicit Arguments.
 Unset Strict Implicit.
 
-Unset Printing Implicit Defensives.
+Unset Printing Implicit Defensive.
 
 Import GRing.
 

@@ -6,7 +6,7 @@ Require Import bigop cssralg cseqpoly.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Unset Printing Implicit Defensives.
+Unset Printing Implicit Defensive.
 
 Import GRing.Theory.
 Local Open Scope ring_scope.

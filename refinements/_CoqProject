@@ -18,3 +18,4 @@ boolF2.v
 trivial_seq.v
 examples/irred.v
 binrat.v
+multipoly.v

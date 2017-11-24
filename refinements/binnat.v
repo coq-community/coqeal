@@ -363,6 +363,79 @@ Proof.
   apply Rpos_1.
 Qed.
 
+Lemma Rnat_eqE (c d : N) : (c == d)%C = (spec_N c == spec_N d).
+Proof.
+symmetry; eapply refines_eq.
+refines_apply.
+refines_abstr.
+Qed.
+
+Lemma Rnat_ltE (c d : N) : (c < d)%C = (spec_N c < spec_N d).
+Proof.
+symmetry; eapply refines_eq.
+change (spec_N c < spec_N d) with (ltn (spec_N c) (spec_N d)).
+refines_apply1; first refines_apply1.
+refines_abstr.
+Qed.
+
+Lemma Rnat_ltP x y : reflect (x < y)%num (spec_N x < spec_N y).
+Proof.
+by apply: (iffP idP); rewrite -Rnat_ltE /lt_op /lt_N; apply N.ltb_lt.
+Qed.
+
+Lemma Rnat_leE (c d : N) : (c <= d)%C = (spec_N c <= spec_N d)%N.
+Proof.
+symmetry; eapply refines_eq.
+refines_apply.
+refines_abstr.
+Qed.
+
+Lemma Rnat_eqxx (c : N) : (c == c)%C.
+Proof. by rewrite Rnat_eqE. Qed.
+
+Definition Rnat_E := (Rnat_eqE, Rnat_ltE, Rnat_leE).
+
+Lemma map_spec_N_inj : injective (map spec_N).
+Proof.
+apply inj_map => m n Hmn.
+rewrite -(nat_of_binK m) -(nat_of_binK n).
+by rewrite /spec_N in Hmn; rewrite Hmn.
+Qed.
+
+Lemma Nat2Pos_xI m : ((Pos.of_nat m.+1)~1)%positive = Pos.of_nat ((m.+1).*2.+1).
+Proof.
+rewrite -muln2 [RHS]Nat2Pos.inj_succ // Nat2Pos.inj_mul //.
+simpl (Pos.of_nat 2); zify; omega.
+Qed.
+
+Lemma Nat2Pos_xO m : ((Pos.of_nat m.+1)~0)%positive = Pos.of_nat ((m.+1).*2).
+Proof.
+rewrite -muln2 Nat2Pos.inj_mul //.
+simpl (Pos.of_nat 2); zify; omega.
+Qed.
+
+Lemma pos_of_natE m n : pos_of_nat m n = Pos.of_nat (maxn 1 (m.*2.+1 - n)).
+Proof.
+elim: m n => [|m IHm] n; first by rewrite /= double0 (maxn_idPl (leq_subr _ _)).
+simpl.
+case: n => [|n]; last case: n => [|n]; last by rewrite IHm.
+- rewrite subn0 IHm.
+  have->: (m.*2.+1 - m = m.+1)%N.
+    rewrite -addnn subSn; first by rewrite addnK.
+    exact: leq_addr.
+  by rewrite !(maxn_idPr _) // Nat2Pos_xI.
+- rewrite subn1 IHm.
+  have->: (m.*2.+1 - m = m.+1)%N.
+    rewrite -addnn subSn; first by rewrite addnK.
+    exact: leq_addr.
+  by rewrite !(maxn_idPr _) // Nat2Pos_xO.
+Qed.
+
+Lemma bin_of_natE : bin_of_nat =1 N.of_nat.
+move=> n.
+by rewrite -[bin_of_nat n]nat_of_binK bin_of_natK.
+Qed.
+
 End binnat_theory.
 
 Typeclasses Opaque nat_of_bin bin_of_nat.
