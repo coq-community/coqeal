@@ -11,7 +11,7 @@ Import Refinements.Op.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Unset Printing Implicit Defensives.
+Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 

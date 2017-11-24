@@ -6,7 +6,7 @@ From mathcomp Require Import choice poly polydiv mxpoly binomial.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Unset Printing Implicit Defensives.
+Unset Printing Implicit Defensive.
 
 (** This file contains definitions and lemmas that are generic enough that
 we could try to integrate them in Math Components' library.

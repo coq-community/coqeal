@@ -24,7 +24,7 @@ Import GRing.Theory.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Unset Printing Implicit Defensives.
+Unset Printing Implicit Defensive.
 
 Open Scope ring_scope.
 
