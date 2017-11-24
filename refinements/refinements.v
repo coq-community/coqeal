@@ -205,6 +205,8 @@ Qed.
 
 End refinements.
 
+Arguments refinesP {T T' R x y} _.
+
 Hint Mode refines - - - + - : typeclass_instances.
 
 Hint Extern 0 (refines _ _ _)
@@ -420,3 +422,37 @@ Ltac refines_abstr1 := eapply refines_abstr=> ???; tc.
 Ltac refines_apply := do ![refines_apply1].
 Ltac refines_abstr := do ![refines_abstr1].
 Ltac refines_trans :=  eapply refines_trans; tc.
+
+(** Automation: for proving refinement lemmas involving if-then-else's
+do [rewrite !ifE; apply refines_if_expr]. *)
+Lemma refines_if_expr
+  (A C : Type) (b1 b2 : bool) (vt1 vf1 : A) (vt2 vf2 : C) (R : A -> C -> Type) :
+  refines bool_R b1 b2 -> (b1 -> b2 -> R vt1 vt2) -> (~~ b1 -> ~~ b2 -> R vf1 vf2) ->
+  refines R (if_expr b1 vt1 vf1) (if_expr b2 vt2 vf2).
+Proof.
+move/refines_bool_eq/refinesP=> Hb; rewrite -!{}Hb => Ht Hf.
+rewrite /if_expr !refinesE; case: b1 Ht Hf => Ht Hf.
+exact: Ht.
+exact: Hf.
+Qed.
+
+Lemma optionE (A B : Type) (o : option A) (b : B) (f : A -> B) :
+  match o with
+  | Some a => f a
+  | None => b
+  end = oapp f b o.
+Proof. by []. Qed.
+
+(** Automation: for proving refinement lemmas involving options,
+do [rewrite !optionE; refines_apply]. *)
+Global Instance refines_option
+  (A B : Type) (rA : A -> A -> Type) (rB : B -> B -> Type) :
+  refines ((rA ==> rB) ==> rB ==> option_R rA ==> rB) (@oapp _ _) (@oapp _ _).
+Proof.
+rewrite refinesE => f1 f2 Hf b1 b2 Hb o1 o2 Ho.
+case: o1 Ho => [a1|]; case: o2 => [a2|] Ho //=.
+{ eapply refinesP; refines_apply; rewrite refinesE in Ho *.
+  by inversion_clear Ho. }
+{ by eapply refinesP; inversion_clear Ho. }
+{ by eapply refinesP; inversion_clear Ho. }
+Qed.
