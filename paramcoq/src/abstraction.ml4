@@ -16,10 +16,13 @@
 (*i camlp4deps: "src/parametricity.cmo" "src/declare_translation.cmo" i*)
 
 DECLARE PLUGIN "parametricity"
+
+open Ltac_plugin
+open Feedback
+open Stdarg
+open Tacarg
 open Parametricity
 open Declare_translation
-open Constrarg
-open Stdarg
 
 VERNAC COMMAND EXTEND SetParametricityTactic CLASSIFIED AS SIDEFF
 | [ "Parametricity" "Tactic" ":=" tactic(t) ] -> [
@@ -36,7 +39,7 @@ END
 
 VERNAC COMMAND EXTEND ShowParametricityTactic CLASSIFIED AS QUERY
 | [ "Show" "Parametricity" "Tactic" ] -> [
-   Pp.(Feedback.msg_info (str "Paramericity obligation tactic is " ++ Relations.print_parametricity_tactic ())) ]
+   Pp.(msg_info (str "Paramericity obligation tactic is " ++ Relations.print_parametricity_tactic ())) ]
 END
 
 VERNAC COMMAND EXTEND ParametricityDefined CLASSIFIED AS SIDEFF
@@ -46,7 +49,7 @@ VERNAC COMMAND EXTEND ParametricityDefined CLASSIFIED AS SIDEFF
 END
 
 VERNAC COMMAND EXTEND AbstractionReference CLASSIFIED AS SIDEFF
-| [ "Parametricity" reference(c) ] -> 
+| [ "Parametricity" ref(c) ] -> 
   [
     command_reference default_arity (Constrintern.intern_reference c) None  
   ]
@@ -54,13 +57,21 @@ VERNAC COMMAND EXTEND AbstractionReference CLASSIFIED AS SIDEFF
   [
     command_reference default_arity (Constrintern.intern_reference c) (Some name)
   ]
-| [ "Parametricity" reference(c) "arity" integer(arity) ] -> 
+| [ "Parametricity" reference(c) "qualified" ] -> 
+  [
+    command_reference ~fullname:true default_arity (Constrintern.intern_reference c) None
+  ]
+| [ "Parametricity" reference(c) "arity" int(arity) ] -> 
   [
     command_reference arity (Constrintern.intern_reference c) None  
   ]
-| [ "Parametricity" reference(c) "arity" integer(arity) "as" ident(name) ] ->
+| [ "Parametricity" reference(c) "arity" int(arity) "as" ident(name) ] ->
   [
     command_reference arity (Constrintern.intern_reference c) (Some name)  
+  ]
+| [ "Parametricity" reference(c) "arity" int(arity) "qualified" ] ->
+  [
+    command_reference ~fullname:true arity (Constrintern.intern_reference c) None
   ]
 | [ "Parametricity" reference(c)  "as" ident(name) "arity" integer(arity) ] -> 
   [
@@ -76,6 +87,14 @@ VERNAC COMMAND EXTEND AbstractionRecursive CLASSIFIED AS SIDEFF
 | [ "Parametricity" "Recursive" reference(c) "arity" integer(arity) ] -> 
   [
     command_reference_recursive arity (Constrintern.intern_reference c)
+  ]
+| [ "Parametricity" "Recursive" reference(c) "qualified" ] ->
+  [
+    command_reference_recursive ~fullname:true default_arity (Constrintern.intern_reference c)
+  ]
+| [ "Parametricity" "Recursive" reference(c) "arity" integer(arity) "qualified" ] ->
+  [
+    command_reference_recursive ~fullname:true arity (Constrintern.intern_reference c)
   ]
 END
 
