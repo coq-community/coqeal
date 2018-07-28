@@ -22,3 +22,18 @@ Authors
 
 Guillaume Cano,  Cyril Cohen,  Maxime Dénès, Anders  Mörtberg and Vincent
 Siles.
+
+Compilation
+===========
+
+  cd theory
+  make
+  make install
+  cd ../refinements
+  make
+  make install
+
+Dependencies
+============
+
+https://github.com/math-comp/multinomials/tree/v1.x
