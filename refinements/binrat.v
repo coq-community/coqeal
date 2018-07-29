@@ -1,6 +1,7 @@
 (** * A refinement of Mathcomp's rationals [rat] with [bigQ] from Coq standard library. *)
 
-Require Import ZArith QArith BigQ.
+Require Import ZArith QArith.
+From Bignums Require Import BigQ.
 From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat.
 From mathcomp Require Import ssralg ssrnum ssrint rat div.
 From CoqEAL.refinements Require Import hrel refinements param binint.
@@ -211,7 +212,7 @@ Proof.
 rewrite -lez_addr1 -[1%R]/(Z2int 1) -Z2int_add Z2int_le; omega.
 Qed.
 
-Lemma nat_of_pos_Z_to_pos x : nat_of_pos x = `|Z2int (' x)|%N.
+Lemma nat_of_pos_Z_to_pos x : nat_of_pos x = `|Z2int (Z.pos x)|%N.
 Proof. by rewrite /absz /Z2int. Qed.
 
 Lemma Zabs_natE n : Z.abs_nat n = `|Z2int n|%N.
@@ -237,7 +238,7 @@ apply: (iffP idP) => H.
   by apply: Zmult_le_0_reg_r H0. }
 Qed.
 
-Lemma ZgcdE n d : Z.gcd n (' d) = Z.of_nat (div.gcdn `|Z2int n| (nat_of_pos d)).
+Lemma ZgcdE n d : Z.gcd n (Z.pos d) = Z.of_nat (div.gcdn `|Z2int n| (nat_of_pos d)).
 Proof.
 apply: Z.gcd_unique.
 { exact: Zle_0_nat. }
@@ -448,9 +449,9 @@ rewrite /GRing.mul /= -!binnat.to_natE -multE -Pos2Nat.inj_mul !binnat.to_natE.
 rewrite Posz_nat_of_pos_neq0.
 case E: ((Z.ggcd _ _).2)=>/=; move: E.
 rewrite (surjective_pairing (_.2))=>[] [] <- <-.
-move: (Z_ggcd_coprime (nb * nd) (' (db * dd))).
-move: (Z.ggcd_correct_divisors (nb * nd) (' (db * dd))).
-move: (Z.ggcd_gcd (nb * nd) (' (db * dd))).
+move: (Z_ggcd_coprime (nb * nd) (Z.pos (db * dd))).
+move: (Z.ggcd_correct_divisors (nb * nd) (Z.pos (db * dd))).
+move: (Z.ggcd_gcd (nb * nd) (Z.pos (db * dd))).
 case (Z.ggcd _ _)=>g ab /= Hg; case ab=> a' b' [] /= Ha' Hb' CPab'.
 have ->: intRing.mulz (Z2int nb) (Z2int nd) = Z2int (nb * nd).
 { by rewrite Z2int_mul. }

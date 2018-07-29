@@ -14,12 +14,11 @@
 (**************************************************************************)
 
 
-open Term
+open Ltac_plugin
 open Names
+open Term
 open Globnames
 open Libobject
-
-
 
 let (set_parametricity_tactic, get_parametricity_tactic, print_parametricity_tactic) = 
     Tactic_option.declare_tactic_option "Parametricity tactic"
@@ -35,7 +34,7 @@ let relations = Summary.ref initial_relations ~name:"parametricity"
 
 let print_relations () = 
   IntMap.iter (fun n translations -> 
-   GMap.iter (fun gref c -> Pp.(Feedback.msg_info (Printer.pr_global gref))) translations
+   GMap.iter (fun gref c -> Feedback.(msg_info (Printer.pr_global gref))) translations
   ) !relations
 
 let add (n : int) f = 

@@ -13,7 +13,7 @@ install:
 - opam remote add coq-extra-dev https://coq.inria.fr/opam/extra-dev
 - opam remote add coq-core-dev  https://coq.inria.fr/opam/core-dev
 - opam remote add coq-released  https://coq.inria.fr/opam/released
-- opam pin add -y -v coq 8.6
+- opam pin add -y -v coq 8.7
 - opam list
 script:
 - opam pin add -y -vvv .
