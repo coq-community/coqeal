@@ -45,7 +45,7 @@ install:
 # The 'travis_wait' command below extends the 10 mn, no-output timeout to 20 mn
 - |
   # Building Coq...
-  travis_wait opam install -j ${NJOBS} -y ocamlfind camlp5 coq.${COQ_VERSION}
+  travis_wait opam install -j ${NJOBS} -y ocamlfind camlp5 coq.${COQ_VERSION} coq-bignums
 
 - |
   # Building Paramcoq...
