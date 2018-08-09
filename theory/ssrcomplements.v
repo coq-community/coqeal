@@ -13,25 +13,8 @@ we could try to integrate them in Math Components' library.
 Definitions and theories are gathered according to the file of the
 library which they could be moved to. *)
 
-(* Cyril : I should push these in ssr someday *)
-Section extraPP.
-
-Lemma existsPP (T : finType) (P : T -> Prop) (b : pred T) :
-   (forall x, reflect (P x) (b x)) ->
-   reflect (exists x : T, P x) [exists x, b x].
-Proof. by move=> bP; apply: (iffP existsP) => [] [Px /bP]; exists Px. Qed.
-
-Lemma forallPP (T : finType) (P : T -> Prop) (b : pred T) :
-   (forall x, reflect (P x) (b x)) ->
-   reflect (forall x : T, P x) [forall x, b x].
-Proof. by move=> bP; apply: (iffP forallP) => [] hP x; apply/bP. Qed.
-
-End extraPP.
-
-Notation "\forall_ view" := (forallPP (fun _ => view)) (at level 0).
-Notation "\exists_ view" := (existsPP (fun _ => view)) (at level 0).
-
 (** ** Informative version of [iff] *)
+
 (** As CoqEAL now puts all relations in [Type], we define a compliant
 version of [iff], named [ifft], along with view declarations *)
 Inductive ifft (A B : Type) : Type := Ifft of (A -> B) & (B -> A).
@@ -131,7 +114,7 @@ Variable T : eqType.
 
 Open Scope ring_scope.
 
-(*** This lemma is usefull to prove that \mu_x p = count (xpred1 x) s where 
+(*** This lemma is usefull to prove that \mu_x p = count (xpred1 x) s where
      s is the sequence of roots of polynomial p ***)
 Lemma prod_seq_count (s : seq T) (F : T -> R) :
   \prod_(i <- s) F i =
@@ -396,6 +379,27 @@ End MonicDivisor.
 End mon.
 
 End RPdiv.
+
+
+Section prelude.
+Variable R : comRingType.
+
+Let lreg := GRing.lreg.
+Let rreg := GRing.rreg.
+
+Lemma monic_lreg (p : {poly R}) : p \is monic -> lreg p.
+Proof. by rewrite monicE=> /eqP lp1; apply/lreg_lead; rewrite lp1; apply/lreg1. Qed.
+
+Lemma monic_rreg (p : {poly R}) : p \is monic -> rreg p.
+Proof. by rewrite monicE=> /eqP lp1; apply/rreg_lead; rewrite lp1; apply/rreg1. Qed.
+
+Lemma lregMl (a b: R) : lreg (a * b) -> lreg b.
+Proof. by move=> rab c c' eq_bc;  apply/rab; rewrite -!mulrA eq_bc. Qed.
+
+Lemma rregMr (a b: R) : rreg (a * b) -> rreg a.
+Proof. by move=> rab c c' eq_ca;  apply/rab; rewrite !mulrA eq_ca. Qed.
+
+End prelude.
 
 (****************************************************************************)
 (****************************************************************************)

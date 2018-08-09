@@ -130,7 +130,7 @@ Local Notation "A == B" := (A <= B <= A)%IS : ideal_scope.
 Lemma subidP m n (I : 'cV[R]_m) (J : 'cV[R]_n) :
   reflect (exists D, I = D *m J) (I <= J)%IS.
 Proof.
-apply: (iffP (\forall_(memberP _ _))); last first.
+apply: (iffP ('forall_(memberP _ _))); last first.
   move=> [D ->] i; exists (row i D).
   apply/matrixP => i' j'; rewrite !ord1 {i' j'} !mxE /=.
   by apply: eq_bigr => l _; rewrite !mxE.

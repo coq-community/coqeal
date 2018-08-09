@@ -1,17 +1,4 @@
-MAKEFLAGS := -r
-
-.SUFFIXES:
-
-.PHONY: clean all config tags install
-
-COQMAKEFILE := Makefile.coq
-COQMAKE := +$(MAKE) -f $(COQMAKEFILE)
-
-all: $(COQMAKEFILE)
-	$(COQMAKE) all
-
-$(COQMAKEFILE) config:
-	$(COQBIN)coq_makefile -f _CoqProject -o $(COQMAKEFILE)
+include ../Makefile.common
 
 dist:
 	mkdir CoqEAL_refinements
@@ -24,11 +11,3 @@ dist:
 	tar zcvf CoqEAL_refinements.tgz CoqEAL_refinements
 	rm -rf CoqEAL_refinements
 
-clean: $(COQMAKEFILE)
-	$(COQMAKE) clean
-
-install: $(COQMAKEFILE)
-	$(COQMAKE) install
-
-%: Makefile.coq
-	$(COQMAKE) $@

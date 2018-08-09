@@ -1,4 +1,5 @@
 -R . CoqEAL.refinements
+
 hrel.v
 param.v
 refinements.v
@@ -20,3 +21,4 @@ trivial_seq.v
 examples/irred.v
 binrat.v
 multipoly.v
+trivial_seq.v
