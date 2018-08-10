@@ -25,9 +25,10 @@ Siles.
 Compilation & Installation
 ==========================
 
+```
   make
   make install
-  
+```
 
   
 Dependencies
