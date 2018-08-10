@@ -1,12 +1,25 @@
 -R . CoqEAL.theory
+
+atomic_operations.v
+bareiss_dvdring.v
+bareiss.v
 binetcauchy.v
 coherent.v
 dvdring.v
 edr.v
 fpmod.v
+gauss.v
 kaplansky.v
+karatsuba.v
 minor.v
 mxstructure.v
+polydvd.v
+rank.v
 similar.v
-stronglydiscrete.v
+smithpid.v
+smith.v
+ssralg_ring_tac.v
 ssrcomplements.v
+strassen.v
+stronglydiscrete.v
+toomcook.v

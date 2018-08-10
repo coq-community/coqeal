@@ -5,7 +5,8 @@ From mathcomp Require Import perm fingroup choice ssralg fintype finfun poly pol
 From mathcomp Require Import bigop matrix zmodp mxalgebra.
 
 Require Import ssrcomplements dvdring mxstructure similar minor binetcauchy.
-Require Import stronglydiscrete coherent.
+Require Import stronglydiscrete.
+Require Import coherent.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

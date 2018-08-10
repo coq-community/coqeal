@@ -1,13 +1,14 @@
--R . CoqEAL_theory
-binetcauchy.v
-coherent.v
-dvdring.v
-edr.v
-fpmod.v
-hrel.v
-kaplansky.v
-minor.v
-mxstructure.v
-similar.v
-stronglydiscrete.v
-ssrcomplements.v
+-R . CoqEAL_refinements
+binint.v
+binnat.v
+karatsuba.v
+pos.v
+rational.v
+refinements.v
+seqmatrix.v
+seqpoly.v
+smith.v
+smithpid.v
+strassen.v
+pivot.v
+rank.v

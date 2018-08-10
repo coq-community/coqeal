@@ -1719,23 +1719,10 @@ Record mixin_of (R : ringType) : Type := Mixin {
   _ : forall a b, edivr_spec enorm a b (ediv a b)
 }.
 
-Module Mixins.
-
-Section Mixins.
-
-Variable R : Type.
+Module Dvd.
+Section Dvd.
+Variable R : idomainType.
 Implicit Type a b : R.
-
-Hypothesis cR : GRing.IntegralDomain.class_of R.
-
-Canonical Structure R_eqType := EqType R cR.
-Canonical Structure R_choiceType := ChoiceType R (Choice.mixin cR).
-Canonical Structure R_zmod := @GRing.Zmodule.Pack R cR R.
-Canonical Structure R_ring := @GRing.Ring.Pack R cR R.
-Canonical Structure R_com :=  @GRing.ComRing.Pack R cR R.
-Canonical Structure R_unit := @GRing.UnitRing.Pack R cR R.
-Canonical Structure R_comunit := [comUnitRingType of R].
-Canonical Structure R_idom := @GRing.IntegralDomain.Pack R cR R.
 
 Hypothesis mR : mixin_of [ringType of R].
 Local Notation norm := (enorm mR).
@@ -1780,10 +1767,26 @@ Qed.
 Lemma odiv_def a b : odiv a b = if a %% b == 0 then Some (a %/ b) else None.
 Proof. by rewrite /odiv /div; case: ediv. Qed.
 
-Definition EuclidDvd := DvdRingMixin odivP.
+Definition Mixin := DvdRingMixin odivP.
+End Dvd.
+End Dvd.
 
-Hypothesis dvdM : DvdRing.mixin_of [ringType of R].
-Canonical Structure euclidDvdRing := DvdRingType R dvdM.
+Module Gcd.
+Section Gcd.
+Variable R : dvdRingType.
+Implicit Type a b : R.
+
+Hypothesis mR : mixin_of [ringType of R].
+Local Notation norm := (enorm mR).
+Local Notation ediv := (ediv mR).
+
+Definition div a b := if b == 0 then 0 else (ediv a b).1.
+
+Local Notation "a %/ b" := (div a b) : ring_scope.
+Local Notation "a %% b" := (ediv a b).2 : ring_scope.
+Local Notation edivP := (Dvd.edivP mR).
+Local Notation norm_mul := (Dvd.norm_mul mR).
+Local Notation norm0_lt := (Dvd.norm0_lt mR).
 
 Lemma leq_norm : forall a b, b != 0 -> a %| b -> norm a <= norm b.
 Proof.
@@ -1938,11 +1941,29 @@ case b0: (b == 0).
 by move=> nb; rewrite ihk // -ltnS (leq_trans (mod_spec _ _)) ?b0.
 Qed.
 
-Definition EuclidGCD := GcdDomainMixin GCDP.
-Definition EuclidGcd := GcdDomainMixin gcdP.
+Definition AccMixin := GcdDomainMixin GCDP.
+Definition Mixin := GcdDomainMixin gcdP.
+End Gcd.
+End Gcd.
 
-Hypothesis gcdM : GcdDomain.mixin_of [dvdRingType of R].
-Canonical Structure R_gcdDomain := GcdDomainType R gcdM.
+Module Bezout.
+Section Bezout.
+
+Variable R : gcdDomainType.
+Implicit Type a b : R.
+
+Hypothesis mR : mixin_of [ringType of R].
+Local Notation norm := (enorm mR).
+Local Notation ediv := (ediv mR).
+
+Definition div a b := if b == 0 then 0 else (ediv a b).1.
+
+Local Notation "a %/ b" := (div a b) : ring_scope.
+Local Notation "a %% b" := (ediv a b).2 : ring_scope.
+Local Notation edivP := (Dvd.edivP mR).
+Local Notation norm_mul := (Dvd.norm_mul mR).
+Local Notation norm0_lt := (Dvd.norm0_lt mR).
+Local Notation norm_eq0 := (@Gcd.norm_eq0 _ mR).
 
 Fixpoint egcd_rec (a b : R) n {struct n} : R * R :=
   if n is n'.+1 then
@@ -1966,9 +1987,7 @@ Lemma egcd_recP : forall n a b, norm b <= n
   -> let e := (egcd_rec a b n) in gcdr a b %= e.1 * a + e.2 * b.
 Proof.
 elim=> [|n ihn] a b /=.
-  rewrite leqn0.
-  (* move/(norm_eq0 (eqP _)). (* <- note : why doesn't it work *) *)
-  by move/eqP; move/norm_eq0=>->; rewrite mul1r mul0r addr0 gcdr0.
+  by rewrite leqn0 => /eqP/norm_eq0->; rewrite mul1r mul0r addr0 gcdr0.
 move=> nbSn.
 case b0: (b == 0)=> /=; first by rewrite (eqP b0) mul1r mulr0 addr0 gcdr0.
 have := (ihn b (a %% b) _).
@@ -1988,39 +2007,9 @@ case H: egcd_rec=> [x y]; constructor.
 by move: (@egcd_recP _ a b (leqnn _)); rewrite H.
 Qed.
 
-Definition EuclidBezout := BezoutDomainMixin egcdP.
-
-End Mixins.
-
-End Mixins.
-
-
-Definition EuclidDvdMixin R cR (m0 : mixin_of cR) :=
-  fun bT b  & phant_id (GRing.IntegralDomain.class bT) b =>
-  fun     m & phant_id m0 m => @Mixins.EuclidDvd R b m.
-
-Definition EuclidGcdMixin R cR (m0 : mixin_of cR) :=
-  fun biT bi  & phant_id (GRing.IntegralDomain.class biT) bi =>
-  fun bdT bd  & phant_id (DvdRing.class bdT : DvdRing.mixin_of _) bd =>
-  fun     m & phant_id m0 m => @Mixins.EuclidGcd R bi m bd.
-
-
-Definition EuclidGCDMixin R cR (m0 : mixin_of cR) :=
-  fun biT bi  & phant_id (GRing.IntegralDomain.class biT) bi =>
-  fun bdT bd  & phant_id (DvdRing.class bdT : DvdRing.mixin_of _) bd =>
-  fun     m & phant_id m0 m => @Mixins.EuclidGCD R bi m bd.
-
-
-Definition EuclidBezoutMixin R cR (m0 : mixin_of cR) :=
-  fun biT bi  & phant_id (GRing.IntegralDomain.class biT) bi =>
-  fun bdT bd  & phant_id (DvdRing.class bdT : DvdRing.mixin_of _) bd =>
-  fun bgT bg  & phant_id (GcdDomain.class bgT : GcdDomain.mixin_of _) bg =>
-  fun     m & phant_id m0 m => @Mixins.EuclidBezout R bi m bd bg.
-
-Definition EuclidPIDMixin R cR (m0 : mixin_of cR) :=
-  fun biT bi  & phant_id (GRing.IntegralDomain.class biT) bi =>
-  fun bdT bd  & phant_id (DvdRing.class bdT : DvdRing.mixin_of _) bd =>
-  fun     m & phant_id m0 m => @Mixins.EuclidPID R bi m bd.
+Definition Mixin := BezoutDomainMixin egcdP.
+End Bezout.
+End Bezout.
 
 Section ClassDef.
 
@@ -2092,12 +2081,11 @@ Notation "[ 'euclidDomainType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
   (at level 0, format "[ 'euclidDomainType'  'of'  T  'for'  cT ]") : form_scope.
 Notation "[ 'euclidDomainType' 'of' T ]" := (@clone T _ _ id)
   (at level 0, format "[ 'euclidDomainType'  'of'  T ]") : form_scope.
-Notation EuclidDvdMixin T m := (@EuclidDvdMixin T _ m _ _ id _ id).
-Notation EuclidGcdMixin T m := (@EuclidGcdMixin T _ m _ _ id _ _ id _ id).
-Notation EuclidGCDMixin T m := (@EuclidGCDMixin T _ m _ _ id _ _ id _ id).
-Notation EuclidBezoutMixin T m :=
-  (@EuclidBezoutMixin T _ m _ _ id _ _ id _ _ id _ id).
-Notation EuclidPIDMixin T m := (@EuclidPIDMixin T _ m _ _ id _ _ id _ id).
+Definition EuclidDvdMixin := @Dvd.Mixin.
+Definition EuclidGcdMixin := @Gcd.Mixin.
+Definition EuclidGCDMixin := @Gcd.AccMixin.
+Definition EuclidPIDMixin := @Gcd.EuclidPID.
+Definition EuclidBezoutMixin := @Bezout.Mixin.
 End Exports.
 End EuclideanDomain.
 Export EuclideanDomain.Exports.
@@ -2109,10 +2097,9 @@ Definition enorm (R : euclidDomainType) :=
 
 
 Definition GCD (R : euclidDomainType) :=
-    EuclideanDomain.Mixins.GCD (EuclideanDomain.class R).
+    EuclideanDomain.Gcd.GCD (EuclideanDomain.class R).
 Definition ACC_GCD (R : euclidDomainType) :=
-    @EuclideanDomain.Mixins.acc_gcd _ (EuclideanDomain.class R).
-
+    @EuclideanDomain.Gcd.acc_gcd _ (EuclideanDomain.class R).
 
 Definition divr (R : euclidDomainType) (m d : R) := (edivr m d).1.
 Notation "m %/ d" := (divr m d) : ring_scope.
@@ -2138,34 +2125,34 @@ Lemma edivrP : forall a b, EuclideanDomain.edivr_spec (@enorm _) a b (edivr a b)
 Proof. by case: R=> [? [? []]]. Qed.
 
 Lemma enorm0_lt : forall a, a != 0 -> enorm (0 : R) < enorm a.
-Proof. exact: EuclideanDomain.Mixins.norm0_lt. Qed.
+Proof. exact: EuclideanDomain.Dvd.norm0_lt. Qed.
 
 Lemma leq_enorm : forall a b, b != 0 -> a %| b -> enorm a <= enorm b.
-Proof. exact: EuclideanDomain.Mixins.leq_norm. Qed.
+Proof. exact: EuclideanDomain.Gcd.leq_norm. Qed.
 
 Lemma ltn_enorm : forall a b, b != 0 -> a %<| b -> enorm a < enorm b.
-Proof. exact: EuclideanDomain.Mixins.ltn_norm. Qed.
+Proof. exact: EuclideanDomain.Gcd.ltn_norm. Qed.
 
 Lemma modr_eq0 : forall a b, (a %% b == 0) = (b %| a).
-Proof. exact: EuclideanDomain.Mixins.mod_eq0. Qed.
+Proof. exact: EuclideanDomain.Gcd.mod_eq0. Qed.
 
 Lemma enorm_eq0 : forall a, enorm a = 0%N -> a = 0.
-Proof. exact: EuclideanDomain.Mixins.norm_eq0. Qed.
+Proof. exact: EuclideanDomain.Gcd.norm_eq0. Qed.
 
 Lemma modr_spec: forall a b, b != 0 -> enorm (a %% b) < (enorm b).
-Proof. exact: EuclideanDomain.Mixins.mod_spec. Qed.
+Proof. exact: EuclideanDomain.Gcd.mod_spec. Qed.
 
 Lemma modr0 : forall a, a %% 0 = a.
-Proof. exact: EuclideanDomain.Mixins.modr0. Qed.
+Proof. exact: EuclideanDomain.Gcd.modr0. Qed.
 
 Lemma mod0r : forall a, 0 %% a = 0.
 Proof.
-apply: EuclideanDomain.Mixins.mod0r;
+apply: EuclideanDomain.Gcd.mod0r;
 exact: (DvdRing.class [dvdRingType of R]).
 Qed.
 
 Lemma dvdr_mod : forall a b d, (d %| a) && (d %| b) = (d %| b) && (d %| a %% b).
-Proof. exact: EuclideanDomain.Mixins.dvd_mod. Qed.
+Proof. exact: EuclideanDomain.Gcd.dvd_mod. Qed.
 
 Lemma divr_mulKr a b : b != 0 -> (b * a) %/ b = a.
 Proof.
