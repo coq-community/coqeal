@@ -5,6 +5,9 @@ cache:
   apt: true
   directories:
   - $HOME/.opam
+branches:
+  only:
+  - master
 addons:
   apt:
     sources:
