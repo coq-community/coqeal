@@ -1,5 +1,3 @@
--R . CoqEAL
-
 theory/atomic_operations.v
 theory/bareiss_dvdring.v
 theory/bareiss.v
@@ -23,7 +21,6 @@ theory/ssrcomplements.v
 theory/strassen.v
 theory/stronglydiscrete.v
 theory/toomcook.v
-
 refinements/hrel.v
 refinements/param.v
 refinements/refinements.v
@@ -38,10 +35,13 @@ refinements/binord.v
 refinements/seqmx.v
 refinements/seqmx_complements.v
 refinements/hpoly.v
-refinements/bareiss.v
+refinements/bareiss_eff.v
 refinements/rational.v
 refinements/boolF2.v
 refinements/trivial_seq.v
 refinements/examples/irred.v
 refinements/binrat.v
 refinements/multipoly.v
+
+-I .
+-R . CoqEAL

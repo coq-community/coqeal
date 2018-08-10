@@ -14,7 +14,7 @@ binord.v
 seqmx.v
 seqmx_complements.v
 hpoly.v
-bareiss.v
+bareiss_eff.v
 rational.v
 boolF2.v
 trivial_seq.v
