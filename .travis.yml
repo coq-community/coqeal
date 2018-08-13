@@ -1,84 +1,58 @@
 dist: trusty
 sudo: required
-language: c
-cache:
-  apt: true
-  directories:
-  - $HOME/.opam
-branches:
-  only:
-  - master
-addons:
-  apt:
-    sources:
-    - avsm
-    packages:
-    - opam
-    - aspcud
+
+language: generic
+
+services:
+  - docker
+
 env:
   global:
-  - NJOBS=3
-  - COMPILER="system"
-  # system <=> 4.02.3
-  #- PARAMCOQ_URL="https://github.com/CohenCyril/paramcoq.git"
-  - PARAMCOQ_URL="https://github.com/aa755/paramcoq.git"
+  - NJOBS="2"
   - MULTINOM_URL="https://github.com/math-comp/multinomials.git"
   - MULTINOM_VERSION="5b46e50983ee68dd1b6932e7e4a3bfc1113e7360"
-  - yellow="\\e[33;1m"
-  - dflt="\\e[0m"
+  - PARAMCOQ_URL="https://github.com/aa755/paramcoq.git"
+  - COQEAL_URL="https://github.com/CoqEAL/CoqEAL.git"
+  - COQEAL_VERSION="d205c98bc36e284759956bee6c8886d548e2e9d0"
   matrix:
-  - COQ_VERSION="8.7.2" MATHCOMP_VERSION="1.7.0" PARAMCOQ_VERSION="3a2a137cf2af356677dca06467ea2092f8021bb2"
-  - COQ_VERSION="8.8.1" MATHCOMP_VERSION="1.7.0" PARAMCOQ_VERSION="3a0fe26713c1b00c5f806aae72942242b8959de4"
-#  - COQ_VERSION="8.6.1" MATHCOMP_VERSION="1.6.1" PARAMCOQ_VERSION="8dbf3fc1a0a0e0177eb9d88f6b76b8eb0dc22889"
-#  - COQ_VERSION="8.5.3" MATHCOMP_VERSION="1.6.1" PARAMCOQ_VERSION="956d77ff6269159be5828fe8235d2e0dfb1b5987"
+  - COQ_IMAGE="erikmd/coq:8.7.2_mathcomp-1.7.0" PARAMCOQ_VERSION="v1.1.0"
+  - COQ_IMAGE="erikmd/coq:8.8.1_mathcomp-1.7.0" PARAMCOQ_VERSION="v1.1.0"
 
-matrix:
-  allow_failures:
-  - env: COQ_VERSION="8.5.3" MATHCOMP_VERSION="1.6.1" PARAMCOQ_VERSION="956d77ff6269159be5828fe8235d2e0dfb1b5987"
-  # (refinements.v + Coq 8.5 => "Error: Unable to locate library ssrmatching.")
-  fast_finish: true
-
-install:
-- opam init -j ${NJOBS} --compiler=${COMPILER} -n -y
-- opam config env && eval $(opam config env)
-- opam config var root
-- opam repo add coq-released https://coq.inria.fr/opam/released || true
-- opam update
-- opam repo list
-# The 'travis_wait' command below extends the 10 mn, no-output timeout to 20 mn
-- |
-  # Building Coq...
-  travis_wait opam install -j ${NJOBS} -y ocamlfind camlp5 coq.${COQ_VERSION} coq-bignums
-
-- |
-  # Building Paramcoq...
-  if [ -d paramcoq ] && [ -z "${PARAMCOQ_VERSION}" ]; then
-      echo '# Building BUNDLED version of paramcoq...'
-      pushd paramcoq && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install && popd
-  else
-      echo '# CLONING and building paramcoq...'
-      git clone -n ${PARAMCOQ_URL} $HOME/paramcoq
-      if [ -n "${PARAMCOQ_VERSION}" ]; then
-          pushd $HOME/paramcoq && git checkout ${PARAMCOQ_VERSION} && popd
-      fi
-      pushd $HOME/paramcoq && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install && popd
-  fi
-
-# The '-v' flag below is another solution to avoid the 10 mn, no-output timeout
-- |
-  # Building Mathcomp...
-  opam install -j ${NJOBS} -y -v coq.${COQ_VERSION} coq-mathcomp-field.${MATHCOMP_VERSION}
-
-- opam list
-
-- |
-  # Building Multinomials...
-  git clone -n ${MULTINOM_URL} $HOME/multinom
-  pushd $HOME/multinom && git checkout ${MULTINOM_VERSION} && popd
-  pushd $HOME/multinom && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install && popd
+install: |
+  # Prepare the coq-deps docker image with all dependencies
+  # In case of no-output timeout, prepend "travis_wait" to:
+  docker run --name=COQ ${COQ_IMAGE} /bin/bash --login -c "
+    # this bash script is double-quoted to interpolate Travis CI env vars:
+    echo \"Build triggered by ${TRAVIS_EVENT_TYPE}\"
+    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
+    set -e # exit on failure
+    set -x # trace for debug
+    : Building coq-bignums...
+    opam install -y -j ${NJOBS} coq-bignums
+    opam config list && opam list
+    : Building Multinomials...
+    git clone -n ${MULTINOM_URL} ~coq/multinomials
+    cd ~coq/multinomials
+    git checkout ${MULTINOM_VERSION}
+    make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install
+    : Building Paramcoq...
+    git clone -n ${PARAMCOQ_URL} ~coq/paramcoq
+    cd ~coq/paramcoq
+    git checkout ${PARAMCOQ_VERSION}
+    make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install
+    echo 'Install done.'"
+  docker commit COQ coq-deps
+  docker rm COQ
 
 script:
-- echo -e "${yellow}Building CoqEAL...${dflt}" && echo -en 'travis_fold:start:coqeal.build\\r'
-- pushd theory && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && popd
-- pushd refinements && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} COQLIBS="-R ../theory CoqEAL.theory -R . CoqEAL.refinements" all && popd
+- echo -e "${ANSI_YELLOW}Building CoqEAL...${ANSI_RESET}" && echo -en 'travis_fold:start:coqeal.build\\r'
+- |
+  docker run --rm -v ${TRAVIS_BUILD_DIR}:/home/coq/coqeal coq-deps /bin/bash --login -c "
+    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
+    set -e # exit on failure
+    set -x # trace for debug
+    sudo chown -R coq:coq ~coq/coqeal
+    cd ~coq/coqeal
+    pushd theory && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install && popd
+    pushd refinements && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} && make install && popd"
 - echo -en 'travis_fold:end:coqeal.build\\r'
