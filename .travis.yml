@@ -12,9 +12,10 @@ env:
   - MULTINOM_URL="https://github.com/math-comp/multinomials.git"
   - MULTINOM_VERSION="5b46e50983ee68dd1b6932e7e4a3bfc1113e7360"
   - PARAMCOQ_URL="https://github.com/aa755/paramcoq.git"
+  - PARAMCOQ_VERSION="v1.1.0"
   matrix:
-  - COQ_IMAGE="erikmd/coq:8.7.2_mathcomp-1.7.0" PARAMCOQ_VERSION="v1.1.0"
-  - COQ_IMAGE="erikmd/coq:8.8.1_mathcomp-1.7.0" PARAMCOQ_VERSION="v1.1.0"
+  - COQ_IMAGE="erikmd/coq:8.7.2_mathcomp-1.7.0" 
+  - COQ_IMAGE="erikmd/coq:8.8.1_mathcomp-1.7.0"
 
 install: |
   # Prepare the coq-deps docker image with all dependencies
