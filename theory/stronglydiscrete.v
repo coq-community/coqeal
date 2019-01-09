@@ -120,8 +120,7 @@ Section IdealTheory.
 Definition subid m n (I : 'cV[R]_m) (J : 'cV[R]_n) : bool :=
   [forall i, member (I i 0) J].
 
-Arguments Scope subid
-  [nat_scope nat_scope ideal_scope ideal_scope].
+Arguments subid m%nat_scope n%nat_scope I%ideal_scope J%ideal_scope.
 Prenex Implicits subid.
 Local Notation "A <= B" := (subid A B) : ideal_scope.
 Local Notation "A <= B <= C" := ((A <= B) && (B <= C))%IS : ideal_scope.
