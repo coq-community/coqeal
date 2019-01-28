@@ -46,6 +46,9 @@ Global Instance lt_ord n : lt_of (binord n) := N.ltb.
 Global Instance implem_ord n : implem_of 'I_n (binord n) :=
   fun x => implem (x : nat).
 
+Definition in_ord n : N -> binord n :=
+  fun x => N.modulo x (implem n).
+
 End binord_op.
 
 Section binord_theory.
@@ -178,5 +181,12 @@ Qed.
 Global Instance Rnat_nat_of_ord n1 n2 (rn : nat_R n1 n2) :
   refines (Rord rn ==> Rnat) (@nat_of_ord n1) id.
 Proof. by rewrite refinesE. Qed.
+
+Global Instance Rord_in n1 n2 (rn : nat_R n1.+1 n2.+1) :
+  refines (Rnat ==> Rord rn) inZp (@in_ord n2.+1).
+Proof.
+eapply refines_abstr => a b Rab.
+by rewrite refinesE /Rord /inZp /= /in_ord; apply: refinesP.
+Qed.
 
 End binord_theory.
