@@ -13,6 +13,12 @@ env:
   matrix:
   - COQ_IMAGE="mathcomp/mathcomp:1.7.0-coq-8.7"
   - COQ_IMAGE="mathcomp/mathcomp:1.7.0-coq-8.8"
+  - COQ_IMAGE="mathcomp/mathcomp:1.7.0-coq-8.9"
+  - COQ_IMAGE="mathcomp/mathcomp:1.7.0-coq-dev"
+  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.7"
+  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.8"
+  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.9"
+  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-dev"
 
 install: |
   # Prepare the COQ container
@@ -35,14 +41,13 @@ install: |
     : done" install
 
 script:
-- echo -e "${ANSI_YELLOW}Building CoqEAL...${ANSI_RESET}" && echo -en 'travis_fold:start:script\\r'
+- echo -e "${ANSI_YELLOW}Building ${CONTRIB_NAME}...${ANSI_RESET}" && echo -en 'travis_fold:start:script\\r'
 - |
-  # In case of no-output timeout, prepend "travis_wait" to:
   docker exec COQ /bin/bash --login -c "
     export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
     set -ex
-    pushd theory && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install && popd
-    pushd refinements && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} && make install && popd
+    ( pushd theory && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install && popd )
+    ( pushd refinements && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} && make install && popd )
     : done" script
 - docker stop COQ  # optional
 - echo -en 'travis_fold:end:script\\r'
