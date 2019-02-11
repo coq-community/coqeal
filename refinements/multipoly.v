@@ -1826,7 +1826,7 @@ eapply IHt.
 - rewrite -H2 -H4; exact: Heqs.
 Qed.
 
-Global Instance refine_filter A B (rAB : A -> B -> Type) :
+Global Instance refine_filter A' B (rAB : A' -> B -> Type) :
   refines ((rAB ==> eq) ==> list_R rAB ==> list_R rAB)
     filter filter.
 Proof.

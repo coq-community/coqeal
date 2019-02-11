@@ -10,7 +10,7 @@ Import GRing.Theory.
 
 Global Instance Rops:
   @Ring_ops R 0%R 1%R (@GRing.add R) (@GRing.mul R)
-            (fun a b : R => a - b)%R (@GRing.opp R) eq.
+            (fun a b : R => a - b)%R (@GRing.opp R) eq := {}.
 
 Global Instance R_is_ring: (@Ring _ _ _ _ _ _ _ _ Rops).
 constructor=> //.
@@ -31,10 +31,10 @@ constructor=> //.
 Qed.
 
 Global Instance matrix_ops (R : ringType) (n : nat) : @Ring_ops 'M[R]_n 0%R
-  (scalar_mx 1) (@addmx R _ _) mulmx (fun M N => addmx M (oppmx N)) (@oppmx R _ _) eq.
+  (scalar_mx 1) (@addmx R _ _) mulmx (fun M N => addmx M (oppmx N)) (@oppmx R _ _) eq := {}.
 
-Global Instance matrix_is_ring (R : ringType) (n : nat) :
-  (@Ring _ _ _ _ _ _ _ _ (matrix_ops R n)).
+Global Instance matrix_is_ring (R' : ringType) (n : nat) :
+  (@Ring _ _ _ _ _ _ _ _ (matrix_ops R' n)).
 Proof.
 constructor=> //.
   + exact:eq_equivalence.
