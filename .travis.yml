@@ -34,7 +34,12 @@ install: |
     opam update -y
     : Installing OPAM deps
     sudo chown -R coq:coq /home/coq/${CONTRIB_NAME}
-    opam install -y -j ${NJOBS} coq-mathcomp-multinomials coq-paramcoq
+    opam install -y -j ${NJOBS} coq-paramcoq
+    if [[ "${COQ_IMAGE}" =~ "mathcomp-dev" ]]; then
+      opam install -y -j ${NJOBS} --ignore-constraints-on=coq-mathcomp-ssreflect,coq-mathcomp-algebra coq-mathcomp-multinomials
+    else
+      opam install -y -j ${NJOBS} coq-mathcomp-multinomials 
+    fi
     opam config list
     opam repo list
     opam list
