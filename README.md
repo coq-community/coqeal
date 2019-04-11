@@ -32,6 +32,7 @@ opam install coq-mathcomp-ssreflect
 Dependencies
 ============
 
+```
 coq >= 8.7
 coq-paramcoq >= 1.1.1
 coq-mathcomp-ssreflect >= 1.8.0
@@ -40,3 +41,4 @@ coq-mathcomp-algebra >= 1.8.0
 coq-mathcomp-finmap >= 1.2.0
 coq-mathcomp-bigenough >= 1.0.0
 coq-mathcomp-multinomials >= 1.2
+```
