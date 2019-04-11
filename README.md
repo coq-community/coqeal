@@ -7,11 +7,11 @@ This archive is split across four directories:
 
 - theory (package  CoqEAL.theory): which contains  formal developments
   in algebra and optimized algorithms on mathcomp data structures.
-  More documentation in the dedicated [README.md](theory/README.md).
+  More documentation in the dedicated [README](theory/README.md).
 
 - refinements (package  CoqEAL.refinements): which is a framework to
   ease change of data representation during a proof.
-  More documentation in the dedicated [README.md](refinements/README.md).
+  More documentation in the dedicated [README](refinements/README.md).
 
 - doc: tools for generating documentation out of local documentation.
 
@@ -46,7 +46,6 @@ coq-mathcomp-bigenough >= 1.0.0
 coq-mathcomp-multinomials >= 1.2
 ```
 
-======================================================================
 License
--------
-This software is distributed under MIT license (see LICENSE file)
+============
+This software is distributed under MIT license (see [LICENSE](LICENSE) file)
