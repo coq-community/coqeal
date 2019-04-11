@@ -29,7 +29,7 @@ Compilation & Installation
 Assuming your opam is installed and initialized
 ```
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam install coq-mathcomp-ssreflect
+opam install coq-coqeal
 ```
 
 Dependencies
