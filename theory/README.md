@@ -1,5 +1,5 @@
-    The Coq Effective Algebra Library - CoqEAL - Theory Package
-======================================================================
+CoqEAL - Theory Package
+=======================
 
 Content
 -------
