@@ -1,7 +1,10 @@
 dist: trusty
 sudo: required
-
 language: generic
+
+branches:
+  only:
+  - master
 
 services:
   - docker
@@ -11,8 +14,12 @@ env:
   - NJOBS="2"
   - CONTRIB_NAME="CoqEAL"
   matrix:
-  - COQ_IMAGE="mathcomp/mathcomp:1.7.0-coq-8.7"
-  - COQ_IMAGE="mathcomp/mathcomp:1.7.0-coq-8.8"
+  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-8.7"
+  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-8.8"
+#  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-dev"
+  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.7"
+  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.8"
+#  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-dev"
 
 install: |
   # Prepare the COQ container
@@ -24,14 +31,17 @@ install: |
     echo \"Build triggered by ${TRAVIS_EVENT_TYPE}\"
     export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
     set -ex  # -e = exit on failure; -x = trace for debug
+    # Using flambda makes sense here as we usually get ~10% faster
+    # builds in math-comp.
+    opam switch \$COMPILER_EDGE
+    eval \$(opam env)
     : Updating OPAM cache
     opam update -y
     : Installing OPAM deps
     sudo chown -R coq:coq /home/coq/${CONTRIB_NAME}
-    opam install -y -j ${NJOBS} coq-mathcomp-multinomials coq-paramcoq
-    opam config list
-    opam repo list
-    opam list
+    opam pin add -y -n coq-coqeal .
+    # install deps only
+    opam install -y -vvv --deps-only coq-coqeal
     : done" install
 
 script:
@@ -41,8 +51,8 @@ script:
   docker exec COQ /bin/bash --login -c "
     export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
     set -ex
-    pushd theory && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} all && make install && popd
-    pushd refinements && make Makefile.coq && make -f Makefile.coq -j ${NJOBS} && make install && popd
+    eval \$(opam env)
+    opam install -y -vvv coq-coqeal
     : done" script
 - docker stop COQ  # optional
 - echo -en 'travis_fold:end:script\\r'

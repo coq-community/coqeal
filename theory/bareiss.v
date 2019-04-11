@@ -58,7 +58,8 @@ Section bareiss.
 
 Variable R : comRingType.
 
-Fixpoint bareiss_rec m (a : {poly R}) : 'M_(1 + m, 1 + m) -> {poly R} :=
+Fixpoint bareiss_rec m (a : {poly R}) :
+   'M[{poly R}]_(1 + m, 1 + m) -> {poly R} :=
   match m with
     | S p => fun M =>
       let d   := M 0 0 in

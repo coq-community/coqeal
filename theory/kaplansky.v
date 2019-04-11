@@ -79,7 +79,7 @@ Definition smithmxn m n : 'M[R]_(m,n) -> 'M[R]_m * seq R * 'M[R]_n :=
 
 End Smith2x2.
 
-Let simplmx := (mulmx1,mul1mx,mul0mx,mulmx0,addr0,add0r).
+Definition simplmx := (mulmx1,mul1mx,mul0mx,mulmx0,addr0,add0r).
 
 Section Smith2x2_correctness.
 

@@ -31,30 +31,30 @@ Section ClassDef.
 (** Coherent rings are based on strongly discrete rings *)
 Record class_of (R : Type) : Type := Class {
   base  : StronglyDiscrete.class_of R;
-  mixin : mixin_of (StronglyDiscrete.Pack base R)
+  mixin : mixin_of (StronglyDiscrete.Pack base)
 }.
 Local Coercion base : class_of >-> StronglyDiscrete.class_of.
 
-Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
+Structure type : Type := Pack {sort : Type; _ : class_of sort}.
 Local Coercion sort : type >-> Sortclass.
 
 Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c _ := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c T.
+Definition class := let: Pack _ c := cT return class_of cT in c.
+Definition clone c of phant_id class c := @Pack T c.
 
-Definition pack b0 (m0 : mixin_of (@StronglyDiscrete.Pack T b0 T)) :=
+Definition pack b0 (m0 : mixin_of (@StronglyDiscrete.Pack T b0)) :=
   fun bT b & phant_id (StronglyDiscrete.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m) T.
+  fun    m & phant_id m m0 => Pack (@Class T b m).
 
-Definition eqType := Equality.Pack class cT.
-Definition choiceType := Choice.Pack class cT.
-Definition zmodType := GRing.Zmodule.Pack class cT.
-Definition ringType := GRing.Ring.Pack class cT.
-Definition comRingType := GRing.ComRing.Pack class cT.
-Definition unitRingType := GRing.UnitRing.Pack class cT.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
-Definition idomainType := GRing.IntegralDomain.Pack class cT.
-Definition stronglyDiscreteType := StronglyDiscrete.Pack class cT.
+Definition eqType := Equality.Pack class.
+Definition choiceType := Choice.Pack class.
+Definition zmodType := GRing.Zmodule.Pack class.
+Definition ringType := GRing.Ring.Pack class.
+Definition comRingType := GRing.ComRing.Pack class.
+Definition unitRingType := GRing.UnitRing.Pack class.
+Definition comUnitRingType := GRing.ComUnitRing.Pack class.
+Definition idomainType := GRing.IntegralDomain.Pack class.
+Definition stronglyDiscreteType := StronglyDiscrete.Pack class.
 
 End ClassDef.
 
