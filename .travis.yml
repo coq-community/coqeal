@@ -16,9 +16,11 @@ env:
   matrix:
   - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-8.7"
   - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-8.8"
+  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-8.9"
 #  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-dev"
   - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.7"
   - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.8"
+  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.9"
 #  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-dev"
 
 install: |
