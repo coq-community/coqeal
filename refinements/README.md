@@ -1,5 +1,5 @@
-   The Coq Effective Algebra Library - CoqEAL - Refinements Package
-======================================================================
+CoqEAL - Refinements Package
+============================
 
 Content
 -------
