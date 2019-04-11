@@ -36,30 +36,30 @@ Section ClassDef.
 (** EDRs are based on dvdrings *)
 Record class_of (R : Type) : Type := Class {
   base  : DvdRing.class_of R;
-  mixin : mixin_of (DvdRing.Pack base R)
+  mixin : mixin_of (DvdRing.Pack base)
 }.
 Local Coercion base : class_of >-> DvdRing.class_of.
 
-Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
+Structure type : Type := Pack {sort : Type; _ : class_of sort}.
 Local Coercion sort : type >-> Sortclass.
 
 Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c _ := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c T.
+Definition class := let: Pack _ c := cT return class_of cT in c.
+Definition clone c of phant_id class c := @Pack T c.
 
-Definition pack b0 (m0 : mixin_of (@DvdRing.Pack T b0 T)) :=
+Definition pack b0 (m0 : mixin_of (@DvdRing.Pack T b0)) :=
   fun bT b & phant_id (DvdRing.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m) T.
+  fun    m & phant_id m m0 => Pack (@Class T b m) .
 
-Definition eqType := Equality.Pack class cT.
-Definition choiceType := Choice.Pack class cT.
-Definition zmodType := GRing.Zmodule.Pack class cT.
-Definition ringType := GRing.Ring.Pack class cT.
-Definition comRingType := GRing.ComRing.Pack class cT.
-Definition unitRingType := GRing.UnitRing.Pack class cT.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
-Definition idomainType := GRing.IntegralDomain.Pack class cT.
-Definition dvdRingType := DvdRing.Pack class cT.
+Definition eqType := Equality.Pack class.
+Definition choiceType := Choice.Pack class.
+Definition zmodType := GRing.Zmodule.Pack class.
+Definition ringType := GRing.Ring.Pack class.
+Definition comRingType := GRing.ComRing.Pack class.
+Definition unitRingType := GRing.UnitRing.Pack class.
+Definition comUnitRingType := GRing.ComUnitRing.Pack class.
+Definition idomainType := GRing.IntegralDomain.Pack class.
+Definition dvdRingType := DvdRing.Pack class.
 
 End ClassDef.
 
@@ -462,12 +462,12 @@ rewrite conform_mx_id in Hseq.
 have HdivmA p q k1 (B C : 'M[R]_(p,q)) (M1 : 'M_p) (N1 : 'M_q) :
    forall (H : M1 *m C *m N1 = B),
    forall (f : 'I_k1 -> 'I_p) (g : 'I_k1 -> 'I_q),
-   \big[(@gcdr gcdType)/0]_(f0 : {ffun 'I_k1 -> _})
-    \big[(@gcdr gcdType)/0]_(g0 : {ffun 'I_k1 -> _}) minor f0 g0 C
+   \big[(@gcdr gcdType)/0]_(f0 : {ffun 'I_k1 -> 'I_p})
+    \big[(@gcdr gcdType)/0]_(g0 : {ffun 'I_k1 -> 'I_q}) minor f0 g0 C
     %| minor f g B.
   move=> H f g.
-  have HBC: minor f g B =  \sum_(f0 : {ffun _ -> _ } | strictf f0)
-                 ((\sum_(g0 : {ffun _ -> _ } | strictf g0)
+  have HBC: minor f g B =  \sum_(f0 : {ffun 'I__ -> 'I__ } | strictf f0)
+                 ((\sum_(g0 : {ffun 'I__ -> 'I__ } | strictf g0)
                   (minor id g0 (submatrix f id M1) * minor g0 f0 C)) *
                    minor f0 id (submatrix id g N1)).
     rewrite -H /minor submatrix_mul BinetCauchy.

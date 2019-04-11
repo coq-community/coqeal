@@ -61,29 +61,29 @@ Section ClassDef.
 
 Record class_of (R : Type) : Type := Class {
   base  : GRing.IntegralDomain.class_of R;
-  mixin : mixin_of (GRing.IntegralDomain.Pack base R)
+  mixin : mixin_of (GRing.IntegralDomain.Pack base)
 }.
 Local Coercion base : class_of >-> GRing.IntegralDomain.class_of.
 
-Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
+Structure type : Type := Pack {sort : Type; _ : class_of sort}.
 Local Coercion sort : type >-> Sortclass.
 
 Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c _ := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c T.
+Definition class := let: Pack _ c := cT return class_of cT in c.
+Definition clone c of phant_id class c := @Pack T c.
 
-Definition pack b0 (m0 : mixin_of (@GRing.IntegralDomain.Pack T b0 T)) :=
+Definition pack b0 (m0 : mixin_of (@GRing.IntegralDomain.Pack T b0)) :=
   fun bT b & phant_id (GRing.IntegralDomain.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m) T.
+  fun    m & phant_id m m0 => Pack (@Class T b m).
 
-Definition eqType := Equality.Pack class cT.
-Definition choiceType := Choice.Pack class cT.
-Definition zmodType := GRing.Zmodule.Pack class cT.
-Definition ringType := GRing.Ring.Pack class cT.
-Definition comRingType := GRing.ComRing.Pack class cT.
-Definition unitRingType := GRing.UnitRing.Pack class cT.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
-Definition idomainType := GRing.IntegralDomain.Pack class cT.
+Definition eqType := Equality.Pack class.
+Definition choiceType := Choice.Pack class.
+Definition zmodType := GRing.Zmodule.Pack class.
+Definition ringType := GRing.Ring.Pack class.
+Definition comRingType := GRing.ComRing.Pack class.
+Definition unitRingType := GRing.UnitRing.Pack class.
+Definition comUnitRingType := GRing.ComUnitRing.Pack class.
+Definition idomainType := GRing.IntegralDomain.Pack class.
 
 End ClassDef.
 
@@ -678,31 +678,31 @@ Section ClassDef.
 
 Record class_of (R : Type) : Type := Class {
   base  : DvdRing.class_of R;
-  mixin : mixin_of (DvdRing.Pack base R)
+  mixin : mixin_of (DvdRing.Pack base)
 }.
 Local Coercion base : class_of >-> DvdRing.class_of.
 
 (* Structure = Record *)
-Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
+Structure type : Type := Pack {sort : Type; _ : class_of sort}.
 Local Coercion sort : type >-> Sortclass.
 
 Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c _ := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c T.
+Definition class := let: Pack _ c := cT return class_of cT in c.
+Definition clone c of phant_id class c := @Pack T c.
 
-Definition pack b0 (m0 : mixin_of (@DvdRing.Pack T b0 T)) :=
+Definition pack b0 (m0 : mixin_of (@DvdRing.Pack T b0)) :=
   fun bT b & phant_id (DvdRing.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m) T.
+  fun    m & phant_id m m0 => Pack (@Class T b m).
 
-Definition eqType := Equality.Pack class cT.
-Definition choiceType := Choice.Pack class cT.
-Definition zmodType := GRing.Zmodule.Pack class cT.
-Definition ringType := GRing.Ring.Pack class cT.
-Definition comRingType := GRing.ComRing.Pack class cT.
-Definition unitRingType := GRing.UnitRing.Pack class cT.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
-Definition idomainType := GRing.IntegralDomain.Pack class cT.
-Definition dvdRingType := DvdRing.Pack class cT.
+Definition eqType := Equality.Pack class.
+Definition choiceType := Choice.Pack class.
+Definition zmodType := GRing.Zmodule.Pack class.
+Definition ringType := GRing.Ring.Pack class.
+Definition comRingType := GRing.ComRing.Pack class.
+Definition unitRingType := GRing.UnitRing.Pack class.
+Definition comUnitRingType := GRing.ComUnitRing.Pack class.
+Definition idomainType := GRing.IntegralDomain.Pack class.
+Definition dvdRingType := DvdRing.Pack class.
 
 End ClassDef.
 
@@ -1287,31 +1287,31 @@ Section ClassDef.
 
 Record class_of (R : Type) : Type := Class {
   base  : GcdDomain.class_of R;
-  mixin : mixin_of (GcdDomain.Pack base R)
+  mixin : mixin_of (GcdDomain.Pack base)
 }.
 Local Coercion base : class_of >-> GcdDomain.class_of.
 
-Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
+Structure type : Type := Pack {sort : Type; _ : class_of sort}.
 Local Coercion sort : type >-> Sortclass.
 
 Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c _ := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c T.
+Definition class := let: Pack _ c := cT return class_of cT in c.
+Definition clone c of phant_id class c := @Pack T c.
 
-Definition pack b0 (m0 : mixin_of (@GcdDomain.Pack T b0 T)) :=
+Definition pack b0 (m0 : mixin_of (@GcdDomain.Pack T b0)) :=
   fun bT b & phant_id (GcdDomain.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m) T.
+  fun    m & phant_id m m0 => Pack (@Class T b m).
 
-Definition eqType := Equality.Pack class cT.
-Definition choiceType := Choice.Pack class cT.
-Definition zmodType := GRing.Zmodule.Pack class cT.
-Definition ringType := GRing.Ring.Pack class cT.
-Definition comRingType := GRing.ComRing.Pack class cT.
-Definition unitRingType := GRing.UnitRing.Pack class cT.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
-Definition idomainType := GRing.IntegralDomain.Pack class cT.
-Definition dvdRingType := DvdRing.Pack class cT.
-Definition gcdDomainType := GcdDomain.Pack class cT.
+Definition eqType := Equality.Pack class.
+Definition choiceType := Choice.Pack class.
+Definition zmodType := GRing.Zmodule.Pack class.
+Definition ringType := GRing.Ring.Pack class.
+Definition comRingType := GRing.ComRing.Pack class.
+Definition unitRingType := GRing.UnitRing.Pack class.
+Definition comUnitRingType := GRing.ComUnitRing.Pack class.
+Definition idomainType := GRing.IntegralDomain.Pack class.
+Definition dvdRingType := DvdRing.Pack class.
+Definition gcdDomainType := GcdDomain.Pack class.
 
 End ClassDef.
 
@@ -1624,32 +1624,32 @@ Section ClassDef.
 
 Record class_of (R : Type) : Type := Class {
   base  : BezoutDomain.class_of R;
-  mixin : mixin_of (DvdRing.Pack base R)
+  mixin : mixin_of (DvdRing.Pack base)
 }.
 Local Coercion base : class_of >-> BezoutDomain.class_of.
 
-Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
+Structure type : Type := Pack {sort : Type; _ : class_of sort}.
 Local Coercion sort : type >-> Sortclass.
 
 Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c _ := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c T.
+Definition class := let: Pack _ c := cT return class_of cT in c.
+Definition clone c of phant_id class c := @Pack T c.
 
-Definition pack b0 (m0 : mixin_of (@DvdRing.Pack T b0 T)) :=
+Definition pack b0 (m0 : mixin_of (@DvdRing.Pack T b0)) :=
   fun bT b & phant_id (BezoutDomain.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m) T.
+  fun    m & phant_id m m0 => Pack (@Class T b m).
 
-Definition eqType := Equality.Pack class cT.
-Definition choiceType := Choice.Pack class cT.
-Definition zmodType := GRing.Zmodule.Pack class cT.
-Definition ringType := GRing.Ring.Pack class cT.
-Definition comRingType := GRing.ComRing.Pack class cT.
-Definition unitRingType := GRing.UnitRing.Pack class cT.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
-Definition idomainType := GRing.IntegralDomain.Pack class cT.
-Definition dvdRingType := DvdRing.Pack class cT.
-Definition gcdDomainType := GcdDomain.Pack class cT.
-Definition bezoutDomainType := BezoutDomain.Pack class cT.
+Definition eqType := Equality.Pack class.
+Definition choiceType := Choice.Pack class.
+Definition zmodType := GRing.Zmodule.Pack class.
+Definition ringType := GRing.Ring.Pack class.
+Definition comRingType := GRing.ComRing.Pack class.
+Definition unitRingType := GRing.UnitRing.Pack class.
+Definition comUnitRingType := GRing.ComUnitRing.Pack class.
+Definition idomainType := GRing.IntegralDomain.Pack class.
+Definition dvdRingType := DvdRing.Pack class.
+Definition gcdDomainType := GcdDomain.Pack class.
+Definition bezoutDomainType := BezoutDomain.Pack class.
 
 End ClassDef.
 
@@ -2015,33 +2015,33 @@ Section ClassDef.
 
 Record class_of (R : Type) : Type := Class {
   base  : PID.class_of R;
-  mixin : mixin_of (GRing.Ring.Pack base R)
+  mixin : mixin_of (GRing.Ring.Pack base)
 }.
 Local Coercion base : class_of >-> PID.class_of.
 
-Structure type : Type := Pack {sort : Type; _ : class_of sort; _ : Type}.
+Structure type : Type := Pack {sort : Type; _ : class_of sort}.
 Local Coercion sort : type >-> Sortclass.
 
 Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c _ := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c T.
+Definition class := let: Pack _ c := cT return class_of cT in c.
+Definition clone c of phant_id class c := @Pack T c.
 
-Definition pack b0 (m0 : mixin_of (@GRing.Ring.Pack T b0 T)) :=
+Definition pack b0 (m0 : mixin_of (@GRing.Ring.Pack T b0)) :=
   fun bT b & phant_id (PID.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m) T.
+  fun    m & phant_id m m0 => Pack (@Class T b m).
 
-Definition eqType := Equality.Pack class cT.
-Definition choiceType := Choice.Pack class cT.
-Definition zmodType := GRing.Zmodule.Pack class cT.
-Definition ringType := GRing.Ring.Pack class cT.
-Definition comRingType := GRing.ComRing.Pack class cT.
-Definition unitRingType := GRing.UnitRing.Pack class cT.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class cT.
-Definition idomainType := GRing.IntegralDomain.Pack class cT.
-Definition dvdRingType := DvdRing.Pack class cT.
-Definition gcdDomainType := GcdDomain.Pack class cT.
-Definition bezoutDomainType := BezoutDomain.Pack class cT.
-Definition pidType := PID.Pack class cT.
+Definition eqType := Equality.Pack class.
+Definition choiceType := Choice.Pack class.
+Definition zmodType := GRing.Zmodule.Pack class.
+Definition ringType := GRing.Ring.Pack class.
+Definition comRingType := GRing.ComRing.Pack class.
+Definition unitRingType := GRing.UnitRing.Pack class.
+Definition comUnitRingType := GRing.ComUnitRing.Pack class.
+Definition idomainType := GRing.IntegralDomain.Pack class.
+Definition dvdRingType := DvdRing.Pack class.
+Definition gcdDomainType := GcdDomain.Pack class.
+Definition bezoutDomainType := BezoutDomain.Pack class.
+Definition pidType := PID.Pack class.
 
 End ClassDef.
 
