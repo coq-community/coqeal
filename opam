@@ -31,3 +31,6 @@ This libary contains a subset of the work that was developed in the context of t
 - theory (module CoqEAL_theory), which contains formal developments in algebra and optimized algorithms on mathcomp data structures.
 - refinements (module CoqEAL_refinements), which is a framework to ease change of data representation during a proof.
 """
+url {
+  src: "git+https://github.com/CoqEAL/CoqEAL.git"
+}

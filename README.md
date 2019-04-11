@@ -3,16 +3,19 @@ CoqEAL - The Coq Effective Algebra Library
 
 This repository contains a subset of the work that was developed in
 the context of the ForMath european project (2009-2013), and was extended afterwards.
-This archive is split in four parts:
+This archive is split across four directories:
 
-- theory (package  CoqEAL.theory), which contains  formal developments
+- theory (package  CoqEAL.theory): which contains  formal developments
   in algebra and optimized algorithms on mathcomp data structures.
+  More documentation in the dedicated [README.md](theory/README.md).
 
-- refinements (package  CoqEAL.refinements), which is a framework to 
+- refinements (package  CoqEAL.refinements): which is a framework to
   ease change of data representation during a proof.
+  More documentation in the dedicated [README.md](refinements/README.md).
 
-- doc, tools for generating documentation out of local documentation.
+- doc: tools for generating documentation out of local documentation.
 
+- releases: archives of pre-GitHub releases
 
 Authors
 =======
@@ -28,7 +31,7 @@ Assuming your opam is installed and initialized
 opam repo add coq-released https://coq.inria.fr/opam/released
 opam install coq-mathcomp-ssreflect
 ```
-  
+
 Dependencies
 ============
 
@@ -42,3 +45,8 @@ coq-mathcomp-finmap >= 1.2.0
 coq-mathcomp-bigenough >= 1.0.0
 coq-mathcomp-multinomials >= 1.2
 ```
+
+======================================================================
+License
+-------
+This software is distributed under MIT license (see LICENSE file)
