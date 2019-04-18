@@ -326,7 +326,7 @@ Qed.
 Definition Rhpoly : {poly A} -> hpoly A -> Type := fun_hrel to_poly.
 
 (* This is OK here, but not everywhere *)
-Instance refines_eq_refl A (x : A) : refines Logic.eq x x | 999.
+Instance refines_eq_refl A' (x : A') : refines Logic.eq x x | 999.
 Proof. by rewrite refinesE. Qed.
 
 Lemma RhpolyE p q : refines Rhpoly p q -> p = to_poly q.
