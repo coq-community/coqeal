@@ -14,14 +14,14 @@ env:
   - NJOBS="2"
   - CONTRIB_NAME="CoqEAL"
   matrix:
-  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-8.7"
-  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-8.8"
-  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-8.9"
-  - COQ_IMAGE="mathcomp/mathcomp:1.8.0-coq-dev"
-  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.7"
-  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.8"
-  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.9"
-  - COQ_IMAGE="mathcomp/mathcomp-dev:coq-dev"
+  - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.7"
+  - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.8"
+  - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.9"
+  - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-dev"
+  #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.7"
+  #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.8"
+  #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.9"
+  #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-dev"
 
 install: |
   # Prepare the COQ container
@@ -42,8 +42,14 @@ install: |
     : Installing OPAM deps
     sudo chown -R coq:coq /home/coq/${CONTRIB_NAME}
     opam pin add -y -n coq-coqeal .
-    # install deps only
-    opam install -y -vvv --deps-only coq-coqeal
+    if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.7" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.8" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.9" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-dev" ] ; then
+      # install deps only
+      # coq-mathcomp-multinomials.1.3 and coq-mathcomp-finmap opam package don't accept coq.dev or mathcomp.dev
+      opam install -y -vvv --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-mathcomp-multinomials.1.3
+      opam install -y -vvv --deps-only --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-coqeal
+    else
+      opam install -y -vvv --deps-only coq-coqeal
+    fi
     : done" install
 
 script:
@@ -54,7 +60,11 @@ script:
     export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
     set -ex
     eval \$(opam env)
-    opam install -y -vvv coq-coqeal
+    if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.7" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.8" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.9" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-dev" ] ; then
+      opam install -y -vvv --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-coqeal
+    else
+      opam install -y -vvv coq coq-coqeal
+    fi
     : done" script
 - docker stop COQ  # optional
 - echo -en 'travis_fold:end:script\\r'

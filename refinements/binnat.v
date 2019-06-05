@@ -373,7 +373,7 @@ Qed.
 Lemma Rnat_ltE (c d : N) : (c < d)%C = (spec_N c < spec_N d).
 Proof.
 symmetry; eapply refines_eq.
-change (spec_N c < spec_N d) with (ltn (spec_N c) (spec_N d)).
+change (spec_N c < spec_N d) with (rel_of_simpl_rel ltn (spec_N c) (spec_N d)).
 refines_apply1; first refines_apply1.
 refines_abstr.
 Qed.
