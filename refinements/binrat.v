@@ -112,7 +112,7 @@ rewrite /Z2int /GRing.add /= /intZmod.addz /Z.add; case x, y=>//.
 { rewrite -binnat.to_natE /GRing.opp /= /intZmod.oppz.
   by case (Pos.to_nat p)=>// n; rewrite subn0. }
 { by rewrite addn0. }
-{ by rewrite nat_of_addn_gt0. }
+{ (try by rewrite nat_of_add_pos) || by rewrite nat_of_addn_gt0. }
 { rewrite -binnat.to_natE /GRing.opp /= /intZmod.oppz.
   move: (Z.pos_sub_discr p p0); case (Z.pos_sub _ _).
   { move<-; rewrite -binnat.to_natE; case (Pos.to_nat _)=>// n.
