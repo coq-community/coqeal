@@ -66,7 +66,7 @@ script:
     if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" ] ; then
       opam install -y -vvv --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-coqeal
     else
-      opam install -y -vvv coq coq-coqeal
+      opam install -y -vvv coq-coqeal
     fi
     : done" script
 - docker stop COQ  # optional
