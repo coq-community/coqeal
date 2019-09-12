@@ -1,0 +1,3 @@
+COQVV:= $(shell $(COQBIN)coqtop -v | head -1 \
+	     | sed 's/.*version \([0-9]\.[0-9]\)[^ ]* .*/\1/')
+COQEXTRAFLAGS := $(COQEXTRAFLAGS) $(shell [ x$(COQVV) = x8.7 -o x$(COQVV) = x8.8 -o x$(COQVV) = x8.9 ] || echo '-set "Template Check=false"')
