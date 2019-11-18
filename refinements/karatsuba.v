@@ -133,10 +133,10 @@ Qed.
 End karatsuba_param.
 End karatsuba_correctness.
 
-Section karatsuba_test.
-
 From mathcomp Require Import ssrint.
 From CoqEAL Require Import binnat binint seqpoly.
+
+Section karatsuba_test.
 
 Goal ((1 + 2%:Z *: 'X) * (1 + 2%:Z%:P * 'X) == 1 + 4%:Z *: 'X + 4%:Z%:P * 'X^2).
 by coqeal.
