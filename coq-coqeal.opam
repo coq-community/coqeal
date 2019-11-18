@@ -15,6 +15,7 @@ install: [
 remove: ["rm" "-R" "%{lib}%/coq/user-contrib/CoqEAL"]
 depends: [
   "coq" {(>= "8.7" | = "dev")}
+  "coq-bignums"
   "coq-paramcoq" {(>= "1.1.1" | = "dev")}
   "coq-mathcomp-multinomials" {(>= "1.2" | = "dev")}
   "coq-mathcomp-algebra" {((>= "1.8.0" & < "1.10~") | = "dev")}
