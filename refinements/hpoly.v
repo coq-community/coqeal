@@ -844,10 +844,10 @@ Qed.
 End hpoly_parametricity.
 End hpoly_theory.
 
-Section testpoly.
-
 From mathcomp Require Import ssrint.
 From CoqEAL Require Import binnat binint.
+
+Section testpoly.
 
 Goal (0 == 0 :> {poly int}).
 by coqeal.

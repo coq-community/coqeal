@@ -20,6 +20,7 @@ env:
   - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.7"
   - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.8"
   - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.9"
+  - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.10"
   - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-dev"
   #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.7"
   #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.8"
@@ -44,8 +45,8 @@ install: |
     opam update -y
     : Installing OPAM deps
     sudo chown -R coq:coq /home/coq/${CONTRIB_NAME}
-    opam pin add -y -n coq-coqeal .
-    if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.7" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.8" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.9" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-dev" ] ; then
+    opam pin add -y -n -k path coq-coqeal .
+    if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" ] ; then
       # install deps only
       # coq-mathcomp-multinomials.1.3 and coq-mathcomp-finmap opam package don't accept coq.dev or mathcomp.dev
       opam install -y -vvv --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-mathcomp-multinomials.1.3
@@ -63,10 +64,10 @@ script:
     export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
     set -ex
     eval \$(opam env)
-    if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.7" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.8" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-8.9" -o "x${COQ_IMAGE}" = "xmathcomp/mathcomp-dev:coq-dev" ] ; then
+    if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" ] ; then
       opam install -y -vvv --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-coqeal
     else
-      opam install -y -vvv coq coq-coqeal
+      opam install -y -vvv coq-coqeal
     fi
     : done" script
 - docker stop COQ  # optional
