@@ -17,7 +17,7 @@ depends: [
   "coq" {(>= "8.7" | = "dev")}
   "coq-bignums"
   "coq-paramcoq" {(>= "1.1.1" | = "dev")}
-  "coq-mathcomp-multinomials" {(>= "1.2" | = "dev")}
+  "coq-mathcomp-multinomials" {((>= "1.4" & < "1.5~") | = "dev")}
   "coq-mathcomp-algebra" {((>= "1.8.0" & < "1.10~") | = "dev")}
 ]
 
