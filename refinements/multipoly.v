@@ -646,28 +646,45 @@ Global Instance refine_mnmc_lt n :
 Proof.
 rewrite refinesE=> m1 m1' rm1 m2 m2' rm2.
 apply trivial_refines in rm1; apply trivial_refines in rm2; rewrite /mnmc_lt.
+rewrite -ltEmnm.
 case: (boolP (m1 == m2)) => /= [E|].
 { suff: mnmc_eq_seq m1' m2'.
-  { move=> E'; symmetry; apply negbTE; apply /negP => K.
+  { move=> E'; symmetry.
+    move: E => /eqP ->; rewrite order.Order.POrderTheory.ltxx.
+    apply negbTE; apply /negP => K.
     by apply (E.lt_not_eq K). }
   by apply /mnmc_eq_seqP; rewrite -(Rseqmultinom_eq rm1 rm2). }
-move=> nE; rewrite /mnmc_le -leEmnm order.Order.POrderTheory.le_eqVlt.
-rewrite (negbTE nE) /mnmc_lt_seq /order.Order.POrderDef.lt /mnmc_le /= nE /=.
+move=> nE.
+rewrite /mnmc_lt_seq /order.Order.POrderDef.lt /=.
+rewrite mpoly.ltmc_def eq_sym nE /=.
 have rmdeg := refine_mdeg n; rewrite refinesE in rmdeg.
 rewrite /eq_op /eq_N /lt_op /lt_N.
-rewrite /order.Order.POrderDef.lt /order.Order.POrder.lt /mnmc_le /=.
+rewrite /mnmc_le.
+rewrite order.Order.SeqLexiOrder.Exports.lexi_cons.
 rewrite (rmdeg _ _ (refinesP rm1)) (rmdeg _ _ (refinesP rm2)) => {rmdeg}.
-rewrite (_ : order.Order.SeqLexPOrder.lexi _ _ = mnmc_lt_seq_aux m1' m2').
-{ apply/idP/idP.
-  { case eqP => //= He; move/orP=> [] //.
-    { by move=> H; apply /orP; left; rewrite /is_true N.ltb_lt; apply/Rnat_ltP. }
-    { move=> H; apply /orP; right; rewrite H andbC /= /is_true N.eqb_eq.
-      by move: He; rewrite -Nat2N.inj_iff !nat_of_binK. }
-    by move=> H; apply /orP; left; rewrite /is_true N.ltb_lt; apply/Rnat_ltP. }
-  move/orP => [].
-  { by rewrite {1}/is_true N.ltb_lt; move/Rnat_ltP=> H; apply /orP; left. }
-  move=> /andP [H H']; apply /orP; right; rewrite H' andbC /=.
-  by apply /eqP=> /=; rewrite -Nat2N.inj_iff !nat_of_binK -N.eqb_eq. }
+rewrite /order.Order.POrderDef.le /=.
+rewrite (_ : order.Order.SeqLexiOrder.le _ _ = mnmc_lt_seq_aux m1' m2').
+{ rewrite leq_eqVlt.
+  apply/idP/idP.
+  { case eqP => /= He.
+    { rewrite He leqnn /= => ->.
+      apply /orP; right.
+      rewrite andbC /=.
+      move: He; rewrite -Nat2N.inj_iff !nat_of_binK => ->.
+      by rewrite /is_true N.eqb_eq. }
+    move=> /andP [Hlt _].
+    apply /orP; left.
+    by rewrite /is_true N.ltb_lt; apply /Rnat_ltP. }
+  move=> /orP [Hlt|/andP [Heaq ->]].
+  { apply /andP; split.
+    { apply /orP; right.
+      by move: Hlt; rewrite /is_true N.ltb_lt => /Rnat_ltP. }
+    apply /implyP => Hle.
+    exfalso; move: Hlt.
+    rewrite /is_true N.ltb_lt => /Rnat_ltP.
+    by rewrite /spec_N ltnNge Hle. }
+  move: Heaq => /Neqb_ok => ->.
+  by apply /andP; split; [rewrite eqxx|apply /implyP]. }
 elim: n m1 m1' rm1 m2 m2' rm2 nE => [|n IH] m1 m1' rm1 m2 m2' rm2 nE.
 { move: rm1=> /(@refine_size _) /size0nil ->.
   move: rm2=> /(@refine_size _) /size0nil -> /=.
@@ -679,11 +696,15 @@ move: nE; case: m1 rm1=> m1; case: m1 => m1; case: m1=> [//|h1' t1'] sm1 /= rm1.
 case: m2 rm2 => m2; case: m2 => m2; case: m2 => [//|h2' t2'] sm2 /= rm2 => nE.
 have st1 : size t1' == n; [by rewrite -eqSS|].
 have st2 : size t2' == n; [by rewrite -eqSS|].
+have Hh1 : nat_of_bin h1 = h1'.
+{ by move: (refine_nth ord0 rm1); rewrite /spec_N => ->. }
 have rt1 : refines Rseqmultinom [multinom Tuple st1] t1.
 { apply refine_seqmultinomP.
   { by move: (@refine_size _ _ _ rm1)=> /= /eqP; rewrite eqSS=> /eqP. }
   move=> i; move: (refine_nth (fintype.lift ord0 i) rm1).
   by rewrite /= =>->; rewrite !multinomE !(tnth_nth 0%N) /=. }
+have Hh2 : nat_of_bin h2 = h2'.
+{ by move: (refine_nth ord0 rm2); rewrite /spec_N => ->. }
 have rt2 : refines Rseqmultinom [multinom Tuple st2] t2.
 { apply refine_seqmultinomP.
   { by move: (@refine_size _ _ _ rm2)=> /= /eqP; rewrite eqSS=> /eqP. }
@@ -694,25 +715,38 @@ move: (@refine_nth _ _ _ ord0 rm1) => /=.
 rewrite multinomE /spec_N (tnth_nth 0%N) /= => <-.
 move: (@refine_nth _ _ _ ord0 rm2) => /=.
 rewrite multinomE /spec_N (tnth_nth 0%N) /= => <-.
+rewrite /order.Order.POrderDef.le /=.
 apply/idP/idP.
-{ case eqP => //= He; move/orP=> [] //.
-  { by move=> H; apply /orP; left; rewrite /is_true N.ltb_lt; apply/Rnat_ltP. }
-  { have Hh : h1 = h2; [by move: He; rewrite -Nat2N.inj_iff !nat_of_binK|].
-    move=> H; apply /orP; right; rewrite /= -(IH _ _ rt1 _ _ rt2).
-    { by rewrite H andbC /= /is_true N.eqb_eq. }
-    apply /negP; move: nE=> /negP H'' H'; apply H''=>{H''}.
-    rewrite (Rseqmultinom_eq rm1 rm2) Hh.
-    suff: t1 = t2 => [-> //|].
-    by apply /eqP; rewrite -(Rseqmultinom_eq rt1 rt2). }
-  by move=> H; apply /orP; left; move: H; rewrite /is_true N.ltb_lt; apply/Rnat_ltP. }
-move/orP => [].
-{ by move=> H; apply /orP; left; move: H; rewrite /is_true N.ltb_lt; move/Rnat_ltP. }
-move/andP => []; rewrite {1}/is_true N.eqb_eq => Hh He; rewrite Hh eqxx /=.
-apply /orP; right; rewrite (IH _ _ rt1 _ _ rt2) //.
-apply /negP; move: nE=> /negP H'' H'; apply H''=>{H''}.
-rewrite (Rseqmultinom_eq rm1 rm2) Hh.
-suff: t1 = t2 => [-> //|].
-by apply /eqP; rewrite -(Rseqmultinom_eq rt1 rt2).
+{ rewrite leq_eqVlt.
+  move=> /andP [/orP [Heq12|Hlt12] /implyP Himpl].
+  { move: Heq12 => /eqP; rewrite -Nat2N.inj_iff !nat_of_binK => Heq12.
+    apply /orP; right.
+    apply /andP; split.
+    { rewrite Heq12; apply N.eqb_refl. }
+    rewrite -(IH _ _ rt1 _ _ rt2).
+    { by apply Himpl; rewrite Heq12. }
+    apply /eqP => Hst12.
+    move: nE => /eqP; apply.
+    do 2 (apply val_inj => /=).
+    apply f_equal2.
+    { by rewrite -Hh1 Heq12. }
+    by move: Hst12 => []. }
+  apply /orP; left.
+  by rewrite /is_true N.ltb_lt; apply /Rnat_ltP. }
+move=> /orP [Hlt12|/andP [Heq12 Hltseq]];
+  (apply /andP; split; [|apply /implyP => Hle21]).
+{ apply ltnW.
+  by move: Hlt12; rewrite /is_true N.ltb_lt => /Rnat_ltP. }
+{ exfalso; move: Hle21.
+  apply /negP; rewrite -ltnNge.
+  by move: Hlt12; rewrite /is_true N.ltb_lt => /Rnat_ltP. }
+{ by move: Heq12 => /Neqb_ok => ->. }
+rewrite (IH _ _ rt1 _ _ rt2) => [//|].
+apply /negP => /eqP [Ht12'].
+move: nE => /negP; apply; apply /eqP.
+do 2 (apply val_inj => /=).
+apply f_equal2 => [|//].
+by rewrite -Hh1 -Hh2; move: Heq12 => /Neqb_ok => ->.
 Qed.
 
 Definition mpoly_of_effmpoly (T : ringType) n (p' : effmpoly T) : option (mpoly n T) :=
