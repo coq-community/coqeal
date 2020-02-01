@@ -655,14 +655,14 @@ case: (boolP (m1 == m2)) => /= [E|].
     by apply (E.lt_not_eq K). }
   by apply /mnmc_eq_seqP; rewrite -(Rseqmultinom_eq rm1 rm2). }
 move=> nE.
-rewrite /mnmc_lt_seq /order.Order.POrderDef.lt /=.
+rewrite /mnmc_lt_seq /order.Order.lt /=.
 rewrite mpoly.ltmc_def eq_sym nE /=.
 have rmdeg := refine_mdeg n; rewrite refinesE in rmdeg.
 rewrite /eq_op /eq_N /lt_op /lt_N.
 rewrite /mnmc_le.
 rewrite order.Order.SeqLexiOrder.Exports.lexi_cons.
 rewrite (rmdeg _ _ (refinesP rm1)) (rmdeg _ _ (refinesP rm2)) => {rmdeg}.
-rewrite /order.Order.POrderDef.le /=.
+rewrite /order.Order.le /=.
 rewrite (_ : order.Order.SeqLexiOrder.le _ _ = mnmc_lt_seq_aux m1' m2').
 { rewrite leq_eqVlt.
   apply/idP/idP.
@@ -710,12 +710,12 @@ have rt2 : refines Rseqmultinom [multinom Tuple st2] t2.
   { by move: (@refine_size _ _ _ rm2)=> /= /eqP; rewrite eqSS=> /eqP. }
   move=> i; move: (refine_nth (fintype.lift ord0 i) rm2).
   by rewrite /= =>->; rewrite !multinomE !(tnth_nth 0%N) /=. }
-rewrite /order.Order.POrderDef.lt /= /eq_op /eq_N /lt_op /lt_N.
+rewrite /order.Order.lt /= /eq_op /eq_N /lt_op /lt_N.
 move: (@refine_nth _ _ _ ord0 rm1) => /=.
 rewrite multinomE /spec_N (tnth_nth 0%N) /= => <-.
 move: (@refine_nth _ _ _ ord0 rm2) => /=.
 rewrite multinomE /spec_N (tnth_nth 0%N) /= => <-.
-rewrite /order.Order.POrderDef.le /=.
+rewrite /order.Order.le /=.
 apply/idP/idP.
 { rewrite leq_eqVlt.
   move=> /andP [/orP [Heq12|Hlt12] /implyP Himpl].

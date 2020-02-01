@@ -1,6 +1,8 @@
 *.v.d
 *.glob
 *.vo
+*.vos
+*.vok
 *.cmo
 *.cma
 *.cmx
