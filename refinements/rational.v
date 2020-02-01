@@ -359,9 +359,9 @@ Qed.
 End Qparametric.
 End Qint.
 
-Section tests.
-
 Require Import binnat binint.
+
+Section tests.
 
 Goal (0 == 0 :> rat).
 by coqeal.

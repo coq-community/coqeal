@@ -653,10 +653,10 @@ End seqpoly_theory.
 Hint Extern 0 (refines _ (Poly _) _) => simpl : typeclass_instances.
 Hint Extern 0 (refines _ _ (Poly _)) => simpl : typeclass_instances.
 
-Section testpoly.
-
 From mathcomp Require Import ssrint.
 From CoqEAL Require Import binnat binint.
+
+Section testpoly.
 
 Goal (0 == 0 :> {poly int}).
 by coqeal.

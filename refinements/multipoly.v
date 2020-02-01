@@ -1014,7 +1014,7 @@ apply (path.eq_sorted (leT:=mnmc_le)).
     by rewrite -/l Hl in_cons; apply/orP; right; rewrite mem_nth. }
   apply refine_multinom_of_seqmultinom_val, Hs.
   by rewrite -/l Hl in_cons; apply/orP; right; rewrite mem_nth. }
-apply uniq_perm_eq.
+apply uniq_perm.
 { rewrite path.sort_uniq; apply msupp_uniq. }
 { change (fun _ => multinom_of_seqmultinom_val _ _)
   with ((fun m => multinom_of_seqmultinom_val n m) \o (fst (B:=T))).
@@ -1306,7 +1306,7 @@ have -> : \sum_(m <- msupp p) f m p@_m
   = f m c + \sum_(m <- msupp pmcm) f m pmcm@_m.
 { case_eq (m \in msupp p) => Hmsuppp.
   { rewrite (big_rem _ Hmsuppp) /= Hc; f_equal.
-    rewrite /pmcm /cm -Hc -(eq_big_perm _ (msupp_rem p m)) /=.
+    rewrite /pmcm /cm -Hc -(perm_big _ (msupp_rem p m)) /=.
     apply eq_big_seq => i.
     rewrite mcoeffB mcoeffZ mcoeffX.
     rewrite mcoeff_msupp Hc -/cm -/pmcm -Hpmcm.
@@ -1426,7 +1426,7 @@ have->: sum = p0 + \big[+%R/0]_(i2 <- msupp pmpk) ((c * pmpk@_i2) *: 'X_[(m + i2
 { rewrite /sum /pmpk /p0.
   case_eq (k \in msupp p) => Hmsuppp.
   { rewrite (big_rem _ Hmsuppp) /= Hp; f_equal.
-    rewrite -Hp -(eq_big_perm _ (msupp_rem p k)) /=.
+    rewrite -Hp -(perm_big _ (msupp_rem p k)) /=.
     apply eq_big_seq => i.
     rewrite mcoeffB mcoeffZ mcoeffX.
     rewrite mcoeff_msupp Hp -Hpmpk.

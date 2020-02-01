@@ -53,6 +53,8 @@ Qed.
 
 End prelude.
 
+Require Import polydvd.
+
 Module poly.
 Section bareiss.
 
@@ -412,8 +414,6 @@ End Bareiss2.
   In practice, we apply this algorithm to the characteristic matrix
   so we get the characteristic polynomial in polynomial time
 *)
-Require Import polydvd.
-
 Import PolyDvdRing.
 
 Section bareiss_det.
@@ -462,5 +462,3 @@ Qed.
 
 End bareiss_det.
 End dvdring.
-
-
