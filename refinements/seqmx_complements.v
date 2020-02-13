@@ -90,6 +90,8 @@ End seqmx_op.
 
 (** ** Refinement proofs *)
 
+Require Import Equivalence RelationClasses Morphisms.
+
 Section seqmx_theory.
 
 Context {A : Type}.
@@ -158,8 +160,6 @@ elim: s j k => [|a s IHs] j k; first by case: j.
 case: j IHs => [|j] IHs //=; case: k IHs => [|k] IHs //=.
 by rewrite size_store_aux.
 Qed.
-
-Require Import Equivalence RelationClasses Morphisms.
 
 Global Instance store_ssr : store_of A ordinal (matrix A) :=
   fun m n (M : 'M[A]_(m, n)) (i : 'I_m) (j : 'I_n) v =>

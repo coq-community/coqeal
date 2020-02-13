@@ -254,7 +254,8 @@ case: find_pivotP =>[[i j] HMij | H].
     by rewrite !nth_default ?size_map ?Hk // mulr0.
   * have {HA00}HA00: A 0 0 != 0.
       by apply/eqP=> H; move:HA00; rewrite H dvd0r (negbTE HMij).
-    rewrite /= path_min_sorted; last by move=> a /mapP [b _ ->]; exact:dvdr_mull.
+    rewrite /= path_min_sorted;
+      last by apply/allP=> a /mapP [b _ ->]; exact:dvdr_mull.
     case: d Hsorted {Hd} => //= a d; elim: d a=> //= a1 d IHd a0 /andP[a01 /IHd].
     by rewrite dvdr_mul2r ?a01.
   * rewrite xcolE !unitmx_mul unitmx_perm HL !unitmxE.

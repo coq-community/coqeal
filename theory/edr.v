@@ -295,12 +295,12 @@ Lemma minor_diag_mx_seq :
 Proof.
 elim: k=>[f g|j IHj f g Hf Hg Hfg]; first by rewrite /minor det_mx00 big_ord0.
 have: perm_eq [seq f x | x in 'I_j.+1] [seq g x | x in 'I_j.+1].
-  have [||e _] := leq_size_perm _ Hfg; first by rewrite map_inj_uniq ?enum_uniq.
+  have [||_ e] := uniq_min_size _ Hfg; first by rewrite map_inj_uniq ?enum_uniq.
     by rewrite !size_map.
-  by rewrite uniq_perm_eq // map_inj_uniq // enum_uniq.
+  by rewrite uniq_perm // map_inj_uniq // enum_uniq.
 have Ht : size (codom g) == j.+1 by rewrite size_codom card_ord.
 have -> : image g 'I_j.+1 = Tuple Ht by [].
-case/tuple_perm_eqP=> p Hp .
+case/tuple_permP=> p Hp .
 have Hfg0 i : g (p i) = f i.
   have He : i < #|'I_j.+1| by rewrite card_ord.
   have {2}-> : i = enum_val (Ordinal He) by rewrite enum_val_ord; apply: ord_inj.

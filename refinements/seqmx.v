@@ -1370,10 +1370,10 @@ End seqmx_poly.
 
 End seqmx_theory.
 
-Section testmx.
-
 From mathcomp Require Import ssrint poly.
 From CoqEAL Require Import binint seqpoly binord.
+
+Section testmx.
 
 Goal ((0 : 'M[int]_(2,2)) == 0).
 by coqeal.

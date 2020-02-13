@@ -197,7 +197,7 @@ Lemma card'_perm (T : eqType) (s s' : seq T) (P : pred T) :
   perm_eq s s' -> card' s P = card' s' P :> nat.
 Proof.
 move=> peq_ss'; rewrite /card' /size_op !size_seqE.
-by apply/perm_eq_size/perm_eqP=> x; rewrite !count_filter; apply/perm_eqP.
+by apply/perm_size/seq.permP=> x; rewrite !count_filter; apply/seq.permP.
 Qed.
 
 Lemma card'E (T : finType) (P : pred T) : card' (@Finite.enum _) P = #|P|.
@@ -245,7 +245,7 @@ Global Instance refines_enum_boolF2 :
 Proof.
 rewrite -enumT; refines_trans; last first.
   by rewrite refinesE; do !constructor.
-rewrite refinesE /= uniq_perm_eq ?enum_uniq //.
+rewrite refinesE /= uniq_perm ?enum_uniq //.
 by move=> i; rewrite mem_enum /= !inE; case: i => [[|[|[]]] ?].
 Qed.
 
@@ -266,7 +266,7 @@ Lemma enum_npolyE (n : nat) (R : finRingType) s :
   perm_eq (Finite.enum [finType of {poly_n R}])
                (enum_npoly n iter s (@npoly_of_seq _ _)).
 Proof.
-rewrite -!enumT => Rs; rewrite uniq_perm_eq ?enum_uniq //=.
+rewrite -!enumT => Rs; rewrite uniq_perm ?enum_uniq //=.
   admit.
 move=> /= p; symmetry; rewrite mem_enum inE /=.
 apply/mapP => /=; exists p; last first.

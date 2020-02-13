@@ -463,9 +463,9 @@ End binint_nat_pos.
 End binint_parametricity.
 End binint_theory.
 
-Section testint.
-
 From CoqEAL Require Import binnat.
+
+Section testint.
 
 Goal (0 == 0 :> int).
 by coqeal.
