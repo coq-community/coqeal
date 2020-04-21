@@ -1470,7 +1470,7 @@ Global Instance refine_mpoly_mul_eff n :
 Proof.
 apply refines_abstr => q q' ref_q.
 apply refines_abstr => p p' ref_p.
-rewrite [mpoly_mul q p]mpolyME -ssrcomplements.pair_bigA_seq_curry /=.
+rewrite [mpoly_mul q p]mpolyME big_allpairs.
 rewrite /mpoly_mul_eff.
 pose f m c := \big[+%R/0]_(i2 <- msupp p) ((c * p@_i2) *: 'X_[(m + i2)]).
 pose f' m c := @mult_monomial_eff _ mul_instR m c p'.
