@@ -2,7 +2,7 @@
 
 Require Import ZArith QArith.
 From Bignums Require Import BigQ.
-From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat order.
 From mathcomp Require Import ssralg ssrnum ssrint rat div.
 From CoqEAL.refinements Require Import hrel refinements param binint.
 Import Refinements.Op.
@@ -14,8 +14,7 @@ Unset Printing Implicit Defensive.
 Local Open Scope ring_scope.
 Local Open Scope Z_scope.
 
-Import GRing.Theory.
-Import Num.Theory.
+Import GRing.Theory Order.Theory Num.Theory.
 
 (** ** Link between [Z] (Coq standard lib) and [int] (Mathcomp) *)
 Section Zint.
@@ -188,22 +187,22 @@ Lemma Z2int_le x y : (Z2int x <= Z2int y)%R <-> Z.le x y.
 Proof.
 rewrite /Z2int; case Ex: x; case Ey: y=> //.
 { rewrite oppr_ge0; split; move=> H; exfalso; move: H; [|by rewrite /Z.le].
-  apply/negP; rewrite -ltrNge; apply nat_of_pos_gt0. }
+  apply/negP; rewrite -ltNge; apply nat_of_pos_gt0. }
 { split; move=> H; exfalso; move: H; [|by rewrite /Z.le].
-  apply/negP; rewrite -ltrNge; apply nat_of_pos_gt0. }
+  apply/negP; rewrite -ltNge; apply nat_of_pos_gt0. }
 { rewrite -!binnat.to_natE /Num.Def.ler /=.
-  by rewrite -!positive_nat_Z -Nat2Z.inj_le; split; [apply/leP|move/leP]. }
+  by rewrite -!positive_nat_Z -Nat2Z.inj_le; split => /ssrnat.leP. }
 { split; move=> H; exfalso; move: H; [|by rewrite /Z.le].
-  apply /negP; rewrite -ltrNge.
-  apply (@ltr_trans _ 0%R); rewrite ?oppr_lt0; apply nat_of_pos_gt0. }
+  apply /negP; rewrite -ltNge.
+  by apply: (@lt_trans _ _ 0%R); rewrite ?oppr_lt0; apply nat_of_pos_gt0. }
 { rewrite oppr_le0; split; by rewrite /Z.le. }
 { split=>_; [by rewrite /Z.le|].
-  by apply (@ler_trans _ 0%R); [apply oppr_le0|apply ltrW, nat_of_pos_gt0]. }
+  by apply: (@le_trans _ _ 0%R); [apply oppr_le0|apply ltW, nat_of_pos_gt0]. }
 rewrite ler_opp2; split.
-{ rewrite /Z.le /Z.compare -!binnat.to_natE /Num.Def.ler /= => /leP.
+{ rewrite /Z.le /Z.compare -!binnat.to_natE /Num.Def.ler /= => /ssrnat.leP.
   by rewrite -Pos.compare_antisym -Pos2Nat.inj_le -Pos.compare_le_iff. }
 rewrite /Z.le /Z.compare -!binnat.to_natE /Num.Def.ler /=.
-rewrite -Pos.compare_antisym=>H; apply/leP.
+rewrite -Pos.compare_antisym => H; apply/ssrnat.leP.
 by rewrite -Pos2Nat.inj_le -Pos.compare_le_iff.
 Qed.
 
@@ -356,8 +355,7 @@ have Hg: g = 1%N; [|rewrite Hg divn1].
   apply Qcanon.Qred_iff, Qcanon.Qred_involutive. }
 rewrite !Posz_nat_of_pos_neq0 divn1 expN1r mulz_sign_abs abszN -/g Hg !divn1.
 rewrite !absz_nat.
-have ->: (Posz (nat_of_pos d'') < 0)%R = false.
-{ by rewrite -(absz_nat (nat_of_pos d'')) normr_lt0. }
+have ->: (Posz (nat_of_pos d'') < 0)%R = false by [].
 rewrite /= -(abszN (Z2int n'')) mulz_sign_abs; f_equal.
 { rewrite -Z2int_opp; f_equal.
   rewrite /n' /n''; case (_ =? _)%bigN=>//.
@@ -506,7 +504,7 @@ case E: (_ < _)%R; case E': (_ ?= _)%bigQ; rewrite refinesE //; exfalso.
   move: E; rewrite -rba -rdc.
   rewrite /Num.Def.ltr /= /lt_rat /numq /denq /=.
   move: E'; rewrite BigQ.spec_compare Qred_compare -Qeq_alt /Qeq.
-  by rewrite !Z2int_mul_nat_of_pos=>->; rewrite ltrr. }
+  by rewrite !Z2int_mul_nat_of_pos=>->; rewrite ltxx. }
 { move: rab rcd; rewrite refinesE /r_ratBigQ /bigQ2rat /fun_hrel=> rba rdc.
   move: E; rewrite -rba -rdc.
   rewrite /Num.Def.ltr /= /lt_rat /numq /denq /=.
@@ -536,7 +534,7 @@ case E: (_ <= _)%R; case E': (_ ?= _)%bigQ; rewrite refinesE //; exfalso.
   move: E; rewrite -rba -rdc.
   rewrite /Num.Def.ler /= /le_rat /numq /denq /=.
   move: E'; rewrite BigQ.spec_compare Qred_compare -Qeq_alt /Qeq.
-  by rewrite !Z2int_mul_nat_of_pos=>->; rewrite lerr. }
+  by rewrite !Z2int_mul_nat_of_pos=>->; rewrite lexx. }
 move: rab rcd; rewrite refinesE /r_ratBigQ /bigQ2rat /fun_hrel=> rba rdc.
 move: E; rewrite -rba -rdc.
 rewrite /Num.Def.ler /= /le_rat /numq /denq /=.

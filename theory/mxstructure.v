@@ -530,11 +530,7 @@ Qed.
 
 Lemma diag_mx_seq_take_min m n (s : seq R) :
   diag_mx_seq m n (take (minn m n) s) = diag_mx_seq m n s.
-Proof.
-have [/minn_idPl -> | /ltnW/minn_idPr ->] := leqP m n.
-  exact: diag_mx_seq_takel.
-exact: diag_mx_seq_taker.
-Qed.
+Proof. by case: leqP; rewrite (diag_mx_seq_takel, diag_mx_seq_taker). Qed.
 
 Lemma tr_diag_mx_seq m n s : (diag_mx_seq m n s)^T = diag_mx_seq n m s.
 Proof.

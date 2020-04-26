@@ -1,72 +1,31 @@
-dist: trusty
-sudo: required
-language: generic
+os: linux
+
+services:
+- docker
 
 branches:
   only:
   - master
 
-services:
-  - docker
-
 env:
   global:
   - NJOBS="2"
-  - CONTRIB_NAME="CoqEAL"
+  - CONTRIB="coqeal"
+  - OPAMYES=yes
   matrix:
-  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.7"
-  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.8"
-  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.9"
-  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.10"
-  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.11"
-  #- COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-dev"
-  #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.7"
-  #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.8"
-  #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-8.9"
-  #- COQ_IMAGE="mathcomp/mathcomp-dev:coq-dev"
+  - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.7"
+  - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.8"
+  - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.9"
+  - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.10"
+  - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.11"
 
-install: |
-  # Prepare the COQ container
-  docker pull ${COQ_IMAGE}
-  docker run -d -i --init --name=COQ -v ${TRAVIS_BUILD_DIR}:/home/coq/${CONTRIB_NAME} -w /home/coq/${CONTRIB_NAME} ${COQ_IMAGE}
-  docker exec COQ /bin/bash --login -c "
-    # pass --login so we can use “travis_retry” and omit “opam config exec --”
-    # and this bash script is double-quoted to interpolate Travis CI env vars:
-    echo \"Build triggered by ${TRAVIS_EVENT_TYPE}\"
-    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
-    set -ex  # -e = exit on failure; -x = trace for debug
-    # Using flambda makes sense here as we usually get ~10% faster
-    # builds in math-comp.
-    opam switch \$COMPILER_EDGE
-    eval \$(opam env)
-    : Updating OPAM cache
-    opam update -y
-    : Installing OPAM deps
-    sudo chown -R coq:coq /home/coq/${CONTRIB_NAME}
-    opam pin add -y -n -k path coq-coqeal .
-    if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" ] ; then
-      # install deps only
-      # coq-mathcomp-multinomials.1.3 and coq-mathcomp-finmap opam package don't accept coq.dev or mathcomp.dev
-      opam install -y -vvv --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-mathcomp-multinomials.1.3
-      opam install -y -vvv --deps-only --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-coqeal
-    else
-      opam install -y -vvv --deps-only coq-coqeal
-    fi
-    : done" install
+install:
+- docker pull ${DOCKERIMAGE}
+- docker tag  ${DOCKERIMAGE} ci:current
+- docker run  --env=OPAMYES --init -id --name=CI -v ${TRAVIS_BUILD_DIR}:/home/coq/${CONTRIB} -w /home/coq/${CONTRIB} ci:current
+- docker exec CI /bin/bash --login -c "opam repo add coq-extra-dev https://coq.inria.fr/opam/extra-dev"
+- docker exec CI /bin/bash --login -c "opam pin add -n coq-${CONTRIB} ."
+- docker exec CI /bin/bash --login -c "opam install --deps-only coq-${CONTRIB}"
 
 script:
-- echo -e "${ANSI_YELLOW}Building CoqEAL...${ANSI_RESET}" && echo -en 'travis_fold:start:script\\r'
-- |
-  # In case of no-output timeout, prepend "travis_wait" to:
-  docker exec COQ /bin/bash --login -c "
-    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
-    set -ex
-    eval \$(opam env)
-    if [ "x${COQ_IMAGE}" = "xmathcomp/mathcomp:1.9.0-coq-dev" ] ; then
-      opam install -y -vvv --ignore-constraints-on "coq,coq-mathcomp-ssreflect,coq-mathcomp-fingroup,coq-mathcomp-algebra,coq-mathcomp-solvable,coq-mathcomp-field,coq-bignums" coq-coqeal
-    else
-      opam install -y -vvv coq-coqeal
-    fi
-    : done" script
-- docker stop COQ  # optional
-- echo -en 'travis_fold:end:script\\r'
+- docker exec CI /bin/bash --login -c "opam install ."

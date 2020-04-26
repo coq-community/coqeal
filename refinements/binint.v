@@ -1,7 +1,8 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
-From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-From mathcomp Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
+From mathcomp Require Import path choice fintype tuple finset bigop order.
+From mathcomp Require Import ssralg zmodp ssrnum ssrint.
 
 From CoqEAL Require Import hrel param refinements pos.
 
@@ -21,7 +22,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory Num.Theory Refinements Op.
+Import GRing.Theory Order.Theory Num.Theory Refinements Op.
 
 (******************************************************************************)
 (** PART I: Defining generic datastructures and programming with them         *)
@@ -212,7 +213,7 @@ Proof.
   rewrite refinesE=> a b rab; rewrite [a]RintE {a rab}.
   case: b => [n|[n n_gt0]] //=; rewrite /cast /cast_ZP /cast_ZN /int_to_nat.
     by rewrite ltz_nat; have [->|] // := posnP n.
-  by rewrite ler_gtF // oppr_le0 ltrW.
+  by rewrite le_gtF // oppr_le0 ltW.
 Qed.
 
 Local Instance Rint_int_to_pos : refines (Rint ==> Logic.eq) int_to_pos cast.
@@ -266,7 +267,7 @@ Implicit Type p : pos.
 Local Instance Rint_eq : refines (Rint ==> Rint ==> bool_R) eqtype.eq_op eq_op.
 Proof.
   have nat_nneg n p : bool_R (n == - (Posz (val p)) :> int) false.
-    by rewrite gtr_eqF // ltNz_nat -lt0n [(_ < _)%N]valP.
+    by rewrite gt_eqF // ltNz_nat -lt0n [(_ < _)%N]valP.
   rewrite refinesE=> _ x <- _ y <-; rewrite /eq_op /eqZ.
   case: x; case: y=> * /=; simpC; rewrite ?eqr_opp ?[- _ == _]eq_sym //;
   exact: bool_Rxx.
@@ -275,10 +276,10 @@ Qed.
 Local Instance Rint_leq : refines (Rint ==> Rint ==> bool_R) Num.le leq_op.
 Proof.
   have nat_nleqneg n p : bool_R (n <= - (Posz (val p)) :> int) false.
-    rewrite lerNgt (@ltr_le_trans _ 0) ?oppr_lt0 //=.
+    rewrite leNgt (@lt_le_trans _ _ 0) ?oppr_lt0 //=.
     apply: valP.
   have neg_leqnat n p : bool_R (- (Posz (val p)) <= n :> int) true.
-    by rewrite ler_oppl (@ler_trans _ 0) // oppr_le0 le0z_nat.
+    by rewrite ler_oppl (@le_trans _ _ 0) // oppr_le0 le0z_nat.
   rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leqZ.
   case: x y => [x|x] [y|y] /=; rewrite -?[((_<=_)%C)]/(_<=_)%N ?ler_opp2 //;
   exact: bool_Rxx.
@@ -289,8 +290,8 @@ Proof.
 rewrite refinesE /Rint /fun_hrel /eq_op => _ x <- _ y <-.
 have -> : (int_of_Z x < int_of_Z y) = (x < y)%C.
   case: x y => [x|x] [y|y] //=.
-  - by rewrite ltrNge (@ler_trans _ 0) // oppr_le0.
-  - by rewrite (@ltr_le_trans _ 0) // oppr_lt0; apply: valP.
+  - by rewrite ltNge (@le_trans _ _ 0) // oppr_le0.
+  - by rewrite (@lt_le_trans _ _ 0) // oppr_lt0; apply: valP.
   by rewrite ltr_opp2.
 exact: bool_Rxx.
 Qed.

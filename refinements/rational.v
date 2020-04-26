@@ -1,7 +1,8 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
-From mathcomp Require Import path choice fintype tuple finset ssralg bigop ssrint ssrnum rat.
+From mathcomp Require Import path choice fintype tuple finset bigop order.
+From mathcomp Require Import ssralg ssrint ssrnum rat.
 
 From CoqEAL Require Import hrel param refinements pos.
 
@@ -18,7 +19,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 
-Import GRing.Theory Num.Theory Refinements.Op.
+Import GRing.Theory Order.Theory Num.Theory Refinements.Op.
 
 (*************************************************************)
 (* PART I: Defining datastructures and programming with them *)
@@ -195,10 +196,10 @@ rewrite /cast_pos_int /cast_int_pos /pos_to_int /int_to_pos /int_to_nat /=.
 have [-> /=|na_neq0 /=] := altP (na =P 0).
   by rewrite !mul0r ?invr0.
 have [na_gt0|na_le0] /= := ltrP 0 na.
-  rewrite val_insubd absz_gt0 na_neq0 abszE ger0_norm ?ltrW //.
+  rewrite val_insubd absz_gt0 na_neq0 abszE ger0_norm ?ltW//.
   by rewrite invfM invrK natz mulrC.
 rewrite val_insubd /= /opp_op /opp_int /=.
-rewrite oppr_gt0 ltr_neqAle na_neq0 na_le0 /= absz_gt0 oppr_eq0 na_neq0.
+rewrite oppr_gt0 lt_neqAle na_neq0 na_le0 /= absz_gt0 oppr_eq0 na_neq0.
 rewrite abszN mulrNz mulNr -mulrN -invrN -rmorphN /=.
 by rewrite lez0_abs // opprK invfM invrK mulrC natz.
 Qed.
@@ -209,8 +210,8 @@ apply refines_abstr2 => x [na [da da_gt0]] rx y [nb [db db_gt0]] ry.
 have -> : (x == y) = ((na, pos_of da_gt0) == (nb, pos_of db_gt0))%C.
   rewrite /eq_op /eqQ /cast /cast_pos_int /pos_to_int /=; simpC.
   rewrite [x]RratE [y]RratE /= divq_eq; last 2 first.
-  - by rewrite gtr_eqF // ltr0z.
-  - by rewrite gtr_eqF // ltr0z.
+  - by rewrite gt_eqF // ltr0z.
+  - by rewrite gt_eqF // ltr0z.
   by rewrite -!rmorphM /= eqr_int !natz.
 rewrite refinesE; exact: bool_Rxx.
 Qed.
