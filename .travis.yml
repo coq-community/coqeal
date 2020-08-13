@@ -18,6 +18,7 @@ env:
   - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.9"
   - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.10"
   - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.11"
+  - DOCKERIMAGE="mathcomp/mathcomp:1.11.0-coq-8.12"
 
 install:
 - docker pull ${DOCKERIMAGE}
