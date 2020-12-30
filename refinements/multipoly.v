@@ -986,9 +986,7 @@ suff : path.sort mnmc_le (msupp p)
     suff: mc \in l'; [by rewrite mem_filter=>/andP []|by apply mem_nth]. }
   apply refine_multinom_of_seqmultinom_val; move: Hs; move/allP; apply.
   rewrite -/l' /mc; apply (mem_nth (mnm0_seq, 0) Hi'). }
-apply (path.eq_sorted (leT:=mnmc_le)).
-{ apply mpoly.lemc_trans. }
-{ apply mpoly.lemc_anti. }
+apply: (path.eq_sorted mpoly.lemc_trans mpoly.lemc_anti).
 { apply path.sort_sorted, lemc_total. }
 { have Se := M.elements_3 p'.
   pose lef := fun x y : _ * T => mnmc_lt_seq x.1 y.1.
