@@ -18,7 +18,7 @@ depends: [
   "coq-bignums"
   "coq-paramcoq" {(>= "1.1.1" | = "dev")}
   "coq-mathcomp-multinomials" {((>= "1.5.1" & < "1.7~") | = "dev")}
-  "coq-mathcomp-algebra" {((>= "1.11.0" & < "1.12~") | = "dev")}
+  "coq-mathcomp-algebra" {((>= "1.11.0" & < "1.13~") | = "dev")}
 ]
 
 tags: [ "keyword:effective algebra" "keyword:elementary divisor rings"
