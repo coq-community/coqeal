@@ -330,6 +330,7 @@ Global Instance add_bigQ : add_of bigQ := BigQ.add.
 Global Instance sub_bigQ : sub_of bigQ := BigQ.sub.
 Global Instance mul_bigQ : mul_of bigQ := BigQ.mul.
 Global Instance inv_bigQ : inv_of bigQ := BigQ.inv.
+Global Instance div_bigQ : div_of bigQ := BigQ.div.
 Global Instance eq_bigQ : eq_of bigQ := BigQ.eq_bool.
 Global Instance lt_bigQ : lt_of bigQ := fun p q => if BigQ.compare p q is Lt then true else false.
 Global Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt then false else true.
@@ -528,6 +529,14 @@ case: ltP => Hn1.
 { by rewrite expr1z -H2 GRing.mulN1r. }
 exfalso; move: Hn1; apply/negP; rewrite -ltNge -H1 -GRing.oppr0 /=.
 by rewrite Num.Theory.oppr_lt0 ltz_nat nat_of_pos_gt0.
+Qed.
+
+Global Instance refine_ratBigQ_div :
+  refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel (fun x y => x / y)%R div_op.
+Proof.
+apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
+rewrite /div_op /div_bigQ /BigQ.div.
+exact: refines_apply.
 Qed.
 
 Global Instance refine_ratBigQ_eq :
