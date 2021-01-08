@@ -325,6 +325,7 @@ Global Instance mul_bigQ : mul_of bigQ := BigQ.mul.
 Global Instance eq_bigQ : eq_of bigQ := BigQ.eq_bool.
 Global Instance lt_bigQ : lt_of bigQ := fun p q => if BigQ.compare p q is Lt then true else false.
 Global Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt then false else true.
+Global Instance cast_of_nat_bigQ : cast_of nat bigQ := BigQ.of_Z \o Z.of_nat.
 
 (** *** Proofs of refinement *)
 
@@ -541,6 +542,22 @@ rewrite /Num.Def.ler /= /le_rat /numq /denq /=.
 move: E'; rewrite BigQ.spec_compare Qred_compare -Qgt_alt /Qlt.
 rewrite !Z2int_mul_nat_of_pos=>H.
 by move/negP /Z2int_le=>H'; apply H', Z.lt_le_incl.
+Qed.
+
+Global Instance refine_ratBigQ_of_nat :
+  refines (nat_R ==> r_ratBigQ)%rel (fun n => n%:~R%R) cast_op.
+Proof.
+rewrite refinesE => n _ /nat_R_eq <-.
+apply/val_inj.
+rewrite /= Z_ggcd_1_r /= BigZ.spec_of_Z.
+rewrite -ratzE ratz_frac.
+rewrite /valq /fracq /= expr0z GRing.mul1r gcdn1 !divn1.
+apply: f_equal2 => [|//].
+rewrite -{2}[n]Nat2Z.id.
+rewrite /Z2int.
+move: (Zle_0_nat n).
+case: Z.of_nat => [//|p|//] _.
+by rewrite -binnat.to_natE.
 Qed.
 
 End binrat_theory.
