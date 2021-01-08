@@ -16,6 +16,13 @@ Local Open Scope Z_scope.
 
 Import GRing.Theory Order.Theory Num.Theory.
 
+Section classes.
+
+Class max_of C := max_op : C -> C -> C.
+Class min_of C := min_op : C -> C -> C.
+
+End classes.
+
 (** ** Link between [Z] (Coq standard lib) and [int] (Mathcomp) *)
 Section Zint.
 
@@ -325,6 +332,8 @@ Global Instance mul_bigQ : mul_of bigQ := BigQ.mul.
 Global Instance eq_bigQ : eq_of bigQ := BigQ.eq_bool.
 Global Instance lt_bigQ : lt_of bigQ := fun p q => if BigQ.compare p q is Lt then true else false.
 Global Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt then false else true.
+Global Instance max_bigQ : max_of bigQ := BigQ.max.
+Global Instance min_bigQ : min_of bigQ := BigQ.min.
 Global Instance cast_of_nat_bigQ : cast_of nat bigQ := BigQ.of_Z \o Z.of_nat.
 
 (** *** Proofs of refinement *)
@@ -542,6 +551,27 @@ rewrite /Num.Def.ler /= /le_rat /numq /denq /=.
 move: E'; rewrite BigQ.spec_compare Qred_compare -Qgt_alt /Qlt.
 rewrite !Z2int_mul_nat_of_pos=>H.
 by move/negP /Z2int_le=>H'; apply H', Z.lt_le_incl.
+Qed.
+
+Global Instance refine_ratBigQ_max :
+  refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel Num.max max_op.
+Proof.
+apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
+have H := refines_apply (refines_apply refine_ratBigQ_lt rx) ry.
+move: H => /refines_bool_eq; rewrite maxElt refinesE => ->.
+rewrite /lt_op /lt_bigQ /max_op /max_bigQ /BigQ.max.
+by case: (_ ?= _)%bigQ.
+Qed.
+
+Global Instance refine_ratBigQ_min :
+  refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel Num.min min_op.
+Proof.
+apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
+have H := refines_apply (refines_apply refine_ratBigQ_lt ry) rx.
+move: H => /refines_bool_eq; rewrite minEle leNgt refinesE => ->.
+rewrite /lt_op /lt_bigQ /min_op /min_bigQ /BigQ.min.
+rewrite !BigQ.spec_compare -QArith_base.Qcompare_antisym.
+by case: QArith_base.Qcompare.
 Qed.
 
 Global Instance refine_ratBigQ_of_nat :
