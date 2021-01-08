@@ -337,6 +337,7 @@ Global Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt th
 Global Instance max_bigQ : max_of bigQ := BigQ.max.
 Global Instance min_bigQ : min_of bigQ := BigQ.min.
 Global Instance cast_of_nat_bigQ : cast_of nat bigQ := BigQ.of_Z \o Z.of_nat.
+Global Instance spec_bigQ : spec_of bigQ rat := bigQ2rat.
 
 (** *** Proofs of refinement *)
 
@@ -643,5 +644,9 @@ move: (Zle_0_nat n).
 case: Z.of_nat => [//|p|//] _.
 by rewrite -binnat.to_natE.
 Qed.
+
+Global Instance refine_ratBigQ_spec :
+  refines (eq ==> r_ratBigQ)%rel spec spec_id.
+Proof. by rewrite refinesE => x _ <-. Qed.
 
 End binrat_theory.
