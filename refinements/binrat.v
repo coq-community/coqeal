@@ -559,6 +559,14 @@ move: E; rewrite -rba -rdc=> /eqP H; apply H, val_inj=>/={H}.
 by move: E'; rewrite BigQ.spec_compare -Qeq_alt=>/Qred_complete ->.
 Qed.
 
+Global Instance refine_ratBigQ_eq' :
+  refines (r_ratBigQ ==> r_ratBigQ ==> bool_R)%rel eqtype.eq_op eq_op.
+Proof.
+rewrite refinesE => x1 x2 rx y1 y2 ry.
+move: refine_ratBigQ_eq; rewrite refinesE => /(_ _ _ rx _ _ ry) <-.
+case: (_ == _); constructor.
+Qed.
+
 Global Instance refine_ratBigQ_lt :
   refines (r_ratBigQ ==> r_ratBigQ ==> bool_R) Num.lt lt_op.
 Proof.
