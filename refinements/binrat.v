@@ -329,6 +329,7 @@ Global Instance opp_bigQ : opp_of bigQ := BigQ.opp.
 Global Instance add_bigQ : add_of bigQ := BigQ.add.
 Global Instance sub_bigQ : sub_of bigQ := BigQ.sub.
 Global Instance mul_bigQ : mul_of bigQ := BigQ.mul.
+Global Instance inv_bigQ : inv_of bigQ := BigQ.inv.
 Global Instance eq_bigQ : eq_of bigQ := BigQ.eq_bool.
 Global Instance lt_bigQ : lt_of bigQ := fun p q => if BigQ.compare p q is Lt then true else false.
 Global Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt then false else true.
@@ -483,6 +484,50 @@ suff ->: (Z2int g * Z2int a' < 0 = (Z2int a' < 0))%R.
   move=> p; move: Pg'; case g=>// p'.
   by rewrite /Z2int=>/= H; exfalso; move: H; rewrite oppr_gt0. }
 by apply pmulr_rlt0.
+Qed.
+
+Global Instance refine_ratBigQ_inv :
+  refines (r_ratBigQ ==> r_ratBigQ)%rel GRing.inv inv_op.
+Proof.
+rewrite refinesE => x1 x2.
+case: (ratP x1) => n1 d1 Hn1d1 rx {x1}.
+apply/val_inj.
+rewrite /inv_op /inv_bigQ [LHS]/=.
+have ->: Qred [BigQ.inv x2]%bigQ = Qred (/ (Qred [x2]%bigQ)).
+{ by apply Qred_complete; rewrite BigQ.spec_inv Qred_correct. }
+move: rx.
+rewrite /r_ratBigQ /bigQ2rat /fun_hrel => /(f_equal val).
+rewrite [LHS]/= GRing.Theory.invf_div.
+move: (fracqE (n1, Posz d1.+1)%R); rewrite /fst /snd => <-.
+move: (fracqE (Posz d1.+1, n1)%R); rewrite /fst /snd => <-.
+rewrite /=.
+move: (Hn1d1) => /eqP ->; rewrite !divn1 -intEsign => -[].
+move: (Hn1d1) => /eqP; rewrite gcdnC => ->; rewrite !divn1.
+set s := (_ (+) _)%R.
+have -> : s = (n1 < 0)%R.
+{ by rewrite /s addbC -[0%R]/(- Posz 0)%R ltzN_nat. }
+move: (Qcanon.Qred_involutive [x2]%bigQ).
+rewrite Qcanon.Qred_iff /Qinv.
+case: Qnum => [|n2|n2] Hgcd H1 H2.
+{ by move: H1 => /= <-. }
+{ have -> : Qred (QDen (Qred [x2]%bigQ) # n2) = QDen (Qred [x2]%bigQ) # n2.
+  { by rewrite Qcanon.Qred_iff Z.gcd_comm. }
+  have -> : n1 == 0%R = false.
+  { by apply/negbTE/eqP; rewrite -H1 -[0%R]/(Z2int 0) => /Z2int_inj. }
+  apply: f_equal2; [|by rewrite -H1 -nat_of_pos_Z_to_pos].
+  rewrite -H2 nat_of_pos_Z_to_pos.
+  case: ltP => Hn1 /=.
+  { by exfalso; move: Hn1; apply/negP; rewrite -leNgt -H1. }
+  by rewrite expr0z GRing.mul1r. }
+have -> : Qred (Z.neg (Qden (Qred [x2]%bigQ)) # n2) = Z.neg (Qden (Qred [x2]%bigQ)) # n2.
+{ by rewrite Qcanon.Qred_iff Z.gcd_comm. }
+have -> : n1 == 0%R = false.
+{ by apply/negbTE/eqP; rewrite -H1 -[0%R]/(Z2int 0) => /Z2int_inj. }
+apply: f_equal2; [|by rewrite -H1 -abszN -Z2int_opp].
+case: ltP => Hn1.
+{ by rewrite expr1z -H2 GRing.mulN1r. }
+exfalso; move: Hn1; apply/negP; rewrite -ltNge -H1 -GRing.oppr0 /=.
+by rewrite Num.Theory.oppr_lt0 ltz_nat nat_of_pos_gt0.
 Qed.
 
 Global Instance refine_ratBigQ_eq :
