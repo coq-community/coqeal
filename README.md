@@ -19,12 +19,12 @@ This libary contains a subset of the work that was developed in the context of t
 ## Meta
 
 - Author(s):
-  - Guillaume Cano
+  - Guillaume Cano (initial)
   - Cyril Cohen (initial)
   - Maxime Dénès (initial)
   - Anders Mörtberg (initial)
   - Damien Rouhling
-  - Vincent Siles
+  - Vincent Siles (initial)
 - License: [MIT](LICENSE)
 - Compatible Coq versions: 8.10 or later (use releases for other Coq versions)
 - Additional dependencies:

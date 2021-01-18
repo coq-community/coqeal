@@ -22,7 +22,7 @@ publications:
 
 authors:
 - name: Guillaume Cano
-  initial: false
+  initial: true
 - name: Cyril Cohen
   initial: true
 - name: Maxime Dénès
@@ -32,7 +32,7 @@ authors:
 - name: Damien Rouhling
   initial: false
 - name: Vincent Siles
-  initial: false
+  initial: true
 
 maintainers:
 - name: Cyril Cohen
