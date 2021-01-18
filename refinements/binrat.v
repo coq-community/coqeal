@@ -16,6 +16,13 @@ Local Open Scope Z_scope.
 
 Import GRing.Theory Order.Theory Num.Theory.
 
+Section classes.
+
+Class max_of C := max_op : C -> C -> C.
+Class min_of C := min_op : C -> C -> C.
+
+End classes.
+
 (** ** Link between [Z] (Coq standard lib) and [int] (Mathcomp) *)
 Section Zint.
 
@@ -322,9 +329,15 @@ Global Instance opp_bigQ : opp_of bigQ := BigQ.opp.
 Global Instance add_bigQ : add_of bigQ := BigQ.add.
 Global Instance sub_bigQ : sub_of bigQ := BigQ.sub.
 Global Instance mul_bigQ : mul_of bigQ := BigQ.mul.
+Global Instance inv_bigQ : inv_of bigQ := BigQ.inv.
+Global Instance div_bigQ : div_of bigQ := BigQ.div.
 Global Instance eq_bigQ : eq_of bigQ := BigQ.eq_bool.
 Global Instance lt_bigQ : lt_of bigQ := fun p q => if BigQ.compare p q is Lt then true else false.
 Global Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt then false else true.
+Global Instance max_bigQ : max_of bigQ := BigQ.max.
+Global Instance min_bigQ : min_of bigQ := BigQ.min.
+Global Instance cast_of_nat_bigQ : cast_of nat bigQ := BigQ.of_Z \o Z.of_nat.
+Global Instance spec_bigQ : spec_of bigQ rat := bigQ2rat.
 
 (** *** Proofs of refinement *)
 
@@ -475,6 +488,58 @@ suff ->: (Z2int g * Z2int a' < 0 = (Z2int a' < 0))%R.
 by apply pmulr_rlt0.
 Qed.
 
+Global Instance refine_ratBigQ_inv :
+  refines (r_ratBigQ ==> r_ratBigQ)%rel GRing.inv inv_op.
+Proof.
+rewrite refinesE => x1 x2.
+case: (ratP x1) => n1 d1 Hn1d1 rx {x1}.
+apply/val_inj.
+rewrite /inv_op /inv_bigQ [LHS]/=.
+have ->: Qred [BigQ.inv x2]%bigQ = Qred (/ (Qred [x2]%bigQ)).
+{ by apply Qred_complete; rewrite BigQ.spec_inv Qred_correct. }
+move: rx.
+rewrite /r_ratBigQ /bigQ2rat /fun_hrel => /(f_equal val).
+rewrite [LHS]/= GRing.Theory.invf_div.
+move: (fracqE (n1, Posz d1.+1)%R); rewrite /fst /snd => <-.
+move: (fracqE (Posz d1.+1, n1)%R); rewrite /fst /snd => <-.
+rewrite /=.
+move: (Hn1d1) => /eqP ->; rewrite !divn1 -intEsign => -[].
+move: (Hn1d1) => /eqP; rewrite gcdnC => ->; rewrite !divn1.
+set s := (_ (+) _)%R.
+have -> : s = (n1 < 0)%R.
+{ by rewrite /s addbC -[0%R]/(- Posz 0)%R ltzN_nat. }
+move: (Qcanon.Qred_involutive [x2]%bigQ).
+rewrite Qcanon.Qred_iff /Qinv.
+case: Qnum => [|n2|n2] Hgcd H1 H2.
+{ by move: H1 => /= <-. }
+{ have -> : Qred (QDen (Qred [x2]%bigQ) # n2) = QDen (Qred [x2]%bigQ) # n2.
+  { by rewrite Qcanon.Qred_iff Z.gcd_comm. }
+  have -> : n1 == 0%R = false.
+  { by apply/negbTE/eqP; rewrite -H1 -[0%R]/(Z2int 0) => /Z2int_inj. }
+  apply: f_equal2; [|by rewrite -H1 -nat_of_pos_Z_to_pos].
+  rewrite -H2 nat_of_pos_Z_to_pos.
+  case: ltP => Hn1 /=.
+  { by exfalso; move: Hn1; apply/negP; rewrite -leNgt -H1. }
+  by rewrite expr0z GRing.mul1r. }
+have -> : Qred (Z.neg (Qden (Qred [x2]%bigQ)) # n2) = Z.neg (Qden (Qred [x2]%bigQ)) # n2.
+{ by rewrite Qcanon.Qred_iff Z.gcd_comm. }
+have -> : n1 == 0%R = false.
+{ by apply/negbTE/eqP; rewrite -H1 -[0%R]/(Z2int 0) => /Z2int_inj. }
+apply: f_equal2; [|by rewrite -H1 -abszN -Z2int_opp].
+case: ltP => Hn1.
+{ by rewrite expr1z -H2 GRing.mulN1r. }
+exfalso; move: Hn1; apply/negP; rewrite -ltNge -H1 -GRing.oppr0 /=.
+by rewrite Num.Theory.oppr_lt0 ltz_nat nat_of_pos_gt0.
+Qed.
+
+Global Instance refine_ratBigQ_div :
+  refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel (fun x y => x / y)%R div_op.
+Proof.
+apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
+rewrite /div_op /div_bigQ /BigQ.div.
+exact: refines_apply.
+Qed.
+
 Global Instance refine_ratBigQ_eq :
   refines (r_ratBigQ ==> r_ratBigQ ==> eq) eqtype.eq_op eq_op.
 Proof.
@@ -492,6 +557,14 @@ case E: (_ == _); case E': (_ ?= _)%bigQ=>//; rewrite ?refinesE //; exfalso.
 move: rab rcd; rewrite refinesE /r_ratBigQ /bigQ2rat /fun_hrel=> rba rdc.
 move: E; rewrite -rba -rdc=> /eqP H; apply H, val_inj=>/={H}.
 by move: E'; rewrite BigQ.spec_compare -Qeq_alt=>/Qred_complete ->.
+Qed.
+
+Global Instance refine_ratBigQ_eq' :
+  refines (r_ratBigQ ==> r_ratBigQ ==> bool_R)%rel eqtype.eq_op eq_op.
+Proof.
+rewrite refinesE => x1 x2 rx y1 y2 ry.
+move: refine_ratBigQ_eq; rewrite refinesE => /(_ _ _ rx _ _ ry) <-.
+case: (_ == _); constructor.
 Qed.
 
 Global Instance refine_ratBigQ_lt :
@@ -542,5 +615,46 @@ move: E'; rewrite BigQ.spec_compare Qred_compare -Qgt_alt /Qlt.
 rewrite !Z2int_mul_nat_of_pos=>H.
 by move/negP /Z2int_le=>H'; apply H', Z.lt_le_incl.
 Qed.
+
+Global Instance refine_ratBigQ_max :
+  refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel Num.max max_op.
+Proof.
+apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
+have H := refines_apply (refines_apply refine_ratBigQ_lt rx) ry.
+move: H => /refines_bool_eq; rewrite maxElt refinesE => ->.
+rewrite /lt_op /lt_bigQ /max_op /max_bigQ /BigQ.max.
+by case: (_ ?= _)%bigQ.
+Qed.
+
+Global Instance refine_ratBigQ_min :
+  refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel Num.min min_op.
+Proof.
+apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
+have H := refines_apply (refines_apply refine_ratBigQ_lt ry) rx.
+move: H => /refines_bool_eq; rewrite minEle leNgt refinesE => ->.
+rewrite /lt_op /lt_bigQ /min_op /min_bigQ /BigQ.min.
+rewrite !BigQ.spec_compare -QArith_base.Qcompare_antisym.
+by case: QArith_base.Qcompare.
+Qed.
+
+Global Instance refine_ratBigQ_of_nat :
+  refines (nat_R ==> r_ratBigQ)%rel (fun n => n%:~R%R) cast_op.
+Proof.
+rewrite refinesE => n _ /nat_R_eq <-.
+apply/val_inj.
+rewrite /= Z_ggcd_1_r /= BigZ.spec_of_Z.
+rewrite -ratzE ratz_frac.
+rewrite /valq /fracq /= expr0z GRing.mul1r gcdn1 !divn1.
+apply: f_equal2 => [|//].
+rewrite -{2}[n]Nat2Z.id.
+rewrite /Z2int.
+move: (Zle_0_nat n).
+case: Z.of_nat => [//|p|//] _.
+by rewrite -binnat.to_natE.
+Qed.
+
+Global Instance refine_ratBigQ_spec :
+  refines (eq ==> r_ratBigQ)%rel spec spec_id.
+Proof. by rewrite refinesE => x _ <-. Qed.
 
 End binrat_theory.
