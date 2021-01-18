@@ -1,0 +1,108 @@
+---
+fullname: CoqEAL
+shortname: coqeal
+organization: CoqEAL
+community: false
+action: true
+coqdoc: false
+dune: false
+
+synopsis: >-
+  CoqEAL - The Coq Effective Algebra Library
+
+description: |-
+  This libary contains a subset of the work that was developed in the context of the ForMath european project (2009-2013). It has two parts:
+  - theory (module CoqEAL_theory), which contains formal developments in algebra and optimized algorithms on mathcomp data structures.
+  - refinements (module CoqEAL_refinements), which is a framework to ease change of data representation during a proof.
+
+publications:
+- pub_url: https://hal.inria.fr/hal-01113453/document
+  pub_title: Refinements for free!
+  pub_doi: 10.1007/978-3-319-03545-1_10
+
+authors:
+- name: Guillaume Cano
+  initial: false
+- name: Cyril Cohen
+  initial: true
+- name: Maxime Dénès
+  initial: true
+- name: Anders Mörtberg
+  initial: true
+- name: Damien Rouhling
+  initial: false
+- name: Vincent Siles
+  initial: false
+
+maintainers:
+- name: Cyril Cohen
+  nickname: CohenCyril
+
+opam-file-maintainer: Cyril Cohen <cyril.cohen@inria.fr>
+
+opam-file-version: dev
+
+license:
+  fullname: MIT
+  identifier: MIT
+
+supported_coq_versions:
+  text: 8.10 or later (use releases for other Coq versions)
+  opam: '{(>= "8.10" & < "8.14~") | (= "dev")}'
+
+dependencies:
+- opam:
+    name: coq-bignums
+  description: |-
+    [Bignums](https://github.com/coq/bignums) same version as Coq
+- opam:
+    name: coq-paramcoq
+    version: '{(>= "1.1.1") | (= "dev")}'
+  description: |-
+    [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.1 or later
+- opam:
+    name: coq-mathcomp-multinomials
+    version: '{((>= "1.5.1" & < "1.7~") | = "dev")}'
+  description: |-
+    [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 1.5.1 and < 1.7
+- opam:
+    name: coq-mathcomp-algebra
+    version: '{((>= "1.11.0" & < "1.13~") | = "dev")}'
+  description: |-
+    [MathComp](https://math-comp.github.io) 1.11.0 or later
+
+tested_coq_opam_versions:
+- version: '1.12.0-coq-8.12'
+  repo: 'mathcomp/mathcomp'
+- version: '1.12.0-coq-8.11'
+  repo: 'mathcomp/mathcomp'
+- version: '1.12.0-coq-8.10'
+  repo: 'mathcomp/mathcomp'
+- version: '1.11.0-coq-8.12'
+  repo: 'mathcomp/mathcomp'
+- version: '1.11.0-coq-8.11'
+  repo: 'mathcomp/mathcomp'
+- version: '1.11.0-coq-8.10'
+  repo: 'mathcomp/mathcomp'
+
+namespace: CoqEAL
+
+keywords:
+- name: effective algebra
+- name: elementary divisor rings
+- name: Smith normal form
+- name: mathematical components
+- name: Bareiss
+- name: Karatsuba
+- name: refinements
+
+categories:
+- name: Computer Science/Decision Procedures and Certified Algorithms/Correctness proofs of algorithms
+
+documentation: |-
+  ## Additional directories
+  
+  - doc: tools for generating documentation out of local documentation.
+  
+  - releases: archives of pre-GitHub releases
+---
