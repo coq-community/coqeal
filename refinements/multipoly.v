@@ -1314,8 +1314,8 @@ have -> : \sum_(m <- msupp p) f m p@_m
   by rewrite Hf GRing.add0r GRing.scale0r GRing.subr0. }
 eapply refines_apply.
 { eapply refines_apply; [by apply refine_mpoly_add_eff|].
-  eapply refines_apply; [|by apply trivial_refines; symmetry].
-  eapply refines_apply; [eapply ref_f|apply ref_m]. }
+  apply: (@refines_apply _ _ eq).
+  exact: trivial_refines. }
 apply IH.
 rewrite /pmcm /cm -Hc.
 apply (rem_mpoly_eff Hq Hq' Hp ref_m).
@@ -1564,7 +1564,8 @@ apply refine_mpoly_sum_eff.
   change (_ * _) with ((fun lq => c%:MP_[n] * mmap1 (tnth lq) m) lq).
   eapply refines_apply; [|by apply ref_lq].
   change (fun _ => _) with ((fun c lq => c%:MP_[n] * mmap1 (tnth lq) m) c).
-  eapply refines_apply; [|by apply trivial_refines; symmetry].
+  apply: (@refines_apply _ _ eq); last first.
+  { exact: trivial_refines. }
   change (fun _ => _) with ((fun m (c : T) lq => c%:MP_[n] * mmap1 (tnth lq) m) m).
   eapply refines_apply; [apply refine_comp_monomial_eff|apply ref_m]. }
 apply ref_p.
@@ -2138,10 +2139,8 @@ move=> K; inversion K.
   eapply refines_apply; [apply refine_M_hrel_singleton|by apply trivial_refines]. }
 eapply refines_apply; [eapply refines_apply|].
 { by apply refine_M_hrel_mpoly_mul_eff. }
-{ eapply refines_apply; [|by apply trivial_refines; symmetry].
-  eapply refines_apply; first by apply refine_M_hrel_mpoly_exp_eff.
-  apply trivial_refines.
-  done. }
+{ apply: (@refines_apply _ _ eq).
+  exact: trivial_refines. }
 by apply IH; rewrite refinesE.
 Qed.
 
