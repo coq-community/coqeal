@@ -22,6 +22,9 @@ publications:
 - pub_url: https://hal.inria.fr/hal-01113453/document
   pub_title: Refinements for free!
   pub_doi: 10.1007/978-3-319-03545-1_10
+- pub_url: https://hal.inria.fr/hal-01378905/document
+  pub_title: A Coq Formalization of Finitely Presented Modules
+  pub_doi: 10.1007/978-3-319-08970-6_13
 - pub_url: https://hal.inria.fr/hal-01081908/document
   pub_title: Formalized Linear Algebra over Elementary Divisor Rings in Coq
   pub_doi: 10.2168/LMCS-12(2:7)2016

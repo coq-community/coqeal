@@ -36,6 +36,7 @@ This libary contains a subset of the work that was developed in the context of t
 - Related publication(s):
   - [A refinement-based approach to computational algebra in Coq](https://hal.inria.fr/hal-00734505/document) doi:[10.1007/978-3-642-32347-8_7](https://doi.org/10.1007/978-3-642-32347-8_7)
   - [Refinements for free!](https://hal.inria.fr/hal-01113453/document) doi:[10.1007/978-3-319-03545-1_10](https://doi.org/10.1007/978-3-319-03545-1_10)
+  - [A Coq Formalization of Finitely Presented Modules](https://hal.inria.fr/hal-01378905/document) doi:[10.1007/978-3-319-08970-6_13](https://doi.org/10.1007/978-3-319-08970-6_13)
   - [Formalized Linear Algebra over Elementary Divisor Rings in Coq](https://hal.inria.fr/hal-01081908/document) doi:[10.2168/LMCS-12(2:7)2016](https://doi.org/10.2168/LMCS-12(2:7)2016)
   - [A refinement-based approach to large scale reflection for algebra](https://hal.inria.fr/hal-01414881/document) 
 
