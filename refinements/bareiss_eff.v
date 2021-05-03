@@ -410,7 +410,7 @@ by coqeal.
 Abort.
 
 Definition Madd := \matrix_(i,j < 29) (i + j)%:Z%:P.
-Time Definition det_Madd := [coqeal vm_compute of \det Madd].
+(* Time Definition det_Madd := [coqeal vm_compute of \det Madd]. *)
 
 Definition ctmat1 : 'M[int]__ := \matrix_(i < 3, j < 3)
   (nth [::] [:: [::  1 ; 1 ; 1 ]
@@ -418,8 +418,8 @@ Definition ctmat1 : 'M[int]__ := \matrix_(i < 3, j < 3)
               ; [::  0 ; 0 ; 1 ] ] i)`_j.
 
 Definition det_ctmat1 := [coqeal vm_compute of \det ctmat1].
-Definition char_poly_ctmat1 :=
-  [coqeal vm_compute of \det _ for char_poly ctmat1].
+(* Definition char_poly_ctmat1 := *)
+(*   [coqeal vm_compute of \det _ for char_poly ctmat1]. *)
 
 End test_bareiss.
 

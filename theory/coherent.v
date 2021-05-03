@@ -1,5 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From HB Require Import structures.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 From mathcomp Require Import ssralg fintype perm choice matrix bigop zmodp mxalgebra poly.
 
@@ -18,94 +19,28 @@ Delimit Scope mxpresentation_scope with MP.
 Local Open Scope mxpresentation_scope.
 
 (** Coherent rings *)
-Module CoherentRing.
-
-Record mixin_of (R : ringType) : Type := Mixin {
+HB.mixin Record Ring_isCoherent R of GRing.Ring R := {
   dim_ker : forall m n, 'M[R]_(m,n) -> nat;
-  ker : forall m n (M : 'M_(m,n)), 'M_(dim_ker M,m);
-  _ : forall m n (M : 'M_(m,n)) (X : 'rV_m),
-      reflect (exists Y, X = Y *m ker M) (X *m M == 0)
+  ker : forall m n (M : 'M_(m,n)), 'M_(dim_ker _ _ M,m);
+  kerP_subproof : forall m n (M : 'M_(m,n)) (X : 'rV_m),
+      reflect (exists Y, X = Y *m ker _ _ M) (X *m M == 0)
 }.
 
-Section ClassDef.
+HB.structure Definition CoherentRing :=
+  { R of Ring_isCoherent R & StronglyDiscrete R }.
 
-(** Coherent rings are based on strongly discrete rings *)
-Record class_of (R : Type) : Type := Class {
-  base  : StronglyDiscrete.class_of R;
-  mixin : mixin_of (StronglyDiscrete.Pack base)
-}.
-Local Coercion base : class_of >-> StronglyDiscrete.class_of.
-
-Structure type : Type := Pack {sort : Type; _ : class_of sort}.
-Local Coercion sort : type >-> Sortclass.
-
-Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c.
-
-Definition pack b0 (m0 : mixin_of (@StronglyDiscrete.Pack T b0)) :=
-  fun bT b & phant_id (StronglyDiscrete.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m).
-
-Definition eqType := Equality.Pack class.
-Definition choiceType := Choice.Pack class.
-Definition zmodType := GRing.Zmodule.Pack class.
-Definition ringType := GRing.Ring.Pack class.
-Definition comRingType := GRing.ComRing.Pack class.
-Definition unitRingType := GRing.UnitRing.Pack class.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class.
-Definition idomainType := GRing.IntegralDomain.Pack class.
-Definition stronglyDiscreteType := StronglyDiscrete.Pack class.
-
-End ClassDef.
-
-Module Exports.
-Coercion base : class_of >-> StronglyDiscrete.class_of.
-Coercion mixin : class_of >-> mixin_of.
-Coercion sort : type >-> Sortclass.
-Bind Scope ring_scope with sort.
-Coercion eqType : type >-> Equality.type.
-Canonical Structure eqType.
-Coercion choiceType : type >-> Choice.type.
-Canonical Structure choiceType.
-Coercion zmodType : type >-> GRing.Zmodule.type.
-Canonical Structure zmodType.
-Coercion ringType : type >-> GRing.Ring.type.
-Canonical Structure ringType.
-Coercion comRingType : type >-> GRing.ComRing.type.
-Canonical Structure comRingType.
-Coercion unitRingType : type >-> GRing.UnitRing.type.
-Canonical Structure unitRingType.
-Coercion comUnitRingType : type >-> GRing.ComUnitRing.type.
-Canonical Structure comUnitRingType.
-Coercion idomainType : type >-> GRing.IntegralDomain.type.
-Canonical Structure idomainType.
-Coercion stronglyDiscreteType : type >-> StronglyDiscrete.type.
-Canonical Structure stronglyDiscreteType.
-
-Notation coherentRingType := type.
-Notation CoherentRingType T m := (@pack T _ m _ _ id _ id).
-Notation CoherentRingMixin := Mixin.
-Notation "[ 'coherentRingType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
+Notation coherentRingType := CoherentRing.type.
+Notation "[ 'coherentRingType' 'of' T 'for' cT ]" := (CoherentRing.clone T cT)
   (at level 0, format "[ 'coherentRingType'  'of'  T  'for'  cT ]") : form_scope.
-Notation "[ 'coherentRingType' 'of' T ]" := (@clone T _ _ id)
+Notation "[ 'coherentRingType' 'of' T ]" := (CoherentRing.clone T _)
   (at level 0, format "[ 'coherentRingType'  'of'  T ]") : form_scope.
-End Exports.
 
-End CoherentRing.
-Export CoherentRing.Exports.
-
-Definition dim_ker R := CoherentRing.dim_ker (CoherentRing.class R).
-Definition ker R (m n : nat) (M : 'M_(m, n)) :'M_(dim_ker M, m) :=
-  @CoherentRing.ker _ (CoherentRing.class R) m n M.
+Arguments dim_ker {_} [_ _].
+Arguments ker {_} [_ _].
 
 Section CoherentRingTheory.
 
 Variable R : coherentRingType.
-
-Lemma kerP_subproof : forall m n (M : 'M[R]_(m,n)) (X : 'rV_m),
-  reflect (exists Y : 'rV_(dim_ker M), X = Y *m ker M) (X *m M == 0).
-Proof. by case: R => [? [? []]]. Qed.
 
 Lemma kerK m n (M : 'M[R]_(m,n)) : ker M *m M = 0.
 Proof.
@@ -126,7 +61,7 @@ apply: (iffP eqP); last first.
   case=> [Y ->]; apply/row_matrixP => i.
   by rewrite !row_mul row0 kerAK.
 move=> XM0; have XM0_ i : row i X *m M == 0 by rewrite -row_mul XM0 row0.
-exists (\matrix_(i, j) (projT1 (sig_eqW (kerP_subproof _ _ (XM0_ i)))) 0 j).
+exists (\matrix_(i, j) (projT1 (sig_eqW (kerP_subproof _ _ _ _ (XM0_ i)))) 0 j).
 by apply/row_matrixP => i; rewrite row_mul rowK; case: sig_eqW.
 Qed.
 
@@ -186,7 +121,7 @@ Proof. by move=> /dvdmxP [X ->] /dvdmxP [Y ->]; rewrite mulmxA dvdmxMl. Qed.
 
 Lemma dvdmx0 k m n (M : 'M[R]_(m,n)) : M %| (0 : 'M[R]_(k,n)).
 Proof. by apply/dvdmxP; exists 0; rewrite mul0mx. Qed.
-Hint Resolve dvdmx0 : core.
+Hint Extern 0 (is_true (_ %| 0)) => solve [apply: dvdmx0] : core.
 
 Lemma dvd1mx m n (M : 'M[R]_(m,n)) : 1%:M %| M.
 Proof. by apply/dvdmxP; exists M; rewrite mulmx1. Qed.
@@ -315,7 +250,8 @@ Notation "M .-ker" := (ker_mod M)
   (at level 10, format "M .-ker") : mxpresentation_scope.
 Notation "M %| B" := (dvdmx M B) : mxpresentation_scope.
 
-#[export] Hint Resolve dvdmx_refl dvdmx0 dvd1mx : core.
+#[export] Hint Resolve dvdmx_refl dvd1mx : core.
+#[export] Hint Extern 0 (is_true (_ %| 0)) => solve [apply: dvdmx0] : core.
 
 
 (* It suffices to show how to solve xM = 0 when M is a column for the ring to
@@ -372,20 +308,17 @@ Qed.
 (*    finitely generated ideals is again finitely generated. It requires that *)
 (*    the underlying ring (in this case a strongly discrete ring) is an *)
 (*    integral domain *)
-Section IntersectionCoherent.
+HB.factory Record StronglyDiscrete_isIntersectionCoherent R
+           of StronglyDiscrete R := {
+  (** The size of the intersection - 1, this is done to ensure that *)
+  (*    the intersection is nonempty *)
+  dim_cap : forall m n, 'cV[R]_m -> 'cV[R]_n -> nat;
+  (** Intersection of two ideals *)
+  cap : forall n m (I : 'cV[R]_n) (J : 'cV[R]_m), 'cV[R]_(dim_cap _ _ I J).+1;
+  cap_spec : forall n m (I : 'cV[R]_n) (J : 'cV[R]_m), int_spec (cap _ _ I J)
+}.
 
-Variable R : stronglyDiscreteType.
-
-(** The size of the intersection - 1, this is done to ensure that *)
-(*    the intersection is nonempty *)
-Variable dim_cap : forall m n, 'cV[R]_m -> 'cV[R]_n -> nat.
-
-(** Intersection of two ideals *)
-Variable cap :
-  forall n m (I : 'cV[R]_n) (J : 'cV[R]_m), 'cV[R]_(dim_cap I J).+1.
-
-Hypothesis cap_spec : forall n m (I : 'cV[R]_n) (J : 'cV[R]_m),
-  int_spec (cap I J).
+HB.builders Context R of StronglyDiscrete_isIntersectionCoherent R.
 
 Fixpoint dim_int n : 'cV[R]_n -> nat :=
   if n is p.+1 then
@@ -476,16 +409,15 @@ case: (IH vs _) => // [[]].
 by exists (rsubmx W).
 Qed.
 
-Definition int_coherentMixin := CoherentRing.Mixin (ker_cP ker_c_intP).
-Canonical Structure int_coherentType :=
-  Eval hnf in CoherentRingType R int_coherentMixin.
+HB.instance Definition _ := Ring_isCoherent.Build R (ker_cP ker_c_intP).
 
-End IntersectionCoherent.
+HB.end.
 
 
 (* Using the above result one can prove that Bezout rings are coherent, however
    this is not what we want as we want to prove that constructive PIDs are
    coherent using smith *)
+Module BezoutCoherent.
 Section BezoutCoherent.
 
 Variable R : bezoutDomainType.
@@ -580,8 +512,9 @@ case: (bcap_int h1 h2) => D hD.
 by exists D.
 Qed.
 
-Definition bezout_coherentMixin := int_coherentMixin bcap_spec.
-Canonical Structure bezout_coherentType :=
-  Eval hnf in CoherentRingType R bezout_coherentMixin.
+#[non_forgetful_inheritance]
+HB.instance Definition _ := StronglyDiscrete_isIntersectionCoherent.Build R
+  bcap_spec.
 
+End BezoutCoherent.
 End BezoutCoherent.

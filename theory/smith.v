@@ -1,10 +1,11 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 (* Require Import ZArith. *)
+From HB Require Import structures.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
-From mathcomp Require Import ssralg ssrint ssrnum fintype.
+From mathcomp Require Import ssralg ssrint ssrnum fintype choice.
 From mathcomp Require Import matrix mxalgebra bigop zmodp perm.
-Require Import edr dvdring mxstructure.
+Require Import dvdring mxstructure stronglydiscrete coherent edr.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -34,12 +35,10 @@ and back to 1) *)
 
 Variable E : euclidDomainType.
 
-
 Variable find1 : forall m n, 'M[E]_(m.+1,n.+1) -> E -> option 'I_m.
 Variable find2 : forall m n, 'M[E]_(m.+1,n.+1) -> E -> option ('I_(1+m) * 'I_n).
 Variable find_pivot :
   forall m n, 'M[E]_(1 + m,1 + n) -> option ('I_(1 + m) * 'I_(1 + n)).
-
 Hypothesis find1P : forall m n (E : 'M[E]_(1 + m,1 + n)) a,
   pick_spec [pred i | ~~(a %| E (lift 0 i) 0)] (find1 E a).
 Hypothesis find2P : forall m n (E : 'M[E]_(1 + m,1 + n)) a,
@@ -276,7 +275,24 @@ case H: (Smith _) (Ih n' M) => [[i s] k] /=.
 by rewrite size_map minnSS ltnS.
 Qed.
 
-Definition euclidEDRMixin := EDR.Mixin SmithP.
-Canonical euclidEDRType   := Eval hnf in EDRType E euclidEDRMixin.
-
 End smith.
+
+HB.factory Record hasSmith E of EuclideanDomain E := {
+  find1 : forall m n, 'M[E]_(m.+1,n.+1) -> E -> option 'I_m;
+  find2 : forall m n, 'M[E]_(m.+1,n.+1) -> E -> option ('I_(1+m) * 'I_n);
+  find_pivot :
+    forall m n, 'M[E]_(1 + m,1 + n) -> option ('I_(1 + m) * 'I_(1 + n));
+  find1P : forall m n (E : 'M[E]_(1 + m,1 + n)) a,
+    pick_spec [pred i | ~~(a %| E (lift 0 i) 0)] (find1 _ _ E a);
+  find2P : forall m n (E : 'M[E]_(1 + m,1 + n)) a,
+    pick_spec [pred ij | ~~(a %| E ij.1 (lift 0 ij.2))] (find2 _ _ E a);
+  find_pivotP : forall m n (E : 'M[E]_(1 + m,1 + n)),
+    pick_spec [pred ij | E ij.1 ij.2 != 0] (find_pivot _ _ E)
+}.
+
+HB.builders Context E of hasSmith E.
+
+HB.instance Definition _ := DvdRing_isEDR.Build E
+  (SmithP find1P find2P find_pivotP).
+
+HB.end.

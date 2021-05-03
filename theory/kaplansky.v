@@ -1,9 +1,10 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From HB Require Import structures.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 From mathcomp Require Import ssralg fintype matrix mxalgebra bigop zmodp perm choice.
 
-Require Import dvdring mxstructure minor edr.
+Require Import dvdring mxstructure minor stronglydiscrete coherent edr.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -153,12 +154,12 @@ have dvd_d20_d0 : d2`_0 %| d1`_0.
     by rewrite !mxE; case: j hj=> [[]].
   move/(canRL (mulmxK hQ2))/(canRL (mulKmx hP2)): H1 => ->.
   apply: dvdr_mulmxl=> i j; apply: dvdr_mulmxr=> {}i {}j.
-  by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n.
+  by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n ?dvdr0.
 have hx0 i j : d1`_0 %| d1`_i *+ (i == j).
   by case: eqP => _; rewrite ?sorted_nth0 // mulr0n dvdr0.
 have Hdvd i j : d2`_0 %| H i j.
   rewrite -[(1 + (1 + _))%N]/(2 + _)%N /H H1 dvdr_row_mx //; split=> {}i {}j.
-    by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n.
+    by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n ?dvdr0.
   apply: dvdr_mulmxl=> {}i {}j; rewrite /E row_mxKr h1 !mxE.
   move: (dvdr_trans dvd_d20_d0 (hx0 i (rshift 1 j))).
   by case: eqP => _; rewrite ?(mulr0n,dvdr0,mulr1n).
@@ -215,7 +216,7 @@ have dvd_y0_x0 : y0 %| x`_0.
     by case: unliftP=> // [[[]]] //= i _; rewrite !mxE.
   move/(canRL (mulmxK hQ2))/(canRL (mulKmx hP2)): hP2yQ2=> ->.
   apply: dvdr_mulmxl=> i j; apply: dvdr_mulmxr=> {}i {}j.
-  by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n.
+  by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n ?dvdr0.
 have hx0 i j : x`_0 %| x`_i *+ (i == j).
   by case: (i == j :> nat); rewrite ?sorted_nth0 // mulr0n dvdr0.
 have Hdvd i j : y0 %| H i j.
@@ -354,9 +355,9 @@ by case: sig_eqW=> /= [[]].
 Qed.
 
 Definition egcdr3 (a b c : R) :=
-  let: (g',u1,v1,b1,c1) := egcdr b c in
-  let: (g, u, v, a1,g1) := egcdr a g' in
-  (g, u, v * u1, v * v1, a1, b1 * g1, c1 * g1).
+  let: (g',u1,vv1,b1,c1) := egcdr b c in
+  let: (g,u,v,a1,g1)    := egcdr a g' in
+  (g, u, v * u1, v * vv1, a1, b1 * g1,c1 * g1).
 
 Variant egcdr3_spec a b c : R * R * R * R * R * R * R -> Type :=
   EgcdrSpec g x y z a1 b1 c1 of x * a1 + y * b1 + z * c1 = 1
@@ -581,18 +582,25 @@ rewrite /gdco_smith.
 by apply: smithmxnP; apply: kap_smithP; apply: gdco_kapP.
 Qed.
 
-Definition gdcoEDRMixin := EDR.Mixin gdco_smithP.
-Canonical gdcoEDRType   := Eval hnf in EDRType R gdcoEDRMixin.
-
 End AdequacyEDR.
 
-Section BezoutKrull1.
+HB.factory Record BezoutDomain_isAdequacyEDR R of BezoutDomain R := {
+  gdco : R -> R -> R;
+  gdcoP : forall p q, gdco_spec p q (gdco p q)
+}.
 
-Variable R : bezoutDomainType.
+HB.builders Context R of BezoutDomain_isAdequacyEDR R.
+  HB.instance Definition _ := DvdRing_isEDR.Build R (gdco_smithP gdcoP).
+HB.end.
 
-Implicit Types a b u : R.
+HB.factory Record BezoutDomain_isKrull1EDR R of BezoutDomain R := {
+  krull1 : forall a u : [the bezoutDomainType of R],
+    exists m v, a %| u ^+ m * (1 - u * v)
+}.
 
-Hypothesis krull1 : forall a u, exists m v, a %| u ^+ m * (1 - u * v).
+HB.builders Context R of BezoutDomain_isKrull1EDR R.
+
+Implicit Types a b u : [the bezoutDomainType of R].
 
 Lemma krull1_factor a b :
   exists n b1 b2, [&& 0 < n, b == b1 * b2, coprimer b1 a & b2 %| a ^+ n].
@@ -698,11 +706,11 @@ Definition krull1_smith := gdco_smith krull1_gdco.
 Lemma krull1_smithP m n (M : 'M[R]_(m,n)) : smith_spec M (krull1_smith M).
 Proof. by apply: gdco_smithP=> a b; apply: krull1_gdcoP. Qed.
 
-Definition krull1EDRMixin := EDR.Mixin krull1_smithP.
-Canonical krull1EDRType   := Eval hnf in EDRType R krull1EDRMixin.
+HB.instance Definition _ := DvdRing_isEDR.Build R krull1_smithP.
 
-End BezoutKrull1.
+HB.end.
 
+Module AdequacyPID.
 Section AdequacyPID.
 
 Variable R : pidType.
@@ -734,8 +742,8 @@ Proof.
 by rewrite /pid_smith; apply: gdco_smithP=> a b; case: (pid_gdco a b).
 Qed.
 
-Definition pidEDRMixin := EDR.Mixin pid_smithP.
-Canonical pidEDRType   := Eval hnf in EDRType R pidEDRMixin.
+#[non_forgetful_inheritance]
+HB.instance Definition _ := DvdRing_isEDR.Build R pid_smithP.
 
 (* This should be provable *)
 (* Lemma pri_krull1 (a : R) (u : R) : exists m v, a %| u ^+ m * (1 - u * v). *)
@@ -743,4 +751,5 @@ Canonical pidEDRType   := Eval hnf in EDRType R pidEDRMixin.
 (* admit. *)
 (* Qed. *)
 
+End AdequacyPID.
 End AdequacyPID.

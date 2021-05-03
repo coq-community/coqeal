@@ -52,6 +52,8 @@ Inductive PExpr :=
   | PEopp : PExpr -> PExpr
   | PEpow : PExpr -> nat -> PExpr.
 
+Definition poly_comRingType (R : comRingType) : comRingType :=
+  [the comRingType of {poly R}].
 Definition Npoly (R : comRingType) : nat -> comRingType := fix aux n :=
   if n is n.+1 then poly_comRingType (aux n) else R.
 

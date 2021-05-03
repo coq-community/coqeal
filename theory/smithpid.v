@@ -1,10 +1,11 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From HB Require Import structures.
 (* Require Import ZArith. *)
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
-From mathcomp Require Import ssralg ssrint ssrnum fintype.
+From mathcomp Require Import ssralg ssrint ssrnum fintype choice.
 From mathcomp Require Import matrix mxalgebra bigop zmodp perm.
-Require Import edr dvdring mxstructure.
+Require Import dvdring mxstructure stronglydiscrete coherent edr.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -13,8 +14,6 @@ Unset Printing Implicit Defensive.
 Import GRing.Theory.
 
 Local Open Scope ring_scope.
-
-Section smith_def.
 
 (* Two-steps approach:
 
@@ -32,16 +31,20 @@ Section smith_def.
 For any i j s.t. ~~ g %| M i j, xrow 0 i M, bezout step on the first row
 and back to 1) *)
 
-Variable R : pidType.
+HB.factory Record SmithPID R of PID R := {
+  find1 : forall m n, 'M[R]_(m.+1,n.+1) -> R -> option 'I_m;
+  find2 : forall m n, 'M[R]_(m.+1,n.+1) -> R -> option ('I_(1 + m) * 'I_n);
+  find1P : forall m n (M : 'M[R]_(1 + m,1 + n)) a,
+    pick_spec [pred i | ~~(a %| M (lift 0 i) 0)] (find1 _ _ M a);
+  find2P : forall m n (M : 'M[R]_(1 + m,1 + n)) a,
+    pick_spec [pred ij | ~~(a %| M ij.1 (lift 0 ij.2))] (find2 _ _ M a);
+  find_pivot :
+    forall m n, 'M[R]_(1 + m,1 + n) -> option ('I_(1 + m) * 'I_(1 + n));
+  find_pivotP : forall m n (M : 'M[R]_(1 + m,1 + n)),
+    pick_spec [pred ij | M ij.1 ij.2 != 0] (find_pivot _ _ M)
+}.
 
-Variable find1 : forall m n, 'M[R]_(m.+1,n.+1) -> R -> option 'I_m.
-Variable find2 :
-  forall m n, 'M[R]_(m.+1,n.+1) -> R -> option ('I_(1 + m) * 'I_n).
-
-Hypothesis find1P : forall m n (M : 'M[R]_(1 + m,1 + n)) a,
-  pick_spec [pred i | ~~(a %| M (lift 0 i) 0)] (find1 M a).
-Hypothesis find2P : forall m n (M : 'M[R]_(1 + m,1 + n)) a,
-  pick_spec [pred ij | ~~(a %| M ij.1 (lift 0 ij.2))] (find2 M a).
+HB.builders Context R of SmithPID R.
 
 (* This lemma is used in the termination proof of improve_pivot_rec *)
 Lemma sdvd_Bezout_step2 m n i j u' vM (M : 'M[R]_(1 + m, 1 + n)) :
@@ -62,7 +65,7 @@ by rewrite {2}/C [_ (lift _ _) _]mxE [matrix.xrow _ _ _ _ _]mxE tpermL.
 Qed.
 
 Fixpoint improve_pivot_rec {m n} (P : 'M[R]_(1 + m)) (M : 'M[R]_(1 + m, 1 + n))
-         (Q : 'M[R]_(1 + n)) (k : Acc (@sdvdr R) (M 0 0)) :
+         (Q : 'M[R]_(1 + n)) (k : Acc (@sdvdr [the dvdRingType of R]) (M 0 0)) :
          'M[R]_(1 + m) * 'M[R]_(1 + m, 1 + n) * 'M[R]_(1 + n) :=
     match k with Acc_intro IHa =>
       if find1P M (M 0 0) is Pick i Hi then
@@ -87,9 +90,6 @@ Fixpoint improve_pivot_rec {m n} (P : 'M[R]_(1 + m)) (M : 'M[R]_(1 + m, 1 + n))
         else (P, A, Q)
     end.
 
-Variable find_pivot :
-  forall m n, 'M[R]_(1 + m,1 + n) -> option ('I_(1 + m) * 'I_(1 + n)).
-
 Definition improve_pivot m n (M : 'M[R]_(1 + m, 1 + n)) :=
   improve_pivot_rec 1 1 (sdvdr_wf (M 0 0)).
 
@@ -111,9 +111,6 @@ Fixpoint Smith {m n} : 'M[R]_(m,n) -> 'M[R]_(m) * seq R * 'M[R]_(n) :=
   | _, _ => fun M => (1%:M, [::], 1%:M)
   end.
 
-Hypothesis find_pivotP : forall m n (M : 'M[R]_(1 + m,1 + n)),
-  pick_spec [pred ij | M ij.1 ij.2 != 0] (find_pivot M).
-
 Variant improve_pivot_rec_spec m n P M Q :
   'M[R]_(1 + m) * 'M[R]_(1 + m,1 + n) * 'M[R]_(1 + n) -> Type :=
   ImprovePivotRecSpec P' A Q' of P^-1 *m M *m Q^-1 = P'^-1 *m A *m Q'^-1
@@ -131,7 +128,8 @@ Definition unitmxEE := (unitmx_mul, unitmx_tr, unit_Bezout_mx, unitmx_perm).
 Scheme Acc_rect_dep := Induction for Acc Sort Type.
 
 Lemma improve_pivot_recP :
-  forall m n (P : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) Q (k : Acc (@sdvdr R) (M 0 0)),
+  forall m n (P : 'M_(1 + m)) (M : 'M_(1 + m,1 + n)) Q
+         (k : Acc (@sdvdr [the dvdRingType of R]) (M 0 0)),
    M 0 0 != 0 ->
    P \in unitmx -> Q \in unitmx ->
     improve_pivot_rec_spec P M Q (improve_pivot_rec P Q k).
@@ -311,7 +309,6 @@ move: (Ih n' (map_mx (fun x => odflt 0 (x %/? b 0 0))
 by rewrite H.
 Qed.
 
-Definition pidEDRMixin := EDR.Mixin SmithP.
-Canonical pidEDRType   := Eval hnf in EDRType R pidEDRMixin.
+HB.instance Definition _ := DvdRing_isEDR.Build R SmithP.
 
-End smith_def.
+HB.end.

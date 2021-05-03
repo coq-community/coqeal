@@ -1,3 +1,4 @@
+From HB Require Import structures.
 Require Import mathcomp.ssreflect.ssreflect.
 From mathcomp
 Require Import ssrfun ssrbool eqtype ssrnat seq choice fintype tuple.
@@ -30,19 +31,14 @@ Record npolynomial : predArgType := Npolynomial {
   _ : (size poly_of_npoly <= n)%N
 }.
 
-Canonical npoly_subType := [subType for poly_of_npoly].
-Definition npoly_eqMixin := Eval hnf in [eqMixin of npolynomial by <:].
-Canonical npoly_eqType := Eval hnf in EqType npolynomial npoly_eqMixin.
-Definition npoly_choiceMixin := [choiceMixin of npolynomial by <:].
-Canonical npoly_choiceType :=
-  Eval hnf in ChoiceType npolynomial npoly_choiceMixin.
+HB.instance Definition _ := [isSub of npolynomial for poly_of_npoly].
+HB.instance Definition _ := [Choice of pos by <:].
 
 Definition npoly_of of (phant R) := npolynomial.
 Local Notation npoly_ofR := (npoly_of (Phant R)).
 
-Canonical npoly_of_subType := [subType of npoly_ofR].
-Definition npoly_of_eqType := [eqType of npoly_ofR].
-Definition npoly_of_choiceType := [eqType of npoly_ofR].
+HB.instance Definition _ := SubType.on npoly_ofR.
+HB.instance Definition _ := [Equality of npoly_ofR by <:].
 
 End npoly.
 
@@ -88,13 +84,7 @@ Variable R : finRingType.
 Variable n : nat.
 Implicit Types p q : {poly_n R}.
 
-Definition npoly_countMixin : Countable.mixin_of {poly_n R} :=
-   @sub_countMixin (CountType {poly R} (poly_countMixin [countRingType of R]))
-                   _ (npoly_subType n R).
-Canonical npoly_countType := Eval hnf in CountType (npolynomial n R) npoly_countMixin.
-Canonical npoly_of_countType := [countType of {poly_n R}].
-Canonical npoly_subCountType := [subCountType of (npolynomial n R)].
-Canonical npoly_of_subCountType := [subCountType of {poly_n R}].
+HB.instance Definition _ := [Countable of (npolynomial n R) by <:].
 
 Definition npoly_enum : seq {poly_n R} :=
   if n isn't n.+1 then [:: npoly0 _] else
@@ -119,12 +109,9 @@ have [i_small|i_big] := ltnP; first by rewrite ffunE /= inordK.
 by rewrite nth_default // 1?(leq_trans _ i_big) // size_npoly.
 Qed.
 
-Definition npoly_finMixin :=
-  Eval hnf in UniqFinMixin npoly_enum_uniq mem_npoly_enum.
-Canonical npoly_finType := Eval hnf in FinType (npolynomial n R) npoly_finMixin.
-Canonical npoly_subFinType := Eval hnf in [subFinType of npolynomial n R].
-Canonical npoly_of_finType := [finType of {poly_n R}].
-Canonical npoly_of_subFinType := [subFinType of {poly_n R}].
+HB.instance Definition _ : isFinite (npolynomial n R) :=
+  UniqFinMixin npoly_enum_uniq mem_npoly_enum.
+HB.instance Definition _ := Finite.on {poly_n R}.
 
 Lemma card_npoly : #|{poly_n R}| = (#|R| ^ n)%N.
 Proof.
@@ -138,7 +125,7 @@ End fin_npoly.
 
 Section Irreducible.
 
-Variable R : finIdomainType.
+Variable R : finIntegralDomainType.
 Variable p : {poly R}.
 
 Definition irreducibleb :=

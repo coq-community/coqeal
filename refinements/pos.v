@@ -1,5 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From HB Require Import structures.
 Require Import ZArith.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 From mathcomp Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
@@ -15,10 +16,8 @@ Record pos := pos_of {
                   val_of_pos : nat;
                   _ : (val_of_pos > 0)%N
                 }.
-Canonical pos_subType := [subType for val_of_pos].
-
-Definition pos_eqMixin := [eqMixin of pos by <:].
-Canonical pos_eqType := EqType pos pos_eqMixin.
+HB.instance Definition _ := [isSub of pos for val_of_pos].
+HB.instance Definition _ := [Equality of pos by <:].
 
 (* Parametricity pos. *)
 

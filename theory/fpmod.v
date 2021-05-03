@@ -1,5 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From HB Require Import structures.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 From mathcomp Require Import ssralg fintype perm choice matrix bigop zmodp mxalgebra poly.
 
@@ -83,7 +84,7 @@ Hint Resolve eqmor_sym : core.
 Lemma eqmor_trans : transitive eqmor.
 Proof.
 rewrite /eqmor => phi2 phi1 phi3 phi12 phi23.
-by rewrite -[phi1%:m](addrNK phi2%:m) -addrA dvdmxD.
+by rewrite -[phi1%:m](addrNK phi2%:m) -[X in _ %| X]addrA dvdmxD.
 Qed.
 Hint Resolve eqmor_trans : core.
 
@@ -125,12 +126,9 @@ Section zmodType.
 
 Variables (M N : {fpmod R}).
 
-Canonical morphism_subType := Eval hnf in
-  [subType for (@matrix_of_morphism _ _ _) by (@morphism_of_rect _ M N)].
-Definition morphism_eqMixin := [eqMixin of 'Mor(M, N) by <:].
-Canonical morphism_eqType := EqType 'Mor(M, N) morphism_eqMixin.
-Definition morphism_choiceMixin := [choiceMixin of 'Mor(M, N) by <:].
-Canonical morphism_choiceType := ChoiceType 'Mor(M, N) morphism_choiceMixin.
+HB.instance Definition _ := [isSub for (@matrix_of_morphism _ _ _)
+  by (@morphism_of_rect _ M N)].
+HB.instance Definition _ := [Choice of 'Mor(M, N) by <:].
 
 Implicit Types (phi : 'Mor(M, N)).
 
@@ -164,9 +162,8 @@ Proof. by move=> x; apply: val_inj; apply: add0r. Qed.
 Fact addNm_subproof : left_inverse zeromor oppmor addmor.
 Proof. by move=> x; apply: val_inj; apply: addNr. Qed.
 
-Definition morphism_zmodMixin :=
-  ZmodMixin addmA_subproof addmC_subproof add0m_subproof addNm_subproof.
-Canonical morphism_zmodType := ZmodType 'Mor(M, N) morphism_zmodMixin.
+HB.instance Definition _ := GRing.isZmodule.Build 'Mor(M, N)
+  addmA_subproof addmC_subproof add0m_subproof addNm_subproof.
 
 End zmodType.
 

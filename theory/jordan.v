@@ -80,7 +80,7 @@ case: (eqVneq i ord_max) => Hi.
 have Ho: (i.+1 < n.+1)%N by rewrite ltn_neqAle Hi ltn_ord.
 rewrite (bigD1 i) //= (bigD1 (Ordinal Ho)); last first.
   by rewrite -(inj_eq (@ord_inj _)) eqn_leq ltnn.
-rewrite !mxE eqxx (@eq_sym nat_eqType i) !eqn_leq !ltnn addr0 add0r.
+rewrite !mxE eqxx (@eq_sym [eqType of nat] i) !eqn_leq !ltnn addr0 add0r.
 rewrite !leqnn mul1r subnS /= big1 ?addr0; last first.
   move=> l /andP [] /negbTE Hil /negbTE Hl.
   by rewrite !mxE eq_sym [_ == _ :>nat]Hil eq_sym [_ == _ :>nat]Hl addr0 mul0r.
