@@ -1,6 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
-Require Import ZArith.
+Require Import ZArith Lia.
 
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 From mathcomp Require Import path choice fintype tuple finset ssralg ssrnum bigop ssrint.
@@ -405,13 +405,13 @@ Qed.
 Lemma Nat2Pos_xI m : ((Pos.of_nat m.+1)~1)%positive = Pos.of_nat ((m.+1).*2.+1).
 Proof.
 rewrite -muln2 [RHS]Nat2Pos.inj_succ // Nat2Pos.inj_mul //.
-simpl (Pos.of_nat 2); zify; omega.
+simpl (Pos.of_nat 2); lia.
 Qed.
 
 Lemma Nat2Pos_xO m : ((Pos.of_nat m.+1)~0)%positive = Pos.of_nat ((m.+1).*2).
 Proof.
 rewrite -muln2 Nat2Pos.inj_mul //.
-simpl (Pos.of_nat 2); zify; omega.
+simpl (Pos.of_nat 2); lia.
 Qed.
 
 Lemma pos_of_natE m n : pos_of_nat m n = Pos.of_nat (maxn 1 (m.*2.+1 - n)).

@@ -1,6 +1,6 @@
 (** * A refinement of Mathcomp's rationals [rat] with [bigQ] from Coq standard library. *)
 
-Require Import ZArith QArith.
+Require Import ZArith QArith Lia.
 From Bignums Require Import BigQ.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat order.
 From mathcomp Require Import ssralg ssrnum ssrint rat div.
@@ -215,7 +215,7 @@ Qed.
 
 Lemma Z2int_lt x y : (Z2int x < Z2int y)%R <-> Z.lt x y.
 Proof.
-rewrite -lez_addr1 -[1%R]/(Z2int 1) -Z2int_add Z2int_le; omega.
+rewrite -lez_addr1 -[1%R]/(Z2int 1) -Z2int_add Z2int_le; lia.
 Qed.
 
 Lemma nat_of_pos_Z_to_pos x : nat_of_pos x = `|Z2int (Z.pos x)|%N.
