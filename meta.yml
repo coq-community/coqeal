@@ -78,9 +78,9 @@ dependencies:
     [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 1.5.1 and < 1.7
 - opam:
     name: coq-mathcomp-algebra
-    version: '{((>= "1.11.0" & < "1.13~") | = "dev")}'
+    version: '{((>= "1.12.0" & < "1.14~") | = "dev")}'
   description: |-
-    [MathComp](https://math-comp.github.io) 1.11.0 or later
+    [MathComp](https://math-comp.github.io) 1.12.0 or newer
 
 tested_coq_opam_versions:
 - version: '1.12.0-coq-dev'
@@ -92,12 +92,6 @@ tested_coq_opam_versions:
 - version: '1.12.0-coq-8.11'
   repo: 'mathcomp/mathcomp'
 - version: '1.12.0-coq-8.10'
-  repo: 'mathcomp/mathcomp'
-- version: '1.11.0-coq-8.12'
-  repo: 'mathcomp/mathcomp'
-- version: '1.11.0-coq-8.11'
-  repo: 'mathcomp/mathcomp'
-- version: '1.11.0-coq-8.10'
   repo: 'mathcomp/mathcomp'
 
 namespace: CoqEAL

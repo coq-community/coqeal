@@ -31,7 +31,7 @@ This libary contains a subset of the work that was developed in the context of t
   - [Bignums](https://github.com/coq/bignums) same version as Coq
   - [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.1 or later
   - [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 1.5.1 and < 1.7
-  - [MathComp](https://math-comp.github.io) 1.11.0 or later
+  - [MathComp](https://math-comp.github.io) 1.12.0 or newer
 - Coq namespace: `CoqEAL`
 - Related publication(s):
   - [A refinement-based approach to computational algebra in Coq](https://hal.inria.fr/hal-00734505/document) doi:[10.1007/978-3-642-32347-8_7](https://doi.org/10.1007/978-3-642-32347-8_7)
