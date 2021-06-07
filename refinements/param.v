@@ -28,7 +28,7 @@ Require Import ProofIrrelevance. (* for opaque terms *)
 Parametricity option.
 Parametricity unit.
 Parametricity bool.
-Hint Resolve bool_R_true_R bool_R_false_R.
+Hint Resolve bool_R_true_R bool_R_false_R : core.
 Parametricity nat.
 Parametricity list.
 Parametricity prod.

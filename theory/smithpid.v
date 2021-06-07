@@ -142,7 +142,7 @@ move: (erefl _) => eq_M00; move: eq_M00 k.
 move: {1 3 5}(fun_of_matrix M 0 0) => a eq_a k.
 elim/Acc_rect_dep: k M P Q eq_a => a' Acc_a' IHa' M P Q eq_a' nzM00 unitL unitR /=.
 move: (eq_a') Acc_a' IHa'.
-rewrite eq_a' => {eq_a'}eq_a' Acc_a' IHa'; rewrite {eq_a'}[eq_a']eq_axiomK /=.
+rewrite eq_a' => {}eq_a' Acc_a' IHa'; rewrite {eq_a'}[eq_a']eq_axiomK /=.
 case: find1P=> [i Hi|Hi].
 set P0 := Bezout_step _ _ P _; set M0 := Bezout_step _ _ M _.
 have /(_ erefl) [|||P' A' Q' HA' ? ? Hdiv HP' HQ'] // :=
@@ -280,7 +280,7 @@ case: find_pivotP =>[[i j] HMij | H].
     have [Hk|Hk] := (ltnP k (size d)).
       by rewrite (nth_map 0 _ _ Hk) mulrC.
     by rewrite !nth_default ?size_map ?Hk // mulr0.
-  * have {HA00}HA00: B 0 0 != 0.
+  * have {}HA00: B 0 0 != 0.
       by apply/eqP=> H; move:HA00; rewrite H dvd0r (negbTE HMij).
     rewrite /= path_min_sorted;
       last by apply/allP => a /mapP [b _ ->]; exact:dvdr_mull.

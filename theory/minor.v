@@ -77,7 +77,7 @@ Qed.
 Lemma inj_widen_ord n m (h : n <= m) : injective (widen_ord h).
 Proof.
 move => x y hxy.
-have /= {hxy} hxy : widen_ord h x = widen_ord h y :> nat by rewrite hxy.
+have /= {}hxy : widen_ord h x = widen_ord h y :> nat by rewrite hxy.
 by apply/ord_inj.
 Qed.
 

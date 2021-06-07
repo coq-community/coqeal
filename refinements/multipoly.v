@@ -30,7 +30,7 @@ Local Open Scope ring_scope.
 (** BEGIN FIXME this is redundant with PR CoqEAL/CoqEAL#3 *)
 Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
-Hint Resolve list_R_nil_R.
+Hint Resolve list_R_nil_R : core.
 (** END FIXME this is redundant with PR CoqEAL/CoqEAL#3 *)
 
 (** Tip to leverage a Boolean condition *)
@@ -826,7 +826,7 @@ Proof.
 rewrite !refinesE /Reffmpoly /mpoly_of_effmpoly /ofun_hrel.
 set t := P.for_all _ _; case_eq t => //.
 rewrite /t (P.for_all_iff _); [|by move=> m _ /mnmc_eq_seqP /eqP <-].
-move=> H_sz H; injection H; move=> {H} H m m' Hm'.
+move=> H_sz H; injection H; move=> {}H m m' Hm'.
 rewrite -H mcoeff_MPoly coeff_Freeg.
 case_eq (M.find m' p') => [c|] Hc.
 { change c with ((c, m).1); change m with ((c, m).2).
@@ -986,7 +986,7 @@ suff : path.sort mnmc_le (msupp p)
     suff: mc \in l'; [by rewrite mem_filter=>/andP []|by apply mem_nth]. }
   apply refine_multinom_of_seqmultinom_val; move: Hs; move/allP; apply.
   rewrite -/l' /mc; apply (mem_nth (mnm0_seq, 0) Hi'). }
-apply: (path.eq_sorted mpoly.lemc_trans mpoly.lemc_anti).
+apply: (path.sorted_eq mpoly.lemc_trans mpoly.lemc_anti).
 { apply path.sort_sorted, lemc_total. }
 { have Se := M.elements_3 p'.
   pose lef := fun x y : _ * T => mnmc_lt_seq x.1 y.1.
@@ -1529,7 +1529,7 @@ eapply refines_apply; [eapply refines_apply; [by apply refine_mpoly_mul_eff|]|].
   refines_apply.
   replace (tnth _ _) with (lq`_O); [|by case lq, tval].
   change q0 with (nth mp0_eff (q0 :: lqt') O); rewrite -Hlq'; apply ref_lq. }
-injection sz_lq => {sz_lq} sz_lq; injection sz_m' => {sz_m'} sz_m'.
+injection sz_lq => {}sz_lq; injection sz_m' => {}sz_m'.
 assert (ref_mt : refines Rseqmultinom (multinom_of_seqmultinom_val k mt') mt').
 { by apply /refine_multinom_of_seqmultinom_val /eqP. }
 have Hlq_lq' : forall i : nat,

@@ -61,7 +61,7 @@ Lemma to_nat_gt0 p : 0 < Pos.to_nat p.
 Proof.
 by rewrite to_natE; elim: p => //= p; rewrite NatTrec.trecE double_gt0.
 Qed.
-Hint Resolve to_nat_gt0.
+Hint Resolve to_nat_gt0 : core.
 
 Lemma pos_of_positiveK : cancel pos_of_positive positive_of_pos.
 Proof.

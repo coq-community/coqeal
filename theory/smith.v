@@ -252,7 +252,7 @@ case: find_pivotP =>[[i j] HMij | H].
     have [Hk|Hk] := (ltnP k (size d)).
       by rewrite (nth_map 0 _ _ Hk) mulrC.
     by rewrite !nth_default ?size_map ?Hk // mulr0.
-  * have {HA00}HA00: A 0 0 != 0.
+  * have {}HA00: A 0 0 != 0.
       by apply/eqP=> H; move:HA00; rewrite H dvd0r (negbTE HMij).
     rewrite /= path_min_sorted;
       last by apply/allP=> a /mapP [b _ ->]; exact:dvdr_mull.

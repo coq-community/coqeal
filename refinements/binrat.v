@@ -424,7 +424,7 @@ have Pg : (0 < `|Z2int g|)%N.
   by rewrite /GRing.zero /Num.Def.ltr /= ltnn. }
 rewrite -muln_gcdr !divnMl //.
 have ->: gcdn `|Z2int a'| `|Z2int b'| = 1%N; [|rewrite !divn1].
-{ by move: CPab'; rewrite /coprime=>H; apply/eqP/H=>{H}H; move: Pg'; rewrite H. }
+{ by move: CPab'; rewrite /coprime=>H; apply/eqP/H=>{}H; move: Pg'; rewrite H. }
 suff ->: (Z2int g * Z2int a' < 0 = (Z2int a' < 0))%R.
 { rewrite -[_ (_ ^ _)%R _]/((-1) ^ (Z2int a' < 0)%R * Posz `|Z2int a'|%N)%R.
   rewrite expN1r mulz_sign_abs /Z.to_pos.
@@ -477,7 +477,7 @@ have Pg : (0 < `|Z2int g|)%N.
   by rewrite /GRing.zero /Num.Def.ltr /= ltnn. }
 rewrite -muln_gcdr !divnMl //.
 have ->: gcdn `|Z2int a'| `|Z2int b'| = 1%N; [|rewrite !divn1].
-{ by move: CPab'; rewrite /coprime=>H; apply/eqP/H=>{H}H; move: Pg'; rewrite H. }
+{ by move: CPab'; rewrite /coprime=>H; apply/eqP/H=>{}H; move: Pg'; rewrite H. }
 suff ->: (Z2int g * Z2int a' < 0 = (Z2int a' < 0))%R.
 { rewrite -[_ (_ ^ _)%R _]/((-1) ^ (Z2int a' < 0)%R * Posz `|Z2int a'|%N)%R.
   rewrite expN1r mulz_sign_abs /Z.to_pos.

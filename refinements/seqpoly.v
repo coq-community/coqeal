@@ -240,7 +240,7 @@ Proof.
   rewrite refinesE /Rseqpoly /fun_hrel /poly_of_seqpoly=> _ sp <-.
   rewrite !poly_def -GRing.sumrN size_map.
   apply: eq_bigr=> i _.
-  rewrite -[in RHS]mul_polyC -mulNr -polyC_opp mul_polyC.
+  rewrite -[in RHS]mul_polyC -mulNr -polyCN mul_polyC.
   by rewrite (nth_map 0%C).
 Qed.
 
@@ -476,10 +476,10 @@ Proof. param_comp seqpoly0_R. Qed.
 Global Instance RseqpolyC_1 : refines RseqpolyC 1%R 1%C.
 Proof. param_comp seqpoly1_R. Qed.
 
-Global Instance RseqpolyC_opp : refines (RseqpolyC ==> RseqpolyC) -%R -%C.
+Global Instance RseqpolyCN : refines (RseqpolyC ==> RseqpolyC) -%R -%C.
 Proof. param_comp opp_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_add :
+Global Instance RseqpolyCD :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) +%R +%C.
 Proof. param_comp add_seqpoly_R. Qed.
 
@@ -491,7 +491,7 @@ Global Instance RseqpolyC_scale :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) *:%R *:%C.
 Proof. param_comp scale_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_mul :
+Global Instance RseqpolyCM :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) *%R *%C.
 Proof. param_comp mul_seqpoly_R. Qed.
 
@@ -523,7 +523,7 @@ Proof.
     exact: refinesP.
 Qed.
 
-Global Instance RseqpolyC_mulXn p sp n rn :
+Global Instance RseqpolyCMXn p sp n rn :
   refines rN n rn -> refines RseqpolyC p sp ->
   refines RseqpolyC (p * 'X^n) (shift_op rn sp).
 Proof.
@@ -540,7 +540,7 @@ Qed.
 Global Instance RseqpolyC_Xnmul p sp n rn :
   refines rN n rn -> refines RseqpolyC p sp ->
   refines RseqpolyC ('X^n * p) (shift_op rn sp).
-Proof. rewrite -mulXnC; exact: RseqpolyC_mulXn. Qed.
+Proof. rewrite -mulXnC; exact: RseqpolyCMXn. Qed.
 
 Global Instance RseqpolyC_scaleXn c rc n rn :
   refines rN n rn -> refines rAC c rc ->
@@ -550,13 +550,13 @@ Proof.
   apply: refines_apply.
 Qed.
 
-Global Instance RseqpolyC_mulX p sp :
+Global Instance RseqpolyCMX p sp :
   refines RseqpolyC p sp -> refines RseqpolyC (p * 'X) (shift_op (1%C : N) sp).
-Proof. rewrite -['X]expr1; exact: RseqpolyC_mulXn. Qed.
+Proof. rewrite -['X]expr1; exact: RseqpolyCMXn. Qed.
 
 Global Instance RseqpolyC_Xmul p sp :
   refines RseqpolyC p sp -> refines RseqpolyC ('X * p) (shift_op (1%C : N) sp).
-Proof. rewrite -['X]expr1 -mulXnC; exact: RseqpolyC_mulX. Qed.
+Proof. rewrite -['X]expr1 -mulXnC; exact: RseqpolyCMX. Qed.
 
 Global Instance RseqpolyC_scaleX c rc :
   refines rAC c rc ->
@@ -613,11 +613,11 @@ Proof.
 Qed.
 
 Global Instance RseqpolyC_X : refines RseqpolyC 'X (shift_op (1%C : N) 1)%C.
-Proof. rewrite -['X]mul1r; exact: RseqpolyC_mulX. Qed.
+Proof. rewrite -['X]mul1r; exact: RseqpolyCMX. Qed.
 
 Global Instance RseqpolyC_Xn n rn :
   refines rN n rn -> refines RseqpolyC 'X^n (shift_op rn 1)%C.
-Proof. move=> hn; rewrite -['X^_]mul1r; exact: RseqpolyC_mulXn. Qed.
+Proof. move=> hn; rewrite -['X^_]mul1r; exact: RseqpolyCMXn. Qed.
 
 (* Lemma gRing_Ring_type_Rxx r : gRing_Ring_type_R r r. *)
 (* Proof. *)

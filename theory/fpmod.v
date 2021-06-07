@@ -72,20 +72,20 @@ Definition eqmor (phi psi : 'Mor(M,N)) := pres N %| phi%:m - psi%:m.
 
 Lemma eqmor_refl : reflexive eqmor.
 Proof. by move=> phi; rewrite /eqmor subrr. Qed.
-Hint Resolve eqmor_refl.
+Hint Resolve eqmor_refl : core.
 
 Lemma eqmorxx x : eqmor x x. Proof. exact. Qed.
 
 Lemma eqmor_sym : symmetric eqmor.
 Proof. by move=> phi1 phi2; rewrite /eqmor -dvdmxN opprB. Qed.
-Hint Resolve eqmor_sym.
+Hint Resolve eqmor_sym : core.
 
 Lemma eqmor_trans : transitive eqmor.
 Proof.
 rewrite /eqmor => phi2 phi1 phi3 phi12 phi23.
 by rewrite -[phi1%:m](addrNK phi2%:m) -addrA dvdmxD.
 Qed.
-Hint Resolve eqmor_trans.
+Hint Resolve eqmor_trans : core.
 
 Lemma eqmor_ltrans : left_transitive eqmor.
 Proof. exact: sym_left_transitive. Qed.
@@ -255,7 +255,7 @@ End morphismTheory.
 Arguments idm {_ _}.
 Infix "**" := mulmor.
 Infix "%=" := eqmor.
-Hint Resolve eqmorxx.
+Hint Resolve eqmorxx : core.
 
 Section KernelAndCo.
 Variable R : coherentRingType.
@@ -475,11 +475,11 @@ Variables (M N : {fpmod R}).
 
 Lemma kernel_eq0 (phi : 'Mono(M,N)) : kernel phi %= 0.
 Proof. by case: phi. Qed.
-Hint Resolve kernel_eq0.
+Hint Resolve kernel_eq0 : core.
 
 Lemma mono (phi : 'Mono(M,N)) : is_mono phi.
 Proof. exact/monoP. Qed.
-Hint Resolve mono.
+Hint Resolve mono : core.
 
 Lemma mulmono_eq0 (L : {fpmod R}) (phi : 'Mono(M,N)) (Y : 'Mor(L, M)) :
   (Y ** phi %= 0) = (Y %= 0).
@@ -504,8 +504,8 @@ Qed.
 
 End MonoTheory.
 
-Hint Resolve kernel_eq0.
-Hint Resolve mono.
+Hint Resolve kernel_eq0 : core.
+Hint Resolve mono : core.
 
 Section EpiTheory.
 Variable (R : coherentRingType).
@@ -515,7 +515,7 @@ Variables (M N : {fpmod R}).
 
 Lemma coker_eq0 (phi : 'Epi(M,N)) : coker phi %= 0.
 Proof. by case: phi. Qed.
-Hint Resolve coker_eq0.
+Hint Resolve coker_eq0 : core.
 
 Lemma epi (phi : 'Epi(M,N)) : is_epi phi.
 Proof. exact/epiP. Qed.
@@ -536,19 +536,19 @@ Qed.
 
 End EpiTheory.
 
-Hint Resolve coker_eq0.
-Hint Resolve epi.
+Hint Resolve coker_eq0 : core.
+Hint Resolve epi : core.
 
 Section IsoTheory.
 Variable (R : coherentRingType) (M N : {fpmod R}).
 
 Fact iso_kernel_eq0 (phi : 'Iso(M,N)) : kernel phi %= 0.
 Proof. by case: phi => /= ? /andP[]. Qed.
-Hint Resolve iso_kernel_eq0.
+Hint Resolve iso_kernel_eq0 : core.
 
 Fact iso_coker_eq0 (phi : 'Iso(M,N)) : coker phi %= 0.
 Proof. by case: phi => /= ? /andP[]. Qed.
-Hint Resolve iso_coker_eq0.
+Hint Resolve iso_coker_eq0 : core.
 
 Canonical mono_of_iso phi := Monomorphism (iso_kernel_eq0 phi).
 Canonical epi_of_iso phi := Epimorphism (iso_coker_eq0 phi).

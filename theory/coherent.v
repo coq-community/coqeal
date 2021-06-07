@@ -13,6 +13,7 @@ Import GRing.Theory.
 
 Local Open Scope ring_scope.
 
+Declare Scope mxpresentation_scope.
 Delimit Scope mxpresentation_scope with MP.
 Local Open Scope mxpresentation_scope.
 
@@ -170,7 +171,7 @@ Qed.
 
 Lemma dvdmx_refl m n (M : 'M[R]_(m,n)) : M %| M .
 Proof. by apply/dvdmxP; exists 1%:M; rewrite mul1mx. Qed.
-Hint Resolve dvdmx_refl.
+Hint Resolve dvdmx_refl : core.
 
 Lemma dvdmxMl m0 m1 m2 m3 (M : 'M[R]_(m1,m2)) (N : 'M[R]_(m3,m2))
   (K : 'M[R]_(m0,m3)) : M %| N -> M %| K *m N.
@@ -185,11 +186,11 @@ Proof. by move=> /dvdmxP [X ->] /dvdmxP [Y ->]; rewrite mulmxA dvdmxMl. Qed.
 
 Lemma dvdmx0 k m n (M : 'M[R]_(m,n)) : M %| (0 : 'M[R]_(k,n)).
 Proof. by apply/dvdmxP; exists 0; rewrite mul0mx. Qed.
-Hint Resolve dvdmx0.
+Hint Resolve dvdmx0 : core.
 
 Lemma dvd1mx m n (M : 'M[R]_(m,n)) : 1%:M %| M.
 Proof. by apply/dvdmxP; exists M; rewrite mulmx1. Qed.
-Hint Resolve dvd1mx.
+Hint Resolve dvd1mx : core.
 
 Lemma dvd0mx k m n (M : 'M[R]_(m,n)) :
   ((0 : 'M[R]_(k,n)) %| M) = (M == 0).
@@ -314,7 +315,7 @@ Notation "M .-ker" := (ker_mod M)
   (at level 10, format "M .-ker") : mxpresentation_scope.
 Notation "M %| B" := (dvdmx M B) : mxpresentation_scope.
 
-Hint Resolve dvdmx_refl dvdmx0 dvd1mx.
+Hint Resolve dvdmx_refl dvdmx0 dvd1mx : core.
 
 
 (* It suffices to show how to solve xM = 0 when M is a column for the ring to
@@ -348,7 +349,7 @@ Proof.
 move=> m n; elim: n m=> [n m X | n ih m].
   by rewrite ?thinmx0; apply: (iffP idP)=> //= _; exists X; rewrite mulmx1.
 rewrite [n.+1]/(1 + n)%nat => M /=; set G1 := ker_col (lsubmx M).
-move: (ih _ (G1 *m rsubmx M))=> {ih} ih X.
+move: (ih _ (G1 *m rsubmx M))=> {}ih X.
 apply: (iffP eqP)=> [|[Y hY]];
   rewrite -{1}[M]hsubmxK (@mul_mx_row _ _ _ 1) -(@row_mx0 _ _ 1).
   case/(@eq_row_mx _ _ 1); case/eqP/ker_colP=> V ->; rewrite -mulmxA.

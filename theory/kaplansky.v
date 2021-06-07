@@ -105,7 +105,7 @@ apply: trmx_inj; rewrite (tr_row_mx (row_mx (col 0 M) (col 1 M))).
 by rewrite tr_row_mx !tr_col !trmx_rsub {1}[M^T]surgery.
 Qed.
 
-Hint Resolve dvdr0.
+Hint Resolve dvdr0 : core.
 
 Lemma smith1xnP n (M : 'M[R]_(1,1 + (1 + n)))
   (smith2xn : 'M[R]_(2,n.+2) -> 'M[R]_2 * seq R * 'M[R]_n.+2)
@@ -154,14 +154,14 @@ have dvd_d20_d0 : d2`_0 %| d1`_0.
     rewrite row_mxEr !mxE split1 h1; case: unliftP => //= j hj.
     by rewrite !mxE; case: j hj=> [[]].
   move/(canRL (mulmxK hQ2))/(canRL (mulKmx hP2)): H1 => ->.
-  apply: dvdr_mulmxl=> i j; apply: dvdr_mulmxr=> {i j} i j.
+  apply: dvdr_mulmxl=> i j; apply: dvdr_mulmxr=> {}i {}j.
   by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n.
 have hx0 i j : d1`_0 %| d1`_i *+ (i == j).
   by case: (i == j :> nat); rewrite ?sorted_nth0 // mulr0n dvdr0.
 have Hdvd i j : d2`_0 %| H i j.
-  rewrite -[(1 + (1 + _))%N]/(2 + _)%N /H H1 dvdr_row_mx //; split=> {i j} i j.
+  rewrite -[(1 + (1 + _))%N]/(2 + _)%N /H H1 dvdr_row_mx //; split=> {}i {}j.
     by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n.
-  apply: dvdr_mulmxl=> {i j} i j; rewrite /E row_mxKr h1 !mxE.
+  apply: dvdr_mulmxl=> {}i {}j; rewrite /E row_mxKr h1 !mxE.
   move: (dvdr_trans dvd_d20_d0 (hx0 i (rshift 1 j))).
   by case: (i == _ :> nat); rewrite ?(mulr0n,dvdr0,mulr1n).
 constructor; rewrite ?unitmx_mul; last first.
@@ -216,16 +216,16 @@ have dvd_y0_x0 : y0 %| x`_0.
     rewrite col_mxEd !mxE split1.
     by case: unliftP=> // [[[]]] //= i _; rewrite !mxE.
   move/(canRL (mulmxK hQ2))/(canRL (mulKmx hP2)): hP2yQ2=> ->.
-  apply: dvdr_mulmxl=> i j; apply: dvdr_mulmxr=> {i j} i j.
+  apply: dvdr_mulmxl=> i j; apply: dvdr_mulmxr=> {}i {}j.
   by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n.
 have hx0 i j : x`_0 %| x`_i *+ (i == j).
   by case: (i == j :> nat); rewrite ?sorted_nth0 // mulr0n dvdr0.
 have Hdvd i j : y0 %| H i j.
-  rewrite -[(1 + (1 + _))%N]/(2 + _)%N; apply: dvdr_col_mx; split=> {i j} i j.
+  rewrite -[(1 + (1 + _))%N]/(2 + _)%N; apply: dvdr_col_mx; split=> {}i {}j.
     rewrite hP2yQ2 !mxE.
     by case: (i == j :> nat); rewrite ?sorted_nth0 // mulr0n dvdr0.
-  apply: dvdr_mulmxr=> {i j} i j; rewrite /E col_mxKd.
-  apply: dvdr_dsubmx=> {i j} i j; rewrite !mxE.
+  apply: dvdr_mulmxr=> {}i {}j; rewrite /E col_mxKd.
+  apply: dvdr_dsubmx=> {}i {}j; rewrite !mxE.
   move: (dvdr_trans dvd_y0_x0 (hx0 i j)).
   by case: (i == j :> nat); rewrite ?(mulr0n,dvdr0,mulr1n).
 constructor; last first.
@@ -501,7 +501,7 @@ CoInductive gdco_spec (a b : R) : R -> Type :=
 Lemma adequate_gdco a b r : adequate_spec a b r -> gdco_spec a b r.
 Proof.
 move=> [->|]; first by constructor => //; rewrite eqxx.
-move=> {r} r b_neq0 dvd_rb cra /= Hs; constructor=> //=.
+move=> {}r b_neq0 dvd_rb cra /= Hs; constructor=> //=.
 move=> /= d dvd_db cda; have [du|dnu] := boolP (d \is a GRing.unit).
   by rewrite dvdUr ?eqd1.
 case: dvdrP dvd_rb => // [[s ->]] _ in Hs dvd_db *.
@@ -513,7 +513,7 @@ Qed.
 
 Lemma gdco_adequate a b r : gdco_spec a b r -> adequate_spec a b r.
 Proof.
-move=> [|/= {r} r b_neq0 rb cra Hd]; first by constructor.
+move=> [|/= {}r b_neq0 rb cra Hd]; first by constructor.
 constructor => //= d dr_dvd_b; apply: contra => cda.
 case: dvdrP rb => [[s ->]|//] {b} _ in Hd dr_dvd_b b_neq0 *.
 have r_neq0 : r != 0 by move: b_neq0; rewrite mulf_eq0 negb_or => /andP [].
@@ -714,14 +714,14 @@ Implicit Types a b : R.
 Lemma pid_gdco a b : {r : R & gdco_spec a b r}.
 Proof.
 have [->|b_neq0] := eqVneq b 0; first by exists 0; constructor.
-elim: (sdvdr_wf b) => {b} b _ ihp in b_neq0 *.
+elim: (sdvdr_wf b) => {}b _ ihp in b_neq0 *.
 have [cba|ncba] := boolP (coprimer a b).
   by exists b; constructor; rewrite ?cpa ?orbT // coprimer_sym.
 have := dvdr_gcdr a b; case: dvdrP => // [/choice.sig_eqW /= [r b_eq _]].
 have := b_neq0; rewrite b_eq mulf_eq0 negb_or => /andP [r_neq0 g_neq0].
 have [||r' r_gdco] // := ihp r.
   by rewrite sdvdr_def b_eq dvdr_mulr //= dvdr_mull_l.
-case: r_gdco r_neq0 => [->|/= {r'} r' _ dvdr'r cr'q r'P r_neq0].
+case: r_gdco r_neq0 => [->|/= {}r' _ dvdr'r cr'q r'P r_neq0].
   by rewrite eqxx.
 exists r'; constructor; rewrite ?dvdr_mulr // -?b_eq //=.
 move=> d dp cdq; apply: r'P => //.
