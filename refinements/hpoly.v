@@ -364,24 +364,24 @@ Instance Rhpoly_opp : refines (Rhpoly ==> Rhpoly) -%R -%C.
 Proof.
 apply refines_abstr => p hp h1.
 rewrite [p]RhpolyE refinesE /Rhpoly /fun_hrel {p h1}.
-by elim: hp => /= [a|a n p ->]; rewrite polyC_opp // opprD mulNr.
+by elim: hp => /= [a|a n p ->]; rewrite polyCN // opprD mulNr.
 Qed.
 
 Instance Rhpoly_scale : refines (Logic.eq ==> Rhpoly ==> Rhpoly) *:%R *:%C.
 Proof.
 rewrite refinesE => /= a b -> p hp h1.
 rewrite [p]RhpolyE /Rhpoly /fun_hrel {a p h1}.
-elim: hp => [a|a n p ih] /=; first by rewrite polyC_mul mul_polyC.
-by rewrite ih polyC_mul -!mul_polyC mulrDr mulrA.
+elim: hp => [a|a n p ih] /=; first by rewrite polyCM mul_polyC.
+by rewrite ih polyCM -!mul_polyC mulrDr mulrA.
 Qed.
 
 Lemma addXn_constE n a q :
   to_poly (addXn_const n a q) = a%:P * 'X^n + to_poly q.
 Proof.
 elim: q n => [b [|n]|b m q' ih n] /=; simpC;
-  first by rewrite polyC_add expr0 mulr1.
+  first by rewrite polyCD expr0 mulr1.
   by rewrite /cast /cast_pos_nat insubdK.
-case: eqP => [->|/eqP n0] /=; first by rewrite polyC_add expr0 mulr1 addrCA.
+case: eqP => [->|/eqP n0] /=; first by rewrite polyCD expr0 mulr1 addrCA.
 case: eqP => [hn|hnc] /=; first by rewrite ih expr0 mulr1 -hn mulrDl -addrA.
 rewrite [(_ < _)%C]/((_ < _)%N) subn_eq0.
 case hnm: (n < cast m).
@@ -397,15 +397,15 @@ Lemma addXnE n p q : to_poly (addXn n p q) = to_poly p * 'X^n + to_poly q.
 Proof.
 elim: p n q => [a n q|a n' p ih n [b|b m q]] /=; simpC;
   first by rewrite addXn_constE.
-  case: eqP => [->|/eqP n0]; first by rewrite expr0 mulr1 /= polyC_add addrA.
+  case: eqP => [->|/eqP n0]; first by rewrite expr0 mulr1 /= polyCD addrA.
   by rewrite /= /cast /cast_pos_nat /cast_nat_pos insubdK // -topredE /= lt0n.
 case: eqP => [->|/eqP no].
   rewrite expr0 mulr1 /leq_op /leq_pos /eq_op /eq_pos.
   case: ifP => [/eqP ->|hneq] /=.
-    by rewrite ih expr0 mulr1 mulrDl polyC_add -!addrA [_ + (a%:P + _)]addrCA.
+    by rewrite ih expr0 mulr1 mulrDl polyCD -!addrA [_ + (a%:P + _)]addrCA.
   rewrite -[(_ < _)%C]/((_ < _)%N).
   case hnm: (val n' < val m);
-    rewrite /= ih polyC_add mulrDl -!addrA ?expr0.
+    rewrite /= ih polyCD mulrDl -!addrA ?expr0.
     rewrite mulr1 /= addr0 -mulrA -exprD [_ + (a%:P + _)]addrCA /cast.
     by rewrite /cast_pos_nat insubdK ?subnK -?topredE /= ?subn_gt0 // ltnW.
   rewrite -mulrA -exprD [_ + (a%:P + _)]addrCA /cast /cast_pos_nat.
@@ -427,7 +427,7 @@ Qed.
 Lemma to_poly_scale_l a p : to_poly (a *: p)%C = a *: (to_poly p).
 Proof.
   elim: p=> [b|b n p ih] /=;
-    rewrite /mul_op /mulA -mul_polyC polyC_mul //.
+    rewrite /mul_op /mulA -mul_polyC polyCM //.
   by rewrite ih -mul_polyC mulrDr mulrA /mul_op /mulA.
 Qed.
 
@@ -441,7 +441,7 @@ Lemma to_poly_scale_r a p :
   to_poly (map_hpoly (fun x => (x * a)%C) p) = to_poly p * a%:P.
 Proof.
   elim: p=> [b|b n p ih] /=;
-    rewrite /mul_op /mulA polyC_mul //.
+    rewrite /mul_op /mulA polyCM //.
   by rewrite ih mulrDl -mulrA mulXnC -mulrA.
 Qed.
 
@@ -456,9 +456,9 @@ Proof.
   apply refines_abstr2=> p hp h1 q hq h2.
   rewrite [p]RhpolyE [q]RhpolyE refinesE /Rhpoly /fun_hrel {p q h1 h2}.
   elim: hp hq => [a [b|b m l']|a n l ih [b|b m l']] /=;
-        first by rewrite polyC_mul.
-      by rewrite polyC_mul to_poly_scale_l -mul_polyC mulrDr mulrA.
-    by rewrite polyC_mul to_poly_scale_r mulrDl -mulrA mulXnC mulrA.
+        first by rewrite polyCM.
+      by rewrite polyCM to_poly_scale_l -mul_polyC mulrDr mulrA.
+    by rewrite polyCM to_poly_scale_r mulrDl -mulrA mulXnC mulrA.
   rewrite [in (cast _)]/add_op /add_pos.
   case: n=> n lt0n; case: m=> m lt0m /=.
   rewrite /cast cast_nat_posK /cast_pos_nat ?addn_gt0 ?lt0n //= /shift_hpoly.
@@ -466,7 +466,7 @@ Proof.
   rewrite mulrDr !mulrDl -mulrA -mulXnC -mulrA -exprD !mulrA !addXnE /= expr0.
   rewrite !mulr1 !addr0 ih /cast !cast_nat_posK ?addn_gt0 ?lt0n //=.
   rewrite to_poly_scale_l to_poly_scale_r -mul_polyC -[_ * b%:P * _]mulrA.
-  by rewrite [b%:P * _]mulXnC mulrA polyC_mul addnC.
+  by rewrite [b%:P * _]mulXnC mulrA polyCM addnC.
 Qed.
 
 Instance Rhpoly_exp :
@@ -692,18 +692,18 @@ Proof. param_comp zero_hpoly_R. Qed.
 Global Instance RhpolyC_1 : refines RhpolyC 1%R 1%C.
 Proof. param_comp one_hpoly_R. Qed.
 
-Global Instance RhpolyC_add : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
+Global Instance RhpolyCD : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
                                       +%R (add_hpoly (N:=N)).
 Proof. param_comp add_hpoly_R. Qed.
 
-Global Instance RhpolyC_opp : refines (RhpolyC ==> RhpolyC) -%R -%C.
+Global Instance RhpolyCN : refines (RhpolyC ==> RhpolyC) -%R -%C.
 Proof. param_comp opp_hpoly_R. Qed.
 
 Global Instance RhpolyC_sub : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
                                       (fun x y => x - y) (sub_hpoly (N:=N)).
 Proof. param_comp sub_hpoly_R. Qed.
 
-Global Instance RhpolyC_mul :
+Global Instance RhpolyCM :
   refines (RhpolyC ==> RhpolyC ==> RhpolyC) *%R (mul_hpoly (N:=N)).
 Proof. param_comp mul_hpoly_R. Qed.
 
@@ -747,7 +747,7 @@ Proof.
   exact: refinesP.
 Qed.
 
-Global Instance RhpolyC_mulXn p sp n rn :
+Global Instance RhpolyCMXn p sp n rn :
   refines rN n rn -> refines RhpolyC p sp ->
   refines RhpolyC (p * 'X^n) (shift_op rn sp).
 Proof. by move=> hn hp; rewrite -[_ * 'X^_]/(shiftp _ _); tc. Qed.
@@ -755,7 +755,7 @@ Proof. by move=> hn hp; rewrite -[_ * 'X^_]/(shiftp _ _); tc. Qed.
 Global Instance RhpolyC_Xnmul p sp n rn :
   refines rN n rn -> refines RhpolyC p sp ->
   refines RhpolyC ('X^n * p) (shift_op rn sp).
-Proof. rewrite -mulXnC; exact: RhpolyC_mulXn. Qed.
+Proof. rewrite -mulXnC; exact: RhpolyCMXn. Qed.
 
 Global Instance RhpolyC_scaleXn c rc n rn :
   refines rN n rn -> refines rAC c rc ->
@@ -765,13 +765,13 @@ Proof.
   exact: refines_apply.
 Qed.
 
-Global Instance RhpolyC_mulX p sp :
+Global Instance RhpolyCMX p sp :
   refines RhpolyC p sp -> refines RhpolyC (p * 'X) (shift_op (1%C : N) sp).
-Proof. rewrite -['X]expr1; exact: RhpolyC_mulXn. Qed.
+Proof. rewrite -['X]expr1; exact: RhpolyCMXn. Qed.
 
 Global Instance RhpolyC_Xmul p sp :
   refines RhpolyC p sp -> refines RhpolyC ('X * p) (shift_op (1%C : N) sp).
-Proof. rewrite -['X]expr1 -mulXnC; exact: RhpolyC_mulX. Qed.
+Proof. rewrite -['X]expr1 -mulXnC; exact: RhpolyCMX. Qed.
 
 Global Instance RhpolyC_scaleX c rc :
   refines rAC c rc ->
@@ -812,11 +812,11 @@ Proof.
 Qed.
 
 Global Instance RhpolyC_X : refines RhpolyC 'X (shift_op (1%C : N) 1)%C.
-Proof. rewrite -['X]mul1r; exact: RhpolyC_mulX. Qed.
+Proof. rewrite -['X]mul1r; exact: RhpolyCMX. Qed.
 
 Global Instance RhpolyC_Xn n rn :
   refines rN n rn -> refines RhpolyC 'X^n (shift_op rn 1)%C.
-Proof. move=> hn; rewrite -['X^_]mul1r; exact: RhpolyC_mulXn. Qed.
+Proof. move=> hn; rewrite -['X^_]mul1r; exact: RhpolyCMXn. Qed.
 
 (* Global Instance RhpolyC_horner : param (RhpolyC ==> rAC ==> rAC) *)
 (*   (fun p x => p.[x]) (fun sp x => horner_seq sp x). *)

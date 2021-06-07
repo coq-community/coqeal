@@ -93,6 +93,7 @@ Export StronglyDiscrete.Exports.
 Definition member R := StronglyDiscrete.member (StronglyDiscrete.class R).
 Definition member_spec := StronglyDiscrete.member_spec.
 
+Declare Scope ideal_scope.
 Delimit Scope ideal_scope with IS.
 
 Section StronglyDiscreteTheory.
@@ -158,14 +159,14 @@ Proof. by apply: (iffP forallP) => H i; rewrite (=^~memberE, memberE). Qed.
 
 Lemma subid_refl m (I : 'cV[R]_m) : (I <= I)%IS.
 Proof. by apply/subidP; exists 1%:M; rewrite mul1mx. Qed.
-Hint Resolve subid_refl.
+Hint Resolve subid_refl : core.
 
 Lemma subrid m i (I : 'cV[R]_m) : ((I i 0)%:M <= I)%IS.
 Proof.
 apply/subidP; exists (delta_mx 0 i); rewrite -rowE.
 by apply/colP=> j; rewrite !mxE ord1 mulr1n.
 Qed.
-Hint Resolve subrid.
+Hint Resolve subrid : core.
 
 (** Obsolete *)
 Remark member_in m x (I : 'cV[R]_m) : (exists i, I i 0 = x) -> member x I.
@@ -173,11 +174,11 @@ Proof. by case=> i <-; rewrite memberE subrid. Qed.
 
 Lemma sub0id n m (I : 'cV[R]_m) : ((0 : 'cV_n) <= I)%IS.
 Proof. by apply/subidP; exists 0; rewrite mul0mx. Qed.
-Hint Resolve sub0id.
+Hint Resolve sub0id : core.
 
 Lemma subid1 m (I : 'cV[R]_m) : (I <= 1)%IS.
 Proof. by apply/subidP; exists I; rewrite mulmx1. Qed.
-Hint Resolve subid1.
+Hint Resolve subid1 : core.
 
 Lemma subidMl m n p (I : 'cV[R]_m) (J : 'cV[R]_n) (D : 'M_(p, _)) :
       (I <= J)%IS -> (D *m I <= J)%IS.
@@ -227,11 +228,11 @@ Qed.
 
 Lemma subeqid_refl m (I : 'cV[R]_m) : (I == I)%IS.
 Proof. by rewrite !subid_refl. Qed.
-Hint Resolve subeqid_refl.
+Hint Resolve subeqid_refl : core.
 
 Lemma eqid_refl m (I : 'cV[R]_m) : (I :=: I)%IS.
 Proof. exact/eqidP. Qed.
-Hint Resolve eqid_refl.
+Hint Resolve eqid_refl : core.
 
 Lemma eqid_sym m n (I: 'cV[R]_n) (J: 'cV[R]_m) : (I :=: J)%IS -> (J :=: I)%IS.
 Proof. by move=> /eqidP; rewrite andbC => /eqidP. Qed.
@@ -379,7 +380,7 @@ Local Notation "I *i J" := (mulid I J) (at level 50).
 
 Lemma subid_tr_mxvec m n (I : 'M[R]_(m,n)) : ((mxvec I)^T <= (mxvec I^T)^T)%IS.
 Proof.
-apply/subid_colP => i /=; case: (mxvec_indexP i) => {i} i j.
+apply/subid_colP => i /=; case: (mxvec_indexP i) => {}i j.
 by rewrite (subid_trans _ (subrid (mxvec_index j i) _)) // !(mxE, mxvecE).
 Qed.
 
@@ -707,4 +708,4 @@ Canonical Structure bezout_stronglyDiscreteType :=
   Eval hnf in StronglyDiscreteType R bezout_stronglyDiscreteMixin.
 
 End BezoutStronglyDiscrete.
-Hint Resolve subid_refl sub0id subid1.
+Hint Resolve subid_refl sub0id subid1 : core.

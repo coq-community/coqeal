@@ -235,7 +235,7 @@ Qed.
 Lemma dvdrr a : a %| a.
 Proof. by apply/dvdrP; exists 1; rewrite mul1r. Qed.
 
-Hint Resolve dvdrr.
+Hint Resolve dvdrr : core.
 
 Lemma dvdr_trans : transitive (@dvdr R).
 Proof.
@@ -313,7 +313,7 @@ Proof. by move=> c0; rewrite ![c * _]mulrC dvdr_mul2r. Qed.
 Lemma dvd1r a : 1 %| a.
 Proof. by apply/dvdrP; exists a; rewrite mulr1. Qed.
 
-Hint Resolve dvd1r.
+Hint Resolve dvd1r : core.
 
 (* Sorted and dvdr *)
 Lemma sorted_dvd0r (s : seq R) : sorted %|%R (0 :: s) -> all (eq_op^~ 0) s.
@@ -340,12 +340,12 @@ Proof. by []. Qed.
 Lemma eqdd a : a %= a.
 Proof. by rewrite eqd_def dvdrr. Qed.
 
-Hint Resolve eqdd.
+Hint Resolve eqdd : core.
 
 Lemma eqd_sym : symmetric (@eqd R).
 Proof. by move=> a b; rewrite eqd_def; apply/andP/andP; case. Qed.
 
-Hint Resolve eqd_sym.
+Hint Resolve eqd_sym : core.
 
 Lemma eqd_trans : transitive (@eqd R).
 Proof.
@@ -657,9 +657,7 @@ Qed.
 
 End DvdRingTheory.
 
-Hint Resolve dvdrr.
-Hint Resolve dvd1r.
-Hint Resolve eqdd.
+Hint Resolve dvdrr dvd1r eqdd : core.
 
 (* Notation "x *d y" := (mulqr x y) *)
 (*   (at level 40, left associativity, format "x  *d  y"). *)
@@ -770,8 +768,7 @@ Proof. by move: (dvdrr (gcdr a b)); rewrite dvdr_gcd; case/andP. Qed.
 Lemma gcdr_eq0 a b : (gcdr a b == 0) = (a == 0) && (b == 0).
 Proof. by rewrite -!dvd0r dvdr_gcd. Qed.
 
-Hint Resolve dvdr_gcdr.
-Hint Resolve dvdr_gcdl.
+Hint Resolve dvdr_gcdr dvdr_gcdl : core.
 
 Lemma gcdr_def : forall x a b, x %| a -> x %| b ->
   (forall x', x' %| a -> x' %| b -> (x' %| x)) -> gcdr a b %= x.
@@ -780,7 +777,7 @@ Proof. by move=> x a b xa xb hx; rewrite eqd_def dvdr_gcd xa xb hx. Qed.
 Lemma gcdrC a b : gcdr a b %= gcdr b a.
 Proof. by rewrite /eqd ?dvdr_gcd ?dvdr_gcdr ?dvdr_gcdl. Qed.
 
-Hint Resolve gcdrC.
+Hint Resolve gcdrC : core.
 
 Lemma eqd_gcd c d a b : a %= c -> b %= d -> gcdr a b %= gcdr c d.
 Proof.
@@ -995,12 +992,12 @@ Qed.
 Lemma dvdr_lcml a b : a %| lcmr a b.
 Proof. by move: (dvdrr (lcmr a b)); rewrite dvdr_lcm; case/andP. Qed.
 
-Hint Resolve dvdr_lcml.
+Hint Resolve dvdr_lcml : core.
 
 Lemma dvdr_lcmr a b : b %| lcmr a b.
 Proof. by move: (dvdrr (lcmr a b)); rewrite dvdr_lcm; case/andP. Qed.
 
-Hint Resolve dvdr_lcmr.
+Hint Resolve dvdr_lcmr : core.
 
 Lemma dvdr_gcdr_lcmr a b : gcdr a b %| lcmr a b.
 Proof. exact: (dvdr_trans (dvdr_gcdl a b) (dvdr_lcml a b)). Qed.
@@ -1808,7 +1805,7 @@ Proof.
 move=> a; wlog: a / a != 0=> [ha|].
   case a0: (a == 0); last by apply: ha; rewrite a0.
   rewrite (eqP a0); constructor=> b; rewrite sdvdr0; apply: ha.
-elim: (norm a) {-2}a (leqnn (norm a))=> [|n ihn] {a} a ha a0.
+elim: (norm a) {-2}a (leqnn (norm a))=> [|n ihn] {}a ha a0.
   by constructor=> x; move/(ltn_norm a0); rewrite ltnNge (leq_trans ha) ?leq0n.
 constructor=> x hx; move/(ltn_norm a0):(hx)=> hn; apply ihn.
   by rewrite -ltnS (leq_trans hn).
@@ -1927,7 +1924,7 @@ wlog nba: a b / norm b <= norm a=>[hwlog|].
 rewrite ltnNge nba /=.
 case a0 : (a == 0).
   by rewrite (eqP a0) dvdr0.
-move: (norm a) {-1 3}a nba a0=> n {a} a hn a0.
+move: (norm a) {-1 3}a nba a0=> n {}a hn a0.
 elim: n {-2}n (leqnn n) a b hn a0=> [|k ihk] n hk a b hn a0.
   move: hk hn; rewrite leqn0; move/eqP->; rewrite leqn0.
   by move/eqP; move/norm_eq0->; rewrite modr0 a0 dvdr0 andbT.

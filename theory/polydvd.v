@@ -14,6 +14,7 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (* Local fix for poly notations *)
+Declare Scope poly_scope.
 Delimit Scope poly_scope with P.
 
 Notation "m %/ d" := (rdivp m d) : poly_scope.
@@ -160,7 +161,7 @@ Lemma polyC_inj_dvdr : forall a b, (a %| b)%R -> a%:P %| b %:P.
 Proof.
 move=> a b.
 case/dvdrP=> x Hx; apply/dvdrP; exists (x%:P).
-by rewrite -polyC_mul Hx.
+by rewrite -polyCM Hx.
 Qed.
 
 Lemma polyC_inj_eqd : forall a b, a %= b -> a%:P %= b%:P.
@@ -212,7 +213,7 @@ Lemma gcdsr_mull : forall a p, gcdsr (a%:P * p) %= a * gcdsr p.
 Proof.
 move=> a.
 elim/poly_ind=> [|p c IH]; first by rewrite mulr0 gcdsr0 mulr0.
-rewrite mulrDr -polyC_mul mulrA gcdsr_gcdl.
+rewrite mulrDr -polyCM mulrA gcdsr_gcdl.
 rewrite (eqd_trans (eqd_gcd (eqdd _) IH)) //.
 by rewrite (eqd_trans (gcdr_mul2l _ _ _)) // -gcdsr_gcdl.
 Qed.
@@ -234,12 +235,12 @@ Lemma gcdr_gcdsr_muladdr : forall a p q, gcdr a (gcdsr (a%:P * p + q)) %= gcdr a
 Proof.
 move=> a.
 elim/poly_ind=> [|p c IH q]; first by move=> q; rewrite mulr0 add0r eqdd.
-rewrite mulrDr mulrA -polyC_mul addrC addrA -[q]polyseqK.
+rewrite mulrDr mulrA -polyCM addrC addrA -[q]polyseqK.
 case: q=> /= q _; case: q=> /= [|d p1].
   rewrite add0r gcdsr_gcdl (eqd_trans (gcdrA a _ _)) // -[a*c]addr0.
   rewrite (eqd_trans (eqd_gcd (gcdr_addl_mul a 0 c) (eqdd _))) //.
   by rewrite (eqd_trans (eqd_gcd (gcdr0 a) (eqdd _))) // -[_ * p]addr0 (IH 0).
-rewrite cons_poly_def -!addrA [d%:P + _]addrCA -polyC_add addrA -mulrDl.
+rewrite cons_poly_def -!addrA [d%:P + _]addrCA -polyCD addrA -mulrDl.
 rewrite !gcdsr_gcdl [Poly p1 + _]addrC [d+_]addrC (eqd_trans (gcdrA _ _ _)) //.
 rewrite (eqd_trans ((eqd_gcd (gcdr_addl_mul a d c)) (eqdd _))) //.
 rewrite (eqd_trans (gcdrAC _ _ _)) ?(eqd_trans (eqd_gcd (IH _) (eqdd d))) //.
@@ -272,7 +273,7 @@ elim/poly_ind: p=> /= [|p c [q IH]]; first by exists 1; rewrite gcdsr0 mul0r.
 case/dvdrP: (dvdr_gcdr c (gcdsr p))=> wr Hr; rewrite mulrC in Hr.
 case/dvdrP: (dvdr_gcdl c (gcdsr p))=> wl Hl; rewrite mulrC in Hl.
 exists (wr%:P * q * 'X + wl%:P).
-by rewrite mulrDr gcdsr_gcdl !mulrA -!polyC_mul -Hl -Hr -IH.
+by rewrite mulrDr gcdsr_gcdl !mulrA -!polyCM -Hl -Hr -IH.
 Qed.
 
 Lemma gcdsr_dvdr : forall p, (gcdsr p)%:P %| p.
@@ -317,11 +318,11 @@ case H0q0 : (q0 == 0).
   rewrite /q (eqP H0q0) addr0 mulrA (eqd_trans (gcdsr_mulX _)) //.
   by rewrite (eqd_trans IH2) // eqd_sym (eqd_mul _ (gcdsr_mulX _)).
 have Hp1p1' : p1 = (gcdsr p)%:P * p1'.
-  apply/polyP=> i; move: Hp; rewrite {1}/p Hp' mulrDr mulrA -polyC_mul.
+  apply/polyP=> i; move: Hp; rewrite {1}/p Hp' mulrDr mulrA -polyCM.
   move/polyP=> H; move: (H (i.+1)); rewrite -!cons_poly_def !coef_cons.
   by case i.
 have Hq1q1' : q1 = (gcdsr q)%:P * q1'.
-  apply/polyP=> i; move: Hq; rewrite {1}/q Hq' mulrDr mulrA -polyC_mul.
+  apply/polyP=> i; move: Hq; rewrite {1}/q Hq' mulrDr mulrA -polyCM.
   move/polyP=> H; move: (H (i.+1)); rewrite -!cons_poly_def !coef_cons.
   by case i.
 have Hgcdsrp0 : (gcdsr p != 0) by rewrite /p gcdsr_gcdl gcdr_eq0 H0p0.
@@ -341,13 +342,13 @@ have IH2' : gcdsr (p' * q1') %= gcdsr q1'.
 
 (* Simplify goal *)
 suff Hprim : (gcdsr (p' * q') %= 1).
-  rewrite {1}Hp {1}Hq mulrAC mulrA -polyC_mul-mulrA.
+  rewrite {1}Hp {1}Hq mulrAC mulrA -polyCM-mulrA.
   rewrite (eqd_trans (gcdsr_mull _ _)) // [q' * _]mulrC -{2}[gcdsr q]mulr1.
   rewrite mulrA (eqd_mul _ _) //.
 
 (* Simplify further *)
 rewrite Hp' Hq' mulrC.
-rewrite mulrDr !mulrDl -polyC_mul mulrCA [_ * p0'%:P]mulrC !mulrA.
+rewrite mulrDr !mulrDl -polyCM mulrCA [_ * p0'%:P]mulrC !mulrA.
 rewrite !addrA -mulrDl -mulrDl.
 
 (* Finish everything *)
@@ -451,7 +452,7 @@ have h1: pp p * pp q != 0.
 rewrite -(eqd_mul2l _ _ h0) -ppP.
 move: (polyC_inj_eqd (gauss_lemma p q)).
 rewrite -(eqd_mul2r _ _ h1)=> H; rewrite eqd_sym (eqd_trans H); first by done.
-by rewrite polyC_mul mulrCA -mulrA -ppP mulrCA mulrA -ppP.
+by rewrite polyCM mulrCA -mulrA -ppP mulrCA mulrA -ppP.
 Qed.
 
 Lemma pp_mull : forall a p, a != 0 -> pp (a%:P * p) %= pp p.
@@ -488,7 +489,7 @@ apply/andP; split.
   by rewrite {5}(ppP p) size_polyC gp0.
 rewrite {2}(ppP p).
 elim/poly_ind: (pp p)=> [|q c IH]; first by rewrite size_poly0 leq0n.
-rewrite mulrDr mulrA -polyC_mul !size_MXaddC.
+rewrite mulrDr mulrA -polyCM !size_MXaddC.
 case: ifP=>[|H]; first by rewrite leq0n.
 case: ifP=>//.
 case/andP=> H1 H2.
@@ -761,7 +762,7 @@ case: {1}_ / h=> //.
   rewrite addrAC -!addrA [xx in _ + (_ + xx)]addrC -scalerAl.
   rewrite [_ ^+ _ * (_ * _)]mulrCA -exprD subnKC //.
   rewrite /lead_coef hsp hsq ![_.+1.-1]/= scalerAr ![_ *: _]scale_polyE.
-  rewrite !mulrA -polyC_mul -!mulrA [_ * q`_sq]mulrC divff; last first.
+  rewrite !mulrA -polyCM -!mulrA [_ * q`_sq]mulrC divff; last first.
     by apply: contra Hq0; rewrite -lead_coef_eq0 /lead_coef hsq.
   rewrite mulr1 subrr addr0.
   rewrite ltnS (leq_trans (size_add _ _)) //.

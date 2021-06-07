@@ -484,7 +484,7 @@ pose N0 := rmodp (phi N) ('X - B%:P).
 pose M1 := rdivp_l (phi M) ('X - B%:P).
 pose N1 := rdivp (phi N) ('X - B%:P).
 pose R1 := M1 * phi M^-1 + phi N^-1 * N1 - M1 * ('X - A%:P) * N1.
-have {H}H: M0 * ('X - A%:P) * N0 = (1 - ('X - B%:P) * R1) * ('X - B%:P).
+have {}H: M0 * ('X - A%:P) * N0 = (1 - ('X - B%:P) * R1) * ('X - B%:P).
   have HM1: ('X - B%:P) * M1 = phi M - M0.
     by rewrite [phi M](rdivp_l_eq (monicXsubC B)) addrK.
   have HN1: N1 * ('X - B%:P) = phi N - N0.

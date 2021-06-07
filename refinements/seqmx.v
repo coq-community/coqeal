@@ -12,6 +12,7 @@ Import Refinements.Op.
 
 Local Open Scope ring_scope.
 
+Declare Scope hetero_computable_scope.
 Delimit Scope hetero_computable_scope with HC.
 
 Section classes.

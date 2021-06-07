@@ -11,7 +11,7 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (* Import GRing.Theory Pdiv.Ring Pdiv.CommonRing Pdiv.RingMonic. *)
-
+Declare Scope computable_scope.
 Delimit Scope computable_scope with C.
 Local Open Scope rel.
 

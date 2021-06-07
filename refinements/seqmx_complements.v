@@ -19,7 +19,7 @@ Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
 Arguments refinesP {T T' R x y} _.
 
-Hint Resolve list_R_nil_R.
+Hint Resolve list_R_nil_R : core.
 
 Notation ord_instN := (fun _ : nat => nat) (only parsing).
 

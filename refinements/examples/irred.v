@@ -54,9 +54,9 @@ Section npoly_theory.
 Context {n : nat} (R : ringType).
 
 Lemma size_npoly (p : {poly_n R}) : (size p <= n)%N. Proof. exact: valP p. Qed.
-Hint Resolve size_npoly.
+Hint Resolve size_npoly : core.
 Lemma npoly_inj : injective (@poly_of_npoly n R). Proof. exact: val_inj. Qed.
-Hint Resolve npoly_inj.
+Hint Resolve npoly_inj : core.
 
 Canonical npoly (E : nat -> R) : {poly_n R} :=
   @Npolynomial _ _ (\poly_(i < n) E i) (size_poly _ _).
@@ -80,7 +80,7 @@ Lemma big_coef_npoly (p : {poly_n R}) i : n <= i -> p`_i = 0.
 Proof. by move=> i_big; rewrite nth_default // (leq_trans _ i_big). Qed.
 
 End npoly_theory.
-Hint Resolve size_npoly npoly_inj.
+Hint Resolve size_npoly npoly_inj : core.
 
 Section fin_npoly.
 
@@ -201,10 +201,7 @@ by apply/perm_size/seq.permP=> x; rewrite !count_filter; apply/seq.permP.
 Qed.
 
 Lemma card'E (T : finType) (P : pred T) : card' (@Finite.enum _) P = #|P|.
-Proof.
-rewrite cardE.
-by rewrite -filter_index_enum /index_enum /card' /size_op /= size_seqE.
-Qed.
+Proof. by rewrite cardE; rewrite /card' /size_op/= size_seqE. Qed.
 
 Local Open Scope rel_scope.
 
@@ -223,7 +220,7 @@ Global Instance refines_card :
   (forall x x' `{!refines RT x x'}, refines (bool_R \o (@unify _)) (P x) (P' x')) ->
   refines rN #|[pred x | P x]| (card' enumT' P').
 Proof.
-move=> RP; have := refines_comp_unify (RP _ _ _) => /refines_abstr => {RP} RP.
+move=> RP; have := refines_comp_unify (RP _ _ _) => /refines_abstr => {}RP.
 have [s [rs1 rs2]] := refines_split2 enumR.
 by rewrite -card'E (@card'_perm _ _ s) //; param card'_R.
 Qed.
