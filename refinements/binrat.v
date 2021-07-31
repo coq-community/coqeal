@@ -325,11 +325,11 @@ Definition r_ratBigQ := fun_hrel bigQ2rat.
 Global Instance zero_bigQ : zero_of bigQ := 0%bigQ.
 Global Instance one_bigQ : one_of bigQ := 1%bigQ.
 Global Instance opp_bigQ : opp_of bigQ := BigQ.opp.
-Global Instance add_bigQ : add_of bigQ := BigQ.add.
-Global Instance sub_bigQ : sub_of bigQ := BigQ.sub.
-Global Instance mul_bigQ : mul_of bigQ := BigQ.mul.
-Global Instance inv_bigQ : inv_of bigQ := BigQ.inv.
-Global Instance div_bigQ : div_of bigQ := BigQ.div.
+Global Instance add_bigQ : add_of bigQ := BigQ.add_norm.
+Global Instance sub_bigQ : sub_of bigQ := BigQ.sub_norm.
+Global Instance mul_bigQ : mul_of bigQ := BigQ.mul_norm.
+Global Instance inv_bigQ : inv_of bigQ := BigQ.inv_norm.
+Global Instance div_bigQ : div_of bigQ := BigQ.div_norm.
 Global Instance eq_bigQ : eq_of bigQ := BigQ.eq_bool.
 Global Instance lt_bigQ : lt_of bigQ := fun p q => if BigQ.compare p q is Lt then true else false.
 Global Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt then false else true.
@@ -386,7 +386,7 @@ Global Instance refine_ratBigQ_add :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) +%R +%C.
 Proof.
 rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
-rewrite (Qred_complete _ _ (BigQ.spec_add _ _)).
+rewrite (Qred_complete _ _ (BigQ.spec_add_norm _ _)).
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
 rewrite /Qplus !Z2int_Qred.
@@ -399,14 +399,14 @@ Global Instance refine_ratBigQ_sub :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) (fun x y => x - y)%R sub_op.
 Proof.
 apply refines_abstr2=> a b rab c d rcd.
-rewrite /sub_op /sub_bigQ /BigQ.sub; eapply refines_apply; tc.
+rewrite /sub_op /sub_bigQ /BigQ.sub_norm; eapply refines_apply; tc.
 Qed.
 
 Global Instance refine_ratBigQ_mul :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) *%R *%C.
 Proof.
 rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
-rewrite (Qred_complete _ _ (BigQ.spec_mul _ _)).
+rewrite (Qred_complete _ _ (BigQ.spec_mul_norm _ _)).
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
 rewrite /Qmult !Z2int_Qred /=.
@@ -419,7 +419,7 @@ Global Instance refine_ratBigQ_inv :
   refines (r_ratBigQ ==> r_ratBigQ)%rel GRing.inv inv_op.
 Proof.
 rewrite refinesE => _ a <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
-rewrite (Qred_complete _ _ (BigQ.spec_inv _)).
+rewrite (Qred_complete _ _ (BigQ.spec_inv_norm _)).
 case: (BigQ.to_Q a) => na da {a}.
 rewrite /Qinv [Qnum (na # da)]/=.
 case: na => [|na|na].
@@ -433,7 +433,7 @@ Global Instance refine_ratBigQ_div :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel (fun x y => x / y)%R div_op.
 Proof.
 apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
-rewrite /div_op /div_bigQ /BigQ.div.
+rewrite /div_op /div_bigQ /BigQ.div_norm.
 exact: refines_apply.
 Qed.
 
