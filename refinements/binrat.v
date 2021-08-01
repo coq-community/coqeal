@@ -624,4 +624,7 @@ Global Instance refine_ratBigQ_spec :
   refines (eq ==> r_ratBigQ)%rel spec spec_id.
 Proof. by rewrite refinesE => x _ <-. Qed.
 
+Global Instance refine_ratBigQ_bigQ2rat a : refines r_ratBigQ (bigQ2rat a) a.
+Proof. by rewrite refinesE. Qed.
+
 End binrat_theory.
