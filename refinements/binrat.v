@@ -3,7 +3,7 @@
 Require Import ZArith QArith Lia.
 From Bignums Require Import BigQ.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat order.
-From mathcomp Require Import ssralg ssrnum ssrint rat div.
+From mathcomp Require Import ssralg ssrnum ssrint rat div intdiv.
 From CoqEAL.refinements Require Import hrel refinements param binint.
 Import Refinements.Op.
 
@@ -115,6 +115,9 @@ Qed.
 Lemma Z2int_opp n : Z2int (- n) = (- (Z2int n))%R.
 Proof. by case n=>// p /=; rewrite GRing.opprK. Qed.
 
+Lemma Z2int_abs x : Z2int (Z.abs x) = `|Z2int x|%nat.
+Proof. by case: x => // p /=; rewrite abszN. Qed.
+
 Lemma Z2int_add x y : Z2int (x + y) = (Z2int x + Z2int y)%R.
 Proof.
 rewrite /Z2int /GRing.add /= /intZmod.addz /Z.add; case x, y=>//.
@@ -191,6 +194,35 @@ case y=>/=.
 { by move=> p; rewrite Z2int_mul_nat_of_pos. }
 move=> p.
 by rewrite GRing.mulrN Z2int_mul_nat_of_pos -Z2int_opp Zopp_mult_distr_r.
+Qed.
+
+Lemma divE x y : Nat.div x y = divn x y.
+Proof.
+case: y => [//|y].
+rewrite /Nat.div.
+move: (Nat.divmod_spec x y 0 y).
+case: Nat.divmod => q r /(_ (le_n _)) [].
+rewrite Nat.mul_0_r Nat.sub_diag !Nat.add_0_r Nat.mul_comm => + Hr /=.
+rewrite multE minusE plusE => /(f_equal (fun x => divn x y.+1)) ->.
+rewrite divnMDl // divn_small ?addn0 //.
+rewrite ltn_subLR; [|exact/ssrnat.leP].
+  by rewrite -addSnnS addnC addnS ltnS leq_addr.
+Qed.
+
+(* Mathcomp's divz and Z.div don't match for negative values. *)
+Lemma Z2int_div x y : Z.le 0 x -> Z.le 0 y ->
+  Z2int (Z.div x y) = (Z2int x %/ Z2int y)%Z.
+Proof.
+case: x => [|x|//] _; [by rewrite intdiv.div0z|].
+case: y => [|y|//] _; [by rewrite intdiv.divz0|].
+rewrite -!positive_nat_Z -div_Zdiv; last first.
+{ rewrite Nat.neq_0_lt_0; exact: Pos2Nat.is_pos. }
+rewrite !positive_nat_Z /= /divz gtr0_sgz ?mul1r; last first.
+{ exact: nat_of_pos_gt0. }
+rewrite divE !binnat.to_natE absz_nat /Z2int.
+move: (Zle_0_nat (nat_of_pos x %/ nat_of_pos y)).
+rewrite -[X in _ = Posz X]Nat2Z.id.
+  by case: Z.of_nat => //= p _; rewrite binnat.to_natE.
 Qed.
 
 Lemma Z2int_le x y : (Z2int x <= Z2int y)%R <-> Z.le x y.
@@ -297,6 +329,22 @@ suff ->: a' = (a / g)%Z.
 { suff ->: b' = (b / g)%Z; [by apply Z.gcd_div_gcd|].
   by rewrite Hb Z.mul_comm Z_div_mult_full. }
 by rewrite Ha Z.mul_comm Z_div_mult_full.
+Qed.
+
+Lemma Z2int_lcm x y : Z.le 0 x -> Z.le 0 y ->
+  Z2int (Z.lcm x y) = lcmn `|Z2int x| `|Z2int y|.
+Proof.
+case: x => [|x|//] _; [by rewrite /= lcm0n|].
+case: y => [|y|//] _; [by rewrite /= lcmn0|].
+rewrite /Z.lcm Z2int_abs Z2int_mul Z2int_div //.
+rewrite ZgcdE' abszM; apply: f_equal; apply/eqP.
+rewrite -(@eqn_pmul2r (gcdn `|Z2int (Z.pos x)| `|Z2int (Z.pos y)|)); last first.
+{ rewrite gcdn_gt0; apply/orP; left; rewrite absz_gt0 /= eqz_nat.
+  apply: lt0n_neq0; exact: nat_of_pos_gt0. }
+rewrite muln_lcm_gcd.
+rewrite -(absz_nat (gcdn _ _)) -mulnA -abszM.
+rewrite Z2int_Z_of_nat /=.
+  by rewrite intdiv.divzK // /mem /in_mem /intdiv.dvdz /= dvdn_gcdr.
 Qed.
 
 End Zint.
