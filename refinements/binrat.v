@@ -430,6 +430,52 @@ case: g => [|g|g].
 by move: (Z.gcd_nonneg n (Z.pos d)) => + _ => /[swap] <-.
 Qed.
 
+Lemma BigQ_red_den_nonzero q :
+  match BigQ.red q with BigQ.Qz _ => True | BigQ.Qq _ d => [d]%bigN <> Z0 end.
+Proof.
+case: q => [//|n d] /=.
+rewrite /BigQ.norm.
+rewrite BigN.spec_compare.
+case: Z.compare_spec => [| |//] Hgcd.
+{ rewrite /BigQ.check_int BigN.spec_compare.
+  case Z.compare_spec => [//| |//] Hd.
+  apply: BigNumPrelude.Zlt0_not_eq.
+  move: Hd; exact: Z.lt_trans. }
+rewrite /BigQ.check_int BigN.spec_compare.
+case Z.compare_spec => [//| |//] Hd.
+apply: BigNumPrelude.Zlt0_not_eq.
+move: Hd; exact: Z.lt_trans.
+Qed.
+
+Lemma r_ratBigQ_red x y : r_ratBigQ x y ->
+  match BigQ.red y with
+  | BigQ.Qz n => numq x = Z2int [n]%bigZ /\ denq x = 1%R
+  | BigQ.Qq n d => numq x = Z2int [n]%bigZ /\ denq x = Z2int [d]%bigN
+  end.
+Proof.
+case: (ratP x) => nx dx nx_dx_coprime {x}.
+rewrite /r_ratBigQ /fun_hrel /bigQ2rat -BigQ.strong_spec_red.
+have ry_red : Qred [BigQ.red y]%bigQ = [BigQ.red y]%bigQ.
+{ by rewrite BigQ.strong_spec_red Qcanon.Qred_involutive. }
+have ry_dneq0 := BigQ_red_den_nonzero y.
+case: (BigQ.red y) ry_dneq0 ry_red => [ny _ _|ny dy dy_neq0].
+{ rewrite /BigQ.to_Q /Qnum /Qden mulr1.
+  move=> /(f_equal ( *%R^~ dx.+1%:~R)%R).
+  rewrite mulfVK ?mulrz_neq0 // -intrM => /intr_inj nx_eq.
+  have dx_1 : (dx.+1 = 1)%nat.
+  { by move: nx_dx_coprime => /eqP <-; rewrite -nx_eq abszM /= gcdnC gcdnMl. }
+    by rewrite -nx_eq dx_1 mulr1. }
+rewrite /BigQ.to_Q ifF ?BigN.spec_eqb ?Z.eqb_neq //.
+rewrite Qcanon.Qred_iff ZgcdE -[1%Z]/(Z.of_nat 1%nat) => /Nat2Z.inj.
+rewrite /Qnum /Qden nat_of_pos_Z_to_pos => /eqP ny_dy_coprime.
+move=> /eqP; rewrite rat_eqE !coprimeq_num // !coprimeq_den //=.
+rewrite !gtr0_sg ?nat_of_pos_gtr0 // !mul1r => /andP[/eqP <-].
+rewrite ifF; [|exact/eqP/eqP/lt0r_neq0/nat_of_pos_gtr0].
+rewrite -!abszE !absz_nat => /eqP[<-]; split=> [//|].
+rewrite -[LHS]/(Z2int (Z.pos (Z.to_pos [dy]%bigN))) Z2Pos.id //.
+exact: BigQ.N_to_Z_pos.
+Qed.
+
 Global Instance refine_ratBigQ_add :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) +%R +%C.
 Proof.
