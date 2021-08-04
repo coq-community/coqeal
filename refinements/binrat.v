@@ -355,9 +355,13 @@ Section binrat_theory.
 Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
 (** *** Conversion from [bigQ] to [rat] *)
-Program Definition bigQ2rat (bq : bigQ) :=
+Program Definition bigQ2rat_def (bq : bigQ) :=
   let q := Qred [bq]%bigQ in
   ((Z2int (Qnum q))%:Q / (Z2int (Z.pos (Qden q)))%:Q)%R.
+Fact bigQ2rat_key : unit. Proof. by []. Qed.
+Program Definition bigQ2rat :=
+  locked_with bigQ2rat_key bigQ2rat_def.
+Canonical bigQ2rat_unlockable := [unlockable fun bigQ2rat].
 
 (** *** Conversion from [rat] to [bigQ] *)
 Definition rat2bigQ (q : rat) : bigQ :=
@@ -389,14 +393,14 @@ Global Instance spec_bigQ : spec_of bigQ rat := bigQ2rat.
 (** *** Proofs of refinement *)
 
 Global Instance refine_ratBigQ_zero : refines r_ratBigQ 0%R 0%C.
-Proof. rewrite refinesE /r_ratBigQ /bigQ2rat; red; exact: val_inj. Qed.
+Proof. rewrite refinesE /r_ratBigQ unlock; red; exact: val_inj. Qed.
 
 Global Instance refine_ratBigQ_one : refines r_ratBigQ 1%R 1%C.
-Proof. rewrite refinesE /r_ratBigQ /bigQ2rat; red; exact: val_inj. Qed.
+Proof. rewrite refinesE /r_ratBigQ unlock; red; exact: val_inj. Qed.
 
 Global Instance refine_ratBigQ_opp : refines (r_ratBigQ ==> r_ratBigQ) -%R -%C.
 Proof.
-rewrite refinesE => _ a <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
+rewrite refinesE => _ a <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite BigQ.strong_spec_opp Qred_opp [in LHS]/Qnum /=.
 by rewrite Z2int_opp mulrNz mulNr.
 Qed.
@@ -454,7 +458,7 @@ Lemma r_ratBigQ_red x y : r_ratBigQ x y ->
   end.
 Proof.
 case: (ratP x) => nx dx nx_dx_coprime {x}.
-rewrite /r_ratBigQ /fun_hrel /bigQ2rat -BigQ.strong_spec_red.
+rewrite /r_ratBigQ /fun_hrel unlock -BigQ.strong_spec_red.
 have ry_red : Qred [BigQ.red y]%bigQ = [BigQ.red y]%bigQ.
 { by rewrite BigQ.strong_spec_red Qcanon.Qred_involutive. }
 have ry_dneq0 := BigQ_red_den_nonzero y.
@@ -479,7 +483,7 @@ Qed.
 Global Instance refine_ratBigQ_add :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) +%R +%C.
 Proof.
-rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
+rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite (Qred_complete _ _ (BigQ.spec_add_norm _ _)).
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
@@ -499,7 +503,7 @@ Qed.
 Global Instance refine_ratBigQ_mul :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) *%R *%C.
 Proof.
-rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
+rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite (Qred_complete _ _ (BigQ.spec_mul_norm _ _)).
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
@@ -512,7 +516,7 @@ Qed.
 Global Instance refine_ratBigQ_inv :
   refines (r_ratBigQ ==> r_ratBigQ)%rel GRing.inv inv_op.
 Proof.
-rewrite refinesE => _ a <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
+rewrite refinesE => _ a <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite (Qred_complete _ _ (BigQ.spec_inv_norm _)).
 case: (BigQ.to_Q a) => na da {a}.
 rewrite /Qinv [Qnum (na # da)]/=.
@@ -534,7 +538,7 @@ Qed.
 Global Instance refine_ratBigQ_eq :
   refines (r_ratBigQ ==> r_ratBigQ ==> eq) eqtype.eq_op eq_op.
 Proof.
-rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
+rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite /eq_op /eq_bigQ BigQ.spec_eq_bool.
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
@@ -557,7 +561,7 @@ Qed.
 Global Instance refine_ratBigQ_lt :
   refines (r_ratBigQ ==> r_ratBigQ ==> bool_R) Num.lt lt_op.
 Proof.
-rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
+rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite /lt_op /lt_bigQ BigQ.spec_compare.
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
@@ -575,7 +579,7 @@ Qed.
 Global Instance refine_ratBigQ_le :
   refines (r_ratBigQ ==> r_ratBigQ ==> bool_R) Num.le leq_op.
 Proof.
-rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel /=.
+rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite /leq_op /le_bigQ BigQ.spec_compare.
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
@@ -615,7 +619,7 @@ Qed.
 Global Instance refine_ratBigQ_of_nat :
   refines (nat_R ==> r_ratBigQ)%rel (fun n => n%:~R%R) cast_op.
 Proof.
-rewrite refinesE => n _ /nat_R_eq <-; rewrite /r_ratBigQ /bigQ2rat /fun_hrel.
+rewrite refinesE => n _ /nat_R_eq <-; rewrite /r_ratBigQ unlock /fun_hrel.
 rewrite /= Z_ggcd_1_r /= BigZ.spec_of_Z mulr1.
 by apply/eqP; rewrite eqr_int Z2int_Z_of_nat.
 Qed.
