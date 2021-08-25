@@ -64,7 +64,8 @@ Definition mnmd_seq {n} (i : nat) (d : binnat.N) : seqmultinom :=
   nseq i 0%num ++ [:: d] ++ nseq (n - i - 1) 0%num.
 
 (** Multiplication of multinomials *)
-Definition mnm_add_seq (m1 m2 : seqmultinom) := map2 +%C m1 m2.
+Definition mnm_add_seq (m1 m2 : seqmultinom) :=
+  map (fun xy => xy.1 + xy.2)%C (zip m1 m2).
 
 Definition mdeg_eff : seqmultinom -> binnat.N := foldl +%C 0%C.
 
@@ -569,11 +570,12 @@ Proof.
 apply refines_abstr => mnm1 mnm1' ref_mnm1.
 apply refines_abstr => mnm2 mnm2' ref_mnm2.
 apply/refine_seqmultinomP.
-{ rewrite /mnm_add_seq size_map2.
+{ rewrite /mnm_add_seq size_map size_zip.
   by rewrite (@refine_size _ mnm1) (@refine_size _ mnm2) minnn. }
 move=> i.
-rewrite /mnm_add_seq (nth_map2 _ (da := 0%num) (db := 0%num)) //; last first.
-  by rewrite (@refine_size _ mnm1) (@refine_size _ mnm2).
+rewrite /mnm_add_seq (nth_map (0%num, 0%num)); last first.
+{ by rewrite size_zip (@refine_size _ mnm1) (@refine_size _ mnm2) minnn. }
+rewrite nth_zip /=; [|by rewrite (@refine_size _ mnm1) (@refine_size _ mnm2)].
 rewrite mnmDE -!refine_nth.
 exact: nat_of_add_bin.
 Qed.
