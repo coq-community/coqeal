@@ -74,36 +74,6 @@ Qed.
 
 End Seqeqtype.
 
-(** ** map2 - Section taken from coq-interval *)
-Section Map2.
-Variables (A : Type) (B : Type) (C : Type).
-Variable f : A -> B -> C.
-
-Fixpoint map2 (s1 : seq A) (s2 : seq B) : seq C :=
-  match s1, s2 with
-    | a :: s3, b :: s4 => f a b :: map2 s3 s4
-    | _, _ => [::]
-  end.
-
-Lemma size_map2 (s1 : seq A) (s2 : seq B) :
-  size (map2 s1 s2) = minn (size s1) (size s2).
-Proof.
-elim: s1 s2 => [|x1 s1 IH1] [|x2 s2] //=.
-by rewrite IH1 -addn1 addn_minl 2!addn1.
-Qed.
-
-Lemma nth_map2 s1 s2 (k : nat) da db dc :
-  dc = f da db -> size s2 = size s1 ->
-  nth dc (map2 s1 s2) k = f (nth da s1 k) (nth db s2 k).
-Proof.
-elim: s1 s2 k => [|x1 s1 IH1] s2 k Habc Hsize.
-  by rewrite (size0nil Hsize) !nth_nil.
-case: s2 IH1 Hsize =>[//|x2 s2] IH1 [Hsize].
-case: k IH1 =>[//|k]; exact.
-Qed.
-
-End Map2.
-
 (******************** bigop.v ********************)
 Section BigOp.
 
