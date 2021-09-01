@@ -5,9 +5,9 @@ opam-version: "2.0"
 maintainer: "Cyril Cohen <cyril.cohen@inria.fr>"
 version: "dev"
 
-homepage: "https://github.com/coq-community/CoqEAL"
-dev-repo: "git+https://github.com/coq-community/CoqEAL.git"
-bug-reports: "https://github.com/coq-community/CoqEAL/issues"
+homepage: "https://github.com/coq-community/coqeal"
+dev-repo: "git+https://github.com/coq-community/coqeal.git"
+bug-reports: "https://github.com/coq-community/coqeal/issues"
 license: "MIT"
 
 synopsis: "CoqEAL - The Coq Effective Algebra Library"

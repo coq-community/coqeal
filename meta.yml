@@ -1,7 +1,6 @@
 ---
 fullname: CoqEAL
-shortname: CoqEAL
-opam_name: coq-coqeal
+shortname: coqeal
 organization: coq-community
 community: true
 action: true

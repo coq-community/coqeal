@@ -9,8 +9,8 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 [![Code of Conduct][conduct-shield]][conduct-link]
 [![Zulip][zulip-shield]][zulip-link]
 
-[docker-action-shield]: https://github.com/coq-community/CoqEAL/workflows/Docker%20CI/badge.svg?branch=master
-[docker-action-link]: https://github.com/coq-community/CoqEAL/actions?query=workflow:"Docker%20CI"
+[docker-action-shield]: https://github.com/coq-community/coqeal/workflows/Docker%20CI/badge.svg?branch=master
+[docker-action-link]: https://github.com/coq-community/coqeal/actions?query=workflow:"Docker%20CI"
 
 [contributing-shield]: https://img.shields.io/badge/contributions-welcome-%23f7931e.svg
 [contributing-link]: https://github.com/coq-community/manifesto/blob/master/CONTRIBUTING.md
@@ -69,8 +69,8 @@ opam install coq-coqeal
 To instead build and install manually, do:
 
 ``` shell
-git clone https://github.com/coq-community/CoqEAL.git
-cd CoqEAL
+git clone https://github.com/coq-community/coqeal.git
+cd coqeal
 make   # or make -j <number-of-cores-on-your-machine> 
 make install
 ```
