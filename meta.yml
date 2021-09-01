@@ -1,8 +1,9 @@
 ---
 fullname: CoqEAL
-shortname: coqeal
-organization: CoqEAL
-community: false
+shortname: CoqEAL
+opam_name: coq-coqeal
+organization: coq-community
+community: true
 action: true
 coqdoc: false
 dune: false
@@ -52,13 +53,15 @@ authors:
 maintainers:
 - name: Cyril Cohen
   nickname: CohenCyril
+- name: Pierre Roux
+  nickname: proux01
 
 opam-file-maintainer: Cyril Cohen <cyril.cohen@inria.fr>
 
 opam-file-version: dev
 
 license:
-  fullname: MIT
+  fullname: MIT License
   identifier: MIT
 
 supported_coq_versions:
@@ -72,7 +75,7 @@ dependencies:
     [Bignums](https://github.com/coq/bignums) same version as Coq
 - opam:
     name: coq-paramcoq
-    version: '{(>= "1.1.1") | (= "dev")}'
+    version: '{>= "1.1.1"}'
   description: |-
     [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.1 or later
 - opam:
