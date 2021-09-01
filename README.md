@@ -22,8 +22,10 @@ This libary contains a subset of the work that was developed in the context of t
   - Guillaume Cano (initial)
   - Cyril Cohen (initial)
   - Maxime Dénès (initial)
+  - Érik Martin-Dorel
   - Anders Mörtberg (initial)
   - Damien Rouhling
+  - Pierre Roux
   - Vincent Siles (initial)
 - License: [MIT](LICENSE)
 - Compatible Coq versions: 8.10 or later (use releases for other Coq versions)
