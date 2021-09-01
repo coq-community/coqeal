@@ -5,10 +5,21 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 # CoqEAL
 
 [![Docker CI][docker-action-shield]][docker-action-link]
+[![Contributing][contributing-shield]][contributing-link]
+[![Code of Conduct][conduct-shield]][conduct-link]
+[![Zulip][zulip-shield]][zulip-link]
 
-[docker-action-shield]: https://github.com/CoqEAL/coqeal/workflows/Docker%20CI/badge.svg?branch=master
-[docker-action-link]: https://github.com/CoqEAL/coqeal/actions?query=workflow:"Docker%20CI"
+[docker-action-shield]: https://github.com/coq-community/CoqEAL/workflows/Docker%20CI/badge.svg?branch=master
+[docker-action-link]: https://github.com/coq-community/CoqEAL/actions?query=workflow:"Docker%20CI"
 
+[contributing-shield]: https://img.shields.io/badge/contributions-welcome-%23f7931e.svg
+[contributing-link]: https://github.com/coq-community/manifesto/blob/master/CONTRIBUTING.md
+
+[conduct-shield]: https://img.shields.io/badge/%E2%9D%A4-code%20of%20conduct-%23f15a24.svg
+[conduct-link]: https://github.com/coq-community/manifesto/blob/master/CODE_OF_CONDUCT.md
+
+[zulip-shield]: https://img.shields.io/badge/chat-on%20zulip-%23c1272d.svg
+[zulip-link]: https://coq.zulipchat.com/#narrow/stream/237663-coq-community-devs.20.26.20users
 
 
 
@@ -27,7 +38,10 @@ This libary contains a subset of the work that was developed in the context of t
   - Damien Rouhling
   - Pierre Roux
   - Vincent Siles (initial)
-- License: [MIT](LICENSE)
+- Coq-community maintainer(s):
+  - Cyril Cohen ([**@CohenCyril**](https://github.com/CohenCyril))
+  - Pierre Roux ([**@proux01**](https://github.com/proux01))
+- License: [MIT License](LICENSE)
 - Compatible Coq versions: 8.10 or later (use releases for other Coq versions)
 - Additional dependencies:
   - [Bignums](https://github.com/coq/bignums) same version as Coq
@@ -55,8 +69,8 @@ opam install coq-coqeal
 To instead build and install manually, do:
 
 ``` shell
-git clone https://github.com/CoqEAL/coqeal.git
-cd coqeal
+git clone https://github.com/coq-community/CoqEAL.git
+cd CoqEAL
 make   # or make -j <number-of-cores-on-your-machine> 
 make install
 ```
