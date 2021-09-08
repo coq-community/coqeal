@@ -82,20 +82,20 @@ make install
 The theory directory has the following content:
 
 - `ssrcomplements`, `minor` `mxstructure`, `polydvd`, `similar`,
-  `binetcauchy`, `ssralg_ring_tac`: various extensions of the
+  `binetcauchy`, `ssralg_ring_tac`: Various extensions of the
   Mathematical Components library.
 
-- `dvdring`, `coherent`, `stronglydiscrete`, `edr`: hierarchy of
+- `dvdring`, `coherent`, `stronglydiscrete`, `edr`: Hierarchy of
   structures with divisibility (from rings with divisibility, PIDs,
   elementary divisor rings, etc.).
 
-- `fpmod`: formalization of finitely presented modules.
+- `fpmod`: Formalization of finitely presented modules.
 
-- `kaplansky`: for providing elementary divisor rings from the
+- `kaplansky`: For providing elementary divisor rings from the
   Kaplansky condition.
 
 - `bareiss_dvdring`, `bareiss`, `gauss`, `karatsuba`, `rank`
-  `strassen` `toomcook`, `smithpid`, `smith`: various efficient
+  `strassen` `toomcook`, `smithpid`, `smith`: Various efficient
   algorithms for computing operations on polynomials or matrices.
 
 ## Refinements
@@ -105,25 +105,35 @@ The refinements directory has the following content:
 - `refinements`: Classes for refinements and refines together with
   operational typeclasses for common operations.
 
-- `binnat`: Proof that the binary naturals of Coq (`N`) is a refinement
-  of SSReflect unary naturals (`nat`) together with basic operations.
+- `binnat`: Proof that the binary naturals of Coq (`N`) are a refinement
+  of the MathComp unary naturals (`nat`) together with basic operations.
 
-- `binint`: SSReflect integers (`ssrint`) are refined to a new type
-  paremetrized by positive numbers (represented by a sigma type) and
+- `binord`: Proof that the binary natural numbers of Coq (`N`) are a refinement
+  of the MathComp ordinals.
+
+- `binint`: MathComp integers (`ssrint`) are refined to a new type
+  parameterized by positive numbers (represented by a sigma type) and
   natural numbers.  This means that proofs can be done using only
-  lemmas from the SSReflect library which leads to simpler proofs than
+  lemmas from the MathComp library which leads to simpler proofs than
   previous versions of `binint` (e.g., `N`).
 
-- `rational`: The rational numbers of SSReflect (`rat`) is refined to
+- `binrat`: Arbitrary precision rational numbers (`bigQ`) from the
+  [Bignums](https://github.com/coq/bignums) library are refined to
+  MathComp's rationals (`rat`).
+
+- `rational`: The rational numbers of MathComp (`rat`) are refined to
   pairs of elements refining integers using parametricity of
   refinements.
 
-- `seqmatrix`: First and incomplete attempt to refine SSReflect
-  matrices `M[R]_(m,n)`) to lists of lists (`seq (seq R)`).
-  Work in progress.
+- `seqmatrix` and `seqmx_complements`: Refinement of MathComp
+  matrices (`M[R]_(m,n)`) to lists of lists (`seq (seq R)`).
 
-- `seqpoly`: First and incomplete attempt to refine SSReflect
-  polynomials (`{poly R}`) to lists (`seq R`). Work in progress.
+- `seqpoly`: Refinement of MathComp polynomials (`{poly R}`) to lists (`seq R`).
+
+- `multipoly`: Refinement of
+  [MathComp multinomials](https://github.com/math-comp/multinomials)
+  and multivariate polynomials to Coq
+  [finite maps](https://github.com/coq/coq/blob/master/theories/FSets/FMapAVL.v).
 
 Files should use the following conventions (w.r.t. `Local` and `Global` instances):
 
@@ -141,7 +151,7 @@ Local Instance param_correctness : param ...
 (** Part 3: Parametricity *)
 Section parametricity.
 
-Global Instance param_parametricit : param ...
+Global Instance param_parametricity : param ...
 Proof. exact: param_trans. Qed.
 
 End parametricity.
