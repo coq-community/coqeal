@@ -155,23 +155,28 @@ documentation: |-
   - `binnat`: Proof that the binary naturals of Coq (`N`) is a refinement
     of SSReflect unary naturals (`nat`) together with basic operations.
 
-  - `binint`: SSReflect integers (`ssrint`) are refined to a new type
+- `binord`: Proof that the binary natural numbers of Coq (`N`) is a refinement
+  of SSReflect ordinals.
+  - `binint`: MathComp integers (`ssrint`) are refined to a new type
     paremetrized by positive numbers (represented by a sigma type) and
     natural numbers.  This means that proofs can be done using only
     lemmas from the SSReflect library which leads to simpler proofs than
     previous versions of `binint` (e.g., `N`).
 
+- `binrat`: arbitrary precision rational numbers (`bigQ`) from the [bignums](https://github.com/coq/bignums)
+  library are refined to MathComp's rationals (`rat`).
   - `rational`: The rational numbers of SSReflect (`rat`) is refined to
     pairs of elements refining integers using parametricity of
     refinements.
 
-  - `seqmatrix`: First and incomplete attempt to refine SSReflect
+  - `seqmatrix` and `seqmx_complements`: refinement of MathComp
     matrices `M[R]_(m,n)`) to lists of lists (`seq (seq R)`).
-    Work in progress.
   
-  - `seqpoly`: First and incomplete attempt to refine SSReflect
-    polynomials (`{poly R}`) to lists (`seq R`). Work in progress.
+  - `seqpoly`: refinement of MathComp
+    polynomials (`{poly R}`) to lists (`seq R`).
 
+- `multipoly`: refinement of [MathComp multinomials](https://github.com/math-comp/multinomials/)
+  multivariate polynomials by [standard library maps](https://github.com/coq/coq/blob/master/theories/FSets/FMapAVL.v).
   Files should use the following conventions (w.r.t. `Local` and `Global` instances):
 
   ```coq
