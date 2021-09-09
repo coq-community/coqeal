@@ -1,3 +1,16 @@
+-R . CoqEAL
+
+-arg -w -arg -projection-no-head-constant
+-arg -w -arg -redundant-canonical-projection
+-arg -w -arg -notation-overridden
+-arg -w -arg +duplicate-clear
+-arg -w -arg +non-primitive-record
+-arg -w -arg +undeclared-scope
+-arg -w -arg -deprecated-hint-without-locality
+-arg -w -arg -deprecated-ident-entry
+-arg -w -arg -ambiguous-paths
+-arg -w -arg +implicit-core-hint-db
+
 theory/atomic_operations.v
 theory/bareiss_dvdring.v
 theory/bareiss.v
@@ -42,17 +55,3 @@ refinements/trivial_seq.v
 refinements/examples/irred.v
 refinements/binrat.v
 refinements/multipoly.v
-
--I .
--R . CoqEAL
-
--arg -w -arg -projection-no-head-constant
--arg -w -arg -redundant-canonical-projection
--arg -w -arg -notation-overridden
--arg -w -arg +duplicate-clear
--arg -w -arg +non-primitive-record
--arg -w -arg +undeclared-scope
--arg -w -arg -deprecated-hint-without-locality
--arg -w -arg -deprecated-ident-entry
--arg -w -arg -ambiguous-paths
--arg -w -arg +implicit-core-hint-db

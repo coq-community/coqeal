@@ -1,4 +1,4 @@
-*.v.d
+*.d
 *.glob
 *.vo
 *.vos
@@ -12,4 +12,5 @@
 *.native
 *.aux
 Makefile.coq
+Makefile.coq.conf
 *~
