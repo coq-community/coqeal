@@ -1,10 +1,9 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq fintype.
+From Param Require Import Param.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-
-Declare ML Module "paramcoq".
 
 Global Ltac destruct_reflexivity :=
   intros ; repeat match goal with

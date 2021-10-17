@@ -46,7 +46,7 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
 - Compatible Coq versions: 8.10 or later (use releases for other Coq versions)
 - Additional dependencies:
   - [Bignums](https://github.com/coq/bignums) same version as Coq
-  - [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.1 or later
+  - [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.3 or later
   - [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 1.5.1 and < 1.7
   - [MathComp](https://math-comp.github.io) 1.12.0 or newer
 - Coq namespace: `CoqEAL`
