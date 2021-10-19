@@ -4,7 +4,7 @@ From mathcomp Require Import all_fingroup.
 From mathcomp Require Import all_real_closed.
 From CoqEAL Require Import binetcauchy ssrcomplements mxstructure minor.
 From CoqEAL Require Import smith dvdring polydvd.
-Require Import similar perm_eq_image companion closed_poly smith_complements.
+From CoqEAL Require Import similar perm_eq_image companion closed_poly smith_complements.
 
 (**  This file provides a theory of invariant factors. The main result
      proved here is the similarity between a matrix and its Frobenius

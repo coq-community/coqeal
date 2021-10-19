@@ -4,7 +4,7 @@ From mathcomp Require Import all_fingroup.
 From mathcomp Require Import all_real_closed.
 From CoqEAL Require Import binetcauchy ssrcomplements mxstructure minor.
 From CoqEAL Require Import smith dvdring polydvd.
-Require Import similar perm_eq_image.
+From CoqEAL Require Import similar perm_eq_image.
 
 (**    This file is a complement of the file Smith.v of the CoqEAL library.
        We prove here the unicity of the Smith normal form of a matrix.

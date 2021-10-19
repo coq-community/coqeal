@@ -4,8 +4,8 @@ From mathcomp Require Import all_fingroup.
 From mathcomp Require Import all_real_closed.
 From CoqEAL Require Import binetcauchy ssrcomplements mxstructure minor.
 From CoqEAL Require Import smith dvdring polydvd.
-Require Import similar perm_eq_image companion closed_poly smith_complements.
-Require Import frobenius_form.
+From CoqEAL Require Import similar perm_eq_image companion closed_poly smith_complements.
+From CoqEAL Require Import frobenius_form.
   
 (**  The main result of this file is the theorem of Jordan decomposition.
      A direct consequence of this theorem is the diagonalization theorem.
