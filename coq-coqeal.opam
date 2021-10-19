@@ -14,7 +14,8 @@ synopsis: "CoqEAL - The Coq Effective Algebra Library"
 description: """
 This Coq library contains a subset of the work that was developed in the context
 of the ForMath EU FP7 project (2009-2013). It has two parts:
-- theory, which contains developments in algebra and optimized algorithms on mathcomp data structures.
+- theory, which contains developments in algebra including normal forms of matrices,
+  and optimized algorithms on MathComp data structures.
 - refinements, which is a framework to ease change of data representations during a proof."""
 
 build: [make "-j%{jobs}%"]
@@ -25,6 +26,7 @@ depends: [
   "coq-paramcoq" {>= "1.1.3"}
   "coq-mathcomp-multinomials" {((>= "1.5.1" & < "1.7~") | = "dev")}
   "coq-mathcomp-algebra" {((>= "1.12.0" & < "1.14~") | = "dev")}
+  "coq-mathcomp-real-closed" {(>= "1.1.2" & < "1.2~") | (= "dev")}
 ]
 
 tags: [

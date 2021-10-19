@@ -13,7 +13,8 @@ synopsis: >-
 description: |-
   This Coq library contains a subset of the work that was developed in the context
   of the ForMath EU FP7 project (2009-2013). It has two parts:
-  - theory, which contains developments in algebra and optimized algorithms on mathcomp data structures.
+  - theory, which contains developments in algebra including normal forms of matrices,
+    and optimized algorithms on MathComp data structures.
   - refinements, which is a framework to ease change of data representations during a proof.
 
 publications:
@@ -31,6 +32,8 @@ publications:
   pub_doi: 10.2168/LMCS-12(2:7)2016
 - pub_url: https://hal.inria.fr/hal-01414881/document
   pub_title: A refinement-based approach to large scale reflection for algebra
+- pub_url: https://tel.archives-ouvertes.fr/tel-00986283/
+  pub_title: Interaction entre algèbre linéaire et analyse en formalisation des mathématiques
 
 authors:
 - name: Guillaume Cano
@@ -87,7 +90,12 @@ dependencies:
     name: coq-mathcomp-algebra
     version: '{((>= "1.12.0" & < "1.14~") | = "dev")}'
   description: |-
-    [MathComp](https://math-comp.github.io) 1.12.0 or newer
+    [MathComp algebra](https://math-comp.github.io) 1.12.0 or later
+- opam:
+    name: coq-mathcomp-real-closed
+    version: '{(>= "1.1.2" & < "1.2~") | (= "dev")}'
+  description: |-
+    [MathComp real-closed](https://math-comp.github.io) 1.1.2 or later
 
 tested_coq_opam_versions:
 - version: '1.13.0-coq-8.14'
@@ -150,6 +158,11 @@ documentation: |-
 
   - `kaplansky`: For providing elementary divisor rings from the
     Kaplansky condition.
+
+  - `closed_poly`: Polynomials with coefficients in a closed field.
+
+  - `companion`, `frobenius_form`, `jordan`, `perm_eq_image`,
+    `smith_complements`: Results on normal forms of matrices.
 
   - `bareiss_dvdring`, `bareiss`, `gauss`, `karatsuba`, `rank`
     `strassen` `toomcook`, `smithpid`, `smith`: Various efficient

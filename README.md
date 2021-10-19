@@ -25,7 +25,8 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 
 This Coq library contains a subset of the work that was developed in the context
 of the ForMath EU FP7 project (2009-2013). It has two parts:
-- theory, which contains developments in algebra and optimized algorithms on mathcomp data structures.
+- theory, which contains developments in algebra including normal forms of matrices,
+  and optimized algorithms on MathComp data structures.
 - refinements, which is a framework to ease change of data representations during a proof.
 
 ## Meta
@@ -48,7 +49,8 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
   - [Bignums](https://github.com/coq/bignums) same version as Coq
   - [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.3 or later
   - [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 1.5.1 and < 1.7
-  - [MathComp](https://math-comp.github.io) 1.12.0 or newer
+  - [MathComp algebra](https://math-comp.github.io) 1.12.0 or later
+  - [MathComp real-closed](https://math-comp.github.io) 1.1.2 or later
 - Coq namespace: `CoqEAL`
 - Related publication(s):
   - [A refinement-based approach to computational algebra in Coq](https://hal.inria.fr/hal-00734505/document) doi:[10.1007/978-3-642-32347-8_7](https://doi.org/10.1007/978-3-642-32347-8_7)
@@ -56,6 +58,7 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
   - [A Coq Formalization of Finitely Presented Modules](https://hal.inria.fr/hal-01378905/document) doi:[10.1007/978-3-319-08970-6_13](https://doi.org/10.1007/978-3-319-08970-6_13)
   - [Formalized Linear Algebra over Elementary Divisor Rings in Coq](https://hal.inria.fr/hal-01081908/document) doi:[10.2168/LMCS-12(2:7)2016](https://doi.org/10.2168/LMCS-12(2:7)2016)
   - [A refinement-based approach to large scale reflection for algebra](https://hal.inria.fr/hal-01414881/document) 
+  - [Interaction entre algèbre linéaire et analyse en formalisation des mathématiques](https://tel.archives-ouvertes.fr/tel-00986283/) 
 
 ## Building and installation instructions
 
@@ -93,6 +96,11 @@ The theory directory has the following content:
 
 - `kaplansky`: For providing elementary divisor rings from the
   Kaplansky condition.
+
+- `closed_poly`: Polynomials with coefficients in a closed field.
+
+- `companion`, `frobenius_form`, `jordan`, `perm_eq_image`,
+  `smith_complements`: Results on normal forms of matrices.
 
 - `bareiss_dvdring`, `bareiss`, `gauss`, `karatsuba`, `rank`
   `strassen` `toomcook`, `smithpid`, `smith`: Various efficient
