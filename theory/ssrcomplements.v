@@ -163,6 +163,7 @@ case: splitP => [[] //|k eq_i_k]; congr (M _ _).
 by apply: val_inj; rewrite /= eq_i_k.
 Qed.
 
+(* to be replaced by col1 and colE (once they are in mathcomp) *)
 Lemma col_id_mulmx m n (M : 'M[R]_(m,n)) i :
   M *m col i 1%:M = col i M.
 Proof.
@@ -171,6 +172,7 @@ rewrite (bigD1 i) // big1 /= ?addr0 ?mxE ?eqxx ?mulr1 // => j /negbTE neqji.
 by rewrite !mxE neqji mulr0.
 Qed.
 
+(* to be replaced by row1 and rowE *)
 Lemma row_id_mulmx m n (M : 'M[R]_(m,n)) i :
    row i 1%:M *m M = row i M.
 Proof.
@@ -237,6 +239,7 @@ Variable R : idomainType.
 Import GRing.Theory.
 Local Open Scope ring_scope.
 
+(* use coprimep_XsubC2 *)
 Lemma coprimep_factor (a b : R) : (b - a)%R \is a GRing.unit ->
    coprimep ('X - a%:P) ('X - b%:P).
 Proof.
