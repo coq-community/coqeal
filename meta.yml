@@ -90,6 +90,14 @@ dependencies:
     [MathComp](https://math-comp.github.io) 1.12.0 or newer
 
 tested_coq_opam_versions:
+- version: '1.13.0-coq-8.14'
+  repo: 'mathcomp/mathcomp'
+- version: '1.13.0-coq-8.13'
+  repo: 'mathcomp/mathcomp'
+- version: '1.13.0-coq-8.12'
+  repo: 'mathcomp/mathcomp'
+- version: '1.13.0-coq-8.11'
+  repo: 'mathcomp/mathcomp'
 - version: '1.12.0-coq-8.14'
   repo: 'mathcomp/mathcomp'
 - version: '1.12.0-coq-8.13'
