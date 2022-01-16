@@ -13,6 +13,7 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
 Local Open Scope Z_scope.
+Delimit Scope Z_scope with coqZ.
 
 Import GRing.Theory Order.Theory Num.Theory.
 
@@ -311,7 +312,7 @@ case m.
 by move=> p; rewrite -Z.gcd_opp_r /= ZgcdE abszN /absz.
 Qed.
 
-Lemma Z_ggcd_1_r n : Z.ggcd n 1 = (1, (n, 1))%Z.
+Lemma Z_ggcd_1_r n : Z.ggcd n 1 = (1, (n, 1))%coqZ.
 Proof.
 move: (Z.ggcd_gcd n 1) (Z.ggcd_correct_divisors n 1); rewrite Z.gcd_1_r.
 case (Z.ggcd _ _)=> g ab /= ->; case ab=> a b [].
@@ -320,13 +321,13 @@ Qed.
 
 Lemma Z_ggcd_coprime a b :
   let '(g, (a', b')) := Z.ggcd a b in
-  g <> 0%Z -> coprime `|Z2int a'| `|Z2int b'|.
+  g <> 0%coqZ -> coprime `|Z2int a'| `|Z2int b'|.
 Proof.
 move: (Z.ggcd_gcd a b) (Z.ggcd_correct_divisors a b).
 case (Z.ggcd _ _)=> g ab; case ab=> a' b' /= Hg [] Ha Hb Pg.
 rewrite /coprime; apply/eqP /Nat2Z.inj; rewrite -ZgcdE' /=.
-suff ->: a' = (a / g)%Z.
-{ suff ->: b' = (b / g)%Z; [by apply Z.gcd_div_gcd|].
+suff ->: a' = (a / g)%coqZ.
+{ suff ->: b' = (b / g)%coqZ; [by apply Z.gcd_div_gcd|].
   by rewrite Hb Z.mul_comm Z_div_mult_full. }
 by rewrite Ha Z.mul_comm Z_div_mult_full.
 Qed.
@@ -470,7 +471,7 @@ case: (BigQ.red y) ry_dneq0 ry_red => [ny _ _|ny dy dy_neq0].
   { by move: nx_dx_coprime => /eqP <-; rewrite -nx_eq abszM /= gcdnC gcdnMl. }
     by rewrite -nx_eq dx_1 mulr1. }
 rewrite /BigQ.to_Q ifF ?BigN.spec_eqb ?Z.eqb_neq //.
-rewrite Qcanon.Qred_iff ZgcdE -[1%Z]/(Z.of_nat 1%nat) => /Nat2Z.inj.
+rewrite Qcanon.Qred_iff ZgcdE -[1%coqZ]/(Z.of_nat 1%nat) => /Nat2Z.inj.
 rewrite /Qnum /Qden nat_of_pos_Z_to_pos => /eqP ny_dy_coprime.
 move=> /eqP; rewrite rat_eqE !coprimeq_num // !coprimeq_den //=.
 rewrite !gtr0_sg ?nat_of_pos_gtr0 // !mul1r => /andP[/eqP <-].
