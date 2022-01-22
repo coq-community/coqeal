@@ -900,7 +900,7 @@ Abort.
 
 Definition test := [coqeal simpl of sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2)].
 
-Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) = 3).
+Goal (sizep (1 + 2%:Z *: 'X + 3%:Z *: 'X^2) = 3%N).
 by coqeal.
 Qed.
 

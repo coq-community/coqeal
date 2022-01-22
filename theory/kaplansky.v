@@ -112,7 +112,7 @@ Lemma smith1xnP n (M : 'M[R]_(1,1 + (1 + n)))
   (smith2xnP : forall M, smith_spec M (smith2xn M))  :
   smith_spec M (smith1xn smith2xn M).
 Proof.
-rewrite /smith1xn; case: smith2xnP; rewrite [2]/(1+1)%N=> P d Q h_eq hs hP hQ.
+rewrite /smith1xn; case: smith2xnP; rewrite [2%N]/(1+1)%N=> P d Q h_eq hs hP hQ.
 have [d0|d_neq0] := (boolP (d`_0 == 0)).
   constructor; rewrite ?unitmx1 // ?simplmx; apply/matrixP=> i j.
   move/(canRL (mulmxK hQ))/(canRL (mulKmx hP))/matrixP: h_eq.

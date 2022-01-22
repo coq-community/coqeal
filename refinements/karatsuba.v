@@ -157,11 +157,11 @@ Fixpoint bigpoly (x : int) (n : nat) : {poly int} :=
   | n.+1 => x%:P + (bigpoly (x+1) n) * 'X
   end.
 
-Let p1 := Eval compute in bigseq 1 10.
-Let p2 := Eval compute in bigseq 2 10.
+Let p1 := Eval compute in bigseq 1%N 10.
+Let p2 := Eval compute in bigseq 2%N 10.
 
-Let q1 := Eval simpl in bigpoly 1 10.
-Let q2 := Eval simpl in bigpoly 2 10.
+Let q1 := Eval simpl in bigpoly 1%N 10.
+Let q2 := Eval simpl in bigpoly 2%N 10.
 
 (* TODO: Translate Poly directly? *)
 Goal (Poly p1 * Poly p2 == Poly p2 * Poly p1).
