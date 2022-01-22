@@ -1453,9 +1453,9 @@ Goal (Mp *m 0 == 0 :> 'M[_]_(2,2)).
 by coqeal.
 Abort.
 
-Definition M := \matrix_(i,j < 2) 1%nat%num%:Z.
-Definition N := \matrix_(i,j < 2) 2%num%:Z.
-Definition P := \matrix_(i,j < 2) 14%num%:Z.
+Definition M := \matrix_(i,j < 2) 1%:Z.
+Definition N := \matrix_(i,j < 2) 2%:Z.
+Definition P := \matrix_(i,j < 2) 14%:Z.
 
 Goal (M + N + M + N + M + N + N + M + N) *m
    (M + N + M + N + M + N + N + M + N) =
