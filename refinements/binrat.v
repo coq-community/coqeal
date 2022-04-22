@@ -544,7 +544,7 @@ rewrite /eq_op /eq_bigQ BigQ.spec_eq_bool.
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
 rewrite /Qeq_bool !Z2int_Qred /= /Zeq_bool -Z.eqb_compare.
-rewrite divq_eq ?intq_eq0 ?Posz_nat_of_pos_neq0 //.
+rewrite GRing.eqr_div ?intq_eq0 ?Posz_nat_of_pos_neq0 //.
 rewrite !nat_of_pos_Z_to_pos.
 rewrite !gez0_abs; [|by rewrite -[0%R]int2ZK Z2int_le..].
 rewrite -!intrM -!Z2int_mul eqr_int.

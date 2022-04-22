@@ -209,7 +209,7 @@ Proof.
 apply refines_abstr2 => x [na [da da_gt0]] rx y [nb [db db_gt0]] ry.
 have -> : (x == y) = ((na, pos_of da_gt0) == (nb, pos_of db_gt0))%C.
   rewrite /eq_op /eqQ /cast /cast_pos_int /pos_to_int /=; simpC.
-  rewrite [x]RratE [y]RratE /= divq_eq; last 2 first.
+  rewrite [x]RratE [y]RratE /= GRing.eqr_div; last 2 first.
   - by rewrite gt_eqF // ltr0z.
   - by rewrite gt_eqF // ltr0z.
   by rewrite -!rmorphM /= eqr_int !natz.
