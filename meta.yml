@@ -136,10 +136,6 @@ tested_coq_opam_versions:
   repo: 'mathcomp/mathcomp-dev'
 - version: 'coq-8.13'
   repo: 'mathcomp/mathcomp-dev'
-- version: 'coq-8.12'
-  repo: 'mathcomp/mathcomp-dev'
-- version: 'coq-8.11'
-  repo: 'mathcomp/mathcomp-dev'
 
 namespace: CoqEAL
 
