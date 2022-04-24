@@ -376,6 +376,7 @@ Hint Mode native_compute - + - : typeclass_instances.
 Hint Extern 0 (native_compute _ _) =>
   context [(X in native_compute X)] native_compute; reflexivity :
   typeclass_instances.
+#[global]
 Instance strategy_class_native_compute : strategy_class native_compute := erefl.
 
 Class vm_compute T (x y : T) := VmCompute : x = y.
@@ -383,6 +384,7 @@ Hint Mode vm_compute - + - : typeclass_instances.
 Hint Extern 0 (vm_compute _ _) =>
   context [(X in vm_compute X)] vm_compute; reflexivity :
   typeclass_instances.
+#[global]
 Instance strategy_class_vm_compute : strategy_class vm_compute := erefl.
 
 Class compute T (x y : T) := Compute : x = y.
@@ -390,14 +392,14 @@ Hint Mode compute - + - : typeclass_instances.
 Hint Extern 0 (compute _ _) =>
   context [(X in compute X)] compute; reflexivity :
   typeclass_instances.
-Instance strategy_class_compute : strategy_class compute := erefl.
+#[global] Instance strategy_class_compute : strategy_class compute := erefl.
 
 Class simpl T (x y : T) := Simpl : x = y.
 Hint Mode simpl - + - : typeclass_instances.
 Hint Extern 0 (simpl _ _) =>
   context [(X in simpl X)] simpl; reflexivity :
   typeclass_instances.
-Instance strategy_class_simpl : strategy_class simpl := erefl.
+#[global] Instance strategy_class_simpl : strategy_class simpl := erefl.
 
 Lemma coqeal_eq C {eqC : strategy_class C} {T T'} spec (x x' : T) {y y' : T'}
    {rxy : refines eq (spec_id x) (spec y)}  {ry : C _ y y'}

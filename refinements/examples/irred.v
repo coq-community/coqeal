@@ -167,19 +167,19 @@ End Irreducible.
 
 Module nat_ops.
 
-Instance zero_nat : zero_of nat := 0%N.
-Instance one_nat  : one_of nat  := 1%N.
-Instance add_nat  : add_of nat  := addn.
-Instance sub_nat  : sub_of nat  := subn.
-Instance mul_nat  : mul_of nat  := muln.
-Instance exp_nat  : exp_of nat nat := expn.
-Instance leq_nat  : leq_of nat  := ssrnat.leq.
-Instance lt_nat   : lt_of nat  := ssrnat.ltn.
-Instance eq_nat   : eq_of nat   := eqtype.eq_op.
+#[global] Instance zero_nat : zero_of nat := 0%N.
+#[global] Instance one_nat  : one_of nat  := 1%N.
+#[global] Instance add_nat  : add_of nat  := addn.
+#[global] Instance sub_nat  : sub_of nat  := subn.
+#[global] Instance mul_nat  : mul_of nat  := muln.
+#[global] Instance exp_nat  : exp_of nat nat := expn.
+#[global] Instance leq_nat  : leq_of nat  := ssrnat.leq.
+#[global] Instance lt_nat   : lt_of nat  := ssrnat.ltn.
+#[global] Instance eq_nat   : eq_of nat   := eqtype.eq_op.
 
-Instance spec_nat : spec_of nat nat := spec_id.
+#[global] Instance spec_nat : spec_of nat nat := spec_id.
 
-Instance implem_nat : implem_of nat nat := implem_id.
+#[global] Instance implem_nat : implem_of nat nat := implem_id.
 
 End nat_ops.
 
