@@ -188,24 +188,26 @@ Import PolyPriField.
 Local Open Scope ring_scope.
 
 
-Definition Jordan_form m (A : 'M[R]_m.+1) :=
+(* This contains the main algorithmic description of the computation of
+ Jordan normal forms, but the dimension is too complex for practical use. *)
+Definition pre_Jordan_form m (A : 'M[R]_m.+1) :=
   let sp := root_seq_poly (invariant_factors A) in
   let sizes := [seq  (x.2).-1 | x <- sp] in
   let blocks n i := Jordan_block (nth (0,0%N) sp i).1 n.+1 in 
    diag_block_mx sizes blocks.
   
-Lemma upt_Jordan n (A : 'M[R]_n.+1) : 
-  upper_triangular_mx (Jordan_form A).
+Lemma upt_pre_Jordan n (A : 'M[R]_n.+1) : 
+  upper_triangular_mx (pre_Jordan_form A).
 Proof.
 apply: upper_triangular_diag_block=> j.
 exact: upt_Jordan_block.
 Qed.
 
-Lemma Jordan n (A : 'M[R]_n.+1) : similar A (Jordan_form A).
+Lemma pre_Jordan n (A : 'M[R]_n.+1) : similar A (pre_Jordan_form A).
 Proof.
 apply:(similar_trans (Frobenius _)).
 apply:(similar_trans (similar_Frobenius _)).
-rewrite /Frobenius_form_CF /Jordan_form /root_seq_poly /linear_factor_seq.
+rewrite /Frobenius_form_CF /pre_Jordan_form /root_seq_poly /linear_factor_seq.
 set s1 := flatten _.
 set s2 := map _ _.
 have Hs: size s1 = size s2.
@@ -225,17 +227,73 @@ apply: (@invariant_factor_neq0 _ _ A).
 by rewrite mem_nth.
 Qed.
 
-Lemma Jordan_char_poly n (A : 'M_n.+1) :
-  char_poly A = \prod_i ('X - ((Jordan_form A) i i)%:P).
+(* The concept of similarity contains the information that the size
+  is unchanged.  We can now define a more practical function for
+  the Jordan form. *)
+Definition Jordan_form m : 'M[R]_m -> 'M[R]_m :=
+  if m is n.+1 return 'M_m -> 'M_m then
+   fun A => castmx (esym (proj1 (pre_Jordan A)), esym (proj1 (pre_Jordan A)))
+              (pre_Jordan_form A)
+  else
+    id.
+
+Lemma upt_Jordan (n : nat) (A : 'M[R]_n) :
+  upper_triangular_mx (Jordan_form A).
 Proof.
-rewrite (similar_char_poly (Jordan A)).
-exact: (char_poly_triangular_mx (upt_Jordan A)).
+case: n A => [ | n] A; first by apply/eqP/matrixP=> -[].
+apply/eqP/matrixP=> i j; rewrite /Jordan_form castmxE /upper_part_mx.
+rewrite mxE castmxE.
+have := upt_pre_Jordan A=> /eqP/matrixP uj.
+by rewrite [LHS]uj /upper_part_mx mxE.
 Qed.
 
-Lemma eigen_diag n (A : 'M_n.+1) : 
+Lemma Jordan (n : nat)(A : 'M[R]_n) :
+  (0 < n)%N -> similar A (Jordan_form A).
+Proof.
+case: n A => [ | n] // A; split; first by [].
+apply (similar_trans (pre_Jordan A)); apply/similar_cast/similar_refl.
+Qed.
+
+Lemma pre_Jordan_char_poly n (A : 'M_n.+1) :
+  char_poly A = \prod_i ('X - ((pre_Jordan_form A) i i)%:P).
+Proof.
+rewrite (similar_char_poly (pre_Jordan A)).
+exact: (char_poly_triangular_mx (upt_pre_Jordan A)).
+Qed.
+
+Lemma Jordan_char_poly (n : nat) (A : 'M[R]_n) :
+  (0 < n)%N ->
+  char_poly A = \prod_i ('X - (Jordan_form A i i)%:P).
+Proof.
+have size_index_enum u : size (index_enum (ordinal_finType u)) = u.
+  by rewrite /index_enum unlock -enumT size_enum_ord.
+case: n A => [ | n]; first by [].
+move=> A _; rewrite pre_Jordan_char_poly.
+set w := (size_sum _).+1.
+rewrite -[LHS]/(\prod_(i < w) ('X - (pre_Jordan_form A i i)%:P)).
+set l := index_enum (ordinal_finType w).
+have weq : w = n.+1 by have [] := pre_Jordan A.
+rewrite (_ : index_enum (ordinal_finType n.+1) =
+   [seq cast_ord weq j | j <- l]); last first.
+  apply: (@eq_from_nth _ ord0); first by rewrite /l size_map !size_index_enum.
+  move=> i; rewrite size_index_enum -/w=> ilt.
+  rewrite (nth_map ord0) -/w; last by rewrite /l size_index_enum weq.
+  have ilt' : (i < w)%N by rewrite weq.
+  rewrite -[i in LHS]/(nat_of_ord (Ordinal ilt)).
+  rewrite -[i in RHS]/(nat_of_ord (Ordinal ilt')).
+  rewrite /index_enum unlock -enumT nth_ord_enum.
+  rewrite /l/index_enum unlock -enumT nth_ord_enum.
+  by apply: val_inj.
+rewrite big_map.
+apply: eq_bigr=> i _; rewrite /Jordan_form castmxE.
+congr (fun i : 'I_w => 'X - (pre_Jordan_form A i i)%:P).
+by rewrite cast_ord_comp cast_ord_id.
+Qed.
+
+Lemma pre_Jordan_eigen_diag n (A : 'M_n.+1) : 
   let sp := root_seq_poly (invariant_factors A) in
   let sizes := [seq  (x.2).-1 | x <- sp] in 
-  perm_eq [seq (Jordan_form A) i i | i <- enum 'I_(size_sum sizes).+1] 
+  perm_eq [seq (pre_Jordan_form A) i i | i <- enum 'I_(size_sum sizes).+1] 
           (root_seq (char_poly A)). 
 Proof.
 have Hinj: injective (fun (c : R) => 'X - c%:P).
@@ -254,18 +312,47 @@ apply: (@unicity_decomposition _ _ _ (char_poly A)).
   -move=> r /(nthP 0) []i; rewrite !size_map=> Hi.
    rewrite (nth_map 0) ?size_map // => <-.
    exact: monicXsubC.
-  +by rewrite !big_map; exact: Jordan_char_poly.
+  +by rewrite !big_map; exact: pre_Jordan_char_poly.
   -rewrite big_map {1}[char_poly A]root_seq_eq .
    by rewrite (monicP (char_poly_monic A)) scale1r.    
+Qed.
+
+Lemma eigen_diag (n : nat) (A : 'M[R]_n) :
+  (0 < n)%N ->
+  perm_eq [seq Jordan_form A i i | i : 'I_n] (root_seq (char_poly A)).
+Proof.
+case: n A => [ | n ] A; first by [].
+move=> _.
+apply: perm_trans (pre_Jordan_eigen_diag A).
+set x := (X in perm_eq X _).
+set y := (X in perm_eq _ X).
+suff : x = y by move=> ->; rewrite perm_refl.
+rewrite {}/x {}/y /Jordan_form.
+apply: (@eq_from_nth _ 0).
+  by rewrite !size_map -!enumT !size_enum_ord; case: (pre_Jordan A).
+move=> i; rewrite size_map size_enum_ord => ilt.
+rewrite (nth_map 0); last by rewrite size_enum_ord.
+rewrite castmxE.
+rewrite -[i in LHS]/(nat_of_ord (Ordinal ilt)) nth_ord_enum.
+rewrite (nth_map 0); last by rewrite size_enum_ord -(proj1 (pre_Jordan A)).
+have ilt' : (i < (size_sum
+                [seq x.2.-1 | x <- root_seq_poly (invariant_factors A)]).+1)%N.
+  by rewrite -(proj1 (pre_Jordan A)).
+rewrite -[i in RHS]/(nat_of_ord (Ordinal ilt')).
+rewrite nth_ord_enum /=.
+suff -> : cast_ord (esym (esym (proj1 (pre_Jordan A)))) (Ordinal ilt) =
+    Ordinal ilt' by [].
+by apply/val_inj.
 Qed.
 
 Lemma diagonalization n (A : 'M[R]_n.+1) : uniq (root_seq (mxminpoly A)) ->
   similar A (diag_mx_seq n.+1 n.+1 (root_seq (char_poly A))).
 Proof.
 move=> H.
-have [Heq _]:= (Jordan A).
+have [Heq _]:= (pre_Jordan A).
 pose s := [seq  (x.2).-1 | x <- root_seq_poly (invariant_factors A)].
-have Hs: size ([seq (Jordan_form A) i i | i <- enum 'I_(size_sum s).+1]) = n.+1.
+have Hs: size ([seq (pre_Jordan_form A) i i |
+                i <- enum 'I_(size_sum s).+1]) = n.+1.
   by rewrite size_map size_enum_ord. 
 have Hn i: nth 0%N s i = 0%N.
   case: (ltnP i (size (root_seq_poly (invariant_factors A))))=> Hi.
@@ -286,9 +373,10 @@ have Hn i: nth 0%N s i = 0%N.
       -by rewrite inE prednK. 
     by rewrite -ltnS prednK.
   by rewrite nth_default // size_map.
-apply: (similar_trans (Jordan A)). 
-apply: (similar_trans _ (similar_diag_mx_seq (erefl n.+1) Hs (eigen_diag A))).
-rewrite /Jordan_form diag_block_mx_seq //.
+apply: (similar_trans (pre_Jordan A)). 
+apply: (similar_trans _
+           (similar_diag_mx_seq (erefl n.+1) Hs (pre_Jordan_eigen_diag A))).
+rewrite /pre_Jordan_form diag_block_mx_seq //.
 rewrite size_map size_enum_ord in Hs.
 rewrite Hs.
 set s1 := mkseq _ _.  
@@ -323,3 +411,13 @@ exact: diagonalization.
 Qed.
 
 End jordan.
+
+Definition eigenvalue_Jordan (R : closedFieldType) (n : nat) (A : 'M[R]_n) :
+  (0 < n)%N ->
+  {in [seq Jordan_form A i i | i : 'I_n], forall x, eigenvalue A x}.
+Proof.
+case: n A => [ | n]; first by [].
+move=> A _ x; rewrite eigenvalue_root_char -root_root_seq; last first.
+  by apply/monic_neq0/char_poly_monic.
+by rewrite (perm_mem (eigen_diag A isT)).
+Qed.
