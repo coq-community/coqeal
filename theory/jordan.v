@@ -265,29 +265,24 @@ Lemma Jordan_char_poly (n : nat) (A : 'M[R]_n) :
   (0 < n)%N ->
   char_poly A = \prod_i ('X - (Jordan_form A i i)%:P).
 Proof.
-have size_index_enum u : size (index_enum (ordinal_finType u)) = u.
-  by rewrite /index_enum unlock -enumT size_enum_ord.
 case: n A => [ | n]; first by [].
 move=> A _; rewrite pre_Jordan_char_poly.
-set w := (size_sum _).+1.
-rewrite -[LHS]/(\prod_(i < w) ('X - (pre_Jordan_form A i i)%:P)).
-set l := index_enum (ordinal_finType w).
-have weq : w = n.+1 by have [] := pre_Jordan A.
-rewrite (_ : index_enum (ordinal_finType n.+1) =
-   [seq cast_ord weq j | j <- l]); last first.
-  apply: (@eq_from_nth _ ord0); first by rewrite /l size_map !size_index_enum.
-  move=> i; rewrite size_index_enum -/w=> ilt.
-  rewrite (nth_map ord0) -/w; last by rewrite /l size_index_enum weq.
-  have ilt' : (i < w)%N by rewrite weq.
-  rewrite -[i in LHS]/(nat_of_ord (Ordinal ilt)).
-  rewrite -[i in RHS]/(nat_of_ord (Ordinal ilt')).
-  rewrite /index_enum unlock -enumT nth_ord_enum.
-  rewrite /l/index_enum unlock -enumT nth_ord_enum.
-  by apply: val_inj.
-rewrite big_map.
-apply: eq_bigr=> i _; rewrite /Jordan_form castmxE.
-congr (fun i : 'I_w => 'X - (pre_Jordan_form A i i)%:P).
-by rewrite cast_ord_comp cast_ord_id.
+set J := Jordan_form A; set PJ := pre_Jordan_form A; set w := size_sum _.
+have weq : w = n by have [+ _] := pre_Jordan A; rewrite -/w => - [] ->.
+set f := fun m (B : 'M[R]_m.+1) (i : 'I_m.+1) => ('X - (B i i)%:P).
+have fnat m (B : 'M[R]_m.+1) : forall i : 'I_m.+1, f m B i = f m B (inord i).
+  by move=> i; rewrite inord_val.
+rewrite -[LHS]/(\prod_i (f w PJ i)).
+rewrite (eq_bigr (fun i : 'I_w.+1 => f w PJ (inord i))); last by [].
+rewrite -(big_mkord (fun i => true) (fun i => (f w PJ (inord i)))).
+rewrite -[RHS]/(\prod_i (f n J i)).
+rewrite (eq_bigr (fun i : 'I_n.+1 => f n J (inord i))); last by [].
+rewrite -(big_mkord (fun i => true) (fun i => (f n J (inord i)))).
+rewrite {1}weq [LHS]big_nat_cond [RHS]big_nat_cond.
+ apply: eq_bigr => i /andP[] /andP[] _ cond _; rewrite /f /Jordan_form castmxE.
+set prf := esym _.
+suff -> : cast_ord prf (inord i) = (inord i : 'I_w.+1); first by [].
+by apply/val_inj=> /=; rewrite !inordK // -/w weq.
 Qed.
 
 Lemma pre_Jordan_eigen_diag n (A : 'M_n.+1) : 
