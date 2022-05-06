@@ -267,19 +267,15 @@ Lemma Jordan_char_poly (n : nat) (A : 'M[R]_n) :
 Proof.
 case: n A => [ | n]; first by [].
 move=> A _; rewrite pre_Jordan_char_poly.
-set J := Jordan_form A; set PJ := pre_Jordan_form A; set w := size_sum _.
+have tonat m (f : 'I_m.+1 -> {poly R}) : \prod_i (f i) =
+  \prod_(0 <= i < m.+1 | (i < m.+1)%N) (f (inord i)).
+  have pred_eq : forall i, ((i < m.+1)%N = (0 <= i < m.+1) && true)%N.
+     by move=> i; rewrite andbT.
+  rewrite (eq_bigl _ _ pred_eq) -big_nat_cond big_mkord.
+  by apply: eq_bigr=> i; rewrite inord_val.
+set w := size_sum _; rewrite [LHS]tonat [RHS]tonat.
 have weq : w = n by have [+ _] := pre_Jordan A; rewrite -/w => - [] ->.
-set f := fun m (B : 'M[R]_m.+1) (i : 'I_m.+1) => ('X - (B i i)%:P).
-have fnat m (B : 'M[R]_m.+1) : forall i : 'I_m.+1, f m B i = f m B (inord i).
-  by move=> i; rewrite inord_val.
-rewrite -[LHS]/(\prod_i (f w PJ i)).
-rewrite (eq_bigr (fun i : 'I_w.+1 => f w PJ (inord i))); last by [].
-rewrite -(big_mkord (fun i => true) (fun i => (f w PJ (inord i)))).
-rewrite -[RHS]/(\prod_i (f n J i)).
-rewrite (eq_bigr (fun i : 'I_n.+1 => f n J (inord i))); last by [].
-rewrite -(big_mkord (fun i => true) (fun i => (f n J (inord i)))).
-rewrite {1}weq [LHS]big_nat_cond [RHS]big_nat_cond.
- apply: eq_bigr => i /andP[] /andP[] _ cond _; rewrite /f /Jordan_form castmxE.
+rewrite {1 2}weq; apply: eq_bigr => i ilt; rewrite /Jordan_form castmxE.
 set prf := esym _.
 suff -> : cast_ord prf (inord i) = (inord i : 'I_w.+1); first by [].
 by apply/val_inj=> /=; rewrite !inordK // -/w weq.
