@@ -34,6 +34,14 @@ publications:
   pub_title: A refinement-based approach to large scale reflection for algebra
 - pub_url: https://tel.archives-ouvertes.fr/tel-00986283/
   pub_title: Interaction entre algèbre linéaire et analyse en formalisation des mathématiques
+- pub_url: https://jfr.unibo.it/article/view/2615
+  pub_doi: 10.6092/issn.1972-5787/2615
+  pub_title: A formal proof of Sasaki-Murao algorithm
+- pub_url: http://hdl.handle.net/2077/37325
+  pub_title: Formalizing Refinements and Constructive Algebra in Type Theory
+- pub_title: Coherent and Strongly Discrete Rings in Type Theory
+  pub_url: https://staff.math.su.se/anders.mortberg/papers/coherent.pdf
+  pub_doi: 10.1007/978-3-642-35308-6_21
 
 authors:
 - name: Guillaume Cano
