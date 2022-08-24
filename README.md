@@ -59,6 +59,9 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
   - [Formalized Linear Algebra over Elementary Divisor Rings in Coq](https://hal.inria.fr/hal-01081908/document) doi:[10.2168/LMCS-12(2:7)2016](https://doi.org/10.2168/LMCS-12(2:7)2016)
   - [A refinement-based approach to large scale reflection for algebra](https://hal.inria.fr/hal-01414881/document) 
   - [Interaction entre algèbre linéaire et analyse en formalisation des mathématiques](https://tel.archives-ouvertes.fr/tel-00986283/) 
+  - [A formal proof of Sasaki-Murao algorithm](https://jfr.unibo.it/article/view/2615) doi:[10.6092/issn.1972-5787/2615](https://doi.org/10.6092/issn.1972-5787/2615)
+  - [Formalizing Refinements and Constructive Algebra in Type Theory](http://hdl.handle.net/2077/37325) 
+  - [Coherent and Strongly Discrete Rings in Type Theory](https://staff.math.su.se/anders.mortberg/papers/coherent.pdf) doi:[10.1007/978-3-642-35308-6_21](https://doi.org/10.1007/978-3-642-35308-6_21)
 
 ## Building and installation instructions
 
