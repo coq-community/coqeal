@@ -48,7 +48,7 @@ End GUARD.
 Module DvdRing.
 
 (* Specification of division: div_spec a b == b | a *)
-CoInductive div_spec (R : ringType) (a b :R) : option R -> Type :=
+Variant div_spec (R : ringType) (a b : R) : option R -> Type :=
 | DivDvd x of a = x * b : div_spec a b (Some x)
 | DivNDvd of (forall x, a != x * b) : div_spec a b None.
 
@@ -1272,7 +1272,7 @@ End GCDDomainTheory.
 
 Module BezoutDomain.
 
-CoInductive bezout_spec (R : gcdDomainType) (a b : R) : R * R -> Type:=
+Variant bezout_spec (R : gcdDomainType) (a b : R) : R * R -> Type:=
   BezoutSpec x y of gcdr a b %= x * a + y * b : bezout_spec a b (x, y).
 
 Record mixin_of (R : gcdDomainType) : Type := Mixin {
@@ -1370,7 +1370,7 @@ Definition egcdr a b :=
         let b1 := odflt 0 (b %/? g) in
           if g == 0 then (0,1,0,1,0) else (g, u, v, a1, b1).
 
-CoInductive egcdr_spec a b : R * R * R * R * R -> Type :=
+Variant egcdr_spec a b : R * R * R * R * R -> Type :=
   EgcdrSpec g u v a1 b1 of u * a1 + v * b1 = 1
                          & g %= gcdr a b
                          & a = a1 * g
@@ -1703,7 +1703,7 @@ End PIDTheory.
 
 Module EuclideanDomain.
 
-CoInductive edivr_spec (R : ringType)
+Variant edivr_spec (R : ringType)
   (norm : R -> nat) (a b : R) : R * R -> Type :=
   EdivrSpec q r of a = q * b + r & (b != 0) ==> (norm r < norm b)
   : edivr_spec norm a b (q,r).

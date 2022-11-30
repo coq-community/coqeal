@@ -98,7 +98,7 @@ Fixpoint Smith m n : 'M[E]_(m,n) -> 'M[E]_(m) * seq E * 'M[E]_(n) :=
   | _, _ => fun M => (1%:M, [::], 1%:M)
   end.
 
-CoInductive improve_pivot_rec_spec m n P M Q :
+Variant improve_pivot_rec_spec m n P M Q :
   'M_(1 + m) * 'M_(1 + m,1 + n) * 'M[E]_(1 + n) -> Type :=
   ImprovePivotQecSpec P' M' Q' of P^-1 *m M *m Q^-1 = P'^-1 *m M' *m Q'^-1
   & (forall i j, M' 0 0 %| M' i j)
@@ -183,7 +183,7 @@ constructor=> //; first by rewrite -HblockL -Hblock invrM // mulmxA mulmxKV.
 by rewrite -HblockL unitmx_mul unitmxE (det_lblock 1 P) !det1 mulr1 unitr1.
 Qed.
 
-CoInductive improve_pivot_spec m n M :
+Variant improve_pivot_spec m n M :
   'M[E]_(1 + m) * 'M_(1 + m,1 + n) * 'M_(1 + n) -> Type :=
   ImprovePivotSpec L A R of L *m M *m R = A
   & (forall i j, A 0 0 %| A i j)
