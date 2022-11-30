@@ -17,7 +17,7 @@ Local Open Scope ring_scope.
 (** Strongly discrete rings *)
 Module StronglyDiscrete.
 
-CoInductive member_spec (R : ringType) n (x : R) (I : 'cV[R]_n)
+Variant member_spec (R : ringType) n (x : R) (I : 'cV[R]_n)
   : option 'rV[R]_n -> Type :=
 | Member J of x%:M = J *m I : member_spec x I (Some J)
 | NMember of (forall J, x%:M != J *m I) : member_spec x I None.
@@ -661,7 +661,7 @@ Section IdealIntersection.
 
 Variable cap_size : forall n m, 'cV[R]_n -> 'cV[R]_m -> nat.
 
-CoInductive int_spec m n (I : 'cV[R]_m) (J : 'cV[R]_n) : 'cV[R]_(cap_size I J).+1 -> Type :=
+Variant int_spec m n (I : 'cV[R]_m) (J : 'cV[R]_n) : 'cV[R]_(cap_size I J).+1 -> Type :=
   IntSpec cap of (cap <= I)%IS
   & (cap <= J)%IS
   & (forall x, member x I -> member x J -> member x cap) : int_spec cap.

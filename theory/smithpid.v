@@ -114,7 +114,7 @@ Fixpoint Smith {m n} : 'M[R]_(m,n) -> 'M[R]_(m) * seq R * 'M[R]_(n) :=
 Hypothesis find_pivotP : forall m n (M : 'M[R]_(1 + m,1 + n)),
   pick_spec [pred ij | M ij.1 ij.2 != 0] (find_pivot M).
 
-CoInductive improve_pivot_rec_spec m n P M Q :
+Variant improve_pivot_rec_spec m n P M Q :
   'M[R]_(1 + m) * 'M[R]_(1 + m,1 + n) * 'M[R]_(1 + n) -> Type :=
   ImprovePivotRecSpec P' A Q' of P^-1 *m M *m Q^-1 = P'^-1 *m A *m Q'^-1
   & (forall i j, A 0 0 %| A i j)
@@ -213,7 +213,7 @@ constructor=> //; first by rewrite -HblockP -Hblock invrM // mulmxA mulmxKV.
 by rewrite -HblockP unitmx_mul unitmxE (det_lblock 1 M') !det1 mulr1 unitr1.
 Qed.
 
-CoInductive improve_pivot_spec m n M :
+Variant improve_pivot_spec m n M :
   'M[R]_(1 + m) * 'M[R]_(1 + m,1 + n) * 'M[R]_(1 + n) -> Type :=
   ImprovePivotSpec P A Q of P *m M *m Q = A
   & (forall i j, A 0 0 %| A i j)

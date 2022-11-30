@@ -19,7 +19,7 @@ Local Open Scope ring_scope.
 (** Elementary divisor rings *)
 Module EDR.
 
-CoInductive smith_spec (R : dvdRingType) m n M
+Variant smith_spec (R : dvdRingType) m n M
   : 'M[R]_m * seq R * 'M[R]_n -> Type :=
     SmithSpec P d Q of P *m M *m Q = diag_mx_seq m n d
                      & sorted %|%R d
@@ -498,12 +498,12 @@ elim: i {-2}i (leqnn i)=>[i|i IHi j Hji Hj].
   rewrite leqn0=> /eqP -> Hi.
   move: (Smith_gcdr_spec Hi Hd HMd); rewrite eqd_sym.
   move/(eqd_trans (Smith_gcdr_spec Hi Hsorted HMdmt)).
-  by rewrite !big_ord1 eqd_sym. 
+  by rewrite !big_ord1 eqd_sym.
 move: (Smith_gcdr_spec Hj Hd HMd); rewrite eqd_sym.
 move/(eqd_trans (Smith_gcdr_spec Hj Hsorted HMdmt)).
 rewrite !big_ord_recr /= => H3.
 have H1: \prod_(i < j) d`_i %= \prod_(i < j) s`_i.
-  apply: eqd_big_mul=> k _. 
+  apply: eqd_big_mul=> k _.
   by rewrite (IHi k _ (ltn_trans _ Hj)) // -ltnS (leq_trans (ltn_ord k) Hji).
 have [H0|H0] := boolP (\prod_(i < j) d`_i == 0).
   have/prodf_eq0 [k _ /eqP Hk] : (\prod_(i < j) s`_i == 0).

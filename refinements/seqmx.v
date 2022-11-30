@@ -294,7 +294,7 @@ Local Instance implem_ord : forall n, (implem_of 'I_n 'I_n) :=
 
 Local Open Scope rel_scope.
 
-CoInductive Rseqmx {m1 m2} (rm : nat_R m1 m2) {n1 n2} (rn : nat_R n1 n2) :
+Variant Rseqmx {m1 m2} (rm : nat_R m1 m2) {n1 n2} (rn : nat_R n1 n2) :
   'M[R]_(m1,n1) -> hseqmx m2 n2 -> Type :=
   Rseqmx_spec (A : 'M[R]_(m1, n1)) M of
     size M = m2

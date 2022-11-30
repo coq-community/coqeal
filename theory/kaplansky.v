@@ -360,7 +360,7 @@ Definition egcdr3 (a b c : R) :=
   let: (g,u,v,a1,g1)    := egcdr a g' in
   (g, u, v * u1, v * v1, a1,b1 * g1,c1 * g1).
 
-CoInductive egcdr3_spec a b c : R * R * R * R * R * R * R-> Type :=
+Variant egcdr3_spec a b c : R * R * R * R * R * R * R-> Type :=
   EgcdrSpec g x y z a1 b1 c1 of x * a1 + y * b1 + z * c1 = 1
   & g %= gcdr a (gcdr b c)
   & a = a1 * g & b = b1 * g & c = c1 * g : egcdr3_spec a b c (g,x,y,z,a1,b1,c1).
@@ -481,7 +481,7 @@ Section AdequacyGdco.
 
 Variable R : gcdDomainType.
 
-CoInductive adequate_spec (a b : R) : R -> Type :=
+Variant adequate_spec (a b : R) : R -> Type :=
   | AdequateSpec0 of b = 0 : adequate_spec a b 0
   | AdequateSpec r of b != 0
                       & r %| b
@@ -490,7 +490,7 @@ CoInductive adequate_spec (a b : R) : R -> Type :=
                           ~~ coprimer d a)
                       : adequate_spec a b r.
 
-CoInductive gdco_spec (a b : R) : R -> Type :=
+Variant gdco_spec (a b : R) : R -> Type :=
   | GdcoSpec0 of b = 0 : gdco_spec a b 0
   | GdcoSpec r of b != 0
                   & r %| b
