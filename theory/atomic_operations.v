@@ -44,16 +44,14 @@ Lemma lines_scale_row m n a (M: 'M[R]_(m,n)):
 Proof.
 move => s.
 elim : s n M => [ | hd tl hi] //= n M /andP [h1 h2].
-split => i.
-- rewrite in_cons => /orP [] hin.
-  + rewrite (eqP hin) {i hin}.
-    case: (hi _ (line_scale hd a M) h2) => _ hr.
+split => i; rewrite in_cons.
+- move/orP => [/eqP{i}-> | hin].
+  + case: (hi _ (line_scale hd a M) h2) => _ hr.
     by rewrite hr // line_scale_row_eq.
-  case: (hi _ (line_scale hd a M) h2) => hl _.
-  rewrite hl // line_scale_row_neq //.
-  apply/negP => /eqP heq.
-  by move: h1; rewrite heq hin.
-rewrite in_cons negb_or => /andP [hl hr].
+  case: (hi _ (line_scale hd a M) h2) => -> // _.
+  rewrite line_scale_row_neq //.
+  by apply: contraNneq h1 => ->.
+rewrite negb_or => /andP[hl hr].
 case: (hi _ (line_scale hd a M)  h2) => _ hR.
 by rewrite hR // line_scale_row_neq // eq_sym.
 Qed.
@@ -79,7 +77,7 @@ Lemma det_line_scale_mx : forall n k a (M: 'M[R]_n),
 Proof.
 rewrite /line_scale_mx => n k a M.
 rewrite det_mulmx det_diag (bigD1 k) //= big1 /=;
-  first by rewrite !mxE mulr1 eqxx /=.
+  first by rewrite !mxE mulr1 eqxx.
 by move => i /negbTE h; rewrite !mxE h.
 Qed.
 
@@ -130,17 +128,14 @@ Proof.
 move => s.
 elim : s M => [ | hd tl hi] //= M /andP [h1 h2].
 rewrite in_cons negb_or => /andP [hl1 hl2].
-split => i.
-- rewrite in_cons => /orP [] hin.
-  + rewrite (eqP hin) {i hin}.
-    case: (hi (line_comb hd l a M) h2 hl2) => _ hr.
+split => i; rewrite in_cons.
+- move/orP => [/eqP{i}-> | hin].
+  + case: (hi (line_comb hd l a M) h2 hl2) => _ hr.
     by rewrite hr // line_comb_row_eq.
-  case: (hi (line_comb hd l a M) h2 hl2) => hl _.
-  rewrite hl //  !line_comb_row_neq //.
-  + by rewrite eq_sym.
-  apply/negP => /eqP heq.
-  by move: h1; rewrite heq hin.
-rewrite in_cons negb_or => /andP [hl hr].
+  case: (hi (line_comb hd l a M) h2 hl2) => -> // _.
+  rewrite !line_comb_row_neq // eq_sym // eq_sym.
+  by apply: contraNneq h1 => ->.
+rewrite negb_or => /andP [hl hr].
 case: (hi (line_comb hd l a M)  h2 hl2) => _ hR.
 by rewrite hR // !line_comb_row_neq // eq_sym.
 Qed.
@@ -157,17 +152,14 @@ Proof.
 move => s.
 elim : s M => [ | hd tl hi] //= M /andP [h1 h2].
 rewrite in_cons negb_or => /andP [hl1 hl2].
-split => i.
-- rewrite in_cons => /orP [] hin.
-  + rewrite (eqP hin) {i hin}.
-    case: (hi (line_comb hd l (a hd) M) h2 hl2) => _ hr.
+split => i; rewrite in_cons.
+- move/orP => [/eqP{i}-> | hin].
+  + case: (hi (line_comb hd l (a hd) M) h2 hl2) => _ hr.
     by rewrite hr // line_comb_row_eq.
-  case: (hi (line_comb hd l (a hd) M) h2 hl2) => hl _.
-  rewrite hl //  !line_comb_row_neq //.
-  + by rewrite eq_sym.
-  apply/negP => /eqP heq.
-  by move: h1; rewrite heq hin.
-rewrite in_cons negb_or => /andP [hl hr].
+  case: (hi (line_comb hd l (a hd) M) h2 hl2) => -> // _.
+  rewrite !line_comb_row_neq // eq_sym // eq_sym.
+  by apply: contraNneq h1 => ->.
+rewrite negb_or => /andP [hl hr].
 case: (hi (line_comb hd l (a hd) M)  h2 hl2) => _ hR.
 by rewrite hR // !line_comb_row_neq // eq_sym.
 Qed.
@@ -179,24 +171,13 @@ Proof.
 move => n k l a M hkl.
 have h : row k (line_comb k l a M) = 1 *: row k M +
   a *: row k (\matrix_(i < n) if i == k then row l M else row i M).
-- rewrite /line_comb scale1r.
-  by apply/rowP => i; rewrite !mxE eqxx !mxE.
+  by rewrite scale1r; apply/rowP => i; rewrite !mxE eqxx !mxE.
 rewrite (determinant_multilinear h).
 - rewrite mul1r [X in a * X](determinant_alternate hkl).
   + by rewrite mulr0 addr0.
-  move => x; rewrite !mxE eqxx eq_sym.
-  move: hkl.
-  by case hlk : (k == l).
-- rewrite /line_comb; apply/matrixP => i j; rewrite !mxE.
-  case heq: (lift k i == k).
-  + move/negP : (neq_lift k i).
-    by rewrite (eqP heq) eqxx.
-  by rewrite !mxE.
-- rewrite /line_comb; apply/matrixP => i j; rewrite !mxE.
-  case heq: (lift k i == k).
-  + move/negP : (neq_lift k i).
-    by rewrite (eqP heq) eqxx.
-  by rewrite !mxE.
+  by move => x; rewrite !mxE eqxx eq_sym (negbTE hkl).
+- by apply/matrixP => i j; rewrite !mxE eq_sym (negbTE (neq_lift k i)) !mxE.
+by apply/matrixP => i j; rewrite !mxE eq_sym (negbTE (neq_lift k i)) !mxE.
 Qed.
 
 Lemma det_lines_comb m a l (M: 'M[R]_m) s:
@@ -226,17 +207,11 @@ move => n k l a M /eqP ->; clear k.
 have h : row l (line_comb l l a M) = 1 *: row l M + a *: row l M.
 - rewrite /line_scale.
   by apply/rowP => i; rewrite !mxE eqxx !mxE mul1r.
-rewrite (determinant_multilinear h) ?mulrDl => //.
+rewrite (determinant_multilinear h) ?mulrDl //.
   rewrite /line_scale; apply/matrixP => i j; rewrite !mxE.
-  case heq: (lift l i == l).
-  + move/negP : (neq_lift l i).
-    by rewrite (eqP heq) eqxx.
-  by rewrite !mxE.
+  by rewrite eq_sym (negbTE (neq_lift l i)) !mxE.
 rewrite /line_scale; apply/matrixP => i j; rewrite !mxE.
-case heq: (lift l i == l).
-- move/negP : (neq_lift l i).
-  by rewrite (eqP heq) eqxx.
-by rewrite !mxE.
+by rewrite eq_sym (negbTE (neq_lift l i)) !mxE.
 Qed.
 
 End atomic_operations.

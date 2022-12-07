@@ -84,7 +84,7 @@ Variable T : eqType.
 
 Open Scope ring_scope.
 
-(*** This lemma is usefull to prove that \mu_x p = count (xpred1 x) s where
+(*** This lemma is usefull to prove that \mu_x p = count_mem x s where
      s is the sequence of roots of polynomial p ***)
 Lemma prod_seq_count (s : seq T) (F : T -> R) :
   \prod_(i <- s) F i =
@@ -103,8 +103,8 @@ have ->: \big[*%R/1]_(i <- r) (F i) ^+ (a == i) = F a.
     rewrite (bigD1_seq _ aundl (undup_uniq l)) /= eqxx big1 ?mulr1 //.
     by move=> i /negbTE neqai; rewrite eq_sym neqai.
   rewrite big_cons eqxx big1_seq ?mulr1 // => i /= iundl.
-  case eqai: (a == i)=> //.
-  by rewrite (eqP eqai) -mem_undup iundl in notal.
+  case: (eqVneq a i) => //= eqai.
+  by rewrite eqai -mem_undup iundl in notal.
 rewrite /r; case: ifP=> // /negbT notal.
 rewrite big_cons.
 have->: count (xpred1 a) l = 0%N.
@@ -223,7 +223,7 @@ move=> Hu.
 have Hu2: (block_mx Aul 0 0 Adr) \is a GRing.unit by [].
 rewrite unitmxE det_ublock unitrM in Hu.
 case/andP: Hu; rewrite -!unitmxE => HAul HAur.
-have H: block_mx Aul 0 0 Adr *  block_mx Aul^-1 0 0 Adr^-1 = 1.
+have H: block_mx Aul 0 0 Adr * block_mx Aul^-1 0 0 Adr^-1 = 1.
   rewrite /GRing.mul /= (mulmx_block Aul _ _ _ Aul^-1) !mulmxV //.
   by rewrite !mul0mx !mulmx0 !add0r addr0 -scalar_mx_block.
 by apply: (mulrI Hu2); rewrite H mulrV.
@@ -244,7 +244,7 @@ Lemma coprimep_factor (a b : R) : (b - a)%R \is a GRing.unit ->
    coprimep ('X - a%:P) ('X - b%:P).
 Proof.
 move=> Hab; apply/Bezout_coprimepP.
-exists ((b - a)^-1%:P , -(b - a) ^-1%:P).
+exists ((b - a)^-1%:P, -(b - a) ^-1%:P).
 rewrite /= !mulrBr !mulNr opprK -!addrA (addrC (- _)) !addrA addrN.
 by rewrite add0r -mulrBr -rmorphB -rmorphM mulVr // eqpxx.
 Qed.
@@ -309,12 +309,12 @@ by rewrite -eq_f11 inj_eq.
 Qed.
 
 Definition redivp_l (p q : {poly R}) : nat * {poly R} * {poly R} :=
-  let:(d,q,p) := (redivp (phi p) (phi q)) in
+  let:(d,q,p) := redivp (phi p) (phi q) in
   (d, phi_inv q, phi_inv p).
 
-Definition rdivp_l p q := ((redivp_l p q).1).2.
+Definition rdivp_l p q := (redivp_l p q).1.2.
 Definition rmodp_l p q := (redivp_l p q).2.
-Definition rscalp_l p q := ((redivp_l p q).1).1.
+Definition rscalp_l p q := (redivp_l p q).1.1.
 Definition rdvdp_l p q := rmodp_l q p == 0.
 Definition rmultp_l := [rel m d | rdvdp_l d m].
 

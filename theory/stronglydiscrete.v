@@ -109,9 +109,8 @@ Proof. by case: R => [? [? []]]. Qed.
 Lemma memberP n (x : R) (I : 'cV[R]_n) :
   reflect (exists J, x%:M = J *m I) (member x I).
 Proof.
-case: member_specP=> /= [J ->|h]; first by apply: ReflectT; exists J.
-apply: ReflectF=> [[J hJ]].
-by move: (h J); rewrite hJ eqxx.
+case: member_specP => /= [J ->|h]; constructor; first by exists J.
+by case=> J hJ; move: (h J); rewrite hJ eqxx.
 Qed.
 
 (** Ideal theory of strongly discrete rings *)
@@ -209,7 +208,7 @@ Remark subid_memberP m n (I : 'cV[R]_m) (J : 'cV[R]_n) :
 Proof.
 apply: (iffP idP); first by move=> leIJ i; rewrite !memberE => /subid_trans ->.
 move=> HIJ; apply/subid_colP => i.
-by have := (HIJ (I i 0)); rewrite !memberE; apply.
+by move: (HIJ (I i 0)); rewrite !memberE; apply.
 Qed.
 
 (** Theory of subid and eqid *)
@@ -464,17 +463,17 @@ case: splitP => j hj.
     case/enum_rank_inj => -> ->.
     by rewrite mxE mxvecE !mxE big_ord_recl big_ord0 addr0 !mxE.
   case/mxvec_indexP : ij hij => a b /= hab.
-  have : ~ (enum_rank (i,j) < (m * n)%nat)
-    by rewrite hab -{2}[(m * n)%nat]addn0 ltn_add2l ltn0.
-  case.
+  have : m * n <= enum_rank (i, j).
+    by rewrite hab -{1}[(m * n)%nat]addn0 leq_add2l.
+  rewrite leqNgt => /negP; case.
   by apply (leq_trans (ltn_ord _)); rewrite /= eq_card_prod // !card_ord.
 exists (rshift (m*n)%nat (mxvec_index i j)).
 rewrite !mxE.
 case: splitP => ij /= hij.
   case/mxvec_indexP : ij hij => a b /= hab.
-  have : ~ (enum_rank (a,b) < (m * n)%nat)
-    by rewrite -hab -{2}[(m * n)%nat]addn0 ltn_add2l ltn0.
-  case.
+  have : m * n <= enum_rank (a, b)
+    by rewrite -hab -{1}[(m * n)%nat]addn0 leq_add2l.
+  rewrite leqNgt => /negP; case.
   by apply (leq_trans (ltn_ord _)); rewrite /= eq_card_prod // !card_ord.
 case/mxvec_indexP : ij hij => a b /= hab.
 have : enum_rank (i,j) = enum_rank (a,b).
@@ -682,10 +681,8 @@ Section BezoutStronglyDiscrete.
 
 Variable R : bezoutDomainType.
 
-Definition bmember n (x : R) (I : 'cV[R]_n) := match x %/? principal_gen I with
-  | Some a => Some (a %:M *m principal_w1 I)
-  | None   => None
-end.
+Definition bmember n (x : R) (I : 'cV[R]_n) :=
+  omap (fun a => a %:M *m principal_w1 I) (x %/? principal_gen I).
 
 Lemma bmember_correct : forall n (x : R) (I : 'cV[R]_n),
   member_spec x I (bmember x I).
@@ -695,8 +692,7 @@ case: odivrP => [a | ] Ha /=; constructor.
   by rewrite -mulmxA principal_w1_correct Ha scalar_mxM.
 move => J.
 rewrite -(principal_w2_correct I) /principal mulmxA scalar_mxC.
-move: (Ha ((J *m principal_w2 I) 0 0)).
-apply/contra.
+apply: contra (Ha ((J *m principal_w2 I) 0 0)).
 rewrite {1}[J *m principal_w2 I]mx11_scalar -scalar_mxM.
 move/eqP/matrixP => /(_ 0 0).
 rewrite !mxE /= !mulr1n => ->.

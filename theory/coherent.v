@@ -122,10 +122,10 @@ Proof. by rewrite -kerK mulmx1. Qed.
 Lemma kerP m n k (M : 'M[R]_(m,n)) (X : 'M_(k, m)) :
   reflect (exists Y : 'M_(k, dim_ker M), X = Y *m ker M) (X *m M == 0).
 Proof.
-apply: (iffP idP); last first.
-  case=> [Y ->]; apply/eqP; apply/row_matrixP => i.
+apply: (iffP eqP); last first.
+  case=> [Y ->]; apply/row_matrixP => i.
   by rewrite !row_mul row0 kerAK.
-move=> /eqP XM0; have XM0_ i : row i X *m M == 0 by rewrite -row_mul XM0 row0.
+move=> XM0; have XM0_ i : row i X *m M == 0 by rewrite -row_mul XM0 row0.
 exists (\matrix_(i, j) (projT1 (sig_eqW (kerP_subproof _ _ (XM0_ i)))) 0 j).
 by apply/row_matrixP => i; rewrite row_mul rowK; case: sig_eqW.
 Qed.
@@ -133,14 +133,14 @@ Qed.
 (** As everything is based on strongly discrete rings we can solve q systems
     of the kind XM = B *)
 Fixpoint divmx m n l : 'M_(l, n) -> 'M[R]_(m, n) -> 'M_(l, m) :=
-  match n return 'M_(l, n) -> 'M_(m, n) -> 'M_(l, m) with
-   | p.+1 => fun (B: 'M_(_, 1 + _)) (M : 'M_(_, 1 + _)) =>
-    let K := ker (lsubmx M) in let W := divid (lsubmx B) (lsubmx M) in
-    divmx (rsubmx B - W *m rsubmx M) (K *m rsubmx M) *m K + W
-   | _ => fun _ _ => 0
-  end.
+  if n is p.+1 return 'M_(l, n) -> 'M_(m, n) -> 'M_(l, m) then
+    fun (B: 'M_(_, 1 + _)) (M : 'M_(_, 1 + _)) =>
+      let K := ker (lsubmx M) in let W := divid (lsubmx B) (lsubmx M) in
+      divmx (rsubmx B - W *m rsubmx M) (K *m rsubmx M) *m K + W
+  else fun _ _ => 0.
+
 Definition dvdmx m n k (M : 'M[R]_(m,n)) (N : 'M_(k, n)) :=
-  (divmx N M *m M == N).
+  divmx N M *m M == N.
 
 Local Notation "M %| B" := (dvdmx M B) : mxpresentation_scope.
 
@@ -200,7 +200,7 @@ Lemma dvdmxMr (m0 m1 m2 m3 : nat) (K : 'M_(m2, m0))
      (M : 'M[R]_(m1, m2)) (N : 'M_(m3, m2)) :
    (M %| N) -> (M *m K %| N *m K).
 Proof.
-by move=> /dvdmxP [X hX]; apply/dvdmxP; exists X; rewrite mulmxA hX.
+by case/dvdmxP=>X hX; apply/dvdmxP; exists X; rewrite mulmxA hX.
 Qed.
 
 Lemma dvdmxD m0 m1 m2 (M : 'M[R]_(m0,m1)) (N K : 'M[R]_(m2,m1)) :
@@ -256,7 +256,7 @@ apply/dvdmxP/dvdmxP.
   move=> [Y ->]; exists (- (Y *m lsubmx (ker (col_mx M N)))).
   apply/eqP; rewrite mulNmx -addr_eq0 addrC -!mulmxA -mulmxDr -mul_row_col.
   by rewrite hsubmxK kerK mulmx0.
-move=> [Y /eqP]; rewrite eq_sym -subr_eq0 -mulNmx -mul_row_col.
+case=> [Y /eqP]; rewrite eq_sym -subr_eq0 -mulNmx -mul_row_col.
 move=> /kerP [Z /(congr1 rsubmx)]; rewrite row_mxKr -mulmx_rsub => HZ.
 by exists (-Z); rewrite mulNmx -HZ opprK.
 Qed.
@@ -330,18 +330,17 @@ Hypothesis ker_colP : forall m (M : 'cV_m) (X : 'rV_m),
   reflect (exists Y , X = Y *m ker_col M) (X *m M == 0).
 
 Fixpoint dim_ker_c m n : 'M[R]_(m,n) -> nat :=
-  match n return 'M[R]_(m,n) -> nat with
-    | S p => fun (M: 'M[R]_(m,1 + _)) =>
-       dim_ker_c (ker_col (lsubmx M) *m rsubmx M)
-    | _ => fun _ => m
-end.
+  if n is p.+1 then
+    fun (M: 'M[R]_(m,1 + _)) =>
+      dim_ker_c (ker_col (lsubmx M) *m rsubmx M)
+  else fun => m.
 
-Fixpoint ker_c m n : forall (M : 'M_(m,n)), 'M_(dim_ker_c M,m) := match n with
-  | S p => fun (M : 'M_(m,1 + _)) =>
-    let G1 := ker_col (lsubmx M) in
-    ker_c (G1 *m rsubmx M) *m G1
-  | _ => fun _ => 1%:M
-  end.
+Fixpoint ker_c m n : forall (M : 'M_(m,n)), 'M_(dim_ker_c M,m) :=
+  if n is p.+1 then
+    fun (M : 'M_(m,1 + _)) =>
+      let G1 := ker_col (lsubmx M) in
+      ker_c (G1 *m rsubmx M) *m G1
+  else fun => 1%:M.
 
 Lemma ker_cP : forall m n (M : 'M[R]_(m,n)) (X : 'rV_m),
   reflect (exists Y, X = Y *m ker_c M) (X *m M == 0).
@@ -388,13 +387,13 @@ Variable cap :
 Hypothesis cap_spec : forall n m (I : 'cV[R]_n) (J : 'cV[R]_m),
   int_spec (cap I J).
 
-Fixpoint dim_int n : 'cV[R]_n -> nat := match n with
-  | 0   => fun _ => 0%N
-  | S p => fun (V : 'cV[R]_(1 + p)) =>
-               let v  := usubmx V in
-               let vs := dsubmx V : 'cV[R]_p in
-               ((dim_cap v (-vs)).+1 + dim_int vs)%N
-end.
+Fixpoint dim_int n : 'cV[R]_n -> nat :=
+  if n is p.+1 then
+    fun (V : 'cV[R]_(1 + p)) =>
+      let v  := usubmx V in
+      let vs := dsubmx V : 'cV[R]_p in
+      ((dim_cap v (-vs)).+1 + dim_int vs)%N
+  else fun => 0%N.
 
 Definition cap_wl n m (I : 'cV_n) (J : 'cV_m) := divid (cap I J) I.
 
@@ -407,17 +406,16 @@ Lemma wr n m (I : 'cV_n) (J : 'cV_m) : cap_wr I J *m J = cap I J.
 Proof. by apply: dividK; case: cap_spec. Qed.
 
 Fixpoint ker_c_int m : forall (V : 'cV_m),'M_(dim_int V,m) :=
-  match m return forall V : 'cV_m, 'M_(dim_int V,m) with
-    | 0 => fun _ => 0
-    | S p => fun (V' : 'cV_(1 + p)) =>
-             let v   := usubmx V' in
-             let vs  := dsubmx V' in
-             let m0  := ker_c_int vs in
-             let wv  := cap_wl v (-vs) in
-             let wvs := cap_wr v (-vs) in
-             block_mx (if v == 0 then delta_mx 0 0 else wv) (if v == 0 then 0 else wvs)
-                      0           m0
-  end.
+  if m is p.+1 return forall V : 'cV_m, 'M_(dim_int V,m) then
+    fun (V' : 'cV_(1 + p)) =>
+      let v   := usubmx V' in
+      let vs  := dsubmx V' in
+      let m0  := ker_c_int vs in
+      let wv  := cap_wl v (-vs) in
+      let wvs := cap_wr v (-vs) in
+      block_mx (if v == 0 then delta_mx 0 0 else wv) (if v == 0 then 0 else wvs)
+               0           m0
+  else fun => 0.
 
 (* TODO: Move to ssrcomplements *)
 Lemma colE m n (i : 'I_n) (M : 'M[R]_(m, n)) :
@@ -428,9 +426,8 @@ Lemma ker_c_intP : forall m (V : 'cV_m) (X : 'rV_m),
   reflect (exists Y, X = Y *m ker_c_int V) (X *m V == 0).
 Proof.
 elim => [V X | n IH] /=.
-  rewrite thinmx0 flatmx0 /ker_c_int mulmx0.
-  apply: (iffP idP) => //= _.
-  by exists 0; rewrite mulmx0.
+  rewrite thinmx0 flatmx0 /ker_c_int mulmx0 eqxx.
+  by constructor; exists 0; rewrite mulmx0.
 rewrite [n.+1]/(1 + n)%nat => V X.
 set v  := usubmx V.
 set vs := dsubmx V.
@@ -442,15 +439,15 @@ set wvs := cap_wr v (-vs).
 move: (wl v (-vs)); rewrite -/wv => Hwv.
 move: (wr v (-vs)); rewrite -/wvs => Hwvs.
 rewrite -[V]vsubmxK -[X]hsubmxK.
-case v0 : (v == 0).
+case: (eqVneq v 0) => v0.
   apply: (iffP idP) => /= [|[W ->]].
-    rewrite (@mul_row_col _ _ 1) -/v (eqP v0) mulmx0 add0r => vs0.
+    rewrite (@mul_row_col _ _ 1) -/v v0 mulmx0 add0r => vs0.
     case: (IH vs xs) => [[A HA]|[]]; last by apply/IH.
     exists (row_mx (const_mx (x 0 0)) A).
     rewrite (@mul_row_block _ _ _ _ 1) -/xs !mulmx0 add0r addr0 -colE col_const HA.
     by f_equal; apply/rowP => i; rewrite !mxE /= !ord1.
   rewrite -mulmxA (@mul_block_col _ _ _ 1) -/v !mul0mx addr0 add0r.
-  rewrite -[W]hsubmxK mul_row_col {6}(eqP v0) !mulmx0 add0r mulmxA.
+  rewrite -[W]hsubmxK mul_row_col {6}v0 !mulmx0 add0r mulmxA.
   by apply/IH; exists (rsubmx W).
 apply: (iffP idP) => /= [|[W ->]].
   rewrite (@mul_row_col _ _ 1) => hwx.
@@ -468,8 +465,8 @@ apply: (iffP idP) => /= [|[W ->]].
     rewrite (@mul_row_block _ _ _ _ 1) mulmx0 addr0 -HA addrCA subrr addr0.
     f_equal; apply/(@scalemx_inj _ _ _ (v 0 0)).
     (* The proof breaks down here if strongly discrete rings are not idomains! *)
-      apply/negP => v00; case/negP: v0; apply/eqP.
-      by apply/rowP => i; rewrite !ord1 /= (eqP v00) !mxE.
+      apply: contra_neq v0 => v00.
+      by apply/rowP => i; rewrite !ord1 /= v00 !mxE.
     by rewrite -!mul_mx_scalar -mx11_scalar -mulmxA Hwv -hW -/x vx00.
   by apply/IH; rewrite mulmxDl mulNmx addrC -mulmxN -mulmxA Hwvs -hW vx00.
 rewrite -[W]hsubmxK (@mul_row_block _ _ _ _ 1) mulmx0 addr0 (@mul_row_col _ _ 1).
@@ -508,11 +505,11 @@ Proof.
 rewrite /bcap_wl /bcap -mulmxA principal_w1_correct mul_scalar_mx.
 apply/rowP => i; rewrite !mxE !ord1 {i} /= !mulr1n.
 set a := principal_gen _; set b := principal_gen _.
-case b0 : (b == 0); first by rewrite (eqP b0) lcm0r mulr0.
-case a0 : (a == 0).
-  by rewrite (eqP a0) lcmr0 odiv0r /= ?mul0r // gcdr_eq0 b0.
+have [-> | b0] := eqVneq b 0; first by rewrite lcm0r mulr0.
+have [-> | a0] := eqVneq a 0.
+  by rewrite lcmr0 odiv0r /= ?mul0r // gcdr_eq0 negb_and b0.
 case: odivrP => /= => [x Hx | H].
-  apply/(@mulIf _ (gcdr b a)); first by rewrite gcdr_eq0 a0 b0.
+  apply/(@mulIf _ (gcdr b a)); first by rewrite gcdr_eq0 negb_and b0.
   by rewrite mulr_lcm_gcd -mulrA mulrCA -Hx.
 case/dvdrP: (dvdr_gcdr b a) => x /eqP Hx.
 by move: (H x); rewrite Hx.
@@ -528,11 +525,11 @@ Proof.
 rewrite /bcap_wl /bcap -mulmxA principal_w1_correct mul_scalar_mx.
 apply/rowP => i; rewrite !mxE !ord1 {i} /= !mulr1n.
 set b := principal_gen _; set a := principal_gen _.
-case a0 : (a == 0); first by rewrite (eqP a0) lcmr0 mulr0.
-case b0 : (b == 0).
-  by rewrite (eqP b0) lcm0r odiv0r /= ?mul0r // gcdr_eq0 a0 eqxx.
+have [-> | a0] := eqVneq a 0; first by rewrite lcmr0 mulr0.
+have [-> | b0] := eqVneq b 0.
+  by rewrite lcm0r odiv0r /= ?mul0r // gcdr_eq0 negb_and eqxx.
 case: odivrP => /= => [x Hx | H].
-  apply/(@mulIf _ (gcdr b a)); first by rewrite gcdr_eq0 a0 b0.
+  apply/(@mulIf _ (gcdr b a)); first by rewrite gcdr_eq0 negb_and b0.
   by rewrite -mulrA mulrCA -Hx mulr_lcm_gcd mulrC.
 case/dvdrP: (dvdr_gcdl b a) => x /eqP Hx.
 by move: (H x); rewrite Hx.
@@ -553,7 +550,7 @@ have div1 : (a %| x 0 0)%R.
   exists ((I' *m principal_w2 I) 0 0).
   move: HI'.
   rewrite -{1}Ha => <-.
-  by rewrite mulrC  mul_mx_scalar -scalemxAr !mxE.
+  by rewrite mulrC mul_mx_scalar -scalemxAr !mxE.
 have div2 : (b %| x 0 0)%R.
   apply/dvdrP.
   exists ((J' *m principal_w2 J) 0 0).

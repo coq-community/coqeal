@@ -105,8 +105,8 @@ The theory directory has the following content:
 - `companion`, `frobenius_form`, `jordan`, `perm_eq_image`,
   `smith_complements`: Results on normal forms of matrices.
 
-- `bareiss_dvdring`, `bareiss`, `gauss`, `karatsuba`, `rank`
-  `strassen` `toomcook`, `smithpid`, `smith`: Various efficient
+- `bareiss_dvdring`, `bareiss`, `gauss`, `karatsuba`, `rank`,
+  `strassen`, `toomcook`, `smithpid`, `smith`: Various efficient
   algorithms for computing operations on polynomials or matrices.
 
 ## Refinements

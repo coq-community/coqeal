@@ -81,7 +81,7 @@ Definition Strassen_xO {p : positive} Strassen_p :=
     let A := castmx (addpp p,addpp p) A in
     let B := castmx (addpp p,addpp p) B in
     castmx (esym (addpp p), esym (addpp p)) (Strassen_step A B Strassen_p).
-  
+
 Definition Strassen_xI {p : positive} Strassen_p :=
    fun M N =>
     if p <= K then M *m N else
@@ -101,9 +101,9 @@ Definition Strassen_xI {p : positive} Strassen_p :=
     let R22 := (M21 *m N12) + (Strassen_step M22 N22 Strassen_p) in
     castmx (esym (add1pp p), esym (add1pp p)) (block_mx R11 R12 R21 R22).
 
-Definition Strassen := 
-  (positive_rect (fun p => ('M_(p, p) -> 'M_(p, p) -> 'M_(p, p)))
-                 (@Strassen_xI) (@Strassen_xO) (fun M N => M *m N)).
+Definition Strassen :=
+  positive_rect (fun p => ('M_(p, p) -> 'M_(p, p) -> 'M_(p, p)))
+                (@Strassen_xI) (@Strassen_xO) (fun M N => M *m N).
 
 
 Lemma Strassen_stepP (p : positive) (A B : 'M[R]_(p + p)) f :
@@ -117,7 +117,7 @@ Qed.
 Lemma mulmx_cast {R' : ringType} {m n p m' n' p'} {M:'M[R']_(m,p)} {N:'M_(p,n)}
   {eqm : m = m'} (eqp : p = p') {eqn : n = n'} :
   matrix.castmx (eqm,eqn) (M *m N) = matrix.castmx (eqm,eqp) M *m matrix.castmx (eqp,eqn) N.
-Proof. by case eqm ; case eqn ; case eqp. Qed.
+Proof. by case eqm; case eqn; case eqp. Qed.
 
 Lemma StrassenP p : mulmx =2 (Strassen (p := p)).
 Proof.

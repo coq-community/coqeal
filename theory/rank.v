@@ -17,18 +17,17 @@ Variable F : fieldType.
 Local Open Scope ring_scope.
 
 Fixpoint rank_elim {m n : nat} : 'M[F]_(m, n) -> nat :=
-  match n return 'M_(m, n) -> nat with
-  | p.+1 => fun (M : 'M_(m, 1 + p)) =>
-    if find_pivot M is Some k then
-      let a := fun_of_matrix M k 0 in
-      let u := rsubmx (row k M) in
-      let R := row' k M in
-      let v := a^-1 *: lsubmx R in
-      let R := rsubmx R - v *m u in
-      (1 + rank_elim R)%N
-    else rank_elim (rsubmx M)
-  | _ => fun _ => 0%N
-  end.
+  if n is p.+1 then
+    fun (M : 'M_(m, 1 + p)) =>
+      if find_pivot M is Some k then
+        let a := fun_of_matrix M k 0 in
+        let u := rsubmx (row k M) in
+        let R := row' k M in
+        let v := a^-1 *: lsubmx R in
+        let R := rsubmx R - v *m u in
+        (1 + rank_elim R)%N
+      else rank_elim (rsubmx M)
+  else fun => 0%N.
 
 Lemma rank_row0mx (m n p : nat) (M : 'M[F]_(m,n)) :
   \rank (row_mx (0: 'M[F]_(m,p)) M) = \rank M.
@@ -41,12 +40,12 @@ move=> nz_a.
 rewrite /block_mx -addsmxE mxrank_disjoint_sum.
   rewrite rank_row0mx rank_rV.
   have->//: row_mx a%:M Aur != 0.
-    apply/eqP; move/matrixP/(_ 0 0); rewrite !mxE.
+    apply/eqP => /matrixP/(_ 0 0); rewrite !mxE.
     by case: splitP => // j _; rewrite ord1 !mxE; move/eqP: nz_a.
-  apply/eqP/rowV0P=> v0; rewrite sub_capmx; case/andP=> /sub_rVP [k Hv0k].
-  rewrite Hv0k; case/submxP=> D; move/matrixP/(_ 0 0); rewrite !mxE.
-  case: splitP=> // j _; rewrite ord1 mxE mulr1n big1.
-  by move/eqP; rewrite mulf_eq0 (negbTE nz_a) orbF; move/eqP ->; rewrite scale0r.
+apply/eqP/rowV0P => v0; rewrite sub_capmx; case/andP=> /sub_rVP [k Hv0k].
+rewrite Hv0k; case/submxP => D /matrixP/(_ 0 0); rewrite !mxE.
+case: splitP => // j _; rewrite ord1 mxE mulr1n big1.
+by move/eqP; rewrite mulf_eq0 (negbTE nz_a) orbF => /eqP ->; rewrite scale0r.
 by move=> i _; rewrite !mxE; case: splitP=> // l _; rewrite mxE mulr0.
 Qed.
 
@@ -69,10 +68,9 @@ rewrite -[n.+1]/(1 + n)%N => M /=.
 rewrite /find_pivot.
 have [|nz_Mk0] /= := pickP; last first.
   rewrite -{2}[M]hsubmxK.
-  have->: lsubmx M = 0.
-    apply/matrixP => i j; rewrite !mxE ord1 lshift0.
-    by have /(_ i)/negbFE/eqP -> := nz_Mk0.
-  by rewrite rank_row0mx.
+  suff->: lsubmx M = 0 by rewrite rank_row0mx.
+  apply/matrixP => i j; rewrite !mxE ord1 lshift0.
+  by have /(_ i)/negbFE/eqP -> := nz_Mk0.
 case: m M => [M []|m] //.
 rewrite -[m.+1]/(1 + m)%N => M k /= nz_Mk0; rewrite IHn.
 pose P : 'M[F]_(1 + m) := perm_mx (lift_perm 0 k 1%g).

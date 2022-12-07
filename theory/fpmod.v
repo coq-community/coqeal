@@ -346,7 +346,7 @@ rewrite /is_epi /eqmor subr0.
 move=> /dvd_col_mxP [X /dvdmxP [Z Z_def]] P psi.
 rewrite !subr0 => /= /dvdmxP [Y] /(congr1 (mulmx X)).
 rewrite !mulmxA -[X *m phi](addrNK 1%:M) mulmxDl mul1mx.
-move=> /(canRL (addKr _)) ->.
+move/(canRL (addKr _)) ->.
 rewrite -mulNmx opprB Z_def -mulmxA dvdmxD //; last first.
   by rewrite mulmxA dvdmxMl.
 by rewrite -mulmxA dvdmxMl // dvdmx_morphism.
@@ -355,14 +355,14 @@ Qed.
 Lemma rinv_inj (psi : 'Mor(N, M)) :
   phi ** psi %= idm -> kernel phi %= 0.
 Proof.
-move=> /(eqmorMl (kernel phi)); rewrite mulmorA mulmor1.
+move/(eqmorMl (kernel phi)); rewrite mulmorA mulmor1.
 by rewrite (eqmor_ltrans (eqmorMr _ (mulkmor _))) mul0mor eqmor_sym.
 Qed.
 
 Lemma linv_surj (psi : 'Mor(N, M)) :
    psi ** phi %= idm -> coker phi %= 0.
 Proof.
-move=> /(eqmorMr (coker phi)); rewrite -mulmorA mul1mor.
+move/(eqmorMr (coker phi)); rewrite -mulmorA mul1mor.
 by rewrite (eqmor_ltrans (eqmorMl _ (mulmorc _))) mulmor0 eqmor_sym.
 Qed.
 
@@ -371,9 +371,9 @@ Definition isomorphisms (psi : 'Mor(N, M)) :=
 
 Lemma isoP : reflect (exists psi, isomorphisms psi) (isom phi).
 Proof.
-rewrite /isom /injm /surjm; apply: (iffP idP) => [|[psi]]; last first.
+rewrite /isom /injm /surjm; apply: (iffP andP) => [[]|[psi]]; last first.
   by move=> /andP [/rinv_inj -> /linv_surj ->].
-case/andP; rewrite /eqmor !subr0.
+rewrite /eqmor !subr0.
 move=> phi_inj /dvd_col_mxP /sig_eqW [X /= hX].
 have Xmor : pres M %| pres N *m X.
   rewrite (dvdmx_trans phi_inj) // dvd_ker -mulmxA -[X *m _](subrK 1%:M).
@@ -524,7 +524,7 @@ Lemma mulepi_eq0 (L : {fpmod R}) (phi : 'Epi(M,N)) (Y : 'Mor(N, L)) :
   (phi ** Y %= 0) = (Y %= 0).
 Proof.
 apply/idP/idP; first by move/epi.
-by move=> /eqmorMl /eqmor_ltrans ->; rewrite mulmor0.
+by move/eqmorMl/eqmor_ltrans ->; rewrite mulmor0.
 Qed.
 End Epi1.
 
@@ -610,7 +610,7 @@ Lemma kernelP (M N : {fpmod R}) (phi : 'Mor(M,N)) :
 Proof.
 split; first by rewrite mulkmor.
 move=> L X; apply: (iffP idP) => [|[Y]]; last first.
-  move=> /eqmorMr /eqmor_ltrans <-; rewrite -mulmorA.
+  move/eqmorMr/eqmor_ltrans <-; rewrite -mulmorA.
   by rewrite (eqmor_ltrans (eqmorMl _ (mulkmor _))) mulmor0.
 rewrite /eqmor; rewrite subr0 -dvd_ker => /dvdmxP [Y Yeq].
 have Ymor : pres (source (kernel phi)) %| pres L *m Y.
@@ -690,7 +690,7 @@ Lemma cokerP (M N : {fpmod R}) (phi : 'Mor(M,N)) : is_coker phi (coker phi).
 Proof.
 split; first by rewrite mulmorc.
 move=> L X; apply: (iffP idP) => [phiX|[Y]]; last first.
-  move=> /eqmorMl /eqmor_ltrans <-; rewrite mulmorA.
+  move/eqmorMl/eqmor_ltrans <-; rewrite mulmorA.
   by rewrite (eqmor_ltrans (eqmorMr _ (mulmorc _))) mul0mor.
 by exists (lift phi X); rewrite mul_lift.
 Qed.
@@ -700,7 +700,7 @@ Lemma factor_proof (M N P : {fpmod R}) (phi : 'Mono(N,P)) (psi : 'Mor(M,P)) :
   reflect (exists kapa, kapa ** phi %= psi) (psi ** coker phi %= 0).
 Proof.
 apply: (iffP idP) => [|[c]]; last first.
-  move=> /eqmorMr /eqmor_ltrans <-; rewrite -mulmorA.
+  move/eqmorMr/eqmor_ltrans <-; rewrite -mulmorA.
   by rewrite (eqmor_ltrans (eqmorMl _ (mulmorc _))) mulmor0.
 rewrite /eqmor /= subr0 mulmx1 => /dvd_col_mxP [X Xdef].
 suff Xmor : pres N %| pres M *m X.
@@ -738,7 +738,7 @@ split; first by rewrite mulkmor.
 move=> L psi; apply: (iffP idP); last first.
   move=> [Y /eqmorMl /eqmor_ltrans <-]; rewrite mulmorA.
   by rewrite (eqmor_ltrans (eqmorMr _ (mulkmor _))) mul0mor.
-move=> /mul_lift; have /mul_lift := mulkmor phi.
+move/mul_lift; have /mul_lift := mulkmor phi.
 set phi' := lift _ phi; set psi' := lift _ psi.
 move=> phi'E psi'E.
 have phi'_mono : is_mono phi' by apply: lift_mono.

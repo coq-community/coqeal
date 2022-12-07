@@ -15,11 +15,11 @@ Section submatrix_def.
 
 Variable A B : Type.
 
-Definition submatrix T m n p q (f : 'I_p -> 'I_m) (g : 'I_q -> 'I_n) 
+Definition submatrix T m n p q (f : 'I_p -> 'I_m) (g : 'I_q -> 'I_n)
   (M : 'M[T]_(m,n)) := \matrix_(i < p, j < q) M (f i) (g j).
 
-Lemma sub_submatrix k k' l l' m n (M : 'M[A]_(m,n)) (f' : 'I_k -> 'I_m) 
- (f : 'I_k' -> 'I_k) (g' : 'I_l -> 'I_n) (g : 'I_l' -> 'I_l) : 
+Lemma sub_submatrix k k' l l' m n (M : 'M[A]_(m,n)) (f' : 'I_k -> 'I_m)
+ (f : 'I_k' -> 'I_k) (g' : 'I_l -> 'I_n) (g : 'I_l' -> 'I_l) :
   submatrix f g (submatrix f' g' M) = submatrix (f' \o f) (g' \o g) M.
 Proof. by rewrite /submatrix; apply/matrixP=> i j; rewrite !mxE. Qed.
 
@@ -36,12 +36,9 @@ Lemma widen_ord_eq (m n : nat) (h h' : n <= m) : widen_ord h =1 widen_ord h'.
 Proof. by move=> x; apply/ord_inj. Qed.
 
 (* transform [a .. b] into [0, a+1, .., b+1] *)
-Definition lift_pred m n (f : 'I_n -> 'I_m) : 'I_n.+1 -> 'I_m.+1 := 
-  fun (x : 'I_(1 + n)) => 
-    match split x with
-      | inl _ => 0
-      | inr j => lift 0 (f j)
-    end.
+Definition lift_pred m n (f : 'I_n -> 'I_m) : 'I_n.+1 -> 'I_m.+1 :=
+  fun (x : 'I_(1 + n)) =>
+    if split x is inr j then lift 0 (f j) else 0.
 
 Lemma size_tool n k : k <= n -> k < n.+1.
 Proof. by rewrite ltnS. Qed.
@@ -57,7 +54,7 @@ Qed.
 Lemma lift_pred0 n k (f: 'I_k -> 'I_n) : lift_pred f 0 = 0.
 Proof. by rewrite /lift_pred; case: splitP. Qed.
 
-Lemma lift_predS n k (f : 'I_k -> 'I_n) (x : 'I_k) : 
+Lemma lift_predS n k (f : 'I_k -> 'I_n) (x : 'I_k) :
   lift_pred f (lift 0 x) = lift 0 (f x).
 Proof. by rewrite /lift_pred split1 liftK. Qed.
 
@@ -87,13 +84,13 @@ Section submatrix_theory.
 
 Variable R : ringType.
 
-Lemma submatrix_eq m n p q (f1 g1 : 'I_p -> 'I_m) (f2 g2 : 'I_q -> 'I_n) 
-  (M : 'M[R]_(m,n)) (h1 : f1 =1 g1) (h2 : f2 =1 g2) : 
+Lemma submatrix_eq m n p q (f1 g1 : 'I_p -> 'I_m) (f2 g2 : 'I_q -> 'I_n)
+  (M : 'M[R]_(m,n)) (h1 : f1 =1 g1) (h2 : f2 =1 g2) :
   submatrix f1 f2 M = submatrix g1 g2 M.
 Proof. by apply/matrixP => i j; rewrite !mxE (h1 i) (h2 j). Qed.
 
-Lemma submatrix_lift_block m n p q (f1 : 'I_p -> 'I_m) (f2 : 'I_q -> 'I_n) 
-  a (M: 'M[R]_(m,n)) (c : 'cV[R]_m) (l : 'rV[R]_n) : 
+Lemma submatrix_lift_block m n p q (f1 : 'I_p -> 'I_m) (f2 : 'I_q -> 'I_n)
+  a (M: 'M[R]_(m,n)) (c : 'cV[R]_m) (l : 'rV[R]_n) :
   submatrix (lift_pred f1) (lift_pred f2) (block_mx a%:M l c M) =
   block_mx a%:M (submatrix id f2 l) (submatrix f1 id c) (submatrix f1 f2 M).
 Proof.
@@ -111,7 +108,7 @@ Lemma submatrix0 n m p q (f1 : 'I_p -> 'I_m) (f2 : 'I_q -> 'I_n) :
   submatrix f1 f2 0 = 0 :> 'M[R]__.
 Proof. by apply/matrixP => i j; rewrite !mxE. Qed.
 
-Lemma submatrix_scale m n p k (A : 'M[R]_(m,n)) 
+Lemma submatrix_scale m n p k (A : 'M[R]_(m,n))
   (f : 'I_p -> 'I_m) (g : 'I_k -> 'I_n) a :
   submatrix f g (a *: A) = a *: submatrix f g A.
 Proof. by apply/matrixP => i j; rewrite !mxE. Qed.
@@ -154,7 +151,7 @@ Section submatrix_char_poly_mx.
 
 Variable R : ringType.
 
-Lemma submatrix_char_poly_mx m p (M : 'M[R]_m) 
+Lemma submatrix_char_poly_mx m p (M : 'M[R]_m)
   (f : 'I_p -> 'I_m) (hf : injective f) :
   submatrix f f (char_poly_mx M) = char_poly_mx (submatrix f f M).
 Proof.
@@ -168,11 +165,11 @@ Section minor_def.
 
 Variable R : ringType.
 
-Definition minor (m n p : nat) (f : 'I_p -> 'I_m) (g : 'I_p -> 'I_n) 
+Definition minor (m n p : nat) (f : 'I_p -> 'I_m) (g : 'I_p -> 'I_n)
   (A : 'M[R]_(m,n)) := \det (submatrix f g A).
 
 (* Principal minor *)
-Definition pminor (m n p : nat) (h : p < m) (h' : p < n) (A : 'M[R]_(m,n)) := 
+Definition pminor (m n p : nat) (h : p < m) (h' : p < n) (A : 'M[R]_(m,n)) :=
   minor (widen_ord h) (widen_ord h') A.
 
 End minor_def.
@@ -201,29 +198,29 @@ by rewrite !mxE !mulNr mul1r mulrN; do ?f_equal; apply/ord_inj.
 Qed.
 
 (* Sanity check of the definiton *)
-Lemma minor2 m n (A : 'M[R]_(m,n)) (f : 'I_2 -> 'I_m) (g : 'I_2 -> 'I_n) : 
+Lemma minor2 m n (A : 'M[R]_(m,n)) (f : 'I_2 -> 'I_m) (g : 'I_2 -> 'I_n) :
   minor f g A = A (f 0) (g 0) * A (f 1) (g 1) - A (f 1) (g 0) * A (f 0) (g 1).
 Proof. by rewrite /minor det2 !mxE. Qed.
 
-Lemma minor_ltn_eq0l k m1 m2 n1 n2 x (f : 'I_k -> 'I_(m1 + m2)) g 
-  (M : 'M[R]_(m1,n1)) (N : 'M_(m1,n2)) (H : m1 < f x) : 
-  minor f g (block_mx M N 0 0) = 0. 
+Lemma minor_ltn_eq0l k m1 m2 n1 n2 x (f : 'I_k -> 'I_(m1 + m2)) g
+  (M : 'M[R]_(m1,n1)) (N : 'M_(m1,n2)) (H : m1 < f x) :
+  minor f g (block_mx M N 0 0) = 0.
 Proof.
-rewrite /minor (expand_det_row _ x) big1 // => i _; rewrite !mxE. 
+rewrite /minor (expand_det_row _ x) big1 // => i _; rewrite !mxE.
 case: splitP H => [j ->|j Hj]; first by rewrite ltnNge ltnW.
 by rewrite row_mx0 mxE mul0r.
 Qed.
 
-Lemma minor_ltn_eq0r k m1 m2 n1 n2 x f (g : 'I_k -> 'I_(n1 + n2)) 
-  (M : 'M[R]_(m1,n1)) (N : 'M_(m2,n1)) (H : n1 < g x) : 
-  minor f g (block_mx M 0 N 0) = 0. 
+Lemma minor_ltn_eq0r k m1 m2 n1 n2 x f (g : 'I_k -> 'I_(n1 + n2))
+  (M : 'M[R]_(m1,n1)) (N : 'M_(m2,n1)) (H : n1 < g x) :
+  minor f g (block_mx M 0 N 0) = 0.
 Proof.
-rewrite /minor (expand_det_col _ x) big1 // => i _; rewrite !mxE. 
+rewrite /minor (expand_det_col _ x) big1 // => i _; rewrite !mxE.
 by case: splitP=> j Hj; rewrite mxE; case: splitP H=> [l ->|l];
-   rewrite ?ltnNge ?mxE ?mul0r // ltnW.
+  rewrite ?ltnNge ?mxE ?mul0r // ltnW.
 Qed.
 
-Lemma minor_alternate_f m n p (f : 'I_p -> 'I_m) g (M : 'M[R]_(m,n)) : 
+Lemma minor_alternate_f m n p (f : 'I_p -> 'I_m) g (M : 'M[R]_(m,n)) :
   (exists x y, (x != y) /\ (f x == f y)) -> minor f g M = 0.
 Proof.
 rewrite /minor => [[x [y [hxy /eqP hf]]]].
@@ -241,29 +238,29 @@ Lemma minor_f_not_injective m n p (f : 'I_p -> 'I_m) g (M: 'M[R]_(m,n)) :
   ~ injective f -> minor f g M = 0.
 Proof.
 move/injectiveP/injectivePn => [x [y hxy hf]]; apply minor_alternate_f.
-by exists x; exists y; rewrite hf.
+by exists x, y; rewrite hf.
 Qed.
 
 Lemma minor_g_not_injective m n p (f : 'I_p -> 'I_m) g (M: 'M[R]_(m,n)) :
   ~ injective g -> minor f g M = 0.
 Proof.
 move/injectiveP/injectivePn => [x [y hxy hg]]; apply minor_alternate_g.
-by exists x; exists y; rewrite hg.
+by exists x, y; rewrite hg.
 Qed.
 
-Lemma minor_eq m n p (f1 g1 : 'I_p -> 'I_m) (f2 g2 : 'I_p -> 'I_n) 
+Lemma minor_eq m n p (f1 g1 : 'I_p -> 'I_m) (f2 g2 : 'I_p -> 'I_n)
   (h1 : f1 =1 g1) (h2 : f2 =1 g2) (M : 'M[R]_(m,n)) :
   minor f1 f2 M = minor g1 g2 M.
 Proof. by rewrite /minor (submatrix_eq M h1 h2). Qed.
 
-Lemma minor_lift_block m n p (f1 : 'I_p -> 'I_m) (f2 : 'I_p -> 'I_n) 
-  a (M : 'M[R]_(m,n)) (l : 'rV[R]_n) : 
+Lemma minor_lift_block m n p (f1 : 'I_p -> 'I_m) (f2 : 'I_p -> 'I_n)
+  a (M : 'M[R]_(m,n)) (l : 'rV[R]_n) :
   minor (lift_pred f1) (lift_pred f2) (block_mx a%:M l 0 M) = a * minor f1 f2 M.
 Proof.
 by rewrite /minor submatrix_lift_block submatrix0 (@det_ublock _ 1) det_scalar1.
 Qed.
 
-End minor_theory. 
+End minor_theory.
 
 Section minor_char_poly_mx.
 

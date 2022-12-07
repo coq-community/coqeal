@@ -17,7 +17,7 @@ Variable R : ringType.
 Implicit Types p : {poly R}.
 
 (* Split a polynomial into n pieces of size b *)
-Definition split_poly n b p := 
+Definition split_poly n b p :=
   \poly_(i < n) \poly_(j < b) p`_(i * b + j).
 
 Lemma recompose_split : forall n b p, size p <= b * n ->
@@ -25,7 +25,7 @@ Lemma recompose_split : forall n b p, size p <= b * n ->
 Proof.
 rewrite /split_poly => [[b p|n b p hs]]; rewrite horner_poly ?big_ord_recr /=.
   by rewrite muln0 leqn0 size_poly_eq0 => /eqP ->; rewrite big_ord0.
-suff -> : \big[+%R/0]_(i < n) (\poly_(j < b) p`_(i * b + j) * 'X^b ^+ i) = 
+suff -> : \big[+%R/0]_(i < n) (\poly_(j < b) p`_(i * b + j) * 'X^b ^+ i) =
           \poly_(i < n * b) p`_i.
   apply/polyP=> i; rewrite -exprM coefD coefMXn coef_poly mulnC.
   have [_|hbni] := ltnP; rewrite ?addr0 // add0r coef_poly.
@@ -33,7 +33,7 @@ suff -> : \big[+%R/0]_(i < n) (\poly_(j < b) p`_(i * b + j) * 'X^b ^+ i) =
   rewrite -ltnS -subSn // ltn_subRL ltnS addnC -mulnS in hsub.
   exact: (leq_trans hs hsub).
 elim: n {hs} => [|n ih]; first by rewrite mul0n poly_def !big_ord0.
-apply/polyP=> i. 
+apply/polyP=> i.
 rewrite big_ord_recr /= ih -exprM coefD !coef_poly coefMXn mulSn mulnC.
 have [h1|hbni] := ltnP; first by rewrite addr0 (ltn_addl b h1).
 by rewrite add0r coef_poly subnKC // -(ltn_add2r (b * n)) subnK.
@@ -62,7 +62,7 @@ Definition vandmx m : 'M[{poly R}]_(m,d) :=
 Definition evaluate p := poly_rV p *m vandmx (size p).
 
 Lemma evaluateE p : evaluate p = \row_(i < d) p.[points`_i].
-Proof. 
+Proof.
 apply/rowP => i; rewrite !mxE horner_coef /=.
 by apply: eq_big => // j _; rewrite !mxE.
 Qed.
@@ -73,17 +73,16 @@ Definition interpolate (p : 'rV[{poly R}]_d) := rVpoly (p *m invmx (vandmx d)).
 (* TODO: Express using determinant? *)
 Hypothesis hU : vandmx d \in unitmx.
 
-Lemma interpolateE (p : {poly {poly R}}) : size p <= d -> 
+Lemma interpolateE (p : {poly {poly R}}) : size p <= d ->
   interpolate (\row_i p.[points`_i]) = p.
 Proof.
 rewrite /interpolate => hsp; rewrite -[RHS](poly_rV_K hsp); congr rVpoly.
-apply/(canLR (mulmxK hU))/rowP=> i; rewrite !mxE (horner_coef_wide _ hsp). 
+apply/(canLR (mulmxK hU))/rowP=> i; rewrite !mxE (horner_coef_wide _ hsp).
 by apply: eq_bigr=> j _ ; rewrite !mxE.
 Qed.
 
-Fixpoint toom_rec m p q : {poly R} := match m with
-  | 0 => p * q
-  | m'.+1 => (* if (size p <= 2) || (size q <= 2) then p * q else *)
+Fixpoint toom_rec m p q : {poly R} :=
+  if m is m'.+1 then (* if (size p <= 2) || (size q <= 2) then p * q else *)
     let: b  := (maxn (divn (size p) n) (divn (size q) n)).+1 in
     let: sp := split_poly n b p in
     let: sq := split_poly n b q in
@@ -92,15 +91,15 @@ Fixpoint toom_rec m p q : {poly R} := match m with
     let: r  := \row_i (toom_rec m' (ep 0 i) (eq 0 i)) in
     let: w  := interpolate r in
     w.['X^b]
-  end.
+  else p * q.
 
 Definition toom_cook (p q : {poly R}) :=
   if 0 < n then toom_rec (maxn (size p) (size q)) p q else p * q.
 
-Lemma basisE (p q : {poly R}) : 0 < n -> 
+Lemma basisE (p q : {poly R}) : 0 < n ->
   size p <= (maxn (size p %/ n) (size q %/ n)).+1 * n.
 Proof.
-move=> Hn0; move: (leq_maxl (size p %/ n).+1 (size q %/ n).+1). 
+move=> Hn0; move: (leq_maxl (size p %/ n).+1 (size q %/ n).+1).
 by rewrite -(leq_pmul2r Hn0) maxnSS; apply/leq_trans/ltnW; rewrite ltn_ceil.
 Qed.
 
