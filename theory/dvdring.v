@@ -1,10 +1,9 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
-From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
-From mathcomp Require Import ssralg fintype perm tuple choice.
+From Coq Require Import ssreflect ssrfun ssrbool Arith.Wf_nat.
+From mathcomp Require Import eqtype ssrnat div seq path.
+From mathcomp Require Import ssralg fintype perm tuple choice generic_quotient.
 From mathcomp Require Import matrix bigop zmodp mxalgebra poly.
-
-(* Require Import generic_quotient. (* testing *) *)
 
 Import GRing.Theory.
 
@@ -18,29 +17,18 @@ Local Open Scope ring_scope.
 
 Scheme acc_dep := Induction for Acc Sort Type.
 
-(* vsiles: maybe we can reuse lt_wf but I didn't managed to do it *)
-Lemma lt_wf2 : well_founded (fun x y => x < y).
-Proof.
-red in |- *.
-have: (forall (n:nat) (a:nat), a < n -> Acc (fun x y => x < y) a).
-- elim => [ | n hi] a; first done.
-  move => ltaSn. apply: Acc_intro.
-  move => b ltba. apply : hi.
-  apply : (leq_trans ltba ltaSn).
-move => h a.
-by apply: (h (a.+1)).
-Defined.
+Lemma ssr_lt_wf : well_founded (fun x y => x < y).
+Proof. by apply: (well_founded_lt_compat _ id)=>x y /ltP. Defined.
 
 Section GUARD.
 Variable A: Type.
 Variable P : A -> A -> Prop.
 
-Fixpoint guarded (n:nat) (Wf : well_founded P) : well_founded P :=
-  match n with
-  | O => Wf
-  | S n => fun x =>
-     (@Acc_intro _ _ x (fun y _ => guarded n (guarded n Wf) y))
-end.
+Fixpoint guarded (n: nat) (Wf: well_founded P) : well_founded P :=
+  if n is m.+1 then
+    fun x =>
+      @Acc_intro _ _ x (fun y _ => guarded m (guarded m Wf) y)
+  else Wf.
 End GUARD.
 
 
@@ -155,32 +143,32 @@ Proof. by case: R=> [? [? []]] /=. Qed.
 
 Lemma odiv0r a : a != 0 -> 0 %/? a = Some 0.
 Proof.
-case: odivrP=> [x|H _]; last by by move: (H 0); rewrite mul0r eq_refl.
-by move/eqP; rewrite eq_sym mulf_eq0; case/orP; move/eqP->; rewrite // eq_refl.
+case: odivrP=> [x|H _]; last by move: (H 0); rewrite mul0r eqxx.
+by move/eqP; rewrite eq_sym mulf_eq0 orbC; case: eqP => //= _ /eqP->.
 Qed.
 
 Lemma odivr0 a : a != 0 -> a %/? 0 = None.
 Proof.
-by case: odivrP=> // x; rewrite mulr0=> ->; rewrite eq_refl.
+by case: odivrP=> // x; rewrite mulr0=> ->; rewrite eqxx.
 Qed.
 
 Lemma odivr1 a : a %/? 1 = Some a.
 Proof.
 case: odivrP=> [x|H]; first by rewrite mulr1=> ->.
-by move: (H a); rewrite mulr1 eq_refl.
+by move: (H a); rewrite mulr1 eqxx.
 Qed.
 
 Lemma odivrr a : a != 0 -> a %/? a = Some 1.
 Proof.
 move=> a0; case: odivrP=> [x|H].
   by rewrite -{1}[a]mul1r; move/(mulIf a0) <-.
-by move: (H 1); rewrite mul1r eq_refl.
+by move: (H 1); rewrite mul1r eqxx.
 Qed.
 
 Lemma odivr_mulrK a b : a != 0 -> b * a %/? a = Some b.
 Proof.
 move=> a0; case: odivrP=> [x|H]; first by move/(mulIf a0) ->.
-by move: (H b); rewrite eq_refl.
+by move: (H b); rewrite eqxx.
 Qed.
 
 Lemma odivr_mulKr a b : a != 0 -> a * b %/? a = Some b.
@@ -193,8 +181,8 @@ case c0: (c == 0); first by rewrite (eqP c0) mulr0 !odivr0 // mulf_neq0.
 case: odivrP=> [x|H].
   rewrite mulrCA; move/(mulfI a0).
   case: (odivrP b c)=> [x' ->|H]; first by move/(mulIf (negbT c0)) ->.
-  by move=> Hbxc; move: (H x); rewrite Hbxc eq_refl.
-by case: odivrP=> //x Hbxc; move: (H x); rewrite mulrCA Hbxc eq_refl.
+  by move=> Hbxc; move: (H x); rewrite Hbxc eqxx.
+by case: odivrP=> //x Hbxc; move: (H x); rewrite mulrCA Hbxc eqxx.
 Qed.
 
 Lemma odivr_mul2r a b c : a != 0 -> b != 0 -> b * a %/? (c * a) = (b %/? c).
@@ -208,23 +196,23 @@ Proof. by case: odivrP=>// x -> [<-]; rewrite mulrC. Qed.
 Lemma dvdrP a b : reflect (exists x, b = x * a) (a %| b).
 Proof.
 rewrite /dvdr; case: odivrP=> //= [x|] hx; constructor; first by exists x.
-by case=> x; move/eqP; apply: negP (hx _).
+by case=> x /eqP; apply: negP.
 Qed.
 
 (****)
 Lemma eqdP a b :
   reflect (exists2 c12 : R, (c12 \is a GRing.unit) & c12 * a = b) (a %= b).
 Proof.
-apply: (iffP idP).
-  case/andP=> /dvdrP [x Hx] /dvdrP [y Hy].
-  case: (altP (@eqP _ b 0))=> Hb.
+apply: (iffP andP).
+  case=> /dvdrP [x Hx] /dvdrP [y Hy].
+  case: (eqVneq b 0) => Hb.
     rewrite Hb mulr0 in Hy.
     by exists 1; rewrite ?unitr1 // Hy mulr0 Hb.
   exists x; last by rewrite Hx.
   apply/GRing.unitrPr; exists y.
   rewrite Hy mulrA in Hx.
   by apply: (mulIf Hb); rewrite -Hx mul1r.
-case=> c Hc H; apply/andP; split; apply/dvdrP.
+case=> c Hc H; split; apply/dvdrP.
   by exists c; rewrite H.
 exists (c^-1); apply: (@mulfI _ c).
   by apply/eqP=> Habs; rewrite Habs unitr0 in Hc.
@@ -327,8 +315,8 @@ Proof. by elim: s a=> //= a s ih a'; rewrite /nth => -> ->. Qed.
 
 Lemma sorted_nth0 (s : seq R) : sorted %|%R s -> forall i, s`_0 %| s`_i.
 Proof.
-case: s=> [_|a s hi] [|i] /=; do? by rewrite /= dvdrr.
-have [his|hsi] := (ltnP i (size s)); last by rewrite nth_default // dvdr0.
+case: s=> [_|a s hi] [|i] /=; do? by rewrite dvdrr.
+have [his|hsi] := ltnP i (size s); last by rewrite nth_default // dvdr0.
 by move/(order_path_min dvdr_trans)/(all_nthP 0): hi => ->.
 Qed.
 
@@ -440,21 +428,6 @@ Proof. exact: eqd_dvd. Qed.
 Lemma eqd_dvdl b a c : a %= b -> (a %| c) = (b %| c).
 Proof. by move/eqd_dvd; apply. Qed.
 
-(* TODO: remove once generic_quotient compile on 8.5 *)
-Section EquivRel.
-
-Variable T : Type.
-
-Lemma left_trans (e : rel T) :
-  symmetric e -> transitive e -> left_transitive e.
-Proof. by move=> s t ? * ?; apply/idP/idP; apply: t; rewrite // s. Qed.
-
-Lemma right_trans (e : rel T) :
-  symmetric e -> transitive e -> right_transitive e.
-Proof. by move=> s t ? * x; rewrite ![e x _]s; apply: left_trans. Qed.
-
-End EquivRel.
-
 Lemma eqd_ltrans : left_transitive (@eqd R).
 Proof. exact: (left_trans eqd_sym eqd_trans). Qed.
 
@@ -474,9 +447,8 @@ Proof. by rewrite /eqd dvd1r andbT. Qed.
 
 Lemma unitd1 a : (a \is a GRing.unit) = (a %= 1).
 Proof.
-rewrite -dvdr1. apply/unitrP/dvdrP=> [[x [Hxa1 _]]|[x H]]; exists x.
-  by rewrite Hxa1.
-by rewrite [a * x]mulrC !H.
+rewrite -dvdr1; apply/unitrP/dvdrP => [[x [Hxa1 _]]|[x H]]; exists x => //.
+by split=> //; rewrite mulrC.
 Qed.
 
 Lemma eqd1 a : a \in GRing.unit -> a %= 1.
@@ -637,20 +609,20 @@ Proof. by move=> hM i j; rewrite !mxE. Qed.
 
 (* TODO: Prove other direction *)
 Lemma dvdr_col_mx m n p x (M : 'M[R]_(m,n)) (N : 'M[R]_(p,n)) :
-  ((forall i j, x %| M i j) /\ (forall i j, x %| N i j)) ->
-  (forall i j, x %| (col_mx M N) i j).
+  (forall i j, x %| M i j) /\ (forall i j, x %| N i j) ->
+  forall i j, x %| (col_mx M N) i j.
 Proof.
-case=> h1 h2 i j; rewrite !mxE; case: splitP=> k _.
+case=> h1 h2 i j; rewrite !mxE; case: splitP=> k {i}_.
   exact: (h1 k j).
 exact: (h2 k j).
 Qed.
 
 (* TODO: Prove other direction *)
 Lemma dvdr_row_mx m n p x (M : 'M[R]_(m,n)) (N : 'M[R]_(m,p)) :
-  ((forall i j, x %| M i j) /\ (forall i j, x %| N i j)) ->
-  (forall i j, x %| (row_mx M N) i j).
+  (forall i j, x %| M i j) /\ (forall i j, x %| N i j) ->
+  forall i j, x %| (row_mx M N) i j.
 Proof.
-case=> h1 h2 i j; rewrite !mxE; case: splitP=> k _.
+case=> h1 h2 i j; rewrite !mxE; case: splitP=> k {j}_.
   exact: (h1 i k).
 exact: (h2 i k).
 Qed.
@@ -965,9 +937,9 @@ Proof. by rewrite dvdr_mull. Qed.
 Lemma mulr_lcm_gcd a b : lcmr a b * gcdr a b = a * b.
 Proof.
 rewrite /lcmr /=; move: (dvdr_gcd_mul a b).
-case a0: (a == 0); first by rewrite /= (eqP a0) !mul0r.
-case b0: (b == 0); first by rewrite /= (eqP b0) !(mulr0, mul0r).
-by rewrite /dvdr; case: odivrP=> // x.
+have [-> | a0] := eqVneq a 0; first by rewrite !mul0r.
+have [-> | b0] := eqVneq b 0; first by rewrite !(mulr0, mul0r).
+by rewrite /dvdr; case: odivrP => // x.
 Qed.
 
 Lemma lcmr0 a : lcmr a 0 = 0.
@@ -978,15 +950,15 @@ Proof. by rewrite /lcmr eqxx. Qed.
 
 Lemma dvdr_lcm a b c : (lcmr a b %| c) = (a %| c) && (b %| c) :> bool.
 Proof.
-case a0: (a == 0).
-  rewrite (eqP a0) lcm0r dvd0r.
-  by case c0: (c == 0); rewrite // (eqP c0) dvdr0.
-case b0: (b == 0).
-  rewrite (eqP b0) lcmr0 dvd0r.
-  by case c0: (c == 0); rewrite ?andbF // (eqP c0) dvdr0.
-rewrite -(@dvdr_mul2r _ (gcdr a b)); last by rewrite gcdr_eq0 a0 b0.
+have [-> | a0] := eqVneq a 0.
+  rewrite lcm0r dvd0r.
+  by case: eqP => //= ->; rewrite dvdr0.
+have [-> | b0] := eqVneq b 0.
+  rewrite lcmr0 dvd0r andbC.
+  by case: eqP => //= ->; rewrite dvdr0.
+rewrite -(@dvdr_mul2r _ (gcdr a b)); last by rewrite gcdr_eq0 negb_and a0.
 rewrite mulr_lcm_gcd (eqd_dvd (eqdd _) (mulr_gcdr _ _ _)) dvdr_gcd {1}mulrC.
-by rewrite !dvdr_mul2r ?a0 ?b0 // andbC.
+by rewrite !dvdr_mul2r // andbC.
 Qed.
 
 Lemma dvdr_lcml a b : a %| lcmr a b.
@@ -1010,9 +982,9 @@ Proof. by rewrite /eqd dvdr_lcm dvdr_lcml dvdrr dvd1r !andbT. Qed.
 
 Lemma lcmrC a b : lcmr a b %= lcmr b a.
 Proof.
-case H0: (gcdr b a == 0).
-  by move: H0; rewrite gcdr_eq0; case/andP=> ha; rewrite (eqP ha) lcmr0 lcm0r.
-rewrite -(@eqd_mul2r _ (gcdr b a)) ?H0 //.
+case/boolP: (gcdr b a == 0) => [|H0].
+  by rewrite gcdr_eq0; case/andP => /eqP-> _; rewrite lcmr0 lcm0r.
+rewrite -(@eqd_mul2r _ (gcdr b a)) //.
 by rewrite (eqd_trans (eqd_mul (eqdd _) (gcdrC b a))) // !mulr_lcm_gcd mulrC.
 Qed.
 
@@ -1051,11 +1023,11 @@ Qed.
 
 Lemma mulr_lcmr a b c : a * lcmr b c %= lcmr (a * b) (a * c).
 Proof.
-case H0: ((a * b == 0) && (a * c == 0)).
-  case/andP: H0; rewrite mulf_eq0; case/orP; move/eqP->.
+case/boolP: ((a * b == 0) && (a * c == 0)) => [/andP[] | H0].
+  rewrite mulf_eq0; case/orP => /eqP->.
     by rewrite !mul0r lcm0r.
   by rewrite mulr0 !lcm0r mulr0.
-rewrite -(@eqd_mul2r _ (gcdr (a * b) (a * c))) ?gcdr_eq0 ?H0 // mulr_lcm_gcd.
+rewrite -(@eqd_mul2r _ (gcdr (a * b) (a * c))) ?gcdr_eq0 // mulr_lcm_gcd.
 rewrite eqd_sym (eqd_trans _ (eqd_mul (eqdd _) (mulr_gcdr a b c))) //.
 by rewrite -!mulrA [lcmr b c * _]mulrCA mulr_lcm_gcd [b * _]mulrCA.
 Qed.
@@ -1071,8 +1043,8 @@ Proof. by rewrite ![c * _]mulrC lcmr_mul2r. Qed.
 
 Lemma lcmr_mull a b : lcmr a (a * b) %= a * b.
 Proof.
-case a0: (a == 0); first by rewrite (eqP a0) mul0r /eqd !lcm0r dvdr0.
-rewrite -{1}[a]mulr1 (eqd_trans (lcmr_mul2l 1 b a)) // eqd_mul2l ?a0 //.
+have [-> | a0] := eqVneq a 0; first by rewrite mul0r /eqd !lcm0r dvdr0.
+rewrite -{1}[a]mulr1 (eqd_trans (lcmr_mul2l 1 b a)) // eqd_mul2l //.
 exact: (lcm1r b).
 Qed.
 
@@ -1146,9 +1118,9 @@ Proof. by move=> cab; rewrite mulrC euclid_gcdr. Qed.
 
 Lemma coprimer_mulr a b c : coprimer a (b * c) = coprimer a b && coprimer a c.
 Proof.
-case co_pm: (coprimer a b) => /=.
+case/boolP: (coprimer a b) => co_pm /=.
   by rewrite /coprimer; apply: congr_eqd; rewrite // euclid_gcdl.
-apply: negbTE; move/negP: co_pm; move/negP; apply: contra=> cabc.
+apply: contraNF co_pm=> cabc.
 apply: gcdr_def; rewrite ?dvd1r // => x xa xb.
 by rewrite -(eqd_dvd (eqdd _) cabc) dvdr_gcd xa dvdr_mulr.
 Qed.
@@ -1201,25 +1173,24 @@ Qed.
 (** Irreducible and prime elements *)
 
 Definition primer a := ((a == 0 = false)
-                   * (a %= 1 = false)
-                   * (forall b c, a %| (b * c) = (a %| b) || (a %| c) :> bool)%R)%type.
+                      * (a %= 1 = false)
+                      * (forall b c, a %| (b * c) = (a %| b) || (a %| c) :> bool)%R)%type.
 
 Definition irredr a := ((a == 0 = false)
-                         * (a %= 1 = false)
-                         * (forall b c, a %= b * c
-                         -> (b %= 1) || (c %= 1))%R)%type.
+                      * (a %= 1 = false)
+                      * (forall b c, a %= b * c -> (b %= 1) || (c %= 1))%R)%type.
 
 Lemma irredrP : forall a, irredr a ->
   forall b c, a %= b * c -> b %= 1 \/ c %= 1.
 Proof. by move=> ? [ha ia] *; apply/orP; rewrite ia. Qed.
 
-Lemma irredr_dvd : forall a b, irredr a ->  a %| b = ~~(coprimer a b) :> bool.
+Lemma irredr_dvd : forall a b, irredr a -> a %| b = ~~(coprimer a b) :> bool.
 Proof.
 rewrite /coprimer=> a b ia; case g1: (_ %= 1)=> /=.
-   apply/negP=> hab; suff: a %= 1 by rewrite ia.
-   by rewrite -dvdr1 (@dvdr_trans _ (gcdr a b)) ?dvdr_gcd ?dvdrr // dvdr1.
+  apply/negP=> hab; suff: a %= 1 by rewrite ia.
+  by rewrite -dvdr1 (@dvdr_trans _ (gcdr a b)) ?dvdr_gcd ?dvdrr // dvdr1.
 case: (dvdrP _ _ (dvdr_gcdl a b))=> x hx; rewrite hx.
-move/eq_eqd: hx; case/irredrP=> //; last by rewrite g1.
+move/eq_eqd: hx; case/irredrP => //; last by rewrite g1.
 move=> hx; rewrite (eqd_dvd (eqd_mul hx (eqdd _)) (eqdd _)).
 by rewrite mul1r dvdr_gcdr.
 Qed.
@@ -1233,12 +1204,12 @@ move=> a; split=> ia; rewrite /primer /irredr !ia; do ![split]=> b c.
   apply/idP/idP; last by case/orP=> ha; [rewrite dvdr_mulr|rewrite dvdr_mull].
   rewrite [_ %| b]irredr_dvd //; case cab: (coprimer _ _)=> //=.
   by rewrite mulrC euclid.
-case b0: (b == 0); first by rewrite (eqP b0) mul0r eqdr0 ia.
-case c0: (c == 0); first by rewrite (eqP c0) mulr0 eqdr0 ia.
+have [-> | b0] := eqVneq b 0; first by rewrite mul0r eqdr0 ia.
+have [-> | c0] := eqVneq c 0; first by rewrite mulr0 eqdr0 ia.
 rewrite eqd_def ia andb_orl.
 case/orP; case/andP; move/(dvdr_trans _)=> h; move/h.
-  by rewrite dvdr_mull_l ?b0 // => ->; rewrite orbT.
-by rewrite dvdr_mulr_l ?c0 // => ->.
+  by rewrite dvdr_mull_l // => ->; rewrite orbT.
+by rewrite dvdr_mulr_l // => ->.
 Qed.
 
 (** bigop **)
@@ -1247,7 +1218,7 @@ Lemma big_dvdr_gcdr (I : finType) (F : I -> R) :
    forall i, \big[(@gcdr R)/0]_i F i %| F i.
 Proof.
 move=> i; elim: (index_enum I) (mem_index_enum i)=> // a l IHl.
-rewrite in_cons big_cons; case/orP=> [/eqP ->|H].
+rewrite in_cons big_cons =>/orP [/eqP ->|H].
   by rewrite dvdr_gcdl.
 exact: (dvdr_trans (dvdr_gcdr _ _) (IHl H)).
 Qed.
@@ -1365,10 +1336,11 @@ Proof. by case: R=> [? [? []]]. Qed.
 
 Definition egcdr a b :=
   let: (u, v) := bezout a b in
-    let g := u * a + v * b in
-      let a1 := odflt 0 (a %/? g) in
-        let b1 := odflt 0 (b %/? g) in
-          if g == 0 then (0,1,0,1,0) else (g, u, v, a1, b1).
+  let g := u * a + v * b in
+  if g == 0 then (0,1,0,1,0) else
+    let a1 := odflt 0 (a %/? g) in
+    let b1 := odflt 0 (b %/? g) in
+    (g, u, v, a1, b1).
 
 Variant egcdr_spec a b : R * R * R * R * R -> Type :=
   EgcdrSpec g u v a1 b1 of u * a1 + v * b1 = 1
@@ -1394,19 +1366,19 @@ case: odivrP=> //= b1 Hb _.
 - apply/(mulIf g_neq0).
   by rewrite mulrDl mul1r -!mulrA -Ha -Hb.
 - by rewrite eqd_sym.
-- by move : hb; rewrite /dvdr; case: odivrP.
-by  move: ha; rewrite /dvdr; case: odivrP.
+- by move: hb; rewrite /dvdr; case: odivrP.
+by move: ha; rewrite /dvdr; case: odivrP.
 Qed.
 
 (* Proof that any finitely generated ideal is principal *)
 (* This could use gcdsr if it would be expressed using bigops... *)
-Fixpoint principal_gen n : 'cV[R]_n -> R := match n with
-  | 0 => fun _ => 0
-  | S p => fun (I : 'cV[R]_(1 + p)) =>
-           let x := I 0 0 in
-           let y := principal_gen (dsubmx I) in
-           let: (g,_,_,_,_) := egcdr x y in g
-end.
+Fixpoint principal_gen n : 'cV[R]_n -> R :=
+  if n is p.+1 then
+    fun I : 'cV[R]_(1 + p) =>
+      let x := I 0 0 in
+      let y := principal_gen (dsubmx I) in
+      let: (g,_,_,_,_) := egcdr x y in g
+  else fun => 0.
 
 (* Fixpoint principal_gen n (r : 'rV[R]_n) : R := \big[(fun x y => (egcdr x y).1.1.1.1) /0]_(i < n) (r 0 i). *)
 
@@ -1431,14 +1403,14 @@ Qed.
 Definition principal n (I : 'cV[R]_n) : 'M[R]_1 := (principal_gen I)%:M.
 
 (* (x) \subset (x1...xn) iff exists (v1...vn) such that (x1...xn)(v1...vn)^T = (x) *)
-Fixpoint principal_w1 n : 'cV[R]_n -> 'rV[R]_n := match n with
-  | 0 => fun _ => 0
-  | S p => fun (I : 'cV[R]_(1 + p)) =>
-           let g := principal_gen (dsubmx I) in
-           let us := principal_w1 (dsubmx I) in
-           let: (g',u,v,a1,b1) := egcdr (I 0 0) g in
-           row_mx u%:M (v *: us)
-end.
+Fixpoint principal_w1 n : 'cV[R]_n -> 'rV[R]_n :=
+  if n is p.+1 then
+    fun (I : 'cV[R]_(1 + p)) =>
+      let g := principal_gen (dsubmx I) in
+      let us := principal_w1 (dsubmx I) in
+      let: (g',u,v,a1,b1) := egcdr (I 0 0) g in
+      row_mx u%:M (v *: us)
+  else fun => 0.
 
 Lemma principal_w1_correct : forall n (I : 'cV[R]_n),
   principal_w1 I *m I = principal I.
@@ -1466,8 +1438,8 @@ Proof.
 move=> n I.
 rewrite mul_mx_scalar.
 apply/matrixP => i j; rewrite !mxE !ord1 /= {j}.
-case: n I i => [I i | n I i]; first by rewrite !flatmx0 /= mul0r !mxE.
-case: odivrP => [ x -> | H]; first by rewrite mulrC.
+case: n I i => [|n] I i; first by rewrite !flatmx0 /= mul0r !mxE.
+case: odivrP => [x -> | H]; first by rewrite mulrC.
 case/dvdrP: (principal_gen_dvd I i)=> x Hx.
 move: (H x).
 by rewrite Hx eqxx.
@@ -1566,9 +1538,9 @@ Lemma sdvd_Bezout_step (m n : nat) (M : 'M_(1 + m,1 + n)) (k : 'I_m) :
  ~~ (M 0 0 %| M (lift 0 k) 0) ->
  (Bezout_step (M 0 0) (M (lift 0 k) 0) M k) 0 0 %<| M 0 0.
 Proof.
-move=> H; rewrite /sdvdr (eqd_dvd (Bezout_step_mx00 _) (eqdd _)) dvdr_gcdl.
-rewrite (eqd_dvd (eqdd _ ) (Bezout_step_mx00 _)).
-by apply/negP=> H'; rewrite (dvdr_trans H' (dvdr_gcdr _ _)) in H.
+move=> H; rewrite /sdvdr (eqd_dvd (Bezout_step_mx00 _) (eqdd _)) dvdr_gcdl /=.
+rewrite (eqd_dvd (eqdd _ ) (Bezout_step_mx00 _)); apply: contra H => H'.
+exact: (dvdr_trans H' (dvdr_gcdr _ _)).
 Qed.
 
 Lemma unit_Bezout_mx m a b (k : 'I_m) : Bezout_mx a b k \in unitmx.
@@ -1742,23 +1714,24 @@ move=> a a0; case: (edivP a a)=> q r ha; rewrite a0 /= => hr.
 apply: leq_trans (hr); rewrite ltnS; apply: contraLR hr.
 move/eqP: ha; rewrite addrC -(can2_eq (@addrNK _ _) (@addrK _ _)).
 rewrite -{1}[a]mul1r -mulrBl eq_sym -leqNgt.
-case q1: (1 - q == 0); rewrite ?(eqP q1) ?mul0r; move/eqP->; rewrite ?leqnn //.
-by move=> _; rewrite norm_mul // q1.
+have [-> | q1] := eqVneq (1 - q) 0; rewrite ?mul0r => /eqP->; rewrite ?leqnn //.
+by move=> _; rewrite norm_mul.
 Qed.
 
-Definition odiv a b := let (q, r) := ediv a b in
+Definition odiv a b :=
+  let (q, r) := ediv a b in
   if r == 0 then Some (if b == 0 then 0 else q) else None.
 
 Lemma odivP a b : DvdRing.div_spec a b (odiv a b).
 Proof.
 rewrite /odiv; case: edivP=> q r -> hr.
-case r0: (r == 0)=> //=; constructor.
-  by rewrite (eqP r0) addr0; case: ifP=> //; move/eqP->; rewrite !mulr0.
-move=> x; case b0: (b == 0) hr=> /= hr.
-  by rewrite (eqP b0) !mulr0 add0r r0.
+have [-> | r0] := eqVneq r 0; constructor.
+  by rewrite addr0; case: ifP => // /eqP->; rewrite !mulr0.
+move=> x; case: (eqVneq b 0) hr => /= [-> _|b0 hr].
+  by rewrite !mulr0 add0r.
 rewrite addrC (can2_eq (@addrK _ _) (@addrNK _ _)) -mulrBl.
-case xq : (x - q == 0); first by rewrite (eqP xq) mul0r r0.
-by apply: contraL hr; rewrite -leqNgt; move/eqP->; rewrite norm_mul ?xq.
+have [-> | xq] := eqVneq (x - q) 0; first by rewrite mul0r.
+by apply: contraL hr; rewrite -leqNgt => /eqP->; exact: norm_mul.
 Qed.
 
 Lemma odiv_def a b : odiv a b = if a %% b == 0 then Some (a %/ b) else None.
@@ -1787,7 +1760,7 @@ Local Notation norm0_lt := (Dvd.norm0_lt mR).
 
 Lemma leq_norm : forall a b, b != 0 -> a %| b -> norm a <= norm b.
 Proof.
-move=> a b b0; move/dvdrP=> [x hx]; rewrite hx norm_mul //.
+move=> a b b0; move/dvdrP => [x hx]; rewrite hx norm_mul //.
 by apply: contra b0; rewrite hx; move/eqP->; rewrite mul0r.
 Qed.
 
@@ -1795,7 +1768,7 @@ Lemma ltn_norm : forall a b, b != 0 -> a %<| b -> norm a < norm b.
 Proof.
 move=> a b b0; case/andP=> ab.
 case: (edivP a b)=> q r; rewrite b0 /= => ha nrb; rewrite {1}ha.
-case r0: (r == 0); first by rewrite (eqP r0) addr0  dvdr_mull.
+have [-> | r0] := eqVneq r 0; first by rewrite addr0 dvdr_mull.
 rewrite dvdr_addr ?dvdr_mull // (leq_trans _ nrb) // ltnS leq_norm ?r0 //.
 by move: (dvdrr a); rewrite {2}ha dvdr_addr ?dvdr_mull.
 Qed.
@@ -1803,13 +1776,13 @@ Qed.
 Lemma sdvdr_wf : well_founded (@sdvdr [dvdRingType of R]).
 Proof.
 move=> a; wlog: a / a != 0=> [ha|].
-  case a0: (a == 0); last by apply: ha; rewrite a0.
-  rewrite (eqP a0); constructor=> b; rewrite sdvdr0; apply: ha.
+  have [-> | a0] := eqVneq a 0; last by apply: ha; rewrite a0.
+  constructor=> b; rewrite sdvdr0; apply: ha.
 elim: (norm a) {-2}a (leqnn (norm a))=> [|n ihn] {}a ha a0.
   by constructor=> x; move/(ltn_norm a0); rewrite ltnNge (leq_trans ha) ?leq0n.
-constructor=> x hx; move/(ltn_norm a0):(hx)=> hn; apply ihn.
+constructor=> x hx; move/(ltn_norm a0):(hx)=> hn; apply: ihn.
   by rewrite -ltnS (leq_trans hn).
-by apply: contra a0; move/eqP=> x0; move/sdvdrW:hx; rewrite x0 dvd0r.
+by apply: contra a0 => /eqP x0; move/sdvdrW:hx; rewrite x0 dvd0r.
 Qed.
 
 Definition EuclidPID := PIDMixin sdvdr_wf.
@@ -1817,19 +1790,18 @@ Definition EuclidPID := PIDMixin sdvdr_wf.
 Lemma mod_eq0 a b : (a %% b == 0) = (b %| a).
 Proof.
 case: (edivP a b)=> q r -> /=.
-case b0: (b == 0)=> /=; first by rewrite (eqP b0) mulr0 dvd0r add0r.
-move=> nrb; apply/eqP/idP=> [->| ].
+have [-> | /= b0] := eqVneq b 0; first by rewrite mulr0 dvd0r add0r.
+move=> nrb; apply/eqP/idP=> [->|].
   by apply/dvdrP; exists q; rewrite addr0.
 rewrite dvdr_addr ?dvdr_mull //.
-case r0: (r == 0); first by rewrite (eqP r0).
-by move/leq_norm; rewrite r0 leqNgt nrb; move/(_ isT).
+have [-> // | r0] := eqVneq r 0.
+by move/leq_norm; rewrite leqNgt r0 nrb => /(_ isT).
 Qed.
 
 Lemma norm_eq0 a : norm a = 0%N -> a = 0.
 Proof.
-move/eqP=> na0; apply/eqP.
-apply: contraLR na0; rewrite -lt0n=> a0.
-by rewrite (leq_trans _ (norm0_lt a0)) // ltnS.
+apply: contra_eq; rewrite -lt0n => a0.
+exact/leq_trans/(norm0_lt a0).
 Qed.
 
 Lemma mod_spec: forall a b, b != 0 -> norm (a %% b) < (norm b).
@@ -1840,11 +1812,11 @@ Proof. by case: edivP=> q r; rewrite mulr0 add0r=> ->. Qed.
 
 Lemma mod0r a : 0 %% a = 0.
 Proof.
-case a0: (a == 0); first by rewrite (eqP a0) modr0.
-case: edivP=> q r; rewrite a0 /=; move/eqP.
-rewrite eq_sym (can2_eq (@addKr _ _) (@addNKr _ _)) addr0; move/eqP->.
-rewrite -mulNr=> nra; apply/eqP; apply: contraLR nra; rewrite -leqNgt.
-by move/leq_norm=> -> //; rewrite dvdr_mull.
+have [-> | a0] := eqVneq a 0; first by rewrite modr0.
+case: edivP=> q r; rewrite a0 /= => /eqP.
+rewrite eq_sym (can2_eq (@addKr _ _) (@addNKr _ _)) addr0 => /eqP->.
+rewrite -mulNr; apply: contraTeq; rewrite -leqNgt.
+by move/leq_norm; apply; exact: dvdr_mull.
 Qed.
 
 Lemma dvd_mod a b g : (g %| a) && (g %| b) = (g %| b) && (g %| a %% b).
@@ -1865,13 +1837,13 @@ Qed.
 
 Definition acc_gcd (n:nat) (hn: Acc (fun x y => x < y) n) :
   forall (a b:R), n  = norm b -> R.
-elim hn using acc_dep. clear n hn.
-move => n hn hi a b heq.
-move : (@tool a b).
-case :(b == 0).
+elim hn using acc_dep.
+move => {}n {}hn hi a b heq.
+move: (@tool a b).
+case: (b == 0).
 - move => _; exact a.
 set r := (a %% b).
-case : (r == 0).
+case: (r == 0).
 - move => _; exact b.
 move/implyP => h.
 apply: (hi (norm r) _ b r (refl_equal (norm r))).
@@ -1879,19 +1851,18 @@ rewrite heq.
 by apply: h.
 Defined.
 
-
 Lemma acc_gcdP : forall (n:nat) (hn: Acc (fun x y => x < y) n)
  (a b: R) (hb: n = norm b) (g :R),
  g %| (acc_gcd hn a hb) = (g %| a) && (g %| b).
 Proof.
 move => n hn.
-elim hn using acc_dep. clear n hn.
-move => n hn hi a b heq g /=.
+elim hn using acc_dep.
+move => {}n {}hn hi a b heq g /=.
 move: (@tool a b).
-case b0 : (b == 0).
+case b0: (b == 0).
 - move => _.
   by rewrite (eqP b0) (dvdr0) andbT.
-case r0 : ( a %% b == 0).
+case r0: ( a %% b == 0).
 - move => _.
   by rewrite dvd_mod (eqP r0) dvdr0 andbT.
 move => h2.
@@ -1900,7 +1871,7 @@ by rewrite -{1}dvd_mod.
 Qed.
 
 Definition GCD (a b:R) : R :=
-  acc_gcd (guarded 100 lt_wf2 (norm b)) a (refl_equal (norm b)).
+  acc_gcd (guarded 100 ssr_lt_wf (norm b)) a (refl_equal (norm b)).
 
 Lemma GCDP : forall d a b, d %| GCD a b = (d %| a) && (d %| b).
 Proof. by rewrite /GCD => d a b; apply: acc_gcdP. Qed.
@@ -1916,26 +1887,25 @@ Definition gcd a b :=
 
 Lemma gcdP : forall d a b, d %| gcd a b = (d %| a) && (d %| b).
 Proof.
-move=> d a b. rewrite /gcd.
+move=> d a b; rewrite /gcd.
 wlog nba: a b / norm b <= norm a=>[hwlog|].
   case: ltnP=> nab.
     by move/hwlog:(ltnW nab); rewrite ltnNge (ltnW nab) /= andbC.
   by move/hwlog:(nab); rewrite ltnNge nab.
 rewrite ltnNge nba /=.
-case a0 : (a == 0).
-  by rewrite (eqP a0) dvdr0.
+have [-> | a0] := eqVneq a 0; first by rewrite dvdr0.
 move: (norm a) {-1 3}a nba a0=> n {}a hn a0.
-elim: n {-2}n (leqnn n) a b hn a0=> [|k ihk] n hk a b hn a0.
+elim: n {-2}n (leqnn n) a b hn a0 => [|k ihk] n hk a b hn a0.
   move: hk hn; rewrite leqn0; move/eqP->; rewrite leqn0.
-  by move/eqP; move/norm_eq0->; rewrite modr0 a0 dvdr0 andbT.
+  by move/eqP/norm_eq0->; rewrite modr0 (negbTE a0) dvdr0 andbT.
 move: hk hn; rewrite leq_eqVlt; case/orP; last first.
   by rewrite ltnS=> hnk nb; rewrite ihk.
 move/eqP->; rewrite dvd_mod.
-case r0: (_ == _); first by rewrite (eqP r0) dvdr0 andbT.
-case b0: (b == 0).
-  rewrite (eqP b0) /= !modr0 dvdr0 /=.
+case: eqP => [->|_]; first by rewrite dvdr0 andbT.
+have [-> | b0] := eqVneq b 0.
+  rewrite !modr0 dvdr0 /=.
   by case: k {ihk}=> [|k]; rewrite mod0r eqxx.
-by move=> nb; rewrite ihk // -ltnS (leq_trans (mod_spec _ _)) ?b0.
+by move=> nb; rewrite ihk // -ltnS (leq_trans (mod_spec _ _)).
 Qed.
 
 Definition AccMixin := GcdDomainMixin GCDP.

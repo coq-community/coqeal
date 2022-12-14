@@ -50,30 +50,28 @@ Hypothesis find_pivotP : forall m n (E : 'M[E]_(1 + m,1 + n)),
 Fixpoint improve_pivot_rec k {m n} :
   'M[E]_(1 + m) -> 'M[E]_(1 + m, 1 + n) -> 'M[E]_(1 + n) ->
   'M[E]_(1 + m) * 'M[E]_(1 + m, 1 + n) * 'M[E]_(1 + n) :=
-  match k with
-  | 0 => fun P M Q => (P,M,Q)
-  | p.+1 => fun P M Q =>
-      let a := M 0 0 in
-      if find1 M a is Some i then
-        let Mi0 := M (lift 0 i) 0 in
-        let P := Bezout_step a Mi0 P i in
-        let M := Bezout_step a Mi0 M i in
-        improve_pivot_rec p P M Q
-      else
-      let u  := dlsubmx M in let vM := ursubmx M in let vP := usubmx P in
-      let u' := map_mx (fun x => 1 - odflt 0 (x %/? a)) u in
-      let P  := col_mx (usubmx P) (u' *m vP + dsubmx P) in
-      let M  := block_mx (a%:M) vM
-                         (const_mx a) (u' *m vM + drsubmx M) in
-      if find2 M a is Some (i,j) then
-        let M := xrow 0 i M in let P := xrow 0 i P in
-        let a := fun_of_matrix M 0 0 in
-        let M0ij := fun_of_matrix M 0 (lift 0 j) in
-        let Q := (Bezout_step a M0ij Q^T j)^T in
-        let M := (Bezout_step a M0ij M^T j)^T in
-        improve_pivot_rec p P M Q
-      else (P, M, Q)
-  end.
+  if k is p.+1 then fun P M Q =>
+    let a := M 0 0 in
+    if find1 M a is Some i then
+      let Mi0 := M (lift 0 i) 0 in
+      let P := Bezout_step a Mi0 P i in
+      let M := Bezout_step a Mi0 M i in
+      improve_pivot_rec p P M Q
+    else
+    let u  := dlsubmx M in let vM := ursubmx M in let vP := usubmx P in
+    let u' := map_mx (fun x => 1 - odflt 0 (x %/? a)) u in
+    let P  := col_mx (usubmx P) (u' *m vP + dsubmx P) in
+    let M  := block_mx (a%:M) vM
+                       (const_mx a) (u' *m vM + drsubmx M) in
+    if find2 M a is Some (i,j) then
+      let M := xrow 0 i M in let P := xrow 0 i P in
+      let a := fun_of_matrix M 0 0 in
+      let M0ij := fun_of_matrix M 0 (lift 0 j) in
+      let Q := (Bezout_step a M0ij Q^T j)^T in
+      let M := (Bezout_step a M0ij M^T j)^T in
+      improve_pivot_rec p P M Q
+    else (P, M, Q)
+  else fun P M Q => (P,M,Q).
 
 Definition improve_pivot k m n (M : 'M[E]_(1 + m, 1 + n)) :=
   improve_pivot_rec k 1 M 1.
@@ -172,12 +170,12 @@ constructor=> //; first by rewrite -HblockL -Hblock invrM // mulmxA mulmxKV.
 + rewrite -[m.+1]/(1 + m)%N -[n.+1]/(1 + n)%N => i j.
   rewrite -{3}(lshift0 m 0) -{3}(lshift0 n 0) block_mxEul mxE eqxx !mxE.
 (* Why do we have to specify all these arguments? *)
-  case: splitP=> i' Hi'; rewrite mxE; case: splitP=> j' Hj'; rewrite ?mxE ?ord1 //.
+  case: splitP=> i' Hi'; rewrite mxE; case: splitP=> j' Hj'; rewrite ?mxE ?ord1 //=.
     by move: (negbFE (Hij (lshift m 0,j'))); rewrite -rshift1 block_mxEur !mxE.
   by move: (negbFE (Hij (lift 0 i',j'))); rewrite -!rshift1 block_mxEdr !mxE.
 + rewrite -[m.+1]/(1 + m)%N => i.
-  rewrite -{5}(lshift0 m 0) -{3 6}(lshift0 n 0) (block_mxEul (M 0 0)%:M _) !mxE.
-  by case: splitP=> i' _; rewrite row_mxEl !mxE ?ord1.
+  rewrite -{5}(lshift0 m 0) -{3 6}(lshift0 n 0) (block_mxEul (M 0 0)%:M _) !mxE eqxx /=.
+  by case: splitP=> i' _; rewrite row_mxEl !mxE // ord1.
 + rewrite -{3}(lshift0 m 0) -{3}(lshift0 n 0).
   by rewrite (block_mxEul (M 0 0)%:M (matrix.ursubmx M)) mxE dvdrr.
 by rewrite -HblockL unitmx_mul unitmxE (det_lblock 1 P) !det1 mulr1 unitr1.
@@ -207,11 +205,11 @@ Lemma SmithP : forall (m n : nat) (M : 'M_(m,n)),
   smith_spec M (Smith  M).
 Proof.
 elim=> [n M|m IHn]; first constructor; rewrite ?unitmx1 //.
-  rewrite [M]flatmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
-  by case: (i == j :> nat).
+  rewrite [M]flatmx0 mulmx1 mul1mx; apply/matrixP=> i j.
+  by rewrite !mxE nth_nil mul0rn.
 case=> [M|n M /=]; first constructor; rewrite ?sorted_nil ?mxE ?unitmx1 //.
-  rewrite [M]thinmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
-  by case: (i == j :> nat).
+  rewrite [M]thinmx0 mulmx1 mul1mx; apply/matrixP=> i j.
+  by rewrite !mxE nth_nil mul0rn.
 case: find_pivotP =>[[i j] HMij | H].
   case: improve_pivotP; rewrite ?mxE ?tpermR ?leqnn //.
   rewrite -[m.+1]/(1 + m)%N -[n.+1]/(1 + n)%N => L A R0 HA Hdiv HAi0 HA00.
@@ -248,8 +246,8 @@ case: find_pivotP =>[[i j] HMij | H].
         by case/dvdrP:(Hdiv' k l)=> q /eqP; rewrite (negbTE (H q)).
       by rewrite mulmxA.
     rewrite Hd; apply/matrixP=> k l; rewrite !mxE.
-    case: (k == l :> nat); last by rewrite mulr0.
-    have [Hk|Hk] := (ltnP k (size d)).
+    case: eqP => /=; last by rewrite mulr0.
+    case: (ltnP k (size d)) => Hk.
       by rewrite (nth_map 0 _ _ Hk) mulrC.
     by rewrite !nth_default ?size_map ?Hk // mulr0.
   * have {}HA00: A 0 0 != 0.
@@ -268,7 +266,7 @@ by case: (i == j :> nat); rewrite ?nth_nseq ?if_same nth_nil.
 Qed. (* Why is this so slow??? *)
 
 Lemma size_Smith m n (A : 'M_(m,n)) :
-  let: (_, d, _) := (Smith  A) in (size d <= minn m n)%N.
+  let: (_, d, _) := Smith A in (size d <= minn m n)%N.
 Proof.
 elim: m n A=>[n'|m' Ih n']; first by rewrite min0n.
 case: n'=>[|n' A /=]; first by rewrite minn0.

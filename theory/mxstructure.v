@@ -56,12 +56,11 @@ Lemma upper_triangular_mxP m n {M : 'M_(m,n)} :
   reflect (forall (i : 'I_m) (j : 'I_n), j < i -> M i j = 0)
           (upper_triangular_mx M).
 Proof.
-apply/(iffP idP)=> [H i j Hij|H].
+apply/(iffP eqP)=> [H i j Hij|H].
   rewrite /upper_triangular_mx in H.
-  by move/eqP: H=> ->; rewrite mxE leqNgt Hij.
-apply/eqP/matrixP=> i j; rewrite mxE leqNgt.
-have:= (H i j).
-by case:(j < i)=> // ->.
+  by rewrite H mxE leqNgt Hij.
+apply/matrixP => i j; rewrite mxE leqNgt.
+by case/boolP: (j < i) => // /H ->.
 Qed.
 
 Definition lower_triangular_mx m n (M : 'M[R]_(m,n)) := M == lower_part_mx M.
@@ -78,8 +77,8 @@ Proof.
 rewrite /lower_triangular_mx /upper_triangular_mx.
 rewrite /lower_part_mx /upper_part_mx.
 split=> [/eqP ->|/eqP H]; apply/eqP.
-  by apply/matrixP=> i j; rewrite !mxE; case: (i <= j).
-by rewrite -[M]trmxK H; apply/matrixP=> i j; rewrite !mxE; case: (j <= i).
+  by apply/matrixP=> i j; rewrite !mxE; case: leqP.
+by rewrite -[M]trmxK H; apply/matrixP=> i j; rewrite !mxE; case: leqP.
 Qed.
 
 End Triangular.
@@ -110,7 +109,7 @@ Lemma upper_triangular_block_mxdr :
 Proof.
 move=> /upper_triangular_mxP HA Hn1; apply/upper_triangular_mxP=> i j Hij.
 rewrite -(HA (rshift m1 i) (rshift n1 j)) ?block_mxEdr // -addnS.
-exact:leq_add.
+exact: leq_add.
 Qed.
 
 Lemma upper_triangular_block_mxul :
@@ -156,13 +155,9 @@ Lemma char_poly_mx_triangular_mx n (M : 'M[R]_n) :
   upper_triangular_mx M -> upper_triangular_mx (char_poly_mx M).
 Proof.
 move/upper_triangular_mxP=> HM; apply/upper_triangular_mxP=>i j Hij.
-rewrite !mxE .
-have ->:(i == j) = false.
-  apply/eqP=> Habs.
-  rewrite Habs in Hij.
-  suff: false => //.
-  by rewrite -(ltnn j).
-by rewrite (HM i j Hij) GRing.subr0.
+rewrite !mxE.
+suff /negbTE->/=: i != j by rewrite (HM i j Hij) GRing.subr0.
+by move: Hij; rewrite ltn_neqAle eq_sym; case/andP.
 Qed.
 
 Lemma row'_col'_triangular_mx n (M : 'M[R]_n) i:
@@ -170,7 +165,7 @@ Lemma row'_col'_triangular_mx n (M : 'M[R]_n) i:
 Proof.
 move/upper_triangular_mxP=> HM; apply/upper_triangular_mxP=> j k Hij.
 rewrite !mxE HM // /lift /= /bump /ltn -addn1 -addnA addn1.
-apply: leq_add=> //; case H: (i <= k)=> //.
+apply: leq_add=> //; case H: (i <= k)=> //=.
 by rewrite (ltnW (leq_ltn_trans H Hij)).
 Qed.
 
@@ -396,14 +391,14 @@ Proof.
 case: s=> // a l _ H.
 have Ha: (F a 0%N) \in unitmx by exact: (H 0%N).
 elim: l a F Ha H=> //= b l IHl a F Ha H.
-rewrite unitmxE (det_ublock (F a 0%N)) unitrM -!unitmxE Ha.
+rewrite unitmxE (det_ublock (F a 0%N)) unitrM -!unitmxE Ha /=.
 apply: IHl=> [|i]; first exact: (H 1%N).
 exact: (H i.+1).
 Qed.
 
 Lemma invmx_diag_block s (F : forall n, nat -> 'M[R]_n.+1) :
- (diag_block_mx s F) \in unitmx ->
-(diag_block_mx s F)^-1 = diag_block_mx s (fun n i => (F n i)^-1).
+  (diag_block_mx s F) \in unitmx ->
+  (diag_block_mx s F)^-1 = diag_block_mx s (fun n i => (F n i)^-1).
 Proof.
 case: s=> [|a l]; first by rewrite unitr0.
 elim: l a F => //= b l IHl a F H.
@@ -422,7 +417,7 @@ Local Open Scope ring_scope.
 Import GRing.Theory.
 
 Definition diag_mx_seq m n (s : seq R) :=
-   \matrix_(i < m, j < n) (s`_i *+ (i == j :> nat)).
+  \matrix_(i < m, j < n) (s`_i *+ (i == j :> nat)).
 
 Lemma diag_mx_seq_nil m n : diag_mx_seq m n [::] = 0.
 Proof.
@@ -455,13 +450,13 @@ Lemma diag_mx_seq_block_mx m m' n n' s :
 Proof.
 move=> H; apply/matrixP=> i j; rewrite !mxE.
 case: (splitP _)=> k Hk; rewrite mxE; case: (splitP _)=> l Hl; rewrite mxE Hk Hl //.
-+ case: (altP (k =P (n + l)%N :> nat))=> // ->.
++ case: eqP => //= ->.
   rewrite nth_default ?mul0rn // (leq_trans H) //.
-  by rewrite (leq_trans (geq_minr m n)) // leq_addr.
+  by rewrite geq_min leq_addr orbT.
 + rewrite nth_default ?mul0rn // (leq_trans H) //.
-  by rewrite (leq_trans (geq_minl m n)) // leq_addr.
-+ rewrite nth_default ?mul0rn // (leq_trans H) //.
-  by rewrite (leq_trans (geq_minl m n)) // leq_addr.
+  by rewrite geq_min leq_addr.
+rewrite nth_default ?mul0rn // (leq_trans H) //.
+by rewrite geq_min leq_addr.
 Qed.
 
 Lemma diag_mx_seq_block s :
@@ -472,7 +467,7 @@ Lemma diag_mx_seq_block s :
 Proof.
 case: s=> /= [|a l]; first by rewrite diag_mx_seq_nil.
 have Ha: forall a, diag_mx_seq 1 1 [:: a] = a%:M.
-    by move=> b; apply/matrixP=> i j; rewrite !mxE ord1.
+  by move=> b; apply/matrixP=> i j; rewrite !mxE ord1.
 elim: l a=> //= b l IHl a.
 by rewrite -IHl -cat1s (@diag_mx_seq_cat 1 _ 1) // Ha.
 Qed.
@@ -499,9 +494,8 @@ Lemma diag_mx_seq_deltal m n (i : 'I_m) (j : 'I_n) (s : seq R) :
   delta_mx i j *m diag_mx_seq n n s = s`_j *: delta_mx i j.
 Proof.
 apply/matrixP=> k l; rewrite !mxE (bigD1 l) //= big1 ?addr0.
-  rewrite !mxE eqxx; case Hjl: (l == j); last by rewrite andbF mulr0 mul0r.
-  rewrite (eqP Hjl); case: (k == i); last by rewrite mulr0 mul0r.
-  by rewrite mulr1 mul1r.
+  rewrite !mxE eqxx; case: (eqVneq l j)=>[->/=|_]; last by rewrite andbF mulr0 mul0r.
+  by rewrite andbT; case: eqP=> _; [rewrite mulr1 mul1r | rewrite mulr0 mul0r].
 move=> p; rewrite !mxE=> /negbTE; rewrite (inj_eq (@ord_inj _))=> ->.
 by rewrite mulr0.
 Qed.
@@ -510,9 +504,8 @@ Lemma diag_mx_seq_deltar m n (i : 'I_m) (j : 'I_n) (s : seq R) :
   diag_mx_seq m m s *m  delta_mx i j  = s`_i *: delta_mx i j.
 Proof.
 apply/matrixP=> k l; rewrite !mxE (bigD1 k) //= big1 ?addr0.
-  rewrite !mxE eqxx; case Hjl: (k == i); last by rewrite !mulr0.
-  rewrite (eqP Hjl); case: (l == j); last by rewrite andbF !mulr0.
-  by rewrite !mulr1.
+  rewrite !mxE eqxx; case: (eqVneq k i)=>[->/=|_]; last by rewrite !mulr0.
+  by case: eqP.
 move=> p; rewrite !mxE=> /negbTE; rewrite (inj_eq (@ord_inj _)) eq_sym=> ->.
 by rewrite mul0r.
 Qed.
@@ -525,7 +518,7 @@ Lemma diag_mx_seq_taker m n (s : seq R) :
   diag_mx_seq m n (take n s) = diag_mx_seq m n s.
 Proof.
 apply/matrixP=> i j; rewrite !mxE.
-by have [-> | //] := altP (i =P j :> nat); rewrite nth_take.
+by case: eqP => //=->; rewrite nth_take.
 Qed.
 
 Lemma diag_mx_seq_take_min m n (s : seq R) :
@@ -535,7 +528,7 @@ Proof. by case: leqP; rewrite (diag_mx_seq_takel, diag_mx_seq_taker). Qed.
 Lemma tr_diag_mx_seq m n s : (diag_mx_seq m n s)^T = diag_mx_seq n m s.
 Proof.
 apply/matrixP=> i j; rewrite !mxE eq_sym.
-by have [-> | //] := altP (i =P j :> nat).
+by case: eqP => //=->.
 Qed.
 
 Lemma mul_pid_mx_diag m n p r s :
@@ -562,8 +555,8 @@ Proof.
 elim: s m n=> [m n _|a s ih m n] /=; first by rewrite diag_mx_seq_nil.
 case/andP=> /eqP -> hA.
 case: m n=> [n|m [|n]]; [by apply/matrixP=> [[]]|by apply/matrixP=> i []|].
-rewrite diag_mx_seq_cons ih //; apply/matrixP=> i j. 
-by do 2!(rewrite !mxE split1; case: unliftP=> * /=); rewrite mxE. 
+rewrite diag_mx_seq_cons ih //; apply/matrixP=> i j.
+by do 2!(rewrite !mxE split1; case: unliftP=> * /=); rewrite mxE.
 Qed.
 
 Lemma diag_mx_seq_eq0 m n s : size s <= minn m n -> diag_mx_seq m n s = 0 -> all (eq_op^~ 0) s.
@@ -578,7 +571,7 @@ Lemma diag_mx_seq_scale m n s (d : R) :
   d *: diag_mx_seq m n s = diag_mx_seq m n [seq d * x | x <- s].
 Proof.
 apply/matrixP=> i j; rewrite !mxE.
-case: (i == j :> nat); last by rewrite !mulr0n mulr0.
+case: eqP => _ /=; last by rewrite !mulr0n mulr0.
 have [hi|hl] := (ltnP i (size s)); first by rewrite (@nth_map _ 0).
 by rewrite ?nth_default ?mulr0 // size_map.
 Qed.
@@ -604,12 +597,11 @@ Lemma mul_diag_mx_copid m n r s :
   diag_mx_seq m n s *m @copid_mx R n r = 0.
 Proof.
 move=> le_s_r; apply/matrixP=> i j; rewrite !mxE big1 // => k _; rewrite !mxE.
-have [eq_i_k|] := altP (i =P k :> nat); last by rewrite mul0r.
+case: eqP => /= [eq_i_k|]; last by rewrite mul0r.
 have [le_s_k|lt_k_s] := leqP (size s) k.
   by rewrite eq_i_k nth_default // mul0rn mul0r.
-have -> : k < r.
-  by apply: (leq_trans _ le_s_r); rewrite !leq_min lt_k_s -{1}eq_i_k !ltn_ord.
-by rewrite eqE /=; case H: (k == j :> nat); rewrite subrr mulr0.
+suff ->/= : k < r by rewrite andbT eqE /= subrr mulr0.
+by apply: (leq_trans _ le_s_r); rewrite !leq_min lt_k_s -{1}eq_i_k !ltn_ord.
 Qed.
 
 End diag_mx_seq2.
@@ -681,8 +673,8 @@ have detBl0: \det (lsubmx B) = 0.
   by rewrite -row_mul AdBl0 row0.
 have: \det (diag_mx_seq r r (take r s)) = 0.
   by rewrite -AuBld det_mulmx detBl0 mulr0.
-rewrite det_diag_mx_seq ?size_take ?lt_r_s //; move/eqP; rewrite prodf_seq_eq0.
-apply/negP; move:neq0_s; rewrite -{1}[s](cat_take_drop r) all_cat all_predC.
+rewrite det_diag_mx_seq ?size_take ?lt_r_s // => /eqP; rewrite prodf_seq_eq0 /=.
+apply/negP; move: neq0_s; rewrite -{1}[s](cat_take_drop r) all_cat -all_predC.
 by case/andP.
 Qed.
 
@@ -719,7 +711,7 @@ Lemma diag_mx_seq_filter0 m n (s : seq R) : sorted %|%R s ->
   diag_mx_seq m n [seq x <- s | x != 0] = diag_mx_seq m n s.
 Proof.
 elim: s m n=> // a s ih m n h_sorted.
-have h_s /= := (subseq_sorted (@dvdr_trans R) (subseq_cons s a) h_sorted).
+have h_s /= := subseq_sorted (@dvdr_trans R) (subseq_cons s a) h_sorted.
 move: h_sorted; have [-> hs |an0 _] /= := eqP.
   by rewrite ih // !diag_mx_seq0 //= ?eqxx /=; apply/sorted_dvd0r.
 case: m n=> [n|m [|n]]; [by apply/matrixP=> [[]]|by apply/matrixP=> i []|].

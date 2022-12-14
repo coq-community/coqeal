@@ -134,7 +134,7 @@ Variable R : ringType.
 
 Lemma char_block_mx m n (A : 'M[R]_m) (D : 'M[R]_n) B C :
   char_poly_mx (block_mx A B C D) =
- block_mx (char_poly_mx A) (map_mx polyC (-B)) 
+ block_mx (char_poly_mx A) (map_mx polyC (-B))
           (map_mx polyC (-C)) (char_poly_mx D).
 Proof.
 apply/matrixP=> i j; rewrite !mxE.
@@ -165,10 +165,10 @@ Proof.
 move=> neqdpq [szpgt1 Heqdp] [szqgt1 Heqdq].
 have gcdvp:= (dvdp_gcdl p q).
 have gcdvq:= (dvdp_gcdr p q).
-case: (altP (size (gcdp p q) =P 1%N))=> [/eqP //|neqsz1].
-have:= (Heqdp _ neqsz1 gcdvp); rewrite eqp_sym /eqp dvdp_gcd.
+rewrite /coprimep; apply: contraT => neqsz1.
+move: (Heqdp _ neqsz1 gcdvp); rewrite eqp_sym /eqp dvdp_gcd.
 case/andP=> [/andP [ _ pdvq]] _.
-have:= (Heqdq _ neqsz1 gcdvq); rewrite eqp_sym /eqp dvdp_gcd.
+move: (Heqdq _ neqsz1 gcdvq); rewrite eqp_sym /eqp dvdp_gcd.
 case/andP=> [/andP [qdvp _]] _.
 by rewrite /eqp pdvq qdvp in neqdpq.
 Qed.
@@ -186,7 +186,7 @@ elim: s r => [r pdvr _ _|a l IHl r pdvr Irr mon].
   rewrite eqr1 dvdp1 /irreducible_poly=> /eqP ->.
   by rewrite ltnn; case.
 rewrite big_cons=> eqrM; move: pdvr; rewrite eqrM=> pdvM.
-case: (altP (@idP (eqp p a)))=>[|neqdpa].
+case/boolP: (eqp p a)=>[|neqdpa].
   have am: a \is monic by apply: mon; rewrite mem_head.
   by rewrite eqp_monic // => /eqP ->; rewrite mem_head.
 have Hia: irreducible_poly a by apply: Irr; rewrite mem_head.

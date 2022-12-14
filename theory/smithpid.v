@@ -234,12 +234,14 @@ Qed.
 Lemma SmithP : forall (m n : nat) (M : 'M_(m,n)),
   smith_spec M (Smith M).
 Proof.
-elim=> [n M|m IHn]; first constructor; rewrite ?unitmx1 //.
-  rewrite [M]flatmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
-  by case: (i == j :> nat).
-case=> [M|n M /=]; first constructor; rewrite ?sorted_nil ?mxE ?unitmx1 //.
-  rewrite [M]thinmx0 mulmx1 mul1mx; apply/matrixP=> i j; rewrite !mxE nth_nil.
-  by case: (i == j :> nat).
+elim=> [n M|m IHn].
+  constructor=> //; try by exact: unitmx1.
+  rewrite [M]flatmx0 mulmx1 mul1mx; apply/matrixP => i j.
+  by rewrite !mxE nth_nil mul0rn.
+case=> [M|n M /=].
+  constructor=> //; try by exact: unitmx1.
+  rewrite [M]thinmx0 mulmx1 mul1mx; apply/matrixP => i j.
+  by rewrite !mxE nth_nil mul0rn.
 case: find_pivotP =>[[i j] HMij | H].
   case: improve_pivotP; rewrite ?mxE ?tpermR ?leqnn //.
   rewrite -[m.+1]/(1 + m)%N -[n.+1]/(1 + n)%N => L B Q0 HB Hdiv HAi0 HA00.
@@ -267,19 +269,19 @@ case: find_pivotP =>[[i j] HMij | H].
     (* down-right submatrix *)
     + rewrite mulmxN !mulNmx -mulmxA Hu addNr mul0mx add0r addrC -mulmxA -mulmxBr.
       transitivity (B 0 0 *: (L' *m A' *m Q')).
-      rewrite -[_ *m A' *m _]mulmxA scalemxAr scalemxAl.
-      have Hdiv' : forall i j, B 0 0 %| (matrix.drsubmx B - matrix.const_mx 1 *m matrix.ursubmx B) i j.
-        by move=> k l; rewrite !mxE big_ord1 !mxE mul1r dvdr_sub ?Hdiv.
-      have -> : B 0 0 *: A' = matrix.drsubmx B - matrix.const_mx 1 *m matrix.ursubmx B.
-        apply/matrixP=> k l; rewrite 2!mxE.
-        case: odivrP=>[x ->|H]; first by rewrite mulrC.
-        by case/dvdrP:(Hdiv' k l)=> q /eqP; rewrite (negbTE (H q)).
-      by rewrite mulmxA.
-    rewrite Hd; apply/matrixP=> k l; rewrite !mxE.
-    case: (k == l :> nat); last by rewrite mulr0.
-    have [Hk|Hk] := (ltnP k (size d)).
-      by rewrite (nth_map 0 _ _ Hk) mulrC.
-    by rewrite !nth_default ?size_map ?Hk // mulr0.
+        rewrite -[_ *m A' *m _]mulmxA scalemxAr scalemxAl.
+        have Hdiv' : forall i j, B 0 0 %| (matrix.drsubmx B - matrix.const_mx 1 *m matrix.ursubmx B) i j.
+          by move=> k l; rewrite !mxE big_ord1 !mxE mul1r dvdr_sub ?Hdiv.
+        have -> : B 0 0 *: A' = matrix.drsubmx B - matrix.const_mx 1 *m matrix.ursubmx B.
+          apply/matrixP => k l; rewrite 2!mxE.
+          case: odivrP => [x ->|H]; first by rewrite mulrC.
+          by case/dvdrP:(Hdiv' k l)=> q /eqP; rewrite (negbTE (H q)).
+        by rewrite mulmxA.
+      rewrite Hd; apply/matrixP=> k l; rewrite !mxE.
+      case: eqP => /=; last by rewrite mulr0.
+      case: (ltnP k (size d)) => /= Hk.
+        by rewrite (nth_map 0 _ _ Hk) mulrC.
+      by rewrite !nth_default ?size_map ?Hk // mulr0.
   * have {}HA00: B 0 0 != 0.
       by apply/eqP=> H; move:HA00; rewrite H dvd0r (negbTE HMij).
     rewrite /= path_min_sorted;

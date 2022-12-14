@@ -62,25 +62,24 @@ Variable R : comRingType.
 
 Fixpoint bareiss_rec m (a : {poly R}) :
    'M[{poly R}]_(1 + m, 1 + m) -> {poly R} :=
-  match m with
-    | S p => fun M =>
+  if m is p.+1 then
+    fun M =>
       let d   := M 0 0 in
       let l   := ursubmx M in
       let c   := dlsubmx M in
       let N   := drsubmx M in
-      let M'  := (d *: N - c *m l) in
+      let M'  := d *: N - c *m l in
       let M'' := map_mx (fun x => rdivp x a) M' in
-        bareiss_rec d M''
-    | _ => fun M => M 0 0
-  end.
+      bareiss_rec d M''
+  else fun M => M 0 0.
 
-Definition bareiss n (M : 'M_(1 + n, 1 + n)) : {poly R}  := bareiss_rec 1 M.
+Definition bareiss n (M : 'M_(1 + n, 1 + n)) : {poly R} := bareiss_rec 1 M.
 
 Definition bareiss_char_poly n (M : 'M_(1 + n, 1 + n)) : {poly R} :=
   bareiss (char_poly_mx M).
 
 (* The actual determinant function based on Bareiss *)
-Definition bdet n (M : 'M_(1 + n, 1 + n)) : R := 
+Definition bdet n (M : 'M_(1 + n, 1 + n)) : R :=
   (bareiss_char_poly (- M))`_0.
 
 End bareiss.
@@ -91,8 +90,8 @@ Variable R : comRingType.
 
 Lemma bareiss_recE : forall m a (M : 'M[{poly R}]_(1 + m)),
   a \is monic ->
- (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
- (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
+  (forall p (h h' : p < 1 + m), pminor h h' M \is monic) ->
+  (forall k (f g : 'I_k.+1 -> 'I_m.+1), rdvdp (a ^+ k) (minor f g M)) ->
   a ^+ m * (bareiss_rec a M) = \det M.
 Proof.
 elim=> [a M _ _ _|m ih a M am hpm hdvd] /=.
@@ -101,12 +100,12 @@ have ak_monic k : a ^+ k \is monic by apply/monic_exp.
 set d := M 0 0; set M' := (_ - _); set M'' := map_mx _ _; rewrite /= in M' M'' *.
 have d_monic : d \is monic.
   have -> // : d = pminor (ltn0Sn _) (ltn0Sn _) M.
-  have h : widen_ord (ltn0Sn m.+1) =1 (fun _ => 0)
+  have h : widen_ord (ltn0Sn m.+1) =1 (fun=> 0)
     by move=> x; apply/ord_inj; rewrite [x]ord1.
   by rewrite /pminor (minor_eq h h) minor1.
 have dk_monic : forall k, d ^+ k \is monic by move=> k; apply/monic_exp.
 have hM' : M' = a *: M''.
-  pose f := fun m (i : 'I_m) (x : 'I_2) => if x == 0 then 0 else (lift 0 i).
+  pose f := fun m (i : 'I_m) (x : 'I_2) => if x == 0 then 0 else lift 0 i.
   apply/matrixP => i j.
   rewrite !mxE big_ord1 !rshift1 [a * _]mulrC rdivpK ?(eqP am,expr1n,mulr1) //.
   move: (hdvd 1%nat (f _ i) (f _ j)).
@@ -122,7 +121,7 @@ case/rdvdpP: (hdvd _ (lift_pred f) (lift_pred g)) => // x hx.
 apply/rdvdpP => //; exists x.
 apply/(@lregX _ _ k.+1 (monic_lreg am))/(monic_lreg d_monic).
 rewrite -detZ -submatrix_scale -hM' bareiss_block_key_lemma_sub.
-by rewrite  mulrA [x * _]mulrC mulrACA -exprS [_ * x]mulrC -hx.
+by rewrite mulrA [x * _]mulrC mulrACA -exprS [_ * x]mulrC -hx.
 Qed.
 
 Lemma bareissE n (M : 'M[{poly R}]_(1 + n))
@@ -166,9 +165,7 @@ Proof.
 rewrite /dvd_step => n a M hj.
 rewrite -detZ; f_equal.
 apply/matrixP => i j; rewrite !mxE.
-case: odivrP.
-- move => d /=; by rewrite mulrC.
-move => h.
+case: odivrP=>[d|h] /=; first by rewrite mulrC.
 case/dvdrP: (hj i j) => d hd.
 by move: (h d); rewrite hd eqxx.
 Qed.
@@ -200,8 +197,7 @@ Proof.
 rewrite !mxE.
 case: splitP => x //; rewrite [x]ord1 {x} !mxE => _.
 case: splitP => x; first by rewrite [x]ord1.
-rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP h.
-by have -> : i = x by apply/ord_inj.
+by rewrite /= /bump /leq0n => /eqP; rewrite eqSS => /eqP/ord_inj->.
 Qed.
 
 Lemma blockEi0 m n d (l: 'rV[R]_n) (c: 'cV[R]_m) (M: 'M[R]_(m,n)) i:
@@ -209,8 +205,7 @@ Lemma blockEi0 m n d (l: 'rV[R]_n) (c: 'cV[R]_m) (M: 'M[R]_(m,n)) i:
 Proof.
 rewrite !mxE.
 case: splitP => x; first by rewrite [x]ord1.
-rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP h.
-have -> : i = x by apply/ord_inj.
+rewrite /= /bump /leq0n => /eqP; rewrite eqSS => /eqP/ord_inj->.
 rewrite !mxE.
 by case: splitP => y //; rewrite [y]ord1 {y} => _.
 Qed.
@@ -220,12 +215,10 @@ Lemma blockEij m n d (l: 'rV[R]_n) (c: 'cV[R]_m) (M: 'M[R]_(m,n)) i j:
 Proof.
 rewrite !mxE.
 case: splitP => x; first by rewrite [x]ord1.
-rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP h.
-have -> : i = x by apply/ord_inj.
+rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP/ord_inj->.
 rewrite !mxE.
 case: splitP => y; first by rewrite [y]ord1.
-rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP h'.
-by have -> : j = y by apply/ord_inj.
+by rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP/ord_inj->.
 Qed.
 
 (*
@@ -275,10 +268,8 @@ have h4 : forall i j, a %| M' i j.
 *)
 have h6 : forall i j, M' i j = a * M'' i j.
 - move => i j; rewrite [(dvd_step _ _) i j]mxE.
-  case: odivrP.
-  + move => dv /=; by rewrite mulrC.
-  move => h.
-  case/dvdrP: (h4 i j ) => dv hdv.
+  case: odivrP => [dv|h] /=; first by rewrite mulrC.
+  case/dvdrP: (h4 i j) => dv hdv.
   by move: (h dv); rewrite hdv eqxx.
 have h6' : M' = a *: M'' by apply/matrixP => i j; rewrite h6 !mxE.
 (*
@@ -308,10 +299,7 @@ have h10 : forall k (f1: 'I_k.+1 -> 'I_m) (f2: 'I_k.+1 -> 'I_n),
   have hMk : d^+ k.+1 != 0 by apply/lregP/lregX.
   rewrite -(@dvdr_mul2l _ d) // mulrA h8 //.
   by rewrite mulrAC -exprS dvdr_mul2l //.
-split.
-- exact : h2.
-- exact : h10.
-- exact : h6'.
+split=> //.
 rewrite -/M'' => p h h'.
 apply/(@lregMl _ (a ^+ p.+1)).
 rewrite -h7.
@@ -330,17 +318,16 @@ Qed.
   formal definition of bareiss algorithm
 *)
 Fixpoint bareiss_rec m a : 'M[R]_(1 + m) -> R :=
-  match m return 'M[R]_(1 + m) -> R with
-    | S p => fun (M: 'M[R]_(1 + _)) =>
-      let d := M 0 0 in
-      let l := ursubmx M in
-      let c := dlsubmx M in
-      let N := drsubmx M in
-      let: M' := d *: N - c *m l in
-      let: M'' := dvd_step a M' in
-        bareiss_rec d M''
-    | _ => fun M => M 0 0
-  end.
+  if m is p.+1 return 'M[R]_(1 + m) -> R then
+    fun (M: 'M[R]_(1 + _)) =>
+      let d   := M 0 0 in
+      let l   := ursubmx M in
+      let c   := dlsubmx M in
+      let N   := drsubmx M in
+      let M'  := d *: N - c *m l in
+      let M'' := dvd_step a M' in
+      bareiss_rec d M''
+  else fun M => M 0 0.
 
 (*
   from sketch, we can express the properties of bareiss
@@ -444,9 +431,7 @@ Lemma char_poly_altE : forall n (M: 'M[R]_(1 + n)),
   char_poly_alt M = char_poly M.
 Proof.
 rewrite /char_poly_alt /char_poly => n M.
-rewrite bareissE //.
-move => p h h'; apply/monic_lreg.
-apply pminor_char_poly_mx_monic.
+by rewrite bareissE // => p h h'; exact/monic_lreg/pminor_char_poly_mx_monic.
 Qed.
 
 (* The actual determinant function based on bareiss *)

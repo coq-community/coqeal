@@ -47,8 +47,7 @@ Lemma split_sumZ_sf (P : Z -> R) (C : pred {ffun 'I_k -> 'I_l}):
   \sum_(s: 'S_k) (\sum_(f: {ffun 'I_k -> 'I_l} | C f) (P (f,s))).
 Proof.
 rewrite exchange_big pair_big /=.
-apply/eq_big; first by case => [f s]; rewrite andbT.
-by case.
+by apply/eq_big; case=> //= [f s]; rewrite andbT.
 Qed.
 
 Lemma split_sumZ_fs (P : Z -> R) (C : pred {ffun 'I_k -> 'I_l}):
@@ -56,8 +55,7 @@ Lemma split_sumZ_fs (P : Z -> R) (C : pred {ffun 'I_k -> 'I_l}):
   \sum_(f: {ffun 'I_k -> 'I_l} | C f) (\sum_(s: 'S_k) (P (f,s))).
 Proof.
 rewrite pair_big /=.
-apply/eq_big ; first by case => [f s]; rewrite andbT.
-by case.
+by apply/eq_big; case=>//= [f s]; rewrite andbT.
 Qed.
 
 Lemma detAB_weight : \det (A *m B) = \sum_(fz : Z) (weight fz.1 fz.2).
@@ -66,7 +64,7 @@ rewrite /determinant /weight.
 rewrite (split_sumZ_sf _ xpredT) /=.
 apply/eq_big => // s _.
 rewrite -big_distrr /=; congr (_ * _).
-set F := fun  n m => A n m * B m (s n).
+set F := fun n m => A n m * B m (s n).
 rewrite -(bigA_distr_bigA F) /=.
 apply/eq_big => // i _.
 by rewrite !mxE.
@@ -101,7 +99,7 @@ Lemma reindex_with_tilt (P: 'S_k -> R) (i j: 'I_k) : i != j ->
 Proof.
 move => hij.
 rewrite (bigID (fun z:'S_k => odd_perm z)) big_split /=; congr (_ + _).
-pose C := fun z => ~~ (odd_perm z).
+pose C := fun z => ~~ odd_perm z.
 pose D := fun z => odd_perm z.
 pose D' := fun z => C _ (tilt i j z).
 have hD : D _ =1 D' by move=> p; rewrite /D /D' /C sig_tilt.
@@ -146,7 +144,7 @@ by rewrite (eqP (hfy x)) heq ltnn.
 Qed.
 
 Lemma inj_strictf_ffun (p q : nat) (f: {ffun 'I_p -> 'I_q}) :
- strictf f -> injective f.
+  strictf f -> injective f.
 Proof. by move=> h; apply: inj_strictf. Qed.
 
 Remark trans_ltn : ssrbool.transitive ltn.
@@ -163,7 +161,7 @@ Lemma path_drop : forall (s: seq nat) (i j d x : nat), path ltn x s ->
   i < j -> path ltn (nth d (x :: s) i) (drop i.+1 (x :: s)).
 Proof.
 elim => [ | hd tl hi] //= [ | i] j d x /andP [hx hp] hij /=.
-- by apply/andP.
+- by rewrite hx.
 by apply: (hi _ j.-1 _ hd) => //; move: hij; case: j.
 Qed.
 
@@ -173,7 +171,7 @@ Lemma path_ordered_nth (i j d d' x : nat) (s: seq nat): path ltn x s ->
 Proof.
 move => hp hij h1 h2.
 have hin : nth d' (x :: s) j \in (drop i.+1 (x :: s)).
-- clear hp => /=.
+- move=> {hp}/=.
   elim : s x d' i j hij h1 h2 => [ | hd tl hi] x d' [ | i] [ | j] hij //=.
   + rewrite -[j.+1]add1n -[(size tl).+1]add1n ltn_add2l => _ h.
     by rewrite mem_nth.
@@ -204,13 +202,11 @@ Lemma sorted_ordered_nth_gen (i j d d' x : nat) (s: seq nat):
   i < size s -> j < size s -> nth d s i < nth d' s j -> i < j.
 Proof.
 move => h hi hj hltn.
-case: (ltngtP i j) => //.
-- move => hji.
-  have hgtn := (sorted_ordered_nth d d' h hji hj hi).
+case: (ltngtP i j) => // [hji|heq].
+- have hgtn := sorted_ordered_nth d d' h hji hj hi.
   rewrite -(ltnn (nth d s i)).
-  apply (ltn_trans hltn).
+  apply: (ltn_trans hltn).
   by rewrite (nth_change_default d' d hj) (nth_change_default d d' hi).
-move => heq.
 by move: hltn; rewrite heq (nth_change_default d' d hj) ltnn.
 Qed.
 
@@ -219,13 +215,11 @@ Lemma tool_nth : forall (s: seq 'I_l) (n:nat) (x: 'I_n) (d: 'I_l),
 Proof.
 elim => [ | hd tl hi] //= n x d.
 - by rewrite !nth_nil.
-case: n x => [ | n ]; first by case.
+case: n x => [[] // | n].
 rewrite [n.+1]/(1 + n)%nat => x.
-case: (splitP x) => [ j | j hj].
-- rewrite [j]ord1 => hx.
-  by have -> /= : x = 0 by apply/ord_inj.
-have -> /= : x = lift 0 j by apply/ord_inj.
-by apply: hi.
+case: (splitP x) => [j | j -> /=].
+- by rewrite [j]ord1 => ->.
+exact: hi.
 Qed.
 
 Lemma cast0 (f: {ffun 'I_k -> 'I_l}) : size (enum (codom f)) = #|codom f|.
@@ -234,7 +228,7 @@ Proof. by rewrite cardE. Qed.
 Lemma cast1 (f: {ffun 'I_k -> 'I_l}) : injective f -> k = #|codom f|.
 Proof.
 move => hf.
-by rewrite (card_codom hf)  cardT /= size_enum_ord.
+by rewrite (card_codom hf) cardT /= size_enum_ord.
 Qed.
 
 Lemma step_weight (g f: {ffun 'I_k -> 'I_l}) (pi: 'S_k) (hf : injective f)
@@ -267,7 +261,7 @@ Definition same_codom m n (f g: {ffun 'I_m -> 'I_n}) :=
 Lemma same_codomP m n (f g : {ffun 'I_m -> 'I_n}) :
   reflect (same_codom f g) (same_codomb f g).
 Proof.
-apply: (iffP forallP) => [ h x | h x].
+apply: (iffP forallP) => h x.
 - by rewrite (eqP (h x)).
 by rewrite (h x).
 Qed.
@@ -278,29 +272,25 @@ Definition good (g: {ffun 'I_k -> 'I_l}) : pred {ffun 'I_k -> 'I_l} :=
 Lemma goodP (g f: {ffun 'I_k -> 'I_l}) :
   reflect (injective f /\ same_codom f g) (good g f).
 Proof.
-apply: (iffP idP).
-- case/andP => /injectiveP h1 /forallP h2.
+(* TODO: `andPP` is only available in Coq 8.15+ *)
+(* by apply: andPP; [exact: injectiveP | exact: same_codomP]. *)
+apply: (iffP andP).
+- case => /injectiveP h1 /forallP h2.
   split => // x.
   by rewrite (eqP (h2 x)).
 case => h1 h2.
-apply/andP.
 split; first by apply/injectiveP.
 by apply/forallP => x; rewrite (h2 x).
 Qed.
 
 Lemma mem_same_codom (f g: {ffun 'I_k -> 'I_l}) :
-  same_codom f g -> forall x,   (f x) \in codom g.
-Proof.
-move => h x.
-by rewrite -h codom_f.
-Qed.
+  same_codom f g -> forall x, f x \in codom g.
+Proof. by move => h x; rewrite -h codom_f. Qed.
 
 (* g^-1 (f x) *)
 Definition inv_g_of_fx (g f: {ffun 'I_k -> 'I_l}) :=
-  match (same_codomP f g) with
-    | ReflectT b => finfun (fun x => iinv (mem_same_codom b x))
-    | ReflectF _ => finfun id
-  end.
+  if same_codomP f g isn't ReflectT b then finfun id
+  else finfun (fun x => iinv (mem_same_codom b x)).
 
 Lemma inv_g_of_fxE (g f: {ffun 'I_k -> 'I_l}) :
   same_codom f g ->
@@ -316,8 +306,8 @@ Lemma inv_g_of_fx_inj (g f: {ffun 'I_k -> 'I_l}): injective f ->
   same_codom f g -> injectiveb (inv_g_of_fx g f).
 Proof.
 move => hf hc.
-apply/injectiveP =>  x y heq.
-apply hf.
+apply/injectiveP => x y heq.
+apply: hf.
 by rewrite -!(inv_g_of_fxE hc) heq.
 Qed.
 
@@ -327,19 +317,16 @@ Qed.
    we build this p from g and f
 *)
 Definition perm_f (g f: {ffun 'I_k -> 'I_l}) :=
-  match goodP g f with
-    | ReflectT b => Perm (inv_g_of_fx_inj (proj1 b) (proj2 b))
-    | ReflectF _ => 1%g
-  end.
+  if goodP g f isn't ReflectT b then 1%g
+  else Perm (inv_g_of_fx_inj (proj1 b) (proj2 b)).
 
 Lemma perm_fE  (g f: {ffun 'I_k -> 'I_l}) : injective f ->
   same_codom f g -> forall x, f x = g ((perm_f g f) x).
 Proof.
 move => hf hc /= x.
 rewrite /perm_f PermDef.fun_of_permE /=.
-case: goodP => h.
-- by rewrite inv_g_of_fxE.
-by case: h.
+case: goodP => [/= _|[]] //.
+by rewrite inv_g_of_fxE.
 Qed.
 
 Lemma codom_perm (g: {ffun 'I_k -> 'I_l}) (p: 'S_k) :
@@ -365,23 +352,20 @@ rewrite (reindex_onto (fun p:'S_k => finfun (g \o p)) (perm_f g)) /=.
   + have htemp : injective (g \o p)
       by apply: inj_comp => //; apply: perm_inj.
     move => x y; rewrite !ffunE => heq.
-    by apply htemp.
+    exact: htemp.
   have hcodom : forall x,
     (x \in codom (finfun (g \o p))) = (x \in codom g)
     by move => x; rewrite codom_perm.
   apply/andP; split.
-  + apply/andP; split.
-    by apply/injectiveP.
-  + apply/forallP => x; by rewrite hcodom.
+  + apply/andP; split; first exact/injectiveP.
+    apply/forallP => x; by rewrite hcodom.
   apply/eqP/permP => x.
-  have := (perm_fE hinj hcodom x).
-  rewrite ffunE.
-  by move/hg ->.
+  have := perm_fE hinj hcodom x.
+  by rewrite ffunE => /hg ->.
 move => /= f.
 case/goodP => h1 h2.
 apply/ffunP => /= x.
-rewrite ffunE.
-by rewrite (perm_fE h1 h2).
+by rewrite ffunE (perm_fE h1 h2).
 Qed.
 
 Lemma one_step (g : {ffun 'I_k -> 'I_l}) : injective g ->
@@ -403,13 +387,13 @@ transitivity (\sum_(phi: 'S_k) \sum_(pi : 'S_k)
   + have htemp : injective (g \o phi)
       by apply: inj_comp => //; apply: perm_inj.
     move => x y; rewrite !ffunE => heq.
-    by apply htemp.
+    by apply: htemp.
   rewrite (@step_weight g (finfun (g \o phi)) pi hinj phi) //.
   by move => x; rewrite ffunE.
 transitivity( \sum_(phi: 'S_k)
          ((-1) ^+ phi * \big[*%R/1]_i A i (g (phi i)) * (
       \big[+%R/0]_pi
-          ((-1) ^+ sigma phi pi * \big[*%R/1]_i B (g i) ((sigma phi pi) i))))); 
+          ((-1) ^+ sigma phi pi * \big[*%R/1]_i B (g i) ((sigma phi pi) i)))));
   last first.
 - apply/eq_big => // phi _.
   by rewrite -big_distrr /=.
@@ -447,8 +431,8 @@ Qed.
 Definition strict_from (f: {ffun 'I_k -> 'I_l}) (hf: injective f) :=
   finfun (fun x => @enum_val _ (mem (codom f)) (cast_ord (cast1 hf) x)).
 
-Lemma strict_fromP (f: {ffun 'I_k -> 'I_l})  (hf: injective f):
-  strictf (strict_from hf)  /\ same_codom f (strict_from hf).
+Lemma strict_fromP (f: {ffun 'I_k -> 'I_l}) (hf: injective f):
+  strictf (strict_from hf) /\ same_codom f (strict_from hf).
 Proof.
 split.
 - apply/forallP => x.
@@ -458,17 +442,17 @@ split.
   apply/eqP.
   rewrite !ffunE /enum_val -!tool_nth.
   apply/idP/idP => [ hxy | ].
-  + apply sorted_ordered_nth => //.
+  + apply: sorted_ordered_nth => //.
     * by rewrite size_map cast0 ltn_ord.
     by rewrite size_map cast0 ltn_ord.
-  apply sorted_ordered_nth_gen => //.
+  apply: sorted_ordered_nth_gen => //=.
   + by rewrite size_map cast0 -(cast1 hf) ltn_ord.
   by rewrite size_map cast0 -(cast1 hf) ltn_ord.
 have h1 : enum (codom f) =i codom f by move => y; rewrite mem_enum.
 move => y.
 apply/imageP/imageP.
 - case => x hx hy.
-  have hy' : (y \in (enum (codom f)))
+  have hy' : y \in (enum (codom f))
     by rewrite h1 hy codom_f.
   have hi : index y (enum (codom f)) < #|codom f|
     by rewrite -cast0 index_mem.
@@ -502,8 +486,7 @@ Lemma strictf_uniq : forall m n (f g: {ffun 'I_m -> 'I_n}),
   strictf f -> strictf g -> same_codom f g -> f = g.
 Proof.
 clear A B Z R k l.
-elim => [ | m hi] n f g hf hg hsame; apply/ffunP.
-- by case.
+elim => [ | m hi] n f g hf hg hsame; apply/ffunP; first by case.
 move/forallP : (hf) => hf1.
 move/forallP : (hg) => hg1.
 rewrite [m.+1]/(1 + m)%nat => x.
@@ -520,10 +503,10 @@ case: (ltngtP (f 0) (g 0)) => h.
   by rewrite -(eqP (hf' 0)) ltn0.
 case: (splitP x) => y.
 - rewrite [y]ord1 => hy.
-  have -> : x = 0 by apply/ord_inj.
+  have {x hy}-> : x = 0 by apply/ord_inj.
   by apply/ord_inj.
 move => hy.
-have -> : x = lift 0 y by apply/ord_inj.
+have {x hy}-> : x = lift 0 y by apply/ord_inj.
 set f' := finfun (fun x => f (lift 0 x)).
 set g' := finfun (fun x => g (lift 0 x)).
 have hsame' : forall x, (x \in codom f') = (x \in codom g').
@@ -534,13 +517,13 @@ have hsame' : forall x, (x \in codom f') = (x \in codom g').
     case/imageP; rewrite [m.+1]/(1 + m)%nat => x' _.
     case: (splitP x') => j.
     * rewrite [j]ord1 => hx'.
-      have -> : x' = 0 by apply/ord_inj.
+      have {x' hx'}-> : x' = 0 by apply/ord_inj.
       move => h'.
       have : f (lift 0 a) = f 0
         by apply/ord_inj; rewrite -hz h h'.
       by move/(inj_strictf hf).
     move => hx'.
-    have -> : x' = lift 0 j by apply/ord_inj.
+    have {x' hx'}-> : x' = lift 0 j by apply/ord_inj.
     move => hz'.
     by exists j => //; rewrite ffunE.
   case => /= a _; rewrite ffunE => hz.
@@ -548,13 +531,13 @@ have hsame' : forall x, (x \in codom f') = (x \in codom g').
     case/imageP; rewrite [m.+1]/(1 + m)%nat => x' _.
     case: (splitP x') => j.
     * rewrite [j]ord1 => hx'.
-      have -> : x' = 0 by apply/ord_inj.
+      have {x' hx'}-> : x' = 0 by apply/ord_inj.
       move => h'.
       have : g (lift 0 a) = g 0
         by apply/ord_inj; rewrite -hz -h h'.
       by move/(inj_strictf hg).
     move => hx'.
-    have -> : x' = lift 0 j by apply/ord_inj.
+    have {x' hx'}-> : x' = lift 0 j by apply/ord_inj.
     move => hz'.
     by exists j => //; rewrite ffunE.
 move/ffunP : (hi n f' g' (strictf_lift hf) (strictf_lift hg) hsame')
@@ -563,18 +546,14 @@ by move: (heq y); rewrite !ffunE => ->.
 Qed.
 
 Definition strict_from_f (fz :Z) :=
-  match injectiveP fz.1 with
-    | ReflectT h => strict_from h
-    | ReflectF _ => fz.1
-  end.
+  if injectiveP fz.1 is ReflectT h then strict_from h else fz.1.
 
 Lemma strict_from_fP (fz : Z) : injective fz.1 ->
-  strictf (strict_from_f fz)  /\ same_codom fz.1 (strict_from_f fz).
+  strictf (strict_from_f fz) /\ same_codom fz.1 (strict_from_f fz).
 Proof.
 move => hf.
 rewrite /strict_from_f.
-case: injectiveP => hinj; first by apply strict_fromP.
-by case: hinj.
+case: injectiveP => [hinj | []] //; exact: strict_fromP.
 Qed.
 
 Lemma BinetCauchy:
@@ -589,9 +568,8 @@ rewrite -gather_by_strictness (partition_big strict_from_f ffstrictf) /=.
   apply/congr_big => //.
   case => f pi; rewrite /cond /good /=.
   apply/andP/andP; case => /injectiveP h1.
-  + rewrite /strict_from_f.
-    case: injectiveP; last by case.
-    move => /= hinj.
+  + rewrite /strict_from_f /=.
+    case: injectiveP => [hinj | []] //.
     move/eqP => heq; split => //.
     case: (strict_fromP hinj) => hlt hrt.
     apply/forallP => x.

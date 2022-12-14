@@ -17,7 +17,7 @@ Local Open Scope ring_scope.
 Variable F : fieldType.
 
 Definition find_pivot m n (A : 'M[F]_(m,n.+1)) : option 'I_m :=
-   [pick k | A k 0 != 0].
+  [pick k | A k 0 != 0].
 
 Fixpoint cormen_lup {m n} :=
   match m, n return 'M_(m.+1,n.+1) -> 'S_m.+1 * 'M_(m.+1,m.+1) * 'M_(m.+1,n.+1) with

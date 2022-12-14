@@ -23,12 +23,9 @@ Lemma L1 m (a d: R) (l: 'rV[R]_m) (c: 'cV[R]_m) (M: 'M[R]_m):
 Proof.
 set X := block_mx d%:M l c M.
 have huniq : uniq (map (lift 0) (enum 'I_m)).
-- rewrite map_inj_in_uniq ?enum_uniq //.
-  move => i j hi hj /=.
-  by apply/lift_inj.
-have htool : forall s, 0 \in (map (lift 0) s) -> False.
-- move => n /=.
-  by elim => [ | hd tl hi].
+- rewrite map_inj_in_uniq; first exact: enum_uniq.
+  by move => i j hi hj /= /lift_inj.
+have htool : forall s, 0 \notin map (lift 0) s by move => n /=; elim.
 have -> : block_mx d%:M l (a *: c) (a *: M) =
   foldl (fun N i => line_scale i a N) X (map (lift 0) (enum 'I_m)).
 - apply/row_matrixP => i.
@@ -36,13 +33,13 @@ have -> : block_mx d%:M l (a *: c) (a *: M) =
   move: (hl i) (hr i) => {hl hr}.
   case: (splitP i) => j.
   + rewrite [j]ord1 {j} => hi.
-    have -> : i = 0 by apply/ord_inj.
-    move => _ {hi} /= ->.
-    * apply/rowP => j; rewrite !mxE.
-      by case: splitP.
-    by apply/negP/htool.
+    have {i hi}-> : i = 0 by apply/ord_inj.
+    move => _ /= ->; last exact: htool.
+    apply/rowP => j; rewrite !mxE.
+    by case: splitP.
+
   move => hi.
-  have -> : i = lift 0 j by apply/ord_inj.
+  have {i hi}-> : i = lift 0 j by apply/ord_inj.
   move => -> /=.
   + move => _.
     apply/rowP => k; rewrite !mxE.
@@ -55,23 +52,16 @@ by rewrite det_lines_scale size_map size_enum_ord /=.
 Qed.
 
 Definition L3tool m (c: 'cV[R]_m) (d: R) (i: 'I_(1 + m)) :=
-  match split i with
-    | inl _ => d
-    | inr j => c j 0
-  end.
+  if split i is inr j then c j 0 else d.
 
 Lemma L3toolE0 m (c: 'cV[R]_m) d : L3tool c d 0 = d.
-Proof.
-rewrite /L3tool.
-by case: splitP.
-Qed.
+Proof. by rewrite /L3tool; case: splitP. Qed.
 
 Lemma L3toolES m (c: 'cV[R]_m) d (i: 'I_m) : L3tool c d (lift 0 i) = c i 0.
 Proof.
 rewrite /L3tool.
 case: splitP => x /=; first by rewrite [x]ord1.
-rewrite /bump leq0n => /eqP; rewrite eqSS => /eqP h.
-by have -> : i = x by apply/ord_inj.
+by rewrite /bump leq0n => /eqP; rewrite eqSS => /eqP/ord_inj->.
 Qed.
 
 Lemma L3 m (d: R) (l: 'rV[R]_m) (c c0: 'cV[R]_m) (M: 'M[R]_m):
@@ -83,33 +73,29 @@ have huniq : uniq (map (lift 0) (enum 'I_m)).
 - rewrite map_inj_in_uniq ?enum_uniq //.
   move => i j hi hj /=.
   by apply/lift_inj.
-have htool : forall s, 0 \in (map (lift 0) s) -> False.
-- move => n /=.
-  by elim => [ | hd tl hi].
-have htool2 : 0 \notin (map (lift 0) (enum 'I_m)).
-- by apply/negP/htool.
+have htool : forall s, 0 \notin map (lift 0) s by move => n /=; elim.
+have {}htool := htool _ (enum 'I_m).
 have -> : block_mx d%:M l (c -d *: c0) (M - c0 *m l) =
   foldl (fun N i => line_comb i 0 (-(L3tool c0 d i)) N) X
         (map (lift 0) (enum 'I_m)).
 - apply/row_matrixP => i.
-  case: (lines_comb_row_dep (fun i => - (L3tool c0 d i)) X huniq htool2)
+  case: (lines_comb_row_dep (fun i => - (L3tool c0 d i)) X huniq htool)
      => hl hr.
   move: (hl i) (hr i) => {hl hr}.
   case: (splitP i) => j.
   + rewrite [j]ord1 {j} => hi.
-    have -> : i = 0 by apply/ord_inj.
-    move => _ {hi i} /= -> //.
+    have {hi i}-> : i = 0 by apply/ord_inj.
+    move => _ -> //=.
     apply/rowP => j; rewrite !mxE.
     by case: splitP.
   move => hi.
-  have -> : i = lift 0 j by apply/ord_inj.
-  move => -> /= {i hi}.
+  have {i hi}-> : i = lift 0 j by apply/ord_inj.
+  move => -> /=.
   + rewrite L3toolES => _.
     apply/rowP => k; rewrite !mxE.
     case: splitP => x /= ; first by rewrite [x]ord1.
-    rewrite /bump leq0n => /eqP; rewrite eqSS => /eqP hjx.
-    have -> : j = x by apply/ord_inj.
-    case: splitP => z // {j hjx}; rewrite [z]ord1 {z} !mxE => _.
+    rewrite /bump leq0n => /eqP; rewrite eqSS => /eqP/ord_inj{j}->.
+    case: splitP => z //; rewrite [z]ord1 {z} !mxE => _.
     case: splitP => y; rewrite !mxE.
     * rewrite [y]ord1 {y} => _.
       by rewrite mulrC mulr1n mulNr.
@@ -159,9 +145,7 @@ Proof.
 rewrite /dvd_step => n a M hj.
 rewrite -detZ; f_equal.
 apply/matrixP => i j; rewrite !mxE.
-case: odivrP.
-- move => d /=; by rewrite mulrC.
-move => h.
+case: odivrP => [d|h] /=; first by rewrite mulrC.
 case/dvdrP: (hj i j) => d hd.
 by move: (h d); rewrite hd eqxx.
 Qed.
@@ -193,8 +177,7 @@ Proof.
 rewrite !mxE.
 case: splitP => x //; rewrite [x]ord1 {x} !mxE => _.
 case: splitP => x; first by rewrite [x]ord1.
-rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP h.
-by have -> : i = x by apply/ord_inj.
+by rewrite /= /bump /leq0n => /eqP; rewrite eqSS => /eqP/ord_inj->.
 Qed.
 
 Lemma blockEi0 m n d (l: 'rV[R]_n) (c: 'cV[R]_m) (M: 'M[R]_(m,n)) i:
@@ -202,8 +185,7 @@ Lemma blockEi0 m n d (l: 'rV[R]_n) (c: 'cV[R]_m) (M: 'M[R]_(m,n)) i:
 Proof.
 rewrite !mxE.
 case: splitP => x; first by rewrite [x]ord1.
-rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP h.
-have -> : i = x by apply/ord_inj.
+rewrite /= /bump /leq0n => /eqP; rewrite eqSS => /eqP/ord_inj->.
 rewrite !mxE.
 by case: splitP => y //; rewrite [y]ord1 {y} => _.
 Qed.
@@ -213,12 +195,10 @@ Lemma blockEij m n d (l: 'rV[R]_n) (c: 'cV[R]_m) (M: 'M[R]_(m,n)) i j:
 Proof.
 rewrite !mxE.
 case: splitP => x; first by rewrite [x]ord1.
-rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP h.
-have -> : i = x by apply/ord_inj.
+rewrite /= /bump /leq0n => /eqP; rewrite eqSS => /eqP/ord_inj->.
 rewrite !mxE.
 case: splitP => y; first by rewrite [y]ord1.
-rewrite /= /bump /leq0n => /eqP; rewrite eqSS =>  /eqP h'.
-by have -> : j = y by apply/ord_inj.
+by rewrite /= /bump /leq0n => /eqP; rewrite eqSS => /eqP/ord_inj->.
 Qed.
 
 (*
@@ -243,7 +223,7 @@ rewrite /pminor => ha hM hN.
 set M0 := block_mx d%:M l c M.
 (* d is the 1x1 principal minor of M0 *)
 have hh : d = minor (widen_ord (ltn0Sn _)) (widen_ord (ltn0Sn _)) M0.
-- rewrite (@minor_eq _ _ _ _ _ (fun _ => 0) _ (fun _ => 0)) ?minor1 //.
+- rewrite (@minor_eq _ _ _ _ _ (fun=> 0) _ (fun=> 0)) ?minor1 //.
   + by rewrite /M0 blockE00.
   + by move => x; rewrite ord1; apply: val_inj.
   + by move => x; rewrite ord1; apply: val_inj.
@@ -253,7 +233,7 @@ have h2 : lreg d.
 set M' := d *: M - c *m l.
 set M'' := dvd_step a M'.
 set f : forall m, 'I_m -> 'I_2 -> 'I_(1 + m) :=
-  fun m (i: 'I_m) (x: 'I_2) => if x == 0 then 0 else (lift 0 i).
+  fun m (i: 'I_m) (x: 'I_2) => if x == 0 then 0 else lift 0 i.
 (*
   all elements of M' can be expressed as 2x2 minors of M,
   so a divide all these
@@ -268,10 +248,8 @@ have h4 : forall i j, a %| M' i j.
 *)
 have h6 : forall i j, M' i j = a * M'' i j.
 - move => i j; rewrite [(dvd_step _ _) i j]mxE.
-  case: odivrP.
-  + move => dv /=; by rewrite mulrC.
-  move => h.
-  case/dvdrP: (h4 i j ) => dv hdv.
+  case: odivrP => [dv|h] /=; first by rewrite mulrC.
+  case/dvdrP: (h4 i j) => dv hdv.
   by move: (h dv); rewrite hdv eqxx.
 have h6' : M' = a *: M'' by apply/matrixP => i j; rewrite h6 !mxE.
 (*
@@ -301,10 +279,7 @@ have h10 : forall k (f1: 'I_k.+1 -> 'I_m) (f2: 'I_k.+1 -> 'I_n),
   have hMk : d^+ k.+1 != 0 by apply/lregP/lregX.
   rewrite -(@dvdr_mul2l _ d) // mulrA h8 //.
   by rewrite mulrAC -exprS dvdr_mul2l //.
-split.
-- exact : h2.
-- exact : h10.
-- exact : h6'.
+split => //.
 rewrite -/M'' => p h h'.
 apply/(@lregMl _ (a ^+ p.+1)).
 rewrite -h7.
@@ -323,27 +298,26 @@ Qed.
   formal definition of Bareiss algorithm
 *)
 Fixpoint Bareiss_rec m a : 'M[R]_(1 + m) -> R :=
-  match m return 'M[R]_(1 + m) -> R with
-    | S p => fun (M: 'M[R]_(1 + _)) =>
-      let d := M 0 0 in
-      let l := ursubmx M in
-      let c := dlsubmx M in
-      let N := drsubmx M in
-      let: M' := d *: N - c *m l in
-      let: M'' := dvd_step a M' in
-        Bareiss_rec d M''
-    | _ => fun M => M 0 0
-  end.
+  if m is p.+1 return 'M[R]_(1 + m) -> R then
+    fun (M: 'M[R]_(1 + _)) =>
+      let d   := M 0 0 in
+      let l   := ursubmx M in
+      let c   := dlsubmx M in
+      let N   := drsubmx M in
+      let M'  := d *: N - c *m l in
+      let M'' := dvd_step a M' in
+      Bareiss_rec d M''
+  else fun M => M 0 0.
 
 (*
   from sketch, we can express the properties of Bareiss
 *)
 Lemma Bareiss_recE : forall m a (M: 'M[R]_(1 + m)),
-    lreg a  ->
- (forall (k:nat) (f1 f2: 'I_k.+1 -> 'I_m.+1), a ^+ k %| minor f1 f2 M) ->
- (forall p  (h h' :p.+1 <= 1 + m),
+  lreg a  ->
+  (forall (k:nat) (f1 f2: 'I_k.+1 -> 'I_m.+1), a ^+ k %| minor f1 f2 M) ->
+  (forall p (h h' :p.+1 <= 1 + m),
    lreg (minor (widen_ord h) (widen_ord h') M)) ->
-    a ^+ m * (Bareiss_rec a M) = \det M.
+  a ^+ m * (Bareiss_rec a M) = \det M.
 Proof.
 elim => [ | m hi] //=.
 - move => a M ha h1 h2.
@@ -361,25 +335,23 @@ rewrite -{1 2}heq => hM hm.
 have : forall p (h h': p.+1 <= 1 + (1 + m)),
   lreg (minor (widen_ord h) (widen_ord h') M).
 - rewrite -heq => p h h'.
-  rewrite (@minor_eq _ _ _ _ _ (widen_ord h) _ (widen_ord h)) ?hm//.
+  rewrite (@minor_eq _ _ _ _ _ (widen_ord h) _ (widen_ord h)) ?hm //.
   by move => x; apply/ord_inj.
 case: (@sketch _ _ a (M 0 0) (ursubmx M) (dlsubmx M) (drsubmx M) ha hM hm)
  => hM00 h1 h2 h3 hlreg.
 have h3' : forall p (h h': p < 1 + m),
   lreg (pminor h h' (dvd_step a (d *: N - c *m l)))
- by  move => p h h'; apply/h3.
+  by move => p h h'; apply/h3.
 move: (hi d (dvd_step a (d *: N - c *m l)) hM00 h1 h3').
 set r := Bareiss_rec _ _ => hh.
 have : a ^+ m.+1 *( d ^+m * r) =
        a ^+ m.+1 * \det (dvd_step a (d *: N - c *m l)) by rewrite hh.
-rewrite det_dvd_step //; last by
-  move => i j; apply (det_dvd_step_tool h2).
+rewrite det_dvd_step //; last by move => i j; exact: (det_dvd_step_tool h2).
 move => heq2.
 have hX : lreg (M 0 0 ^+ (1 + m)) by apply/lregX.
 apply/hX.
 rewrite -{3}heq key_lemma -heq2 [M 0 0 ^+ (1 + m)]exprS -mulrA.
-congr(_ * _).
-by rewrite mulrCA.
+by congr (_ * _); rewrite mulrCA.
 Qed.
 
 (*
@@ -442,7 +414,7 @@ Proof.
 rewrite /char_poly_alt /char_poly => n M.
 rewrite BareissE //.
 move => p h h'; apply/monic_lreg.
-apply pminor_char_poly_mx_monic.
+exact: pminor_char_poly_mx_monic.
 Qed.
 
 (* The actual determinant function based on Bareiss *)

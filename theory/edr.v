@@ -141,7 +141,7 @@ Canonical gcdType   := Eval hnf in GcdDomainType R gcdMixin.
 the the ring is a Bézout domain *)
 Definition bezout_edr a b : R * R :=
   let: (P,d,Q) := smith (row_mx a%:M b%:M : 'rV_2)
-  in (P 0 0 * Q 0 0,P 0 0 * Q (rshift 1 0) 0).
+  in (P 0 0 * Q 0 0, P 0 0 * Q (rshift 1 0) 0).
 
 Lemma bezout_edrP a b : BezoutDomain.bezout_spec a b (bezout_edr a b).
 Proof.
@@ -267,8 +267,8 @@ Qed.
 Lemma kermxP m n (M : 'M[R]_(m,n)) (X : 'rV_m) :
   reflect (exists Y : 'rV_m, X = Y *m kermx M) (X *m M == 0).
 Proof.
-apply: (iffP idP)=> [|[Y ->]]; last by rewrite -mulmxA mul_kermx mulmx0.
-by move/eqP/mulmxKV_kermx=> hX; exists (X *m col_ebase M).
+apply: (iffP eqP)=> [|[Y ->]]; last by rewrite -mulmxA mul_kermx mulmx0.
+by move/mulmxKV_kermx=> hX; exists (X *m col_ebase M).
 Qed.
 
 Definition coherentMixin := CoherentRing.Mixin kermxP.
@@ -384,10 +384,10 @@ case: (injectiveb g) /injectiveP=> Hinjg; last first.
 have Hmin k1 i m1 n1 (h : 'I_k1 -> 'I_m1) : minn m1 n1 <= h i -> n1 <= h i.
   move=> Hhi; have := (leq_ltn_trans Hhi (ltn_ord (h i))).
   by rewrite gtn_min ltnn=> /ltnW/minn_idPr <-.
-case: (altP (@forallP _ (fun i => f i < minn m n)))=>[Hwf|]; last first.
+case/altP: (@forallP _ (fun i => f i < minn m n)) => [Hwf|]; last first.
   rewrite negb_forall=> /existsP [x]; rewrite -leqNgt=> /Hmin Hx.
   by rewrite (minor_eq0l _ _ Hx) dvdr0.
-case: (altP (@forallP _ (fun i => g i < minn m n)))=>[Hwg|]; last first.
+case/altP: (@forallP _ (fun i => g i < minn m n)) => [Hwg|]; last first.
   rewrite negb_forall=> /existsP [x]; rewrite -leqNgt minnC=> /Hmin Hx.
   by rewrite (minor_eq0r _ _ Hx) dvdr0.
 pose f1 i := Ordinal (Hwf i).
@@ -399,7 +399,7 @@ have Hinjg1 : injective g1.
 case Hcfg: (codom f1 \subset codom g1); last first.
   move/negbT: Hcfg=> /subsetPn [x] /codomP [y Hy] /negP Habs.
   rewrite /minor (expand_det_row _ y).
-  rewrite  [\sum_(_ <_) _](big1 _ xpredT) ?dvdr0 //.
+  rewrite [\sum_(_ <_) _](big1 _ xpredT) ?dvdr0 //.
   move=> j _; rewrite !mxE.
   have ->: (g j = g1 j :> nat) by [].
   have ->: (f y = f1 y :> nat) by [].
@@ -422,21 +422,21 @@ have [l Hl]: {j | max = g j} by apply: eq_bigmax; rewrite card_ord.
 pose p := tperm l ord_max.
 set B := \prod_(_ < _) _.
 rewrite (reindex_inj (@perm_inj _ p)) /= big_ord_recr /= dvdr_mul //.
-  pose f :=  (g \o p \o (widen_ord (leqnSn j))).
+  pose f := (g \o p \o (widen_ord (leqnSn j))).
   have Hf: injective f.
     apply: inj_comp=> [|x y /eqP].
       by apply: inj_comp=> //; exact: perm_inj.
     by rewrite -(inj_eq (@ord_inj _)) /= => H; apply/ord_inj/eqP.
-  have Hi: injective [ffun x => f x].
+  have Hi: injective (finfun f).
     by move=> x e; rewrite !ffunE; exact: Hf.
   set C := \prod_(_ < _) _.
   have:= (IHj _ Hi).
-  have ->: C = \prod_i s`_([ffun x => f x] i).
+  have ->: C = \prod_i s`_(finfun f i).
     by apply: eq_bigr=> i _; rewrite ffunE.
   by apply.
 move: (sorted_nth0 (sorted_drop j Hs) (g (p ord_max) - j)).
 rewrite !nth_drop addn0 subnKC //= tpermR; case/orP: (leq_total j (g l))=> //.
-rewrite leq_eqVlt; case/orP=> [|Hgm]; first by move/eqP=> ->; rewrite leqnn.
+rewrite leq_eqVlt => /orP [|Hgm]; first by move/eqP=> ->; rewrite leqnn.
 have Habs: forall i, g i < j.
   move=> i; apply: (leq_ltn_trans _ Hgm).
   by rewrite -Hl /k; exact: (leq_bigmax i).
@@ -455,8 +455,8 @@ Lemma Smith_gcdr_spec :
    (\big[(@gcdr gcdType)/0]_(g : {ffun 'I_k -> 'I_n}) minor f g A) .
 Proof.
 rewrite (eqd_ltrans eqd_seq_gcdr).
-have [ _ _ [M [N [_ _ Heqs]]]]:= HAs.
-have [ _ _ [P [Q [_ _ Hseq]]]]:= (equiv_sym HAs).
+have [ _ _ [M [N [_ _ Heqs]]]] := HAs.
+have [ _ _ [P [Q [_ _ Hseq]]]] := equiv_sym HAs.
 rewrite conform_mx_id in Heqs.
 rewrite conform_mx_id in Hseq.
 have HdivmA p q k1 (B C : 'M[R]_(p,q)) (M1 : 'M_p) (N1 : 'M_q) :

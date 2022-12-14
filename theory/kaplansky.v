@@ -20,14 +20,12 @@ Variable R : dvdRingType.
 Variable smith2x2 : 'M[R]_2 -> 'M[R]_2 * seq R * 'M[R]_2.
 
 Definition smith1xn n (smith2xn : 'M[R]_(2,n.+2) -> 'M[R]_2 * seq R * 'M[R]_n.+2)
-  (M : 'M[R]_(1,n.+2)) : 'M[R]_1 * seq R * 'M[R]_n.+2 :=
+                      (M : 'M[R]_(1,n.+2)) : 'M[R]_1 * seq R * 'M[R]_n.+2 :=
   let: (L,d,R) := smith2xn (col_mx M 0) in
   if d`_0 == 0 then (1%:M,[::],1%:M) else ((L 0 0)%:M, [:: d`_0], R).
 
 Fixpoint smith2xn n : 'M[R]_(2,1 + (1 + n)) -> 'M[R]_2 * seq R * 'M[R]_n.+2 :=
-  match n with
-  | 0 => fun A => smith2x2 A
-  | n.+1 => fun A : 'M[R]_(2,1 + _) =>
+  if n is p.+1 then fun A : 'M[R]_(2,1 + _) =>
     let: A1 := lsubmx A in let: A2 := rsubmx A in
     let: (P1,d1,Q1) := smith2xn A2 in
     let: C := row_mx (P1 *m A1) (P1 *m A2 *m Q1) : 'M[R]_(2,1 + (1 + _)) in
@@ -43,7 +41,7 @@ Fixpoint smith2xn n : 'M[R]_(2,1 + (1 + n)) -> 'M[R]_2 * seq R * 'M[R]_n.+2 :=
     (lift0_mx L1 *m P2 *m P1,
      y :: d,
      lift0_mx Q1 *m block_mx Q2 0 0 1%:M *m block_mx 1%:M (- r' *m R1') 0 R1')
-  end.
+  else fun A => smith2x2 A.
 
 Fixpoint smithmxn_rec m n : 'M[R]_(1 + (1 + m),1 + (1 + n)) ->
  'M[R]_(1 + (1 + m)) * seq R * 'M[R]_(1 + (1 + n)) := match m,n with
@@ -118,7 +116,7 @@ have [d0|d_neq0] := (boolP (d`_0 == 0)).
   move/(canRL (mulmxK hQ))/(canRL (mulKmx hP))/matrixP: h_eq.
   rewrite diag_mx_seq0; last by rewrite sorted_dvd0r // sorted_cons // dvd0r.
   rewrite mul0mx mulmx0 ord1 {i} diag_mx_seq_nil.
-  by move=> /(_ (widen_ord (lt0n 2) 0) j); rewrite !mxE split1; case: unliftP.
+  by move/(_ (widen_ord (lt0n 2) 0) j); rewrite !mxE split1; case: unliftP.
 move/matrixP: h_eq; rewrite -mulmxA [col_mx M 0 *m _]mul_col_mx mul0mx=> h_eq.
 have hP00 : ((P 0 0)%:M : 'M_1) \in unitmx.
   rewrite unitmxE det_scalar expr1; apply/unitrPr; exists ((invmx P) 0 0).
@@ -157,16 +155,16 @@ have dvd_d20_d0 : d2`_0 %| d1`_0.
   apply: dvdr_mulmxl=> i j; apply: dvdr_mulmxr=> {}i {}j.
   by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n.
 have hx0 i j : d1`_0 %| d1`_i *+ (i == j).
-  by case: (i == j :> nat); rewrite ?sorted_nth0 // mulr0n dvdr0.
+  by case: eqP => _; rewrite ?sorted_nth0 // mulr0n dvdr0.
 have Hdvd i j : d2`_0 %| H i j.
   rewrite -[(1 + (1 + _))%N]/(2 + _)%N /H H1 dvdr_row_mx //; split=> {}i {}j.
     by rewrite !mxE; case: (i == j :> nat); rewrite ?sorted_nth0 ?mulr0n.
   apply: dvdr_mulmxl=> {}i {}j; rewrite /E row_mxKr h1 !mxE.
   move: (dvdr_trans dvd_d20_d0 (hx0 i (rshift 1 j))).
-  by case: (i == _ :> nat); rewrite ?(mulr0n,dvdr0,mulr1n).
+  by case: eqP => _; rewrite ?(mulr0n,dvdr0,mulr1n).
 constructor; rewrite ?unitmx_mul; last first.
 - rewrite !unitmxE ?(det_lblock,det_ublock,det_lblock Q2,det1,mulr1,mul1r).
-  by rewrite-!unitmxE hQ1 hQ2 hR1.
+  by rewrite -!unitmxE hQ1 hQ2 hR1.
 - by rewrite hP2 hP1 unitmxE (@det_ublock _ 1) det1 mul1r -unitmxE hL1.
 - apply: sorted_cons=> //; move/matrixP: hLdR => /(_ 0 0).
   rewrite [RHS]mxE mulr1n => <-.
@@ -357,10 +355,10 @@ Qed.
 
 Definition egcdr3 (a b c : R) :=
   let: (g',u1,v1,b1,c1) := egcdr b c in
-  let: (g,u,v,a1,g1)    := egcdr a g' in
-  (g, u, v * u1, v * v1, a1,b1 * g1,c1 * g1).
+  let: (g, u, v, a1,g1) := egcdr a g' in
+  (g, u, v * u1, v * v1, a1, b1 * g1, c1 * g1).
 
-Variant egcdr3_spec a b c : R * R * R * R * R * R * R-> Type :=
+Variant egcdr3_spec a b c : R * R * R * R * R * R * R -> Type :=
   EgcdrSpec g x y z a1 b1 c1 of x * a1 + y * b1 + z * c1 = 1
   & g %= gcdr a (gcdr b c)
   & a = a1 * g & b = b1 * g & c = c1 * g : egcdr3_spec a b c (g,x,y,z,a1,b1,c1).
@@ -421,7 +419,7 @@ constructor.
     by rewrite hermite10.
   rewrite -scalemxAl -!scalemxAr -diag_mx_seq_scale; congr (_ *: _).
   rewrite /M1 /M2 /mx2 !(@mulmx_block _ 1) -[0%:M]scalemx1 scale0r !mul0mx.
-  rewrite  !add0r -?(scalar_mxM,raddfD) /= mulrC [_ * y1]mulrC.
+  rewrite !add0r -?(scalar_mxM,raddfD) /= mulrC [_ * y1]mulrC.
   rewrite !diag_mx_seq_cons diag_mx_seq_nil.
   f_equal.
   - by rewrite mulrC Hxy.
@@ -468,9 +466,9 @@ suff : (D 0 0) \is a GRing.unit.
 rewrite unitd1 -dvdr1; apply/(dvdr_trans _ Hgcd).
 have Hij : forall i j, D 0 0 %| (mx2 a b 0 c) i j.
   rewrite (canRL (mulKmx P_unitmx) (canRL (mulmxK Q_unitmx) heq)).
-  apply: dvdr_mulmxl; apply: dvdr_mulmxr=> i j; rewrite !mxE.
-  case: (i == j :> nat); last by rewrite mulr0n dvdr0.
-  rewrite !mulr1n; exact: sorted_nth0.
+  apply: dvdr_mulmxl; apply: dvdr_mulmxr=> i j; rewrite !mxE eqxx /=.
+  case: eqP => _ /=; last by rewrite mulr0n dvdr0.
+  by rewrite !mulr1n; exact: sorted_nth0.
 rewrite !dvdr_gcd; move: (Hij 0 0) (Hij 0 1) (Hij 1 1).
 by rewrite mx2_E00 mx2_E01 mx2_E11=> -> -> ->.
 Qed.
@@ -548,12 +546,12 @@ rewrite /gdco_kap /=.
 have [g /= x y z a1 b1 c1] := egcdr3P a b c.
 move=> Habc1 /eqd_ltrans <- Ha Hb Hc g_eq1.
 move: Habc1 g_eq1 => /(congr1 ( *%R^~ g)); rewrite !mulrDl mul1r.
-rewrite -!mulrA -Ha -Hb -Hc {Ha Hb Hc} => <- Habc {g a1 b1 c1}.
-move: Habc; have [->|an0 Habc] := altP eqP.
+rewrite -!mulrA -Ha -Hb -Hc {Ha Hb Hc} => <- {g a1 b1 c1}.
+have [-> | an0 Habc] := eqVneq a 0.
   rewrite /coprimer !mulr0 add0r => Hbc.
   by rewrite (eqd_ltrans (gcd0r _)).
-case: egcdrP => g u v a' b' Hab' Hg Hc Hr.
-move: Hab' Hg =>  /(congr1 ( *%R^~ g)); rewrite mulrDl mul1r.
+case: egcdrP => /= g u v a' b' Hab' Hg Hc Hr.
+move: Hab' Hg => /(congr1 ( *%R^~ g)); rewrite mulrDl mul1r.
 rewrite -!mulrA -Hc -Hr {Hc Hr} => <- {a' b' g}.
 rewrite (eqd_rtrans (coprimer_gdco c an0)) => Hu.
 have: 1 %| 1 - b by rewrite dvd1r.
@@ -601,7 +599,7 @@ Lemma krull1_factor a b :
 Proof.
 wlog suff: / exists n b1 b2,
              [&& 0 < n, b %= b1 * b2, coprimer b1 a & b2 %| a ^+ n].
-  move=> [n [b1 [b2 /and4P [Hn Hb Hb1 Hb2]]]].
+  case=> n [b1 [b2 /and4P [Hn Hb Hb1 Hb2]]].
   have [b2_eq0|b2_neq0] := eqVneq b2 0.
     exists n, b1, b2; move: Hn Hb Hb1 Hb2.
     by rewrite b2_eq0 mulr0 eqdr0 => -> -> -> ->.
