@@ -23,11 +23,11 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 
 
 
-This Coq library contains a subset of the work that was developed in the context
-of the ForMath EU FP7 project (2009-2013). It has two parts:
-- theory, which contains developments in algebra including normal forms of matrices,
-  and optimized algorithms on MathComp data structures.
-- refinements, which is a framework to ease change of data representations during a proof.
+This Coq library is based on Mathematical Components and has two parts:
+- theory, which contains developments in algebra, including normal forms of matrices
+  and optimized algorithms for matrix operations and on structures such as polynomials.
+- refinements, which is a framework to ease change of data representations during a proof
+  with the help of parametricity.
 
 ## Meta
 
@@ -40,6 +40,7 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
   - Damien Rouhling
   - Pierre Roux
   - Vincent Siles (initial)
+  - Laurent Théry
 - Coq-community maintainer(s):
   - Cyril Cohen ([**@CohenCyril**](https://github.com/CohenCyril))
   - Pierre Roux ([**@proux01**](https://github.com/proux01))
@@ -83,13 +84,20 @@ make install
 ```
 
 
+## Background
+
+The library hosts a subset of the work that was developed in the context of
+the ForMath EU FP7 project (2009-2013). More information about
+the project and its deliverables is available on its
+[website](http://wiki.portal.chalmers.se/cse/pmwiki.php/ForMath).
+
 ## Theory
 
-The theory directory has the following content:
+The `theory` directory has the following content:
 
 - `ssrcomplements`, `minor` `mxstructure`, `polydvd`, `similar`,
   `binetcauchy`, `ssralg_ring_tac`: Various extensions of the
-  Mathematical Components library.
+  Mathematical Components (MathComp) library.
 
 - `dvdring`, `coherent`, `stronglydiscrete`, `edr`: Hierarchy of
   structures with divisibility (from rings with divisibility, PIDs,
@@ -109,9 +117,12 @@ The theory directory has the following content:
   `strassen`, `toomcook`, `smithpid`, `smith`: Various efficient
   algorithms for computing operations on polynomials or matrices.
 
+- `grobner`: Formalization of Gröbner bases associated with polynomial
+   ideals, and Buchberger's algorithm for computing such bases.
+
 ## Refinements
 
-The refinements directory has the following content:
+The `refinements` directory has the following content:
 
 - `refinements`: Classes for refinements and refines together with
   operational typeclasses for common operations.
@@ -129,7 +140,7 @@ The refinements directory has the following content:
   previous versions of `binint` (e.g., `N`).
 
 - `binrat`: Arbitrary precision rational numbers (`bigQ`) from the
-  [Bignums](https://github.com/coq/bignums) library are refined to
+  [Bignums](https://github.com/coq-community/bignums) library are refined to
   MathComp's rationals (`rat`).
 
 - `rational`: The rational numbers of MathComp (`rat`) are refined to
@@ -143,11 +154,10 @@ The refinements directory has the following content:
 
 - `multipoly`: Refinement of
   [MathComp multinomials](https://github.com/math-comp/multinomials)
-  and multivariate polynomials to Coq
+  and multivariate polynomials to the Coq Stdlib's
   [finite maps](https://github.com/coq/coq/blob/master/theories/FSets/FMapAVL.v).
 
 Files should use the following conventions (w.r.t. `Local` and `Global` instances):
-
 ```coq
 (** Part 1: Generic operations *)
 Section generic_operations.
