@@ -12,16 +12,16 @@ license: "MIT"
 
 synopsis: "CoqEAL - The Coq Effective Algebra Library"
 description: """
-This Coq library contains a subset of the work that was developed in the context
-of the ForMath EU FP7 project (2009-2013). It has two parts:
-- theory, which contains developments in algebra including normal forms of matrices,
-  and optimized algorithms on MathComp data structures.
-- refinements, which is a framework to ease change of data representations during a proof."""
+This Coq library is based on Mathematical Components and has two parts:
+- theory, which contains developments in algebra, including normal forms of matrices
+  and optimized algorithms for matrix operations and on structures such as polynomials.
+- refinements, which is a framework to ease change of data representations during a proof
+  with the help of parametricity."""
 
 build: [make "-j%{jobs}%"]
 install: [make "install"]
 depends: [
-  "coq" {(>= "8.13" & < "8.17~") | (= "dev")}
+  "coq" {(>= "8.13" & < "8.18~") | (= "dev")}
   "coq-bignums" 
   "coq-paramcoq" {>= "1.1.3"}
   "coq-mathcomp-multinomials" {((>= "1.5.1" & < "1.7~") | = "dev")}
@@ -38,6 +38,9 @@ tags: [
   "keyword:Bareiss"
   "keyword:Karatsuba multiplication"
   "keyword:refinements"
+  "keyword:Buchberger's algorithm"
+  "keyword:Gröbner basis"
+  "keyword:polynomials"
   "logpath:CoqEAL"
 ]
 authors: [
@@ -49,4 +52,5 @@ authors: [
   "Damien Rouhling"
   "Pierre Roux"
   "Vincent Siles"
+  "Laurent Théry"
 ]
