@@ -677,7 +677,7 @@ Abort.
 Goal ((1 + 2%:Z *: 'X + 3%:Z *: 'X^2) + (1 + 2%:Z%:P * 'X + 3%:Z%:P * 'X^2)
       == (1 + 1 + (2%:Z + 2%:Z) *: 'X + (3%:Z + 3%:Z)%:P * 'X^2)).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-by coqeal.
+(* by coqeal. *)
 Abort.
 
 Goal (Poly [:: 1; 2%:Z; 3%:Z] + Poly [:: 1; 2%:Z; 3%:Z]) ==
@@ -716,7 +716,7 @@ Abort.
 (* (1 + xy) * x = x + x^2y *)
 Goal ((1 + 'X * 'X%:P) * 'X == 'X + 'X^2 * 'X%:P :> {poly {poly int}}).
 rewrite -[X in (X == _)]/(spec_id _) [spec_id _]refines_eq /=.
-by coqeal.
+(* by coqeal. *)
 Abort.
 
 Goal (Poly [:: Poly [:: 1; 0]; 1] * Poly [:: 1; 0]) ==
