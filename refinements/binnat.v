@@ -179,7 +179,7 @@ Qed.
 
 End positive_theory.
 
-Typeclasses Opaque pos_of_positive positive_of_pos.
+#[export] Typeclasses Opaque pos_of_positive positive_of_pos.
 Global Opaque pos_of_positive positive_of_pos.
 
 Section binnat_op.
@@ -438,7 +438,7 @@ Qed.
 
 End binnat_theory.
 
-Typeclasses Opaque nat_of_bin bin_of_nat.
+#[export] Typeclasses Opaque nat_of_bin bin_of_nat.
 Global Opaque nat_of_bin bin_of_nat.
 
 Section test.

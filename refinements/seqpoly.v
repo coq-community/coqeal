@@ -650,8 +650,8 @@ End seqpoly_theory.
 
 (* Always simpl Poly. Maybe have refinement instance instead? Is this *)
 (* more efficient? *)
-Hint Extern 0 (refines _ (Poly _) _) => simpl : typeclass_instances.
-Hint Extern 0 (refines _ _ (Poly _)) => simpl : typeclass_instances.
+#[export] Hint Extern 0 (refines _ (Poly _) _) => simpl : typeclass_instances.
+#[export] Hint Extern 0 (refines _ _ (Poly _)) => simpl : typeclass_instances.
 
 From mathcomp Require Import ssrint.
 From CoqEAL Require Import binnat binint.

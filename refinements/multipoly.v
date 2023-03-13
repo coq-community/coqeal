@@ -30,7 +30,7 @@ Local Open Scope ring_scope.
 (** BEGIN FIXME this is redundant with PR CoqEAL/CoqEAL#3 *)
 Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
-Hint Resolve list_R_nil_R : core.
+#[export] Hint Resolve list_R_nil_R : core.
 (** END FIXME this is redundant with PR CoqEAL/CoqEAL#3 *)
 
 (** Tip to leverage a Boolean condition *)

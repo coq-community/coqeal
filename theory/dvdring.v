@@ -629,7 +629,7 @@ Qed.
 
 End DvdRingTheory.
 
-Hint Resolve dvdrr dvd1r eqdd : core.
+#[export] Hint Resolve dvdrr dvd1r eqdd : core.
 
 (* Notation "x *d y" := (mulqr x y) *)
 (*   (at level 40, left associativity, format "x  *d  y"). *)

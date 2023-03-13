@@ -80,7 +80,7 @@ Lemma big_coef_npoly (p : {poly_n R}) i : n <= i -> p`_i = 0.
 Proof. by move=> i_big; rewrite nth_default // (leq_trans _ i_big). Qed.
 
 End npoly_theory.
-Hint Resolve size_npoly npoly_inj : core.
+#[export] Hint Resolve size_npoly npoly_inj : core.
 
 Section fin_npoly.
 

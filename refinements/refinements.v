@@ -207,12 +207,12 @@ End refinements.
 
 Arguments refinesP {T T' R x y} _.
 
-Hint Mode refines - - - + - : typeclass_instances.
+#[export] Hint Mode refines - - - + - : typeclass_instances.
 
-Hint Extern 0 (refines _ _ _)
+#[export] Hint Extern 0 (refines _ _ _)
   => apply trivial_refines; eassumption : typeclass_instances.
 
-Hint Extern 0 (refines (_ \o (@unify _))%rel _ _)
+#[export] Hint Extern 0 (refines (_ \o (@unify _))%rel _ _)
   => eapply refines_trans : typeclass_instances.
 
 (* Tactic for doing parametricity proofs, it takes a parametricity
@@ -262,51 +262,52 @@ Module Refinements.
 Module Op.
 
 Class zero_of A := zero_op : A.
-Hint Mode zero_of + : typeclass_instances.
+#[export] Hint Mode zero_of + : typeclass_instances.
 Class one_of A := one_op : A.
-Hint Mode one_of + : typeclass_instances.
+#[export] Hint Mode one_of + : typeclass_instances.
 Class opp_of A := opp_op : A -> A.
-Hint Mode opp_of + : typeclass_instances.
+#[export] Hint Mode opp_of + : typeclass_instances.
 Class add_of A := add_op : A -> A -> A.
-Hint Mode add_of + : typeclass_instances.
+#[export] Hint Mode add_of + : typeclass_instances.
 Class sub_of A := sub_op : A -> A -> A.
-Hint Mode sub_of + : typeclass_instances.
+#[export] Hint Mode sub_of + : typeclass_instances.
 Class mul_of A := mul_op : A -> A -> A.
-Hint Mode mul_of + : typeclass_instances.
+#[export] Hint Mode mul_of + : typeclass_instances.
 Class exp_of A B := exp_op : A -> B -> A.
-Hint Mode exp_of + + : typeclass_instances.
+#[export] Hint Mode exp_of + + : typeclass_instances.
 Class div_of A := div_op : A -> A -> A.
-Hint Mode div_of + : typeclass_instances.
+#[export] Hint Mode div_of + : typeclass_instances.
 Class inv_of A := inv_op : A -> A.
-Hint Mode inv_of + : typeclass_instances.
+#[export] Hint Mode inv_of + : typeclass_instances.
 Class mod_of A := mod_op : A -> A -> A.
-Hint Mode mod_of + : typeclass_instances.
+#[export] Hint Mode mod_of + : typeclass_instances.
 Class scale_of A B := scale_op : A -> B -> B.
-Hint Mode scale_of + + : typeclass_instances.
+#[export] Hint Mode scale_of + + : typeclass_instances.
 
 Class eq_of A := eq_op : A -> A -> bool.
-Hint Mode eq_of + : typeclass_instances.
+#[export] Hint Mode eq_of + : typeclass_instances.
 Class leq_of A := leq_op : A -> A -> bool.
-Hint Mode leq_of + : typeclass_instances.
+#[export] Hint Mode leq_of + : typeclass_instances.
 Class lt_of A := lt_op : A -> A -> bool.
-Hint Mode lt_of + : typeclass_instances.
+#[export] Hint Mode lt_of + : typeclass_instances.
 Class size_of A N := size_op : A -> N.
-Hint Mode size_of + + : typeclass_instances.
+#[export] Hint Mode size_of + + : typeclass_instances.
 
 Class spec_of A B   := spec : A -> B.
-Hint Mode spec_of + + : typeclass_instances.
+#[export] Hint Mode spec_of + + : typeclass_instances.
 Definition spec_id {A : Type} : spec_of A A := id.
 Class implem_of A B := implem : A -> B.
-Hint Mode implem_of + + : typeclass_instances.
+#[export] Hint Mode implem_of + + : typeclass_instances.
 Definition implem_id {A : Type} : implem_of A A := id.
 Class cast_of A B  := cast_op : A -> B.
-Hint Mode cast_of + + : typeclass_instances.
+#[export] Hint Mode cast_of + + : typeclass_instances.
 
 End Op.
 End Refinements.
 
 Import Refinements.Op.
 
+#[export]
 Typeclasses Transparent zero_of one_of opp_of add_of sub_of mul_of exp_of div_of
             inv_of mod_of scale_of size_of eq_of leq_of lt_of spec_of implem_of cast_of.
 
@@ -369,34 +370,34 @@ Tactic Notation  "context" "[" ssrpatternarg(pat) "]" tactic3(tac) :=
 
 Class strategy_class (C : forall T, T -> T -> Prop) :=
    StrategyClass : C = @eq.
-Hint Mode strategy_class + : typeclass_instances.
+#[export] Hint Mode strategy_class + : typeclass_instances.
 
 Class native_compute T (x y : T) := NativeCompute : x = y.
-Hint Mode native_compute - + - : typeclass_instances.
-Hint Extern 0 (native_compute _ _) =>
+#[export] Hint Mode native_compute - + - : typeclass_instances.
+#[export] Hint Extern 0 (native_compute _ _) =>
   context [(X in native_compute X)] native_compute; reflexivity :
   typeclass_instances.
 #[global]
 Instance strategy_class_native_compute : strategy_class native_compute := erefl.
 
 Class vm_compute T (x y : T) := VmCompute : x = y.
-Hint Mode vm_compute - + - : typeclass_instances.
-Hint Extern 0 (vm_compute _ _) =>
+#[export] Hint Mode vm_compute - + - : typeclass_instances.
+#[export] Hint Extern 0 (vm_compute _ _) =>
   context [(X in vm_compute X)] vm_compute; reflexivity :
   typeclass_instances.
 #[global]
 Instance strategy_class_vm_compute : strategy_class vm_compute := erefl.
 
 Class compute T (x y : T) := Compute : x = y.
-Hint Mode compute - + - : typeclass_instances.
-Hint Extern 0 (compute _ _) =>
+#[export] Hint Mode compute - + - : typeclass_instances.
+#[export] Hint Extern 0 (compute _ _) =>
   context [(X in compute X)] compute; reflexivity :
   typeclass_instances.
 #[global] Instance strategy_class_compute : strategy_class compute := erefl.
 
 Class simpl T (x y : T) := Simpl : x = y.
-Hint Mode simpl - + - : typeclass_instances.
-Hint Extern 0 (simpl _ _) =>
+#[export] Hint Mode simpl - + - : typeclass_instances.
+#[export] Hint Extern 0 (simpl _ _) =>
   context [(X in simpl X)] simpl; reflexivity :
   typeclass_instances.
 #[global] Instance strategy_class_simpl : strategy_class simpl := erefl.

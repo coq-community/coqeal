@@ -19,7 +19,7 @@ Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
 Arguments refinesP {T T' R x y} _.
 
-Hint Resolve list_R_nil_R : core.
+#[export] Hint Resolve list_R_nil_R : core.
 
 Notation ord_instN := (fun _ : nat => nat) (only parsing).
 
@@ -43,7 +43,7 @@ Class trmx_of B := trmx_op : forall m n : nat, B m n -> B n m.
 
 End classes.
 
-Typeclasses Transparent fun_of_of row_of store_of trmx_of.
+#[export] Typeclasses Transparent fun_of_of row_of store_of trmx_of.
 
 Notation "A ^T" := (trmx_op A) : hetero_computable_scope.
 
