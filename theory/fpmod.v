@@ -255,7 +255,7 @@ End morphismTheory.
 Arguments idm {_ _}.
 Infix "**" := mulmor.
 Infix "%=" := eqmor.
-Hint Resolve eqmorxx : core.
+#[export] Hint Resolve eqmorxx : core.
 
 Section KernelAndCo.
 Variable R : coherentRingType.
@@ -504,8 +504,8 @@ Qed.
 
 End MonoTheory.
 
-Hint Resolve kernel_eq0 : core.
-Hint Resolve mono : core.
+#[export] Hint Resolve kernel_eq0 : core.
+#[export] Hint Resolve mono : core.
 
 Section EpiTheory.
 Variable (R : coherentRingType).
@@ -536,8 +536,8 @@ Qed.
 
 End EpiTheory.
 
-Hint Resolve coker_eq0 : core.
-Hint Resolve epi : core.
+#[export] Hint Resolve coker_eq0 : core.
+#[export] Hint Resolve epi : core.
 
 Section IsoTheory.
 Variable (R : coherentRingType) (M N : {fpmod R}).

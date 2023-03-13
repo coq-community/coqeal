@@ -5,12 +5,12 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Global Ltac destruct_reflexivity :=
+#[global] Ltac destruct_reflexivity :=
   intros ; repeat match goal with
   | [ x : _ |- _ = _ ] => destruct x; reflexivity; fail
   end.
 
-Global Parametricity Tactic := destruct_reflexivity.
+#[global] Parametricity Tactic := destruct_reflexivity.
 
 (** Automation: for turning [sth_R a b] goals into mere [a = b] goals,
 do [suff_eq sth_Rxx]. *)
@@ -27,7 +27,7 @@ Require Import ProofIrrelevance. (* for opaque terms *)
 Parametricity option.
 Parametricity unit.
 Parametricity bool.
-Hint Resolve bool_R_true_R bool_R_false_R : core.
+#[export] Hint Resolve bool_R_true_R bool_R_false_R : core.
 Parametricity nat.
 Parametricity list.
 Parametricity prod.

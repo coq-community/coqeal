@@ -30,7 +30,7 @@ Local Open Scope ring_scope.
 (** BEGIN FIXME this is redundant with PR CoqEAL/CoqEAL#3 *)
 Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
-Hint Resolve list_R_nil_R : core.
+#[export] Hint Resolve list_R_nil_R : core.
 (** END FIXME this is redundant with PR CoqEAL/CoqEAL#3 *)
 
 (** Tip to leverage a Boolean condition *)
@@ -563,7 +563,7 @@ case: (ltnP i k) => Hci.
 by exfalso; apply/Hneq/anti_leq; rewrite Hi.
 Qed.
 
-Global Instance refine_mnm_add n :
+#[export] Instance refine_mnm_add n :
   refines (Rseqmultinom ==> Rseqmultinom ==> Rseqmultinom)
   (@mnm_add n) mnm_add_seq.
 Proof.
@@ -580,7 +580,7 @@ rewrite mnmDE -!refine_nth.
 exact: nat_of_add_bin.
 Qed.
 
-Global Instance refine_mdeg n :
+#[export] Instance refine_mdeg n :
   refines (Rseqmultinom ==> eq) (@mdeg n) mdeg_eff.
 Proof.
 rewrite refinesE.
@@ -642,7 +642,7 @@ rewrite refinesE /Rseqmultinom /ofun_hrel; move/eqP=>->->.
 by move=> H; inversion H.
 Qed.
 
-Global Instance refine_mnmc_lt n :
+#[export] Instance refine_mnmc_lt n :
   refines (Rseqmultinom ==> Rseqmultinom ==> eq)
     (@mnmc_lt n) (mnmc_lt_seq).
 Proof.
@@ -921,7 +921,7 @@ Instance : zero_of T := 0.
 Instance : one_of T := 1.
 Instance : add_of T := +%R.
 Instance : opp_of T := -%R.
-Global Instance sub_instR : sub_of T := fun x y => (x - y).
+#[export] Instance sub_instR : sub_of T := fun x y => (x - y).
 Instance mul_instR : mul_of T := *%R.
 Instance : eq_of T := fun x y => x == y.
 
@@ -959,7 +959,7 @@ move: H; move/mapP=> [] x Hx Hx'; exists x=>//; move: Hx.
 by rewrite mem_filter=>/andP [].
 Qed.
 
-Global Instance refine_list_of_mpoly_eff n :
+#[export] Instance refine_list_of_mpoly_eff n :
   refines (Reffmpoly ==>  list_R (prod_R Rseqmultinom eq))
     (@list_of_mpoly T n) list_of_mpoly_eff.
 Proof.
@@ -1041,14 +1041,14 @@ rewrite mem_filter Hmc2 /= in_InA_iff (surjective_pairing mc).
 by rewrite -F.elements_mapsto_iff; apply M.find_2.
 Qed.
 
-Global Instance refine_mp0_eff n : refines (@Reffmpoly T n) 0 mp0_eff.
+#[export] Instance refine_mp0_eff n : refines (@Reffmpoly T n) 0 mp0_eff.
 Proof.
 apply: refine_effmpolyP.
 - by move=> m /F.empty_in_iff Hm.
 - by move=> m m' ref_m; rewrite F.empty_o mcoeff0.
 Qed.
 
-Global Instance refine_mp1_eff n : refines (@Reffmpoly T n) 1 (mp1_eff (n := n)).
+#[export] Instance refine_mp1_eff n : refines (@Reffmpoly T n) 1 (mp1_eff (n := n)).
 Proof.
 apply refine_effmpolyP.
 - rewrite /mp1_eff => k /singleton_in_iff/mnmc_eq_seqP/eqP <-.
@@ -1062,7 +1062,7 @@ apply refine_effmpolyP.
     by rewrite F.empty_o.
 Qed.
 
-Global Instance refine_mpvar_eff {n1} :
+#[export] Instance refine_mpvar_eff {n1} :
   refines (eq ==> Rnat ==> Rord0 ==> Reffmpoly (T := T) (n := n1))
   mpvar (mpvar_eff (n := n1)).
 Proof.
@@ -1090,7 +1090,7 @@ by apply/mnmc_eq_seqP; rewrite eq_sym Hm'.
 Qed.
 
 Arguments mpolyC {n R} c.
-Global Instance refine_mpolyC_eff n :
+#[export] Instance refine_mpolyC_eff n :
   refines (eq ==> Reffmpoly (T := T) (n := n))
   mpolyC (mpolyC_eff (n := n)).
 Proof.
@@ -1111,7 +1111,7 @@ by apply/mnmc_eq_seqP; move: Hm'; rewrite eq_sym =>->.
 Qed.
 
 Arguments mpolyX {n R} m.
-Global Instance refine_mpolyX_eff n :
+#[export] Instance refine_mpolyX_eff n :
   refines (Rseqmultinom ==> Reffmpoly (T := T) (n := n))
   mpolyX mpolyX_eff.
 Proof.
@@ -1150,7 +1150,7 @@ by move/F.not_find_in_iff: Hin ->.
 Qed.
 
 Arguments mpoly_scale {n R} c p.
-Global Instance refine_mpoly_scale_eff n :
+#[export] Instance refine_mpoly_scale_eff n :
   refines (eq ==> Reffmpoly ==> Reffmpoly (T := T) (n := n))
   mpoly_scale mpoly_scale_eff.
 Proof.
@@ -1172,7 +1172,7 @@ exact/F.map_in_iff.
 Qed.
 
 Arguments mpoly_add {n R} p q.
-Global Instance refine_mpoly_add_eff n :
+#[export] Instance refine_mpoly_add_eff n :
   refines (Reffmpoly ==> Reffmpoly ==> Reffmpoly (T := T) (n := n))
   mpoly_add mpoly_add_eff.
 Proof.
@@ -1209,7 +1209,7 @@ Qed.
 
 Definition mpoly_sub {n} (p : {mpoly T[n]}) q := mpoly_add p (mpoly_opp q).
 
-Global Instance refine_mpoly_sub_eff n :
+#[export] Instance refine_mpoly_sub_eff n :
   refines (Reffmpoly ==> Reffmpoly ==> Reffmpoly (T := T) (n := n))
   mpoly_sub mpoly_sub_eff.
 apply refines_abstr => p p' ref_p.
@@ -1464,7 +1464,7 @@ by rewrite -[RHS]commr_mpolyX -GRing.scalerAl commr_mpolyX.
 Qed.
 
 Arguments mpoly_mul {n R} p q.
-Global Instance refine_mpoly_mul_eff n :
+#[export] Instance refine_mpoly_mul_eff n :
   refines (Reffmpoly ==> Reffmpoly ==> Reffmpoly (T := T) (n := n))
   mpoly_mul mpoly_mul_eff.
 Proof.
@@ -1487,7 +1487,7 @@ Qed.
 
 Definition mpoly_exp {n} (p : {mpoly T[n]}) (n : nat) := p ^+ n.
 
-Global Instance refine_mpoly_exp_eff n :
+#[export] Instance refine_mpoly_exp_eff n :
   refines (Reffmpoly ==> Rnat ==> Reffmpoly (T := T) (n := n))
   mpoly_exp (mpoly_exp_eff (n:=n)).
 Proof.
@@ -1550,7 +1550,7 @@ by apply ord_inj; rewrite inordK //; move: (ltn_ord i).
 Qed.
 
 Arguments comp_mpoly {n R k} lq p.
-Global Instance refine_comp_mpoly_eff n k :
+#[export] Instance refine_comp_mpoly_eff n k :
   refines (@seq_Reffmpoly n k ==> Reffmpoly ==> Reffmpoly)
   comp_mpoly (comp_mpoly_eff (n:= n)).
 Proof.
@@ -1862,7 +1862,7 @@ eapply IHt.
 - rewrite -H2 -H4; exact: Heqs.
 Qed.
 
-Global Instance refine_filter A' B (rAB : A' -> B -> Type) :
+#[export] Instance refine_filter A' B (rAB : A' -> B -> Type) :
   refines ((rAB ==> eq) ==> list_R rAB ==> list_R rAB)
     filter filter.
 Proof.
@@ -1878,7 +1878,7 @@ specialize (IH t' (trivial_refines Ht)); rewrite refinesE in IH.
 by case (f' h') => //; apply list_R_cons_R.
 Qed.
 
-Global Instance ReffmpolyC_list_of_mpoly_eff n :
+#[export] Instance ReffmpolyC_list_of_mpoly_eff n :
   refines (@ReffmpolyC n ==>
     list_R (prod_R Rseqmultinom rAC))
     (@list_of_mpoly A n) list_of_mpoly_eff.
@@ -1923,14 +1923,14 @@ rewrite refinesE in rmc; inversion rmc as [a a' ref_a b b' ref_b].
 apply refinesP; tc.
 Qed.
 
-Global Instance ReffmpolyC_mp0_eff (n : nat) :
+#[export] Instance ReffmpolyC_mp0_eff (n : nat) :
   refines (@ReffmpolyC n) 0 (@mp0_eff C).
 Proof.
 eapply refines_trans; [by apply composable_comp|by apply refine_mp0_eff|].
 apply refine_M_hrel_empty.
 Qed.
 
-Global Instance ReffmpolyC_mp1_eff (n : nat) :
+#[export] Instance ReffmpolyC_mp1_eff (n : nat) :
   refines (@ReffmpolyC n) 1 (mp1_eff (n:=n)).
 Proof.
 eapply refines_trans; [by apply composable_comp|by apply refine_mp1_eff|].
@@ -1948,7 +1948,7 @@ rewrite !composableE => R123 fA fC [fB [RfAB RfBC]] a c rABac.
 apply: R123; exists (fB c); split; [ exact: RfAB | exact: RfBC ].
 Qed.
 
-Global Instance ReffmpolyC_mpvar_eff {n1 : nat} :
+#[export] Instance ReffmpolyC_mpvar_eff {n1 : nat} :
   refines (rAC ==> Rnat ==> Rord0 ==> @ReffmpolyC n1)
     mpvar (mpvar_eff (n:=n1)).
 Proof.
@@ -1967,7 +1967,7 @@ eapply refines_apply; [apply refine_M_hrel_singleton|apply trivial_refines].
 by rewrite (refines_eq ref_d) (refines_eq ref_i).
 Qed.
 
-Global Instance ReffmpolyC_mpolyC_eff (n : nat) :
+#[export] Instance ReffmpolyC_mpolyC_eff (n : nat) :
   refines (rAC ==> ReffmpolyC) (@mpolyC n A) (mpolyC_eff (n:=n)).
 Proof.
 eapply refines_trans.
@@ -1979,7 +1979,7 @@ rewrite /mpolyC_eff; eapply refines_apply;
   by [apply refine_M_hrel_singleton|apply trivial_refines].
 Qed.
 
-Global Instance ReffmpolyC_mpolyX_eff (n : nat) :
+#[export] Instance ReffmpolyC_mpolyX_eff (n : nat) :
   refines (Rseqmultinom ==> ReffmpolyC) (@mpolyX n A) mpolyX_eff.
 Proof.
 eapply refines_trans; [|by apply refine_mpolyX_eff|].
@@ -2005,7 +2005,7 @@ eapply refinesP; refines_apply; rewrite refinesE.
 by eapply (Hp2 _ _ _ Ha2 Hc2).
 Qed.
 
-Global Instance ReffmpolyC_mpoly_scale_eff (n : nat) :
+#[export] Instance ReffmpolyC_mpoly_scale_eff (n : nat) :
   refines (rAC ==> ReffmpolyC ==> ReffmpolyC)
     (@mpoly_scale n A) mpoly_scale_eff.
 Proof. by eapply refines_trans; first eapply composable_imply_id1; tc. Qed.
@@ -2021,7 +2021,7 @@ case: ref_a; case: ref_b => *; constructor =>//.
 by eapply refinesP; refines_apply.
 Qed.
 
-Global Instance ReffmpolyC_mpoly_add_eff (n : nat) :
+#[export] Instance ReffmpolyC_mpoly_add_eff (n : nat) :
   refines (ReffmpolyC ==> ReffmpolyC ==> ReffmpolyC)
     (@mpoly_add n A) mpoly_add_eff.
 Proof. by eapply refines_trans; first eapply composable_imply; tc. Qed.
@@ -2038,7 +2038,7 @@ by eapply refinesP; refines_apply.
 by eapply refinesP; refines_apply.
 Qed.
 
-Global Instance ReffmpolyC_mpoly_sub_eff (n : nat) :
+#[export] Instance ReffmpolyC_mpoly_sub_eff (n : nat) :
   refines (ReffmpolyC ==> ReffmpolyC ==> ReffmpolyC)
     (@mpoly_sub A n) mpoly_sub_eff.
 Proof. by eapply refines_trans; first eapply composable_imply; tc. Qed.
@@ -2092,7 +2092,7 @@ done.
 by tc.
 Qed.
 
-Global Instance ReffmpolyC_mpoly_mul_eff (n : nat) :
+#[export] Instance ReffmpolyC_mpoly_mul_eff (n : nat) :
   refines (ReffmpolyC ==> ReffmpolyC ==> ReffmpolyC)
     (@mpoly_mul n A) mpoly_mul_eff.
 Proof. by eapply refines_trans; first eapply composable_imply; tc. Qed.
@@ -2112,7 +2112,7 @@ elim: nk {Ek} => [|nk IHnk] /=.
 eapply refines_apply; first eapply refines_apply; try by tc.
 Qed.
 
-Global Instance ReffmpolyC_mpoly_exp_eff (n : nat) :
+#[export] Instance ReffmpolyC_mpoly_exp_eff (n : nat) :
   refines (ReffmpolyC ==> Rnat ==> ReffmpolyC)
     (@mpoly_exp A n) (mpoly_exp_eff (n:=n)).
 Proof. by eapply refines_trans; first eapply composable_imply; tc. Qed.
@@ -2165,7 +2165,7 @@ done.
 by tc.
 Qed.
 
-Global Instance ReffmpolyC_comp_mpoly_eff (n k : nat) :
+#[export] Instance ReffmpolyC_comp_mpoly_eff (n k : nat) :
   refines (seq_ReffmpolyC (k:=k) ==> ReffmpolyC ==> ReffmpolyC)
     (comp_mpoly (k:=n)) (comp_mpoly_eff (n:=n)).
 Proof. by eapply refines_trans; first eapply composable_imply; tc. Qed.

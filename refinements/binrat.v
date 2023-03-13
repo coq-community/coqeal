@@ -375,31 +375,31 @@ Definition r_ratBigQ := fun_hrel bigQ2rat.
 
 (** *** Main instances *)
 
-Global Instance zero_bigQ : zero_of bigQ := 0%bigQ.
-Global Instance one_bigQ : one_of bigQ := 1%bigQ.
-Global Instance opp_bigQ : opp_of bigQ := BigQ.opp.
-Global Instance add_bigQ : add_of bigQ := BigQ.add_norm.
-Global Instance sub_bigQ : sub_of bigQ := BigQ.sub_norm.
-Global Instance mul_bigQ : mul_of bigQ := BigQ.mul_norm.
-Global Instance inv_bigQ : inv_of bigQ := BigQ.inv_norm.
-Global Instance div_bigQ : div_of bigQ := BigQ.div_norm.
-Global Instance eq_bigQ : eq_of bigQ := BigQ.eq_bool.
-Global Instance lt_bigQ : lt_of bigQ := fun p q => if BigQ.compare p q is Lt then true else false.
-Global Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt then false else true.
-Global Instance max_bigQ : max_of bigQ := BigQ.max.
-Global Instance min_bigQ : min_of bigQ := BigQ.min.
-Global Instance cast_of_nat_bigQ : cast_of nat bigQ := BigQ.of_Z \o Z.of_nat.
-Global Instance spec_bigQ : spec_of bigQ rat := bigQ2rat.
+#[export] Instance zero_bigQ : zero_of bigQ := 0%bigQ.
+#[export] Instance one_bigQ : one_of bigQ := 1%bigQ.
+#[export] Instance opp_bigQ : opp_of bigQ := BigQ.opp.
+#[export] Instance add_bigQ : add_of bigQ := BigQ.add_norm.
+#[export] Instance sub_bigQ : sub_of bigQ := BigQ.sub_norm.
+#[export] Instance mul_bigQ : mul_of bigQ := BigQ.mul_norm.
+#[export] Instance inv_bigQ : inv_of bigQ := BigQ.inv_norm.
+#[export] Instance div_bigQ : div_of bigQ := BigQ.div_norm.
+#[export] Instance eq_bigQ : eq_of bigQ := BigQ.eq_bool.
+#[export] Instance lt_bigQ : lt_of bigQ := fun p q => if BigQ.compare p q is Lt then true else false.
+#[export] Instance le_bigQ : leq_of bigQ := fun p q => if BigQ.compare q p is Lt then false else true.
+#[export] Instance max_bigQ : max_of bigQ := BigQ.max.
+#[export] Instance min_bigQ : min_of bigQ := BigQ.min.
+#[export] Instance cast_of_nat_bigQ : cast_of nat bigQ := BigQ.of_Z \o Z.of_nat.
+#[export] Instance spec_bigQ : spec_of bigQ rat := bigQ2rat.
 
 (** *** Proofs of refinement *)
 
-Global Instance refine_ratBigQ_zero : refines r_ratBigQ 0%R 0%C.
+#[export] Instance refine_ratBigQ_zero : refines r_ratBigQ 0%R 0%C.
 Proof. rewrite refinesE /r_ratBigQ unlock; red; exact: val_inj. Qed.
 
-Global Instance refine_ratBigQ_one : refines r_ratBigQ 1%R 1%C.
+#[export] Instance refine_ratBigQ_one : refines r_ratBigQ 1%R 1%C.
 Proof. rewrite refinesE /r_ratBigQ unlock; red; exact: val_inj. Qed.
 
-Global Instance refine_ratBigQ_opp : refines (r_ratBigQ ==> r_ratBigQ) -%R -%C.
+#[export] Instance refine_ratBigQ_opp : refines (r_ratBigQ ==> r_ratBigQ) -%R -%C.
 Proof.
 rewrite refinesE => _ a <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite BigQ.strong_spec_opp Qred_opp [in LHS]/Qnum /=.
@@ -481,7 +481,7 @@ rewrite -[LHS]/(Z2int (Z.pos (Z.to_pos [dy]%bigN))) Z2Pos.id //.
 exact: BigQ.N_to_Z_pos.
 Qed.
 
-Global Instance refine_ratBigQ_add :
+#[export] Instance refine_ratBigQ_add :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) +%R +%C.
 Proof.
 rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
@@ -494,14 +494,14 @@ rewrite intrD PoszM !intrM.
 by rewrite [RHS]addf_div // intq_eq0 Posz_nat_of_pos_neq0.
 Qed.
 
-Global Instance refine_ratBigQ_sub :
+#[export] Instance refine_ratBigQ_sub :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) (fun x y => x - y)%R sub_op.
 Proof.
 apply refines_abstr2=> a b rab c d rcd.
 rewrite /sub_op /sub_bigQ /BigQ.sub_norm; eapply refines_apply; tc.
 Qed.
 
-Global Instance refine_ratBigQ_mul :
+#[export] Instance refine_ratBigQ_mul :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ) *%R *%C.
 Proof.
 rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
@@ -514,7 +514,7 @@ rewrite PoszM !intrM.
 by rewrite [RHS]mulf_div.
 Qed.
 
-Global Instance refine_ratBigQ_inv :
+#[export] Instance refine_ratBigQ_inv :
   refines (r_ratBigQ ==> r_ratBigQ)%rel GRing.inv inv_op.
 Proof.
 rewrite refinesE => _ a <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
@@ -528,7 +528,7 @@ rewrite [Qden (_ #da)]/= !Z2int_Qred invf_div.
 by rewrite -!Pos2Z.opp_pos !Z2int_opp !mulrNz mulNr invrN mulrN.
 Qed.
 
-Global Instance refine_ratBigQ_div :
+#[export] Instance refine_ratBigQ_div :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel (fun x y => x / y)%R div_op.
 Proof.
 apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
@@ -536,7 +536,7 @@ rewrite /div_op /div_bigQ /BigQ.div_norm.
 exact: refines_apply.
 Qed.
 
-Global Instance refine_ratBigQ_eq :
+#[export] Instance refine_ratBigQ_eq :
   refines (r_ratBigQ ==> r_ratBigQ ==> eq) eqtype.eq_op eq_op.
 Proof.
 rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
@@ -551,7 +551,7 @@ rewrite -!intrM -!Z2int_mul eqr_int.
 by case: Z.eqb_spec => [->|eq]; apply/eqP => // eq'; apply/eq/Z2int_inj.
 Qed.
 
-Global Instance refine_ratBigQ_eq' :
+#[export] Instance refine_ratBigQ_eq' :
   refines (r_ratBigQ ==> r_ratBigQ ==> bool_R)%rel eqtype.eq_op eq_op.
 Proof.
 rewrite refinesE => x1 x2 rx y1 y2 ry.
@@ -559,7 +559,7 @@ move: refine_ratBigQ_eq; rewrite refinesE => /(_ _ _ rx _ _ ry) <-.
 case: (_ == _); constructor.
 Qed.
 
-Global Instance refine_ratBigQ_lt :
+#[export] Instance refine_ratBigQ_lt :
   refines (r_ratBigQ ==> r_ratBigQ ==> bool_R) Num.lt lt_op.
 Proof.
 rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
@@ -577,7 +577,7 @@ case: ltP.
 by move=> /(proj1 (Z2int_le _ _)) /(proj2 (Z.ltb_ge _ _)) => ->.
 Qed.
 
-Global Instance refine_ratBigQ_le :
+#[export] Instance refine_ratBigQ_le :
   refines (r_ratBigQ ==> r_ratBigQ ==> bool_R) Num.le leq_op.
 Proof.
 rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
@@ -596,7 +596,7 @@ case: leP.
 by move=> /(proj1 (Z2int_lt _ _)) /Zlt_compare; case: Z.compare.
 Qed.
 
-Global Instance refine_ratBigQ_max :
+#[export] Instance refine_ratBigQ_max :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel Num.max max_op.
 Proof.
 apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
@@ -606,7 +606,7 @@ rewrite /lt_op /lt_bigQ /max_op /max_bigQ /BigQ.max.
 by case: (_ ?= _)%bigQ.
 Qed.
 
-Global Instance refine_ratBigQ_min :
+#[export] Instance refine_ratBigQ_min :
   refines (r_ratBigQ ==> r_ratBigQ ==> r_ratBigQ)%rel Num.min min_op.
 Proof.
 apply: refines_abstr2 => x1 x2 rx y1 y2 ry.
@@ -617,7 +617,7 @@ rewrite !BigQ.spec_compare -QArith_base.Qcompare_antisym.
 by case: QArith_base.Qcompare.
 Qed.
 
-Global Instance refine_ratBigQ_of_nat :
+#[export] Instance refine_ratBigQ_of_nat :
   refines (nat_R ==> r_ratBigQ)%rel (fun n => n%:~R%R) cast_op.
 Proof.
 rewrite refinesE => n _ /nat_R_eq <-; rewrite /r_ratBigQ unlock /fun_hrel.
@@ -625,11 +625,11 @@ rewrite /= Z_ggcd_1_r /= BigZ.spec_of_Z mulr1.
 by apply/eqP; rewrite eqr_int Z2int_Z_of_nat.
 Qed.
 
-Global Instance refine_ratBigQ_spec :
+#[export] Instance refine_ratBigQ_spec :
   refines (eq ==> r_ratBigQ)%rel spec spec_id.
 Proof. by rewrite refinesE => x _ <-. Qed.
 
-Global Instance refine_ratBigQ_bigQ2rat a : refines r_ratBigQ (bigQ2rat a) a.
+#[export] Instance refine_ratBigQ_bigQ2rat a : refines r_ratBigQ (bigQ2rat a) a.
 Proof. by rewrite refinesE. Qed.
 
 End binrat_theory.

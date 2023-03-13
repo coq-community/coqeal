@@ -34,17 +34,17 @@ Definition div_rec_poly (q : polyR) :=
       let r1 := (r * cq - m * q)%C in
       if n is n1.+1 then loop (k + 1)%C qq1 r1 n1 else ((k + 1)%C, qq1, r1).
 
-Global Instance div_poly : div_of polyR :=
+#[export] Instance div_poly : div_of polyR :=
   fun p q => (if (q == 0)%C
                  then (0%C, 0%C, p)
                  else div_rec_poly q 0%C 0%C p (spec (size_op p : N))).1.2.
 
-Global Instance mod_poly : mod_of polyR :=
+#[export] Instance mod_poly : mod_of polyR :=
   fun p q => (if (q == 0)%C
                  then (0%C, 0%C, p)
                  else div_rec_poly q 0%C 0%C p (spec (size_op p : N))).2.
 
-Global Instance scal_poly : scal_of polyR N :=
+#[export] Instance scal_poly : scal_of polyR N :=
   fun p q => (if (q == 0)%C then (0%C, 0%C, p)
               else div_rec_poly q 0%C 0%C p (spec (size_op p : N))).1.1.
 
@@ -134,13 +134,13 @@ Context `{!refines (RpolyC ==> RpolyC ==> RpolyC) sub_poly sub_op}.
 Context `{!refines (RpolyC ==> RpolyC ==> bool_R) eqtype.eq_op eq_op}.
 Context `{!refines RpolyC 0%R 0%C}.
 
-Global Instance RpolyC_div_poly :
+#[export] Instance RpolyC_div_poly :
   refines (RpolyC ==> RpolyC ==> RpolyC)
           (div_poly (N:=nat) (R:=R) (polyR:={poly R}))
           (div_poly (N:=N) (R:=C) (polyR:=polyC)).
 Proof. param div_poly_R. Qed.
 
-Global Instance refine_div_poly :
+#[export] Instance refine_div_poly :
   refines (RpolyC ==> RpolyC ==> RpolyC) (@rdivp R)
           (div_poly (N:=N) (R:=C) (polyR:=polyC)).
 Proof.
@@ -149,13 +149,13 @@ Proof.
   exact: refinesP.
 Qed.
 
-Global Instance RpolyC_mod_poly :
+#[export] Instance RpolyC_mod_poly :
   refines (RpolyC ==> RpolyC ==> RpolyC)
           (mod_poly (N:=nat) (R:=R) (polyR:={poly R}))
           (mod_poly (N:=N) (R:=C) (polyR:=polyC)).
 Proof. param mod_poly_R. Qed.
 
-Global Instance refine_mod_poly :
+#[export] Instance refine_mod_poly :
   refines (RpolyC ==> RpolyC ==> RpolyC) (@rmodp R)
           (mod_poly (N:=N) (R:=C) (polyR:=polyC)).
 Proof.
@@ -164,7 +164,7 @@ Proof.
   exact: refinesP.
 Qed.
 
-Global Instance RpolyC_scal_poly :
+#[export] Instance RpolyC_scal_poly :
   refines (RpolyC ==> RpolyC ==> rN)
           (scal_poly (N:=nat) (R:=R) (polyR:={poly R}))
           (scal_poly (N:=N) (R:=C) (polyR:=polyC)).
@@ -175,7 +175,7 @@ Proof.
   do ?eapply refines_apply; tc.
 Qed.
 
-Global Instance refine_scal_poly :
+#[export] Instance refine_scal_poly :
   refines (RpolyC ==> RpolyC ==> rN) (@rscalp R)
           (scal_poly (N:=N) (R:=C) (polyR:=polyC)).
 Proof.

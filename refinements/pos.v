@@ -40,18 +40,18 @@ Import Refinements.Op.
 
 Definition posS (n : nat) : pos := @pos_of n.+1 isT.
 
-Global Instance pos1    : one_of pos := posS 0.
-Global Instance add_pos : add_of pos := fun m n => insubd pos1 (val m + val n).
-Global Instance sub_pos : sub_of pos := fun m n => insubd pos1 (val m - val n).
-Global Instance mul_pos : mul_of pos := fun m n => insubd pos1 (val m * val n).
-Global Instance exp_pos : exp_of pos pos :=
+#[export] Instance pos1    : one_of pos := posS 0.
+#[export] Instance add_pos : add_of pos := fun m n => insubd pos1 (val m + val n).
+#[export] Instance sub_pos : sub_of pos := fun m n => insubd pos1 (val m - val n).
+#[export] Instance mul_pos : mul_of pos := fun m n => insubd pos1 (val m * val n).
+#[export] Instance exp_pos : exp_of pos pos :=
   fun m n => insubd pos1 (val m ^ val n).
-Global Instance leq_pos : leq_of pos := fun m n => val m <= val n.
-Global Instance lt_pos  : lt_of pos  := fun m n => val m < val n.
-Global Instance eq_pos  : eq_of pos  := eqtype.eq_op.
+#[export] Instance leq_pos : leq_of pos := fun m n => val m <= val n.
+#[export] Instance lt_pos  : lt_of pos  := fun m n => val m < val n.
+#[export] Instance eq_pos  : eq_of pos  := eqtype.eq_op.
 
-Global Instance cast_pos_nat : cast_of pos nat := val.
-Global Instance cast_nat_pos : cast_of nat pos := insubd 1%C.
+#[export] Instance cast_pos_nat : cast_of pos nat := val.
+#[export] Instance cast_nat_pos : cast_of nat pos := insubd 1%C.
 
 Local Open Scope ring_scope.
 Definition pos_to_int (p : pos) : int := (val p)%:R.

@@ -53,18 +53,18 @@ Fixpoint from_seq (p : seq A) : hpoly A := match p with
   | x :: xs => PX x 1 (from_seq xs)
   end.
 
-Global Instance cast_hpoly : cast_of A (hpoly A) := fun x => Pc x.
+#[export] Instance cast_hpoly : cast_of A (hpoly A) := fun x => Pc x.
 
-Global Instance zero_hpoly : zero_of (hpoly A) := Pc 0.
-Global Instance one_hpoly  : one_of (hpoly A)  := Pc 1.
+#[export] Instance zero_hpoly : zero_of (hpoly A) := Pc 0.
+#[export] Instance one_hpoly  : one_of (hpoly A)  := Pc 1.
 
 Fixpoint map_hpoly A B (f : A -> B) (p : hpoly A) : hpoly B := match p with
   | Pc c     => Pc (f c)
   | PX a n p => PX (f a) n (map_hpoly f p)
   end.
 
-Global Instance opp_hpoly : opp_of (hpoly A) := map_hpoly -%C.
-Global Instance scale_hpoly : scale_of A (hpoly A) :=
+#[export] Instance opp_hpoly : opp_of (hpoly A) := map_hpoly -%C.
+#[export] Instance scale_hpoly : scale_of A (hpoly A) :=
   fun a => map_hpoly [eta *%C a].
 
 Fixpoint addXn_const (n : N) a (q : hpoly A) := match q with
@@ -99,13 +99,13 @@ Fixpoint addXn (n : N) p q {struct p} := match p, q with
 (*                               else PX (a + b) m (add_hpoly_op q (PX 0 (n - m) p)) *)
 (*   end. *)
 
-Global Instance add_hpoly : add_of (hpoly A) := addXn 0.
-Global Instance sub_hpoly : sub_of (hpoly A) := fun p q => p + - q.
+#[export] Instance add_hpoly : add_of (hpoly A) := addXn 0.
+#[export] Instance sub_hpoly : sub_of (hpoly A) := fun p q => p + - q.
 
-Global Instance shift_hpoly : shift_of (hpoly A) N :=
+#[export] Instance shift_hpoly : shift_of (hpoly A) N :=
   fun n p => if (n == 0)%C then p else PX 0 (cast n) p.
 
-Global Instance mul_hpoly : mul_of (hpoly A) := fix f p q := match p, q with
+#[export] Instance mul_hpoly : mul_of (hpoly A) := fix f p q := match p, q with
   | Pc a, q => a *: q
   | p, Pc b => map_hpoly (fun x => (x * b)%C) p
   | PX a n p, PX b m q =>
@@ -113,7 +113,7 @@ Global Instance mul_hpoly : mul_of (hpoly A) := fix f p q := match p, q with
     (shift_hpoly (cast n) (map_hpoly (fun x => (x * b)%C) p) + Pc (a * b))
   end.
 
-Global Instance exp_hpoly : exp_of (hpoly A) N :=
+#[export] Instance exp_hpoly : exp_of (hpoly A) N :=
   fun p n => iter (spec n) (mul_hpoly p) 1.
 
 Fixpoint eq0_hpoly (p : hpoly A) : bool := match p with
@@ -121,7 +121,7 @@ Fixpoint eq0_hpoly (p : hpoly A) : bool := match p with
   | PX a n p' => (eq0_hpoly p') && (a == 0)%C
   end.
 
-Global Instance eq_hpoly : eq_of (hpoly A) := fun p q => eq0_hpoly (p - q).
+#[export] Instance eq_hpoly : eq_of (hpoly A) := fun p q => eq0_hpoly (p - q).
 
 (* Alternative definition, should be used with normalize: *)
 (* Fixpoint eq_hpoly_op p q {struct p} := match p, q with *)
@@ -130,7 +130,7 @@ Global Instance eq_hpoly : eq_of (hpoly A) := fun p q => eq0_hpoly (p - q).
 (*   | _, _ => false *)
 (*   end. *)
 
-Global Instance size_hpoly : size_of (hpoly A) N :=
+#[export] Instance size_hpoly : size_of (hpoly A) N :=
   fix f p :=
     if eq0_hpoly p then 0%C else match p with
                                  | Pc a => 1%C
@@ -138,7 +138,7 @@ Global Instance size_hpoly : size_of (hpoly A) N :=
                                                 else (cast n + f p')%C
                                  end.
 
-Global Instance lead_coef_hpoly : lead_coef_of A (hpoly A) :=
+#[export] Instance lead_coef_hpoly : lead_coef_of A (hpoly A) :=
   fix f p :=
     match p with
     | Pc a => a
@@ -146,7 +146,7 @@ Global Instance lead_coef_hpoly : lead_coef_of A (hpoly A) :=
                    if (b == 0)%C then a else b
     end.
 
-Global Instance split_hpoly : split_of (hpoly A) N :=
+#[export] Instance split_hpoly : split_of (hpoly A) N :=
   fix f m p:=
     if (m == 0)%C then (p, Pc 0)%C else
       match p with
@@ -227,7 +227,7 @@ Fixpoint spec_hpoly_aux n (p : @hpoly pos C) : {poly R} :=
                           (spec_hpoly_aux k p) + mon
   end.
 
-Global Instance spec_hpoly : spec_of (hpoly C) {poly R} := spec_hpoly_aux 0%N.
+#[export] Instance spec_hpoly : spec_of (hpoly C) {poly R} := spec_hpoly_aux 0%N.
 
 Lemma spec_aux_shift n p :
   spec_hpoly_aux n p = spec_hpoly_aux 0%N p * 'X^n.
@@ -686,28 +686,28 @@ Context `{!refines (rN ==> nat_R) spec_id spec}.
 
 Definition RhpolyC := (Rhpoly \o (hpoly_R rP rAC)).
 
-Global Instance RhpolyC_0 : refines RhpolyC 0%R 0%C.
+#[export] Instance RhpolyC_0 : refines RhpolyC 0%R 0%C.
 Proof. param_comp zero_hpoly_R. Qed.
 
-Global Instance RhpolyC_1 : refines RhpolyC 1%R 1%C.
+#[export] Instance RhpolyC_1 : refines RhpolyC 1%R 1%C.
 Proof. param_comp one_hpoly_R. Qed.
 
-Global Instance RhpolyCD : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
+#[export] Instance RhpolyCD : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
                                       +%R (add_hpoly (N:=N)).
 Proof. param_comp add_hpoly_R. Qed.
 
-Global Instance RhpolyCN : refines (RhpolyC ==> RhpolyC) -%R -%C.
+#[export] Instance RhpolyCN : refines (RhpolyC ==> RhpolyC) -%R -%C.
 Proof. param_comp opp_hpoly_R. Qed.
 
-Global Instance RhpolyC_sub : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
+#[export] Instance RhpolyC_sub : refines (RhpolyC ==> RhpolyC ==> RhpolyC)
                                       (fun x y => x - y) (sub_hpoly (N:=N)).
 Proof. param_comp sub_hpoly_R. Qed.
 
-Global Instance RhpolyCM :
+#[export] Instance RhpolyCM :
   refines (RhpolyC ==> RhpolyC ==> RhpolyC) *%R (mul_hpoly (N:=N)).
 Proof. param_comp mul_hpoly_R. Qed.
 
-Global Instance RhpolyC_exp :
+#[export] Instance RhpolyC_exp :
   refines (RhpolyC ==> rN ==> RhpolyC) (@GRing.exp _) exp_op.
 Proof.
   eapply refines_trans; tc.
@@ -716,29 +716,29 @@ Proof.
     exact: refinesP.
 Qed.
 
-Global Instance RhpolyC_size :
+#[export] Instance RhpolyC_size :
   refines (RhpolyC ==> rN) (sizep (R:=A)) size_hpoly.
 Proof. param_comp size_hpoly_R. Qed.
 
-Global Instance RhpolyC_lead_coef :
+#[export] Instance RhpolyC_lead_coef :
   refines (RhpolyC ==> rAC) lead_coef lead_coef_op.
 Proof.
   rewrite /lead_coef_op.
   param_comp lead_coef_hpoly_R.
 Qed.
 
-Global Instance RhpolyC_polyC :
+#[export] Instance RhpolyC_polyC :
   refines (rAC ==> RhpolyC) (fun a => a%:P) cast.
 Proof. param_comp cast_hpoly_R. Qed.
 
-Global Instance RhpolyC_eq : refines (RhpolyC ==> RhpolyC ==> bool_R)
+#[export] Instance RhpolyC_eq : refines (RhpolyC ==> RhpolyC ==> bool_R)
                                      eqtype.eq_op (eq_hpoly (N:=N)).
 Proof. param_comp eq_hpoly_R. Qed.
 
-Global Instance RhpolyC_scale : refines (rAC ==> RhpolyC ==> RhpolyC) *:%R *:%C.
+#[export] Instance RhpolyC_scale : refines (rAC ==> RhpolyC ==> RhpolyC) *:%R *:%C.
 Proof. param_comp scale_hpoly_R. Qed.
 
-Global Instance RhpolyC_shift : refines (rN ==> RhpolyC ==> RhpolyC)
+#[export] Instance RhpolyC_shift : refines (rN ==> RhpolyC ==> RhpolyC)
                                         (shiftp (R:=A)) shift_hpoly.
 Proof.
   eapply refines_trans; tc.
@@ -747,17 +747,17 @@ Proof.
   exact: refinesP.
 Qed.
 
-Global Instance RhpolyCMXn p sp n rn :
+#[export] Instance RhpolyCMXn p sp n rn :
   refines rN n rn -> refines RhpolyC p sp ->
   refines RhpolyC (p * 'X^n) (shift_op rn sp).
 Proof. by move=> hn hp; rewrite -[_ * 'X^_]/(shiftp _ _); tc. Qed.
 
-Global Instance RhpolyC_Xnmul p sp n rn :
+#[export] Instance RhpolyC_Xnmul p sp n rn :
   refines rN n rn -> refines RhpolyC p sp ->
   refines RhpolyC ('X^n * p) (shift_op rn sp).
 Proof. rewrite -mulXnC; exact: RhpolyCMXn. Qed.
 
-Global Instance RhpolyC_scaleXn c rc n rn :
+#[export] Instance RhpolyC_scaleXn c rc n rn :
   refines rN n rn -> refines rAC c rc ->
   refines RhpolyC (c *: 'X^n) (shift_op rn (cast rc)).
 Proof.
@@ -765,20 +765,20 @@ Proof.
   exact: refines_apply.
 Qed.
 
-Global Instance RhpolyCMX p sp :
+#[export] Instance RhpolyCMX p sp :
   refines RhpolyC p sp -> refines RhpolyC (p * 'X) (shift_op (1%C : N) sp).
 Proof. rewrite -['X]expr1; exact: RhpolyCMXn. Qed.
 
-Global Instance RhpolyC_Xmul p sp :
+#[export] Instance RhpolyC_Xmul p sp :
   refines RhpolyC p sp -> refines RhpolyC ('X * p) (shift_op (1%C : N) sp).
 Proof. rewrite -['X]expr1 -mulXnC; exact: RhpolyCMX. Qed.
 
-Global Instance RhpolyC_scaleX c rc :
+#[export] Instance RhpolyC_scaleX c rc :
   refines rAC c rc ->
   refines RhpolyC (c *: 'X) (shift_op (1%C : N) (cast rc)).
 Proof. rewrite -['X]expr1; exact: RhpolyC_scaleXn. Qed.
 
-Global Instance RhpolyC_split :
+#[export] Instance RhpolyC_split :
   refines (rN ==> RhpolyC ==> prod_R RhpolyC RhpolyC)
           (splitp (R:=A)) split_op.
 Proof.
@@ -788,7 +788,7 @@ refines_trans.
     exact: refinesP.
 Qed.
 
-Global Instance RhpolyC_splitn n rn p sp :
+#[export] Instance RhpolyC_splitn n rn p sp :
   refines rN n rn -> refines RhpolyC p sp ->
   refines (prod_R RhpolyC RhpolyC) (splitp n p) (split_op rn sp).
 Proof. by move=> hn hp; exact: refines_apply. Qed.
@@ -798,7 +798,7 @@ Proof. by move=> hn hp; exact: refines_apply. Qed.
 Definition eq_prod_hpoly (x y : (@hpoly P C * @hpoly P C)) :=
   (eq_hpoly (N:=N) x.1 y.1) && (eq_hpoly (N:=N) x.2 y.2).
 
-Global Instance refines_prod_RhpolyC_eq :
+#[export] Instance refines_prod_RhpolyC_eq :
   refines (prod_R RhpolyC RhpolyC ==> prod_R RhpolyC RhpolyC ==> bool_R)
           eqtype.eq_op eq_prod_hpoly.
 Proof.
@@ -811,23 +811,23 @@ Proof.
   exact: bool_Rxx.
 Qed.
 
-Global Instance RhpolyC_X : refines RhpolyC 'X (shift_op (1%C : N) 1)%C.
+#[export] Instance RhpolyC_X : refines RhpolyC 'X (shift_op (1%C : N) 1)%C.
 Proof. rewrite -['X]mul1r; exact: RhpolyCMX. Qed.
 
-Global Instance RhpolyC_Xn n rn :
+#[export] Instance RhpolyC_Xn n rn :
   refines rN n rn -> refines RhpolyC 'X^n (shift_op rn 1)%C.
 Proof. move=> hn; rewrite -['X^_]mul1r; exact: RhpolyCMXn. Qed.
 
-(* Global Instance RhpolyC_horner : param (RhpolyC ==> rAC ==> rAC) *)
+(* #[export] Instance RhpolyC_horner : param (RhpolyC ==> rAC ==> rAC) *)
 (*   (fun p x => p.[x]) (fun sp x => horner_seq sp x). *)
 (* Proof. admit. Qed. *)
 (* (* Proof. exact: param_trans. Qed. *) *)
 
-Global Instance RhpolyC_head :
+#[export] Instance RhpolyC_head :
   refines (RhpolyC ==> rAC) (fun p => p`_0) head_hpoly.
 Proof. param_comp head_hpoly_R. Qed.
 
-Global Instance RhpolyC_spec :
+#[export] Instance RhpolyC_spec :
   refines (RhpolyC ==> eq) spec_id (spec_hpoly (N:=N) (C:=C)).
 Proof.
   eapply refines_trans; tc.

@@ -3,7 +3,7 @@
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 From mathcomp Require Import choice fintype bigop matrix.
 
-From CoqEAL Require Import hrel param refinements seqmx.
+From CoqEAL Require Import hrel param refinements seqmx seqpoly.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -19,7 +19,7 @@ Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
 Arguments refinesP {T T' R x y} _.
 
-Hint Resolve list_R_nil_R : core.
+#[export] Hint Resolve list_R_nil_R : core.
 
 Notation ord_instN := (fun _ : nat => nat) (only parsing).
 
@@ -43,7 +43,7 @@ Class trmx_of B := trmx_op : forall m n : nat, B m n -> B n m.
 
 End classes.
 
-Typeclasses Transparent fun_of_of row_of store_of trmx_of.
+#[export] Typeclasses Transparent fun_of_of row_of store_of trmx_of.
 
 Notation "A ^T" := (trmx_op A) : hetero_computable_scope.
 
@@ -54,10 +54,10 @@ Section seqmx_op.
 Context {A : Type}.
 Context `{zero_of A}.
 
-Global Instance fun_of_seqmx : fun_of_of A ord_instN hseqmx :=
+#[export] Instance fun_of_seqmx : fun_of_of A ord_instN hseqmx :=
   fun (_ _ : nat) M i j => nth 0%C (nth [::] M i) j.
 
-Global Instance row_seqmx : row_of ord_instN (@hseqmx A) :=
+#[export] Instance row_seqmx : row_of ord_instN (@hseqmx A) :=
   fun (_ _ : nat) i M => [:: nth [::] M i].
 
 Fixpoint store_aux T s k (v : T) :=
@@ -74,15 +74,15 @@ Fixpoint store_seqmx0 T m i j (v : T) :=
     | h :: t, S i => h :: store_seqmx0 t i j v
   end.
 
-Global Instance store_seqmx : store_of A ord_instN hseqmx :=
+#[export] Instance store_seqmx : store_of A ord_instN hseqmx :=
   fun (_ _ : nat) M i j v => store_seqmx0 M i j v.
 
-Global Instance trmx_seqmx : trmx_of hseqmx :=
+#[export] Instance trmx_seqmx : trmx_of hseqmx :=
   fun m n : nat => @trseqmx A m n.
 
 Context `{eq_of A}.
 
-Global Instance heq_seqmx : heq_of (@hseqmx A) :=
+#[export] Instance heq_seqmx : heq_of (@hseqmx A) :=
   fun (_ _ : nat) => eq_seq (eq_seq eq_op).
 
 End seqmx_op.
@@ -110,7 +110,7 @@ rewrite /map_seqmx /spec /spec_of_instance_0 /spec_id /=.
 by rewrite (nth_map [::]) ?Hm ?(ltn_ord i) // map_id.
 Qed.
 
-Global Instance Rseqmx_fun_of_seqmx m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
+#[export] Instance Rseqmx_fun_of_seqmx m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
   refines (Rseqmx rm rn ==> Rord rm ==> Rord rn ==> eq)
     ((@fun_of_matrix A m1 n1) : matrix A m1 n1 -> ordinal m1 -> ordinal n1 -> A)
     (@fun_of_seqmx A _ m2 n2).
@@ -119,7 +119,7 @@ rewrite refinesE => _ _ [M sM h1 h2 h3] i _ <- j _ <-.
 by rewrite /fun_of_seqmx.
 Qed.
 
-Global Instance Rseqmx_row_seqmx m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
+#[export] Instance Rseqmx_row_seqmx m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
   refines (Rord rm ==> Rseqmx rm rn ==> Rseqmx (nat_R_S_R nat_R_O_R) rn)
     (@row A m1 n1) (@row_seqmx A m2 n2).
 Proof.
@@ -161,12 +161,12 @@ case: j IHs => [|j] IHs //=; case: k IHs => [|k] IHs //=.
 by rewrite size_store_aux.
 Qed.
 
-Global Instance store_ssr : store_of A ordinal (matrix A) :=
+#[export] Instance store_ssr : store_of A ordinal (matrix A) :=
   fun m n (M : 'M[A]_(m, n)) (i : 'I_m) (j : 'I_n) v =>
   \matrix_(i', j')
     if ((nat_of_ord i' == i) && (nat_of_ord j' == j))%N then v else M i' j'.
 
-Global Instance Rseqmx_store_seqmx
+#[export] Instance Rseqmx_store_seqmx
        m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
   refines (Rseqmx rm rn ==> Rord rm ==> Rord rn ==> eq ==> Rseqmx rm rn)
     (@store_ssr m1 n1) (@store_seqmx A m2 n2).
@@ -188,10 +188,10 @@ Qed.
 
 Context `{eq_of A}.
 
-Global Instance heq_ssr : heq_of (matrix A) :=
+#[export] Instance heq_ssr : heq_of (matrix A) :=
   fun n1 n2 a b => [forall i, [forall j, (a i j == b i j)%C]].
 
-Global Instance Rseqmx_heq_op m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
+#[export] Instance Rseqmx_heq_op m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
   refines (Rseqmx rm rn ==> Rseqmx rm rn ==> bool_R)
     (@heq_ssr m1 n1) (heq_seqmx (n:=n2)).
 Proof.
@@ -245,7 +245,7 @@ Lemma RseqmxC_spec_seqmx m n (M : @seqmx C) :
 Proof.
 move=> /andP [] /eqP Hm /all_nthP Hn Hc; apply refinesP.
 eapply (refines_trans (b:=map_seqmx spec M)); [by tc| |].
-{  rewrite refinesE; split; [by rewrite size_map| |].
+{ rewrite refinesE; split; [by rewrite size_map| |].
   { move=> i Hi; rewrite (nth_map 0%C) ?Hm // size_map.
     by apply/eqP/Hn; rewrite Hm. }
   by move=> i j; rewrite mxE. }
@@ -274,13 +274,13 @@ apply nth_R_lt.
 rewrite h2 -?(nat_R_eq rm) -?(nat_R_eq rn); apply ltn_ord.
 Qed.
 
-Global Instance refine_fun_of_seqmx m n :
+#[export] Instance refine_fun_of_seqmx m n :
   refines (RseqmxC rAC (nat_Rxx m) (nat_Rxx n) ==> Rord (nat_Rxx m) ==> Rord (nat_Rxx n) ==> rAC)
     ((@fun_of_matrix A m n) : matrix A m n -> ordinal m -> ordinal n -> A)
     (@fun_of_seqmx C _ m n).
 Proof. exact: RseqmxC_fun_of_seqmx. Qed.
 
-Global Instance refine_foldl
+#[export] Instance refine_foldl
   (T1 T2 : Type) (rT : T1 -> T2 -> Type) (R1 R2 : Type) (rR : R1 -> R2 -> Type) :
   refines ((rR ==> rT ==> rR) ==> rR ==> list_R rT ==> rR)
     (@foldl T1 R1) (@foldl T2 R2).

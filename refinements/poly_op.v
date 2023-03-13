@@ -12,20 +12,20 @@ Module Poly.
 Module Op.
 
 Class shift_of polyA N := shift_op : N -> polyA -> polyA.
-Hint Mode shift_of + + : typeclass_instances.
+#[export] Hint Mode shift_of + + : typeclass_instances.
 Class split_of polyA N := split_op : N -> polyA -> polyA * polyA.
-Hint Mode split_of + + : typeclass_instances.
+#[export] Hint Mode split_of + + : typeclass_instances.
 Class lead_coef_of A polyA := lead_coef_op : polyA -> A.
-Hint Mode lead_coef_of + + : typeclass_instances.
+#[export] Hint Mode lead_coef_of + + : typeclass_instances.
 Class scal_of polyA N := scal_op : polyA -> polyA -> N.
-Hint Mode scal_of + + : typeclass_instances.
+#[export] Hint Mode scal_of + + : typeclass_instances.
 
 End Op.
 End Poly.
 
 Import Poly.Op.
 
-Typeclasses Transparent shift_of split_of lead_coef_of scal_of.
+#[export] Typeclasses Transparent shift_of split_of lead_coef_of scal_of.
 
 Section poly_op.
 

@@ -315,7 +315,7 @@ Notation "M .-ker" := (ker_mod M)
   (at level 10, format "M .-ker") : mxpresentation_scope.
 Notation "M %| B" := (dvdmx M B) : mxpresentation_scope.
 
-Hint Resolve dvdmx_refl dvdmx0 dvd1mx : core.
+#[export] Hint Resolve dvdmx_refl dvdmx0 dvd1mx : core.
 
 
 (* It suffices to show how to solve xM = 0 when M is a column for the ring to

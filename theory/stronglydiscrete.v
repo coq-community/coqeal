@@ -704,4 +704,4 @@ Canonical Structure bezout_stronglyDiscreteType :=
   Eval hnf in StronglyDiscreteType R bezout_stronglyDiscreteMixin.
 
 End BezoutStronglyDiscrete.
-Hint Resolve subid_refl sub0id subid1 : core.
+#[export] Hint Resolve subid_refl sub0id subid1 : core.

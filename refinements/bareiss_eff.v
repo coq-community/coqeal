@@ -309,32 +309,32 @@ Context `{forall n1 n2 (rn : nat_R n1 n2),
                   (@char_poly_mxC n2)}.
 Context `{!refines (RpolyC ==> rC) head headC}.
 
-Global Instance RpolyC_bareiss_rec m1 m2 (rm : nat_R m1 m2) :
+#[export] Instance RpolyC_bareiss_rec m1 m2 (rm : nat_R m1 m2) :
   refines (RpolyC ==> RmxpolyC (nat_R_S_R rm) (nat_R_S_R rm) ==> RpolyC)
           (bareiss_rec (polyR:={poly R}) (mxpolyR:=matrix {poly R}) (m:=m1))
           (bareiss_rec (polyR:=polyC) (mxpolyR:=mxpolyC) (m:=m2)).
 Proof. param bareiss_rec_R. Qed.
 
-Global Instance refine_bareiss_rec m :
+#[export] Instance refine_bareiss_rec m :
   refines (RpolyC ==> RmxpolyC (nat_R_S_R (nat_Rxx m)) (nat_R_S_R (nat_Rxx m))
                   ==> RpolyC)
           (bareiss_rec (polyR:={poly R}) (mxpolyR:=matrix {poly R}) (m:=m))
           (bareiss_rec (polyR:=polyC) (mxpolyR:=mxpolyC) (m:=m)).
 Proof. exact: RpolyC_bareiss_rec. Qed.
 
-Global Instance RpolyC_bareiss n1 n2 (rn : nat_R n1 n2) :
+#[export] Instance RpolyC_bareiss n1 n2 (rn : nat_R n1 n2) :
   refines (RmxpolyC (nat_R_S_R rn) (nat_R_S_R rn) ==> RpolyC)
           (bareiss (polyR:={poly R}) (mxpolyR:=matrix {poly R}) (n:=n1))
           (bareiss (polyR:=polyC) (mxpolyR:=mxpolyC) (n:=n2)).
 Proof. param bareiss_R. Qed.
 
-Global Instance refine_bareiss n :
+#[export] Instance refine_bareiss n :
   refines (RmxpolyC (nat_R_S_R (nat_Rxx n)) (nat_R_S_R (nat_Rxx n)) ==> RpolyC)
           (bareiss (polyR:={poly R}) (mxpolyR:=matrix {poly R}) (n:=n))
           (bareiss (polyR:=polyC) (mxpolyR:=mxpolyC) (n:=n)).
 Proof. exact: RpolyC_bareiss. Qed.
 
-Global Instance RpolyC_bareiss_char_poly n1 n2 (rn : nat_R n1 n2) :
+#[export] Instance RpolyC_bareiss_char_poly n1 n2 (rn : nat_R n1 n2) :
   refines (RmxC (nat_R_S_R rn) (nat_R_S_R rn) ==> RpolyC)
           (bareiss_char_poly (polyR:={poly R}) (mxR:=matrix R)
                              (mxpolyR:=matrix {poly R}) (@char_poly_mx R)
@@ -343,7 +343,7 @@ Global Instance RpolyC_bareiss_char_poly n1 n2 (rn : nat_R n1 n2) :
                              char_poly_mxC (n:=n2)).
 Proof. param bareiss_char_poly_R. Qed.
 
-Global Instance refine_bareiss_char_poly n :
+#[export] Instance refine_bareiss_char_poly n :
   refines (RmxC (nat_R_S_R (nat_Rxx n)) (nat_R_S_R (nat_Rxx n)) ==> RpolyC)
           (bareiss_char_poly (polyR:={poly R}) (mxR:=matrix R)
                              (mxpolyR:=matrix {poly R}) (@char_poly_mx R)
@@ -352,7 +352,7 @@ Global Instance refine_bareiss_char_poly n :
                              char_poly_mxC (n:=n)).
 Proof. exact: RpolyC_bareiss_char_poly. Qed.
 
-Global Instance RC_bdet n1 n2 (rn : nat_R n1 n2) :
+#[export] Instance RC_bdet n1 n2 (rn : nat_R n1 n2) :
   refines (RmxC (nat_R_S_R rn) (nat_R_S_R rn) ==> rC)
           (bdet (R:=R) (polyR:={poly R}) (mxR:=matrix R)
                 (mxpolyR:=matrix {poly R}) (@char_poly_mx R) head
@@ -361,7 +361,7 @@ Global Instance RC_bdet n1 n2 (rn : nat_R n1 n2) :
                 char_poly_mxC headC (n:=n2)).
 Proof. param bdet_R. Qed.
 
-Global Instance refine_bdet n :
+#[export] Instance refine_bdet n :
   refines (RmxC (nat_R_S_R (nat_Rxx n)) (nat_R_S_R (nat_Rxx n)) ==> rC)
           (bdet (R:=R) (polyR:={poly R}) (mxR:=matrix R)
                 (mxpolyR:=matrix {poly R}) (@char_poly_mx R) head
@@ -370,7 +370,7 @@ Global Instance refine_bdet n :
                 char_poly_mxC headC (n:=n)).
 Proof. exact: RC_bdet. Qed.
 
-Global Instance RC_det_bdet n1 n2 (rn : nat_R n1 n2) :
+#[export] Instance RC_det_bdet n1 n2 (rn : nat_R n1 n2) :
   refines (RmxC (nat_R_S_R rn) (nat_R_S_R rn) ==> rC) determinant
           (bdet (R:=C) (polyR:=polyC) (mxpolyR:=mxpolyC) char_poly_mxC headC
                 (n:=n2)).
@@ -380,7 +380,7 @@ Proof.
   exact: refinesP.
 Qed.
 
-Global Instance refine_det n :
+#[export] Instance refine_det n :
   refines (RmxC (nat_R_S_R (nat_Rxx n)) (nat_R_S_R (nat_Rxx n)) ==> rC)
           determinant (bdet (R:=C) (polyR:=polyC) (mxpolyR:=mxpolyC)
                             char_poly_mxC headC (n:=n)).
@@ -393,7 +393,7 @@ End bareiss_param.
 End bareiss_correctness.
 
 From mathcomp Require Import ssrint.
-From CoqEAL Require Import binint seqpoly poly_div binord.
+From CoqEAL Require Import binnat binint seqpoly poly_div binord trivial_seq.
 
 Section test_bareiss.
 
