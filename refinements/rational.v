@@ -42,31 +42,31 @@ Context `{one_of P, sub_of P, add_of P, mul_of P, eq_of P, leq_of P, lt_of P}.
 Context `{cast_of P Z, cast_of Z P}.
 Context `{spec_of Z int, spec_of P pos, spec_of N nat}.
 
-Global Instance zeroQ : zero_of Q := (0, 1).
-Global Instance oneQ  : one_of Q  := (1, 1).
-Global Instance addQ  : add_of Q  := fun x y =>
+#[export] Instance zeroQ : zero_of Q := (0, 1).
+#[export] Instance oneQ  : one_of Q  := (1, 1).
+#[export] Instance addQ  : add_of Q  := fun x y =>
   (x.1 * cast y.2 + y.1 * cast x.2, x.2 * y.2).
-Global Instance mulQ  : mul_of Q  := fun x y => (x.1 * y.1, x.2 * y.2).
-Global Instance oppQ  : opp_of Q  := fun x   => (- x.1, x.2).
-Global Instance eqQ   : eq_of Q   :=
+#[export] Instance mulQ  : mul_of Q  := fun x y => (x.1 * y.1, x.2 * y.2).
+#[export] Instance oppQ  : opp_of Q  := fun x   => (- x.1, x.2).
+#[export] Instance eqQ   : eq_of Q   :=
   fun x y => (x.1 * cast y.2 == y.1 * cast x.2).
-Global Instance leqQ  : leq_of Q  :=
+#[export] Instance leqQ  : leq_of Q  :=
   fun x y => (x.1 * cast y.2 <= y.1 * cast x.2).
-Global Instance ltQ   : lt_of Q   :=
+#[export] Instance ltQ   : lt_of Q   :=
   fun x y => (x.1 * cast y.2 < y.1 * cast x.2).
-Global Instance invQ : inv_of Q   := fun x   =>
+#[export] Instance invQ : inv_of Q   := fun x   =>
   if      (x.1 == 0)%C   then 0
   else if (0 < x.1)      then (cast x.2, cast x.1)
                          else (- (cast x.2), cast (- x.1)).
-Global Instance subQ : sub_of Q   := fun x y => (x + - y).
-Global Instance divQ : div_of Q   := fun x y => (x * y^-1).
-Global Instance expQnat : exp_of Q N := fun x n => iter (spec n) (mulQ x) 1.
-Global Instance specQ : spec_of Q rat :=
+#[export] Instance subQ : sub_of Q   := fun x y => (x + - y).
+#[export] Instance divQ : div_of Q   := fun x y => (x * y^-1).
+#[export] Instance expQnat : exp_of Q N := fun x n => iter (spec n) (mulQ x) 1.
+#[export] Instance specQ : spec_of Q rat :=
   fun q => (spec q.1)%:~R / (cast (spec q.2 : pos))%:R.
 
 (* Embedding from Z to Q *)
-Global Instance cast_ZQ : cast_of Z Q := fun x => (x, 1).
-Global Instance cast_PQ : cast_of P Q := fun x => cast (cast x : Z).
+#[export] Instance cast_ZQ : cast_of Z Q := fun x => (x, 1).
+#[export] Instance cast_PQ : cast_of P Q := fun x => cast (cast x : Z).
 
 End Q_ops.
 End Q.
@@ -299,25 +299,25 @@ Context `{!refines (Rpos ==> Logic.eq) spec_id spec}.
 
 Context `{!refines (Rnat ==> nat_R) spec_id spec}.
 
-Global Instance RratC_zeroQ : refines RratC 0 0%C.
+#[export] Instance RratC_zeroQ : refines RratC 0 0%C.
 Proof. param_comp zeroQ_R. Qed.
 
-Global Instance RratC_oneQ  : refines RratC 1 1%C.
+#[export] Instance RratC_oneQ  : refines RratC 1 1%C.
 Proof. param_comp oneQ_R. Qed.
 
-Global Instance RratC_cast_ZQ : refines (Rint ==> RratC) intr cast.
+#[export] Instance RratC_cast_ZQ : refines (Rint ==> RratC) intr cast.
 Proof. param_comp cast_ZQ_R. Qed.
 
-Global Instance RratC_cast_PQ : refines (Rpos ==> RratC) pos_to_rat cast.
+#[export] Instance RratC_cast_PQ : refines (Rpos ==> RratC) pos_to_rat cast.
 Proof. param_comp cast_PQ_R. Qed.
 
-Global Instance RratC_addQ : refines (RratC ==> RratC ==> RratC) +%R +%C.
+#[export] Instance RratC_addQ : refines (RratC ==> RratC ==> RratC) +%R +%C.
 Proof. param_comp addQ_R. Qed.
 
-Global Instance RratC_mulQ : refines (RratC ==> RratC ==> RratC) *%R *%C.
+#[export] Instance RratC_mulQ : refines (RratC ==> RratC ==> RratC) *%R *%C.
 Proof. param_comp mulQ_R. Qed.
 
-Global Instance RratC_expQnat :
+#[export] Instance RratC_expQnat :
   refines (RratC ==> Rnat ==> RratC) (@GRing.exp _) exp_op.
 Proof.
   eapply refines_trans; tc.
@@ -326,30 +326,30 @@ Proof.
     exact: refinesP.
 Qed.
 
-Global Instance RratC_oppQ : refines (RratC ==> RratC) -%R -%C.
+#[export] Instance RratC_oppQ : refines (RratC ==> RratC) -%R -%C.
 Proof. param_comp oppQ_R. Qed.
 
-Global Instance RratC_invQ : refines (RratC ==> RratC) GRing.inv inv_op.
+#[export] Instance RratC_invQ : refines (RratC ==> RratC) GRing.inv inv_op.
 Proof. param_comp invQ_R. Qed.
 
-Global Instance RratC_subQ :
+#[export] Instance RratC_subQ :
   refines (RratC ==> RratC ==> RratC) (fun x y => x - y) sub_op.
 Proof. param_comp subQ_R. Qed.
 
-Global Instance RratC_divq : refines (RratC ==> RratC ==> RratC) divq div_op.
+#[export] Instance RratC_divq : refines (RratC ==> RratC ==> RratC) divq div_op.
 Proof. param_comp divQ_R. Qed.
 
-Global Instance RratC_eqQ :
+#[export] Instance RratC_eqQ :
   refines (RratC ==> RratC ==> bool_R) eqtype.eq_op eq_op.
 Proof. param_comp eqQ_R. Qed.
 
-Global Instance RratC_leqQ : refines (RratC ==> RratC ==> bool_R) Num.le leq_op.
+#[export] Instance RratC_leqQ : refines (RratC ==> RratC ==> bool_R) Num.le leq_op.
 Proof. param_comp leqQ_R. Qed.
 
-Global Instance RratC_ltQ : refines (RratC ==> RratC ==> bool_R) Num.lt lt_op.
+#[export] Instance RratC_ltQ : refines (RratC ==> RratC ==> bool_R) Num.lt lt_op.
 Proof. param_comp ltQ_R. Qed.
 
-Global Instance RratC_spec : refines (RratC ==> Logic.eq) spec_id spec.
+#[export] Instance RratC_spec : refines (RratC ==> Logic.eq) spec_id spec.
 Proof.
   eapply refines_trans; tc.
   rewrite refinesE -[Rint]refinesE -[Rpos]refinesE; move=> x y rxy.

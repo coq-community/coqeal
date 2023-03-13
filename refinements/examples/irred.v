@@ -165,21 +165,21 @@ Qed.
 
 End Irreducible.
 
-Module nat_ops.
+Module Import nat_ops.
 
-#[global] Instance zero_nat : zero_of nat := 0%N.
-#[global] Instance one_nat  : one_of nat  := 1%N.
-#[global] Instance add_nat  : add_of nat  := addn.
-#[global] Instance sub_nat  : sub_of nat  := subn.
-#[global] Instance mul_nat  : mul_of nat  := muln.
-#[global] Instance exp_nat  : exp_of nat nat := expn.
-#[global] Instance leq_nat  : leq_of nat  := ssrnat.leq.
-#[global] Instance lt_nat   : lt_of nat  := ssrnat.ltn.
-#[global] Instance eq_nat   : eq_of nat   := eqtype.eq_op.
+#[export] Instance zero_nat : zero_of nat := 0%N.
+#[export] Instance one_nat  : one_of nat  := 1%N.
+#[export] Instance add_nat  : add_of nat  := addn.
+#[export] Instance sub_nat  : sub_of nat  := subn.
+#[export] Instance mul_nat  : mul_of nat  := muln.
+#[export] Instance exp_nat  : exp_of nat nat := expn.
+#[export] Instance leq_nat  : leq_of nat  := ssrnat.leq.
+#[export] Instance lt_nat   : lt_of nat  := ssrnat.ltn.
+#[export] Instance eq_nat   : eq_of nat   := eqtype.eq_op.
 
-#[global] Instance spec_nat : spec_of nat nat := spec_id.
+#[export] Instance spec_nat : spec_of nat nat := spec_id.
 
-#[global] Instance implem_nat : implem_of nat nat := implem_id.
+#[export] Instance implem_nat : implem_of nat nat := implem_id.
 
 End nat_ops.
 
@@ -216,7 +216,7 @@ Context `{!refines rN 1%N 1%C}.
 Context `{!refines (rN ==> rN ==> rN)%rel addn add_op}.
 Context (P : pred T) (P' : pred T').
 
-Global Instance refines_card :
+#[export] Instance refines_card :
   (forall x x' `{!refines RT x x'}, refines (bool_R \o (@unify _)) (P x) (P' x')) ->
   refines rN #|[pred x | P x]| (card' enumT' P').
 Proof.
@@ -237,7 +237,7 @@ End enum_boolF2.
 
 Parametricity enum_boolF2.
 
-Global Instance refines_enum_boolF2 :
+#[export] Instance refines_enum_boolF2 :
   refines (perm_eq \o list_R Rbool) (Finite.enum [finType of 'F_2]) (enum_boolF2).
 Proof.
 rewrite -enumT; refines_trans; last first.
@@ -295,7 +295,7 @@ Definition Rnpoly : {poly_n A} -> {poly A} -> Type :=
 Definition RnpolyC : {poly_n A} -> seqpoly C -> Type :=
   (Rnpoly \o (RseqpolyC rAC))%rel.
 
-Global Instance refines_enum_npoly :
+#[export] Instance refines_enum_npoly :
    refines (perm_eq \o list_R RnpolyC)
            (Finite.enum [finType of {poly_n A}]) (enum_npoly n' iter' enumC id).
 Proof.
@@ -306,13 +306,13 @@ param enum_npoly_R.
 
 Admitted.
 
-Global Instance refines_RnpolyCpoly (x : {poly_n A}) (y : seqpoly C)
+#[export] Instance refines_RnpolyCpoly (x : {poly_n A}) (y : seqpoly C)
        `{!refines RnpolyC x y} : refines (RseqpolyC rAC) (poly_of_npoly x) y.
 Admitted.
 
 End RnpolyC.
 
-Global Instance refines_iter T T' RT :
+#[export] Instance refines_iter T T' RT :
   refines (Rnat ==> (RT ==> RT) ==> RT ==> RT) (@iter T) (@iter T').
 Proof.
 param iter_R.
@@ -320,7 +320,7 @@ Admitted.
 
 Section LaurentsProblem.
 
-Global Instance refines_predn : refines (Rnat ==> Rnat) predn (fun n => (n - 1)%C).
+#[export] Instance refines_predn : refines (Rnat ==> Rnat) predn (fun n => (n - 1)%C).
 Admitted.
 
 Lemma test_irred : irreducible_poly ('X^5 + 'X^2 + 1 : {poly 'F_2}).

@@ -25,11 +25,11 @@ Context `{add_of A, opp_of A, mul_of A, eq_of A}.
 Context `{zero_of N, one_of N, add_of N, eq_of N}.
 Context `{spec_of N nat}.
 
-Global Instance cast_seqpoly : cast_of A seqpoly := fun x => [:: x].
+#[export] Instance cast_seqpoly : cast_of A seqpoly := fun x => [:: x].
 
-Global Instance seqpoly0 : zero_of seqpoly := [::].
-Global Instance seqpoly1 : one_of seqpoly := [:: 1].
-Global Instance opp_seqpoly : opp_of seqpoly := List.map -%C.
+#[export] Instance seqpoly0 : zero_of seqpoly := [::].
+#[export] Instance seqpoly1 : one_of seqpoly := [:: 1].
+#[export] Instance opp_seqpoly : opp_of seqpoly := List.map -%C.
 
 Fixpoint add_seqpoly_fun (p q : seqpoly) : seqpoly := match p,q with
   | [::], q => q
@@ -37,24 +37,24 @@ Fixpoint add_seqpoly_fun (p q : seqpoly) : seqpoly := match p,q with
   | a :: p', b :: q' => a + b :: add_seqpoly_fun p' q'
   end.
 
-Global Instance add_seqpoly : add_of seqpoly := add_seqpoly_fun.
-Global Instance sub_seqpoly : sub_of seqpoly := fun x y => (x + - y)%C.
+#[export] Instance add_seqpoly : add_of seqpoly := add_seqpoly_fun.
+#[export] Instance sub_seqpoly : sub_of seqpoly := fun x y => (x + - y)%C.
 
 Lemma sub_seqpoly_0 (s : seqpoly) : s - 0 = s.
 Proof. by elim: s. Qed.
 
-Global Instance scale_seqpoly : scale_of A seqpoly := fun a => map ( *%C a).
+#[export] Instance scale_seqpoly : scale_of A seqpoly := fun a => map ( *%C a).
 
 (* 0%C :: aux p = shift 1 (aux p) *)
-Global Instance mul_seqpoly : mul_of seqpoly := fun p q =>
+#[export] Instance mul_seqpoly : mul_of seqpoly := fun p q =>
   let fix aux p :=
       if p is a :: p then (a *: q + (0%C :: aux p))%C else 0
   in aux p.
 
-Global Instance exp_seqpoly : exp_of seqpoly N :=
+#[export] Instance exp_seqpoly : exp_of seqpoly N :=
   fun p n => iter (spec n) (mul_seqpoly p) 1.
 
-Global Instance size_seqpoly : size_of seqpoly N :=
+#[export] Instance size_seqpoly : size_of seqpoly N :=
   let fix aux p :=
       if p is a :: p then
         let sp := aux p in
@@ -63,16 +63,16 @@ Global Instance size_seqpoly : size_of seqpoly N :=
       else 0%C
   in aux.
 
-Global Instance eq_seqpoly : eq_of seqpoly :=
+#[export] Instance eq_seqpoly : eq_of seqpoly :=
   fun p q => all (fun x => x == 0)%C (p - q)%C.
 
-Global Instance shift_seqpoly : shift_of seqpoly N :=
+#[export] Instance shift_seqpoly : shift_of seqpoly N :=
   fun n => ncons (spec n) 0%C.
 
-Global Instance split_seqpoly : split_of seqpoly N :=
+#[export] Instance split_seqpoly : split_of seqpoly N :=
   fun n p => (drop (spec n) p,take (spec n) p).
 
-Global Instance lead_coef_seqpoly : lead_coef_of A seqpoly :=
+#[export] Instance lead_coef_seqpoly : lead_coef_of A seqpoly :=
   fun p => nth 0 p (spec (size_seqpoly p)).-1.
 
 End seqpoly_op.
@@ -116,7 +116,7 @@ Fixpoint spec_seqpoly_aux n (s : seqpoly C) : {poly R} :=
           else (spec_seqpoly_aux n.+1 tl) + c
   end.
 
-Global Instance spec_seqpoly : spec_of (seqpoly C) {poly R}:=
+#[export] Instance spec_seqpoly : spec_of (seqpoly C) {poly R}:=
   spec_seqpoly_aux 0%N.
 
 Lemma spec_aux_shift n s :
@@ -462,40 +462,40 @@ Context `{!refines (rN ==> nat_R) spec_id spec}.
 Definition RseqpolyC : {poly R} -> seq C -> Type :=
   (Rseqpoly \o (list_R rAC)).
 
-Global Instance RseqpolyC_cons :
+#[export] Instance RseqpolyC_cons :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) (@cons_poly R) cons.
 Proof. param_comp list_R_cons_R. Qed.
 
-Global Instance RseqpolyC_cast :
+#[export] Instance RseqpolyC_cast :
   refines (rAC ==> RseqpolyC) polyC cast_op.
 Proof. param_comp cast_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_0 : refines RseqpolyC 0%R 0%C.
+#[export] Instance RseqpolyC_0 : refines RseqpolyC 0%R 0%C.
 Proof. param_comp seqpoly0_R. Qed.
 
-Global Instance RseqpolyC_1 : refines RseqpolyC 1%R 1%C.
+#[export] Instance RseqpolyC_1 : refines RseqpolyC 1%R 1%C.
 Proof. param_comp seqpoly1_R. Qed.
 
-Global Instance RseqpolyCN : refines (RseqpolyC ==> RseqpolyC) -%R -%C.
+#[export] Instance RseqpolyCN : refines (RseqpolyC ==> RseqpolyC) -%R -%C.
 Proof. param_comp opp_seqpoly_R. Qed.
 
-Global Instance RseqpolyCD :
+#[export] Instance RseqpolyCD :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) +%R +%C.
 Proof. param_comp add_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_sub :
+#[export] Instance RseqpolyC_sub :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) (fun x y => x - y) sub_op.
 Proof. param_comp sub_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_scale :
+#[export] Instance RseqpolyC_scale :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) *:%R *:%C.
 Proof. param_comp scale_seqpoly_R. Qed.
 
-Global Instance RseqpolyCM :
+#[export] Instance RseqpolyCM :
   refines (RseqpolyC ==> RseqpolyC ==> RseqpolyC) *%R *%C.
 Proof. param_comp mul_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_exp :
+#[export] Instance RseqpolyC_exp :
   refines (RseqpolyC ==> rN ==> RseqpolyC) (@GRing.exp _) exp_op.
 Proof.
   eapply refines_trans; tc.
@@ -504,15 +504,15 @@ Proof.
     exact: refinesP.
 Qed.
 
-Global Instance RseqpolyC_size :
+#[export] Instance RseqpolyC_size :
   refines (RseqpolyC ==> rN) (sizep (R:=R)) size_op.
 Proof. rewrite /size_op; param_comp size_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_eq :
+#[export] Instance RseqpolyC_eq :
   refines (RseqpolyC ==> RseqpolyC ==> bool_R) eqtype.eq_op eq_op.
 Proof. param_comp eq_seqpoly_R. Qed.
 
-Global Instance RseqpolyC_shift :
+#[export] Instance RseqpolyC_shift :
   refines (rN ==> RseqpolyC ==> RseqpolyC) (shiftp (R:=R)) shift_op.
 Proof.
   (* param_comp shift_seqpoly_R does a mistake on the instantiation of a
@@ -523,7 +523,7 @@ Proof.
     exact: refinesP.
 Qed.
 
-Global Instance RseqpolyCMXn p sp n rn :
+#[export] Instance RseqpolyCMXn p sp n rn :
   refines rN n rn -> refines RseqpolyC p sp ->
   refines RseqpolyC (p * 'X^n) (shift_op rn sp).
 Proof.
@@ -537,12 +537,12 @@ Proof.
   by rewrite coefMXn coefXnM.
 Qed.
 
-Global Instance RseqpolyC_Xnmul p sp n rn :
+#[export] Instance RseqpolyC_Xnmul p sp n rn :
   refines rN n rn -> refines RseqpolyC p sp ->
   refines RseqpolyC ('X^n * p) (shift_op rn sp).
 Proof. rewrite -mulXnC; exact: RseqpolyCMXn. Qed.
 
-Global Instance RseqpolyC_scaleXn c rc n rn :
+#[export] Instance RseqpolyC_scaleXn c rc n rn :
   refines rN n rn -> refines rAC c rc ->
   refines RseqpolyC (c *: 'X^n) (shift_op rn (cast rc)).
 Proof.
@@ -550,21 +550,21 @@ Proof.
   apply: refines_apply.
 Qed.
 
-Global Instance RseqpolyCMX p sp :
+#[export] Instance RseqpolyCMX p sp :
   refines RseqpolyC p sp -> refines RseqpolyC (p * 'X) (shift_op (1%C : N) sp).
 Proof. rewrite -['X]expr1; exact: RseqpolyCMXn. Qed.
 
-Global Instance RseqpolyC_Xmul p sp :
+#[export] Instance RseqpolyC_Xmul p sp :
   refines RseqpolyC p sp -> refines RseqpolyC ('X * p) (shift_op (1%C : N) sp).
 Proof. rewrite -['X]expr1 -mulXnC; exact: RseqpolyCMX. Qed.
 
-Global Instance RseqpolyC_scaleX c rc :
+#[export] Instance RseqpolyC_scaleX c rc :
   refines rAC c rc ->
   refines RseqpolyC (c *: 'X) (shift_op (1%C : N) (cast rc)).
 Proof. rewrite -['X]expr1; exact: RseqpolyC_scaleXn. Qed.
 
 (* Uses composable_prod *)
-Global Instance RseqpolyC_split :
+#[export] Instance RseqpolyC_split :
   refines (rN ==> RseqpolyC ==> prod_R RseqpolyC RseqpolyC)
     (splitp (R:=R)) split_op.
 Proof.
@@ -574,7 +574,7 @@ Proof.
   exact: refinesP.
 Qed.
 
-Global Instance RseqpolyC_splitn n rn p sp :
+#[export] Instance RseqpolyC_splitn n rn p sp :
   refines rN n rn -> refines RseqpolyC p sp ->
   refines (prod_R RseqpolyC RseqpolyC) (splitp n p) (split_op rn sp).
 Proof. by move=> hn hp; apply: refines_apply. Qed.
@@ -582,7 +582,7 @@ Proof. by move=> hn hp; apply: refines_apply. Qed.
 Definition eq_prod_seqpoly (x y : (seqpoly C * seqpoly C)) :=
   (eq_op x.1 y.1) && (eq_op x.2 y.2).
 
-Global Instance refines_prod_RseqpolyC_eq :
+#[export] Instance refines_prod_RseqpolyC_eq :
   refines (prod_R RseqpolyC RseqpolyC ==> prod_R RseqpolyC RseqpolyC ==> bool_R)
           eqtype.eq_op eq_prod_seqpoly.
 Proof.
@@ -595,7 +595,7 @@ Proof.
   exact: bool_Rxx.
 Qed.
 
-Global Instance RseqpolyC_lead_coef :
+#[export] Instance RseqpolyC_lead_coef :
   refines (RseqpolyC ==> rAC) lead_coef (lead_coef_seqpoly (N:=N)).
 Proof.
 param_comp lead_coef_seqpoly_R.
@@ -604,7 +604,7 @@ Qed.
 Local Instance refines_refl_nat : forall m, refines nat_R m m | 999.
 Proof. by rewrite refinesE; apply: nat_Rxx. Qed.
 
-Global Instance RseqpolyC_head :
+#[export] Instance RseqpolyC_head :
   refines (RseqpolyC ==> rAC) (fun p => p`_0) (fun sp => nth 0%C sp 0).
 Proof.
   eapply refines_trans; tc.
@@ -612,10 +612,10 @@ Proof.
   apply nth_R; exact: refinesP.
 Qed.
 
-Global Instance RseqpolyC_X : refines RseqpolyC 'X (shift_op (1%C : N) 1)%C.
+#[export] Instance RseqpolyC_X : refines RseqpolyC 'X (shift_op (1%C : N) 1)%C.
 Proof. rewrite -['X]mul1r; exact: RseqpolyCMX. Qed.
 
-Global Instance RseqpolyC_Xn n rn :
+#[export] Instance RseqpolyC_Xn n rn :
   refines rN n rn -> refines RseqpolyC 'X^n (shift_op rn 1)%C.
 Proof. move=> hn; rewrite -['X^_]mul1r; exact: RseqpolyCMXn. Qed.
 
@@ -623,13 +623,13 @@ Proof. move=> hn; rewrite -['X^_]mul1r; exact: RseqpolyCMXn. Qed.
 (* Proof. *)
 (* Admitted. *)
 
-(* Global Instance RseqpolyC_spec_l : *)
+(* #[export] Instance RseqpolyC_spec_l : *)
 (*   refines (RseqpolyC ==> (@polynomial_R _ _ (gRing_Ring_type_Rxx R))) *)
 (*           spec_id spec. *)
 (* Proof. *)
 (* Admitted. *)
 
-Global Instance RseqpolyC_spec : refines (RseqpolyC ==> eq) spec_id spec.
+#[export] Instance RseqpolyC_spec : refines (RseqpolyC ==> eq) spec_id spec.
 Proof.
   eapply refines_trans; tc.
   rewrite refinesE=> l l' rl.

@@ -11,7 +11,7 @@ Section size_seq.
 
 Context (A : Type) (N : Type) `{zero_of N} `{one_of N} `{add_of N}.
 
-Global Instance size_seq : size_of (seq A) N := 
+#[export] Instance size_seq : size_of (seq A) N := 
   fix size xs := if xs is x :: s then (size s + 1)%C else 0%C.
 
 End size_seq.
@@ -34,7 +34,7 @@ Context `{!refines rN 0%N 0%C}.
 Context `{!refines rN 1%N 1%C}.
 Context `{!refines (rN ==> rN ==> rN) addn add_op}.
 
-Global Instance refine_nth1 :
+#[export] Instance refine_nth1 :
   refines (rAC ==> list_R rAC ==> rN ==> rAC)
           nth (fun x s (n : N) => nth x s (spec n)).
 Proof.
@@ -42,7 +42,7 @@ Proof.
   rewrite -[X in refines _ X _]/(spec_id _); exact: refines_apply.
 Qed.
 
-Global Instance refine_nth2 :
+#[export] Instance refine_nth2 :
   refines (list_R (list_R rAC) ==> rN ==> list_R rAC)
           (nth [::]) (fun s (n : N) => nth [::] s (spec n)).
 Proof.
@@ -51,7 +51,7 @@ Proof.
   rewrite -[X in refines _ X _]/(spec_id _); exact: refines_apply.
 Qed.
 
-Global Instance refine_list_R2_implem s :
+#[export] Instance refine_list_R2_implem s :
   refines (list_R (list_R rAC)) s (map (map implem) s).
 Proof.
   rewrite refinesE.
@@ -68,7 +68,7 @@ Proof.
   exact: ihs.
 Qed.
 
-Global Instance refine_size : refines (list_R rAC ==> rN) size size_op.
+#[export] Instance refine_size : refines (list_R rAC ==> rN) size size_op.
 Proof.
 by rewrite refinesE => s s' rs; rewrite -[size s]size_seqE; param size_seq_R.
 Qed.

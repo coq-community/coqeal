@@ -110,18 +110,18 @@ Context `{!split_of polyC N}.
 Context `{!refines (rN ==> RpolyC ==> prod_R RpolyC RpolyC) split_polyR split_op}.
 
 
-Global Instance RpolyC_karatsuba_rec :
+#[export] Instance RpolyC_karatsuba_rec :
   refines (nat_R ==> RpolyC ==> RpolyC ==> RpolyC)
           (karatsuba_rec (polyA:={poly R}) (N:=nat))
           (karatsuba_rec (polyA:=polyC) (N:=N)).
 Proof. param karatsuba_rec_R. Qed.
 
-Global Instance RpolyC_karatsuba :
+#[export] Instance RpolyC_karatsuba :
   refines (RpolyC ==> RpolyC ==> RpolyC)
     (karatsuba (polyA:={poly R}) (N:=nat)) (karatsuba (polyA:=polyC) (N:=N)).
 Proof. param karatsuba_R. Qed.
 
-Global Instance RpolyC_karatsuba_mul p sp q sq :
+#[export] Instance RpolyC_karatsuba_mul p sp q sq :
   refines RpolyC p sp -> refines RpolyC q sq ->
   refines RpolyC (p * q) (karatsuba (N:=N) sp sq).
 Proof.

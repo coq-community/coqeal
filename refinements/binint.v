@@ -45,10 +45,10 @@ Context `{cast_of N P, cast_of P N}.
 Context `{spec_of N nat, spec_of P pos}.
 Context `{implem_of nat N, implem_of pos P}.
 
-Global Instance zeroZ : zero_of Z := Zpos 0.
-Global Instance oneZ : one_of Z := Zpos 1.
+#[export] Instance zeroZ : zero_of Z := Zpos 0.
+#[export] Instance oneZ : one_of Z := Zpos 1.
 
-Global Instance addZ : add_of Z := fun x y : Z => match x, y with
+#[export] Instance addZ : add_of Z := fun x y : Z => match x, y with
   | Zpos x, Zpos y => Zpos (x + y)
   | Zneg x, Zneg y => Zneg (x + y)
   | Zpos x, Zneg y => if (cast y <= x) then Zpos (x - cast y)
@@ -57,12 +57,12 @@ Global Instance addZ : add_of Z := fun x y : Z => match x, y with
                                        else Zneg (cast (cast x - y))
   end.
 
-Global Instance oppZ : opp_of Z := fun x : Z => match x with
+#[export] Instance oppZ : opp_of Z := fun x : Z => match x with
   | Zpos x => if (x == 0)%C then 0%C else Zneg (cast x)
   | Zneg x => Zpos (cast x)
   end.
 
-Global Instance subZ : sub_of Z := fun x y : Z => match x, y with
+#[export] Instance subZ : sub_of Z := fun x y : Z => match x, y with
   | Zpos x, Zneg y => Zpos (x + cast y)
   | Zneg x, Zpos y => if (y == 0)%C then Zneg x else Zneg (x + cast y)
   | Zpos x, Zpos y => if (y <= x) then Zpos (x - y)
@@ -72,20 +72,20 @@ Global Instance subZ : sub_of Z := fun x y : Z => match x, y with
                       else Zneg (cast ((cast x : N) - cast y))
   end.
 
-Global Instance eqZ : eq_of Z := fun x y : Z => match x, y with
+#[export] Instance eqZ : eq_of Z := fun x y : Z => match x, y with
   | Zpos x, Zpos y => (x == y)
   | Zneg x, Zneg y => (x == y)
   | _, _ => false
   end.
 
-Global Instance mulZ : mul_of Z := fun x y : Z => match x, y with
+#[export] Instance mulZ : mul_of Z := fun x y : Z => match x, y with
   | Zpos x, Zpos y => Zpos (x * y)
   | Zneg x, Zpos y => if (y == 0)%C then 0%C else Zneg (x * cast y)
   | Zpos x, Zneg y => if (x == 0)%C then 0%C else Zneg (cast x * y)
   | Zneg x, Zneg y => Zpos (cast x * cast y)
   end.
 
-Global Instance expZ : exp_of Z N := fun x n =>
+#[export] Instance expZ : exp_of Z N := fun x n =>
   if (n == 0)%C then 1%C else
     match x with
     | Zpos x => Zpos (x ^ n)
@@ -93,36 +93,36 @@ Global Instance expZ : exp_of Z N := fun x n =>
                 else Zneg (x ^ (cast n : P))
     end.
 
-Global Instance leqZ : leq_of Z := fun x y : Z => match x, y with
+#[export] Instance leqZ : leq_of Z := fun x y : Z => match x, y with
   | Zpos x, Zpos y => (x <= y)
   | Zneg x, Zneg y => (y <= x)
   | Zneg _, Zpos _ => true
   | Zpos _, Zneg _ => false
   end.
 
-Global Instance ltZ : lt_of Z := fun x y : Z => match x, y with
+#[export] Instance ltZ : lt_of Z := fun x y : Z => match x, y with
   | Zpos x, Zpos y => (x < y)
   | Zneg x, Zneg y => (y < x)
   | Zneg _, Zpos _ => true
   | Zpos _, Zneg _ => false
   end.
 
-Global Instance cast_NZ : cast_of N Z := fun n : N => Zpos n.
+#[export] Instance cast_NZ : cast_of N Z := fun n : N => Zpos n.
 
-Global Instance cast_PZ : cast_of P Z := fun n : P => Zpos (cast n).
+#[export] Instance cast_PZ : cast_of P Z := fun n : P => Zpos (cast n).
 
-Global Instance cast_ZN : cast_of Z N := fun z =>
+#[export] Instance cast_ZN : cast_of Z N := fun z =>
   if z is Zpos n then n else 0.
 
-Global Instance cast_ZP : cast_of Z P := fun z => cast (cast_ZN z).
+#[export] Instance cast_ZP : cast_of Z P := fun z => cast (cast_ZN z).
 
-Global Instance specZ : spec_of Z int :=
+#[export] Instance specZ : spec_of Z int :=
   fun x => (match x with
              | Zpos p => (spec p : nat)%:Z
              | Zneg n => - (spec (cast n : N): nat)%:Z
            end)%R.
 
-Global Instance implemZ : implem_of int Z :=
+#[export] Instance implemZ : implem_of int Z :=
   fun x => (match x with
             | Posz n => Zpos (implem n)
             | Negz n => Zneg (implem (posS n))
@@ -388,57 +388,57 @@ Context `{!refines (Logic.eq ==> Rnat) implem_id implem,
 
 Local Notation Z := (Z N P).
 
-Global Instance RZNP_zeroZ  : refines RZNP 0 0%C.
+#[export] Instance RZNP_zeroZ  : refines RZNP 0 0%C.
 Proof. param_comp zeroZ_R. Qed.
 
-Global Instance RZNP_oneZ  : refines RZNP 1 1%C.
+#[export] Instance RZNP_oneZ  : refines RZNP 1 1%C.
 Proof. param_comp oneZ_R. Qed.
 
-Global Instance RZNP_castNZ : refines (Rnat ==> RZNP) Posz cast.
+#[export] Instance RZNP_castNZ : refines (Rnat ==> RZNP) Posz cast.
 Proof. param_comp cast_NZ_R. Qed.
 
-Global Instance RZNP_castPZ : refines (Rpos ==> RZNP) pos_to_int cast.
+#[export] Instance RZNP_castPZ : refines (Rpos ==> RZNP) pos_to_int cast.
 Proof. param_comp cast_PZ_R. Qed.
 
-Global Instance RZNP_castZN: refines (RZNP ==> Rnat) int_to_nat cast.
+#[export] Instance RZNP_castZN: refines (RZNP ==> Rnat) int_to_nat cast.
 Proof. rewrite /cast; param_comp cast_ZN_R. Qed.
 
-Global Instance RZNP_castZP: refines (RZNP ==> Rpos) int_to_pos cast.
+#[export] Instance RZNP_castZP: refines (RZNP ==> Rpos) int_to_pos cast.
 Proof. rewrite /cast; param_comp cast_ZP_R. Qed.
 
-Global Instance RZNP_addZ : refines (RZNP ==> RZNP ==> RZNP) +%R +%C.
+#[export] Instance RZNP_addZ : refines (RZNP ==> RZNP ==> RZNP) +%R +%C.
 Proof. param_comp addZ_R. Qed.
 
-Global Instance RZNP_mulZ : refines (RZNP ==> RZNP ==> RZNP) *%R *%C.
+#[export] Instance RZNP_mulZ : refines (RZNP ==> RZNP ==> RZNP) *%R *%C.
 Proof. param_comp mulZ_R. Qed.
 
-Global Instance RZNP_oppZ : refines (RZNP ==> RZNP) -%R -%C.
+#[export] Instance RZNP_oppZ : refines (RZNP ==> RZNP) -%R -%C.
 Proof. param_comp oppZ_R. Qed.
 
-Global Instance RZNP_subZ :
+#[export] Instance RZNP_subZ :
   refines (RZNP ==> RZNP ==> RZNP) (fun x y => x - y) sub_op.
 Proof. param_comp subZ_R. Qed.
 
-Global Instance RZNP_expZ :
+#[export] Instance RZNP_expZ :
   refines (RZNP ==> Rnat ==> RZNP) (@GRing.exp _) exp_op.
 Proof. param_comp expZ_R. Qed.
 
-Global Instance RZNP_eqZ :
+#[export] Instance RZNP_eqZ :
   refines (RZNP ==> RZNP ==> bool_R) eqtype.eq_op (@Op.eq_op Z _).
 Proof. param_comp eqZ_R. Qed.
 
-Global Instance RZNP_leqZ :
+#[export] Instance RZNP_leqZ :
   refines (RZNP ==> RZNP ==> bool_R) Num.le (@Op.leq_op Z _).
 Proof. param_comp leqZ_R. Qed.
 
-Global Instance RZNP_ltZ :
+#[export] Instance RZNP_ltZ :
   refines (RZNP ==> RZNP ==> bool_R) Num.lt (@Op.lt_op Z _).
 Proof. param_comp ltZ_R. Qed.
 
-(* Global Instance RZNP_specZ_l : refines (RZNP ==> int_R) spec_id spec. *)
+(* #[export] Instance RZNP_specZ_l : refines (RZNP ==> int_R) spec_id spec. *)
 (* Proof. param_comp specZ_R. Qed. *)
 
-Global Instance RZNP_specZ : refines (RZNP ==> Logic.eq) spec_id spec.
+#[export] Instance RZNP_specZ : refines (RZNP ==> Logic.eq) spec_id spec.
 Proof.
   eapply refines_trans; tc.
   rewrite refinesE=> x y rxy.
@@ -447,7 +447,7 @@ Proof.
   apply: congr1; exact: refinesP.
 Qed.
 
-Global Instance RZNP_implemZ : refines (Logic.eq ==> RZNP) implem_id implem.
+#[export] Instance RZNP_implemZ : refines (Logic.eq ==> RZNP) implem_id implem.
 Proof.
   eapply refines_trans; tc.
   rewrite refinesE=> _ x ->.
