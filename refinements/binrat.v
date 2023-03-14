@@ -357,7 +357,7 @@ Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
 (** *** Conversion from [bigQ] to [rat] *)
 Program Definition bigQ2rat_def (bq : bigQ) :=
-  let q := Qred [bq]%bigQ in
+  let q := Qred (BigQ.to_Q bq) in
   ((Z2int (Qnum q))%:Q / (Z2int (Z.pos (Qden q)))%:Q)%R.
 Fact bigQ2rat_key : unit. Proof. by []. Qed.
 Program Definition bigQ2rat :=
@@ -436,7 +436,7 @@ by move: (Z.gcd_nonneg n (Z.pos d)) => + _ => /[swap] <-.
 Qed.
 
 Lemma BigQ_red_den_nonzero q :
-  match BigQ.red q with BigQ.Qz _ => True | BigQ.Qq _ d => [d]%bigN <> Z0 end.
+  match BigQ.red q with BigQ.Qz _ => True | BigQ.Qq _ d => (BigN.to_Z d) <> Z0 end.
 Proof.
 case: q => [//|n d] /=.
 rewrite /BigQ.norm.
@@ -454,13 +454,13 @@ Qed.
 
 Lemma r_ratBigQ_red x y : r_ratBigQ x y ->
   match BigQ.red y with
-  | BigQ.Qz n => numq x = Z2int [n]%bigZ /\ denq x = 1%R
-  | BigQ.Qq n d => numq x = Z2int [n]%bigZ /\ denq x = Z2int [d]%bigN
+  | BigQ.Qz n => numq x = Z2int (BigZ.to_Z n) /\ denq x = 1%R
+  | BigQ.Qq n d => numq x = Z2int (BigZ.to_Z n) /\ denq x = Z2int (BigN.to_Z d)
   end.
 Proof.
 case: (ratP x) => nx dx nx_dx_coprime {x}.
 rewrite /r_ratBigQ /fun_hrel unlock -BigQ.strong_spec_red.
-have ry_red : Qred [BigQ.red y]%bigQ = [BigQ.red y]%bigQ.
+have ry_red : Qred (BigQ.to_Q (BigQ.red y)) = BigQ.to_Q (BigQ.red y).
 { by rewrite BigQ.strong_spec_red Qcanon.Qred_involutive. }
 have ry_dneq0 := BigQ_red_den_nonzero y.
 case: (BigQ.red y) ry_dneq0 ry_red => [ny _ _|ny dy dy_neq0].
@@ -477,7 +477,7 @@ move=> /eqP; rewrite rat_eqE !coprimeq_num // !coprimeq_den //=.
 rewrite !gtr0_sg ?nat_of_pos_gtr0 // !mul1r => /andP[/eqP <-].
 rewrite ifF; [|exact/eqP/eqP/lt0r_neq0/nat_of_pos_gtr0].
 rewrite -!abszE !absz_nat => /eqP[<-]; split=> [//|].
-rewrite -[LHS]/(Z2int (Z.pos (Z.to_pos [dy]%bigN))) Z2Pos.id //.
+rewrite -[LHS]/(Z2int (Z.pos (Z.to_pos (BigN.to_Z dy)))) Z2Pos.id //.
 exact: BigQ.N_to_Z_pos.
 Qed.
 
