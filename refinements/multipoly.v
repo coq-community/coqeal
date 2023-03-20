@@ -8,9 +8,8 @@ From CoqEAL Require Import param binord binnat.
 From CoqEAL Require Import seqmx (* for zipwith and eq_seq *).
 From CoqEAL Require Import ssrcomplements.
 (* Multivariate polynomials from
-   https://github.com/math-comp/multinomials.git
-   Tested with 5b46e50983ee68dd1b6932e7e4a3bfc1113e7360 *)
-From SsrMultinomials Require Import mpoly freeg.
+   https://github.com/math-comp/multinomials.git *)
+From mathcomp.multinomials Require Import mpoly freeg.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
