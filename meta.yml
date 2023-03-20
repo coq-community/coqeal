@@ -91,9 +91,9 @@ dependencies:
     [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.3 or later
 - opam:
     name: coq-mathcomp-multinomials
-    version: '{((>= "1.5.1" & < "1.7~") | = "dev")}'
+    version: '{((>= "1.5.7" & < "1.7~") | = "dev")}'
   description: |-
-    [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 1.5.1 and < 1.7
+    [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 1.5.7 and < 1.7
 - opam:
     name: coq-mathcomp-algebra
     version: '{((>= "1.13.0" & < "1.17~") | = "dev")}'
