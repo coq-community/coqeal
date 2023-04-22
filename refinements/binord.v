@@ -156,7 +156,7 @@ Local Opaque ltn.
           (fun x y => ltn x y) lt_op.
 Proof.
   rewrite refinesE=> x x' hx y y' hy /=.
-  try change (pred_of_simpl (ltn x) y) with (rel_of_simpl_rel ltn x y).
+  try change (pred_of_simpl (ltn x) y) with (rel_of_simpl ltn x y).
   exact: refinesP.
 Qed.
 

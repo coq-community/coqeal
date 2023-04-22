@@ -216,14 +216,13 @@ Lemma Z2int_div x y : Z.le 0 x -> Z.le 0 y ->
 Proof.
 case: x => [|x|//] _; [by rewrite intdiv.div0z|].
 case: y => [|y|//] _; [by rewrite intdiv.divz0|].
-rewrite -!positive_nat_Z -div_Zdiv; last first.
-{ rewrite Nat.neq_0_lt_0; exact: Pos2Nat.is_pos. }
+rewrite -!positive_nat_Z -Nat2Z.inj_div; last first.
 rewrite !positive_nat_Z /= /divz gtr0_sgz ?mul1r; last first.
 { exact: nat_of_pos_gt0. }
 rewrite divE !binnat.to_natE absz_nat /Z2int.
 move: (Zle_0_nat (nat_of_pos x %/ nat_of_pos y)).
 rewrite -[X in _ = Posz X]Nat2Z.id.
-  by case: Z.of_nat => //= p _; rewrite binnat.to_natE.
+by case: Z.of_nat => //= p _; rewrite binnat.to_natE.
 Qed.
 
 Lemma Z2int_le x y : (Z2int x <= Z2int y)%R <-> Z.le x y.

@@ -168,7 +168,7 @@ rewrite (expand_det_row _ ((p^-1)%g ord0)) big_ord_recl big1=>[|i _].
     rewrite codomE /f2 /g2 -Hfg0 map_comp (mem_map Hg).
     set i := p _.
     have:= mem_ord_enum i.
-    rewrite -enum_ord_enum enum_ordS in_cons -(permKV p ord0).
+    rewrite -enum_ord_enum enum_ordSl in_cons -(permKV p ord0).
     by rewrite /i (inj_eq (@perm_inj _ _)) eq_sym (negbTE (neq_lift _ _)).
   rewrite addr0 (bigD1 ((p^-1)%g ord0)) //= -Hfg0 permKV eqxx eqd_mull //.
   rewrite -[X in _ %= X]mul1r eqd_mul ?eqd1 ?unitrX ?unitrN ?unitr1 //.
