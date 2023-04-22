@@ -321,7 +321,7 @@ have Hfg2 : {subset codom f2 <= codom g2}.
   move=> x /codomP [y ->].
   rewrite codomE /f2 /g2 -Hfg0 map_comp (mem_map Hg).
   have: p (lift p0 y) \in enum 'I_j.+1 by rewrite mem_enum.
-  rewrite enum_ordS in_cons -(permKV p ord0).
+  rewrite enum_ordSl in_cons -(permKV p ord0).
   by rewrite (inj_eq (@perm_inj _ _)) eq_sym (negbTE (neq_lift _ _)).
 rewrite addr0 (bigD1 ((p^-1)%g ord0)) //= -Hfg0 permKV eqxx eqd_mull //.
 rewrite -[X in _ %= X]mul1r eqd_mul ?eqd1 ?unitrX ?unitrN ?unitr1 //.
