@@ -213,7 +213,7 @@ have Hs: size s1 = size s2.
   by do 2! rewrite map_comp -map_flatten size_map.
 apply: similar_diag_block=> // i; rewrite /s1.
 (do 2! rewrite map_comp -map_flatten size_map) => Hi.
-rewrite !(nth_map 0) ?size_map //.
+rewrite (nth_map 0) ?size_map //.
 rewrite !(nth_map (0,0%N)) ?size_map //.
 set x := nth _ _ _.
 rewrite -(@prednK x.2); first exact: similar_cj.

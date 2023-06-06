@@ -241,8 +241,8 @@ Lemma sum_size_inv_factors n (A : 'M[F]_n) :
   (\sum_(p <- invariant_factors A) (size p).-1 = n)%N.
 Proof.
 have {2}->: n = n.+1.-1 by [].
-rewrite -(size_char_poly A) -invf_char_poly.
-rewrite !(big_nth 0) !big_mkord size_prod=> [|i _]; last first.
+rewrite -(size_char_poly A) -invf_char_poly (big_nth 0) [in RHS](big_nth 0).
+rewrite !big_mkord size_prod=> [|i _]; last first.
   by apply: (@invariant_factor_neq0 _ A); rewrite mem_nth.
 rewrite subSKn -sum1_card; apply/eqP.
 set s := (\sum_(i in _) 1)%N.

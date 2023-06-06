@@ -350,8 +350,8 @@ Proof.
   case sp: (size (\poly_(i < size p) p`_i))=> [|n] /=; simpC.
     move /eqP: sp; rewrite size_poly_eq0; move/eqP=> ->.
     by rewrite mul0r addr0 size_polyC; case: (a == 0).
-  rewrite addrC size_addl size_mulX ?sp ?size_polyC ?addn1; case: (a != 0)=> //;
-  by apply/negP; rewrite -size_poly_eq0 sp.
+  by rewrite addrC size_addl size_mulX ?sp ?size_polyC ?[RHS]addn1;
+    case: (a != 0)=> //; apply/negP; rewrite -size_poly_eq0 sp.
 Qed.
 
 Local Instance Rseqpoly_eq :

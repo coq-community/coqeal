@@ -504,9 +504,9 @@ have {}H: M0 * ('X - A%:P) * N0 = (1 - ('X - B%:P) * R1) * ('X - B%:P).
   rewrite -{1}[_ + _ - B%:P]addrA subrK (addrC (M0 * _ * _)) addrK.
   by rewrite opprD opprK addrA addrN add0r.
 have HM0: size M0 <= 1.
-  by rewrite -ltnS -(size_XsubC B) ltn_rmodp_l polyXsubC_eq0.
+  by rewrite -ltnS -[leqRHS](size_XsubC B) ltn_rmodp_l polyXsubC_eq0.
 have HN0: size N0 <= 1.
-  by rewrite -ltnS -(size_XsubC B) ltn_rmodp polyXsubC_eq0.
+  by rewrite -ltnS -[leqRHS](size_XsubC B) ltn_rmodp polyXsubC_eq0.
 case: (eqVneq R1 0) => HR1; last first.
   have: size ((1 - ('X - B%:P) * R1) * ('X - B%:P)) <= 2.
     rewrite -H; apply:(leq_trans (size_mul_leq _ _)).
