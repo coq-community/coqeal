@@ -44,12 +44,12 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
   - Cyril Cohen ([**@CohenCyril**](https://github.com/CohenCyril))
   - Pierre Roux ([**@proux01**](https://github.com/proux01))
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 8.15 or later (use releases for other Coq versions)
+- Compatible Coq versions: 8.16 or later (use releases for other Coq versions)
 - Additional dependencies:
   - [Bignums](https://github.com/coq/bignums) same version as Coq
   - [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.3 or later
-  - [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 1.5.7 and < 1.7
-  - [MathComp algebra](https://math-comp.github.io) 1.13.0 or later
+  - [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 2.0 or later
+  - [MathComp algebra](https://math-comp.github.io) 2.0 or later
   - [MathComp real-closed](https://math-comp.github.io) 1.1.2 or later
 - Coq namespace: `CoqEAL`
 - Related publication(s):

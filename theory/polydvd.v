@@ -1,10 +1,11 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg. *)
+From HB Require Import structures.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 From mathcomp Require Import path choice fintype tuple finset ssralg.
 From mathcomp Require Import matrix poly. (*  generic_quotient. *)
 From mathcomp Require Import bigop polydiv.
-From CoqEAL Require Import dvdring.
+From CoqEAL Require Import stronglydiscrete dvdring.
 
 Import GRing.Theory.
 Import Pdiv.Ring Pdiv.Idomain Pdiv.RingComRreg dvdring.Notations.
@@ -49,7 +50,7 @@ Definition odivp p q : option {poly R} :=
   if p == 0 then Some 0 else odivp_rec q (size p) 0 p.
 
 Lemma odivp_recP : forall q n p r, size p <= n ->
-  DvdRing.div_spec p q (omap (fun x => x - r) (odivp_rec q n r p)).
+  div_spec p q (omap (fun x => x - r) (odivp_rec q n r p)).
 Proof.
 move=> q; elim=> [|n ihn] p r hn /=.
   move: hn; rewrite leqn0 size_poly_eq0 => /eqP->.
@@ -106,7 +107,7 @@ move: (erefl om); rewrite /om /d; case: {2}_ / ihn.
   by rewrite mulrBl.
 Qed.
 
-Lemma odivpP : forall p q, DvdRing.div_spec p q (odivp p q).
+Lemma odivpP : forall p q, div_spec p q (odivp p q).
 Proof.
 move=> p q; rewrite /odivp.
 case p0: (p == 0); first by constructor; rewrite mul0r (eqP p0).
@@ -114,12 +115,11 @@ have := (@odivp_recP q (size p) p 0 (leqnn _)).
 by case: odivp_rec=> [a|] //=; rewrite subr0; apply.
 Qed.
 
-Definition polyDvdRingMixin := DvdRingMixin odivpP.
-Canonical polyDvdRingType := DvdRingType {poly R} polyDvdRingMixin.
+End PolyDvdRing.
+End PolyDvdRing.
 
-End PolyDvdRing.
-End PolyDvdRing.
-Canonical PolyDvdRing.polyDvdRingType.
+HB.instance Definition _ (R : dvdRingType) := Ring_hasDiv.Build {poly R}
+  (@PolyDvdRing.odivpP R).
 
 Module PolyGcdDomain.
 Section PolyGcdDomain.
@@ -212,7 +212,7 @@ Lemma gcdsr_mull : forall a p, gcdsr (a%:P * p) %= a * gcdsr p.
 Proof.
 move=> a.
 elim/poly_ind=> [|p c IH]; first by rewrite mulr0 gcdsr0 mulr0.
-rewrite mulrDr -polyCM mulrA gcdsr_gcdl.
+rewrite mulrDr -polyCM mulrA [X in X %= _]gcdsr_gcdl.
 rewrite (eqd_trans (eqd_gcd (eqdd _) IH)) //.
 by rewrite (eqd_trans (gcdr_mul2l _ _ _)) // -gcdsr_gcdl.
 Qed.
@@ -385,7 +385,7 @@ Qed.
 Definition pp p := odflt 1 (p %/? (gcdsr p)%:P).
 
 Lemma pp0 : pp 0 = 0.
-Proof. by rewrite /pp /odivr gcdsr0 /= /odivp eqxx. Qed.
+Proof. by rewrite /pp /odivr gcdsr0 /div /= /odivp eqxx. Qed.
 
 Lemma ppP : forall p, p = (gcdsr p)%:P * pp p.
 Proof.
@@ -694,13 +694,11 @@ case: Hgg; case: Hppg=> ? ? ? ?.
 by rewrite (ppP g) (ppP p) (ppP q) !dvdr_mul // polyC_inj_dvdr.
 Qed.
 
-Definition polyGcdDomainMixin := GcdDomainMixin gcdpP.
-Canonical polyGcdDomainType := GcdDomainType {poly R} polyGcdDomainMixin.
-
 End PolyGcdDomain.
 End PolyGcdDomain.
-Canonical PolyGcdDomain.polyGcdDomainType.
 
+HB.instance Definition _ (R : gcdDomainType) := DvdRing_hasGcd.Build {poly R}
+  (@PolyGcdDomain.gcdpP R).
 
 Module PolyPriField.
 Section PolyPriField.
@@ -726,7 +724,7 @@ Definition ediv p q : {poly F} * {poly F} :=
 
 Lemma ediv_recP : forall q n p qq, q != 0 -> size p <= n ->
     let: (qq', r) := (ediv_rec q n qq p) in
-  EuclideanDomain.edivr_spec (size : {poly F} -> nat) p q (qq' - qq, r).
+  edivr_spec (size : {poly F} -> nat) p q (qq' - qq, r).
 Proof.
 move=> q.
 elim=> [|n IHn] p qq Hq0 /=.
@@ -776,7 +774,7 @@ by rewrite -addrA [_ * q + _ * q]addrC !mulNr subrr addr0 [_ + r]addrC.
 Qed.
 
 Lemma edivP : forall p q,
-  EuclideanDomain.edivr_spec (size : {poly F} -> nat) p q (ediv p q).
+  edivr_spec (size : {poly F} -> nat) p q (ediv p q).
 Proof.
 move=> p q; rewrite /ediv.
 case: (eqVneq q 0) => q0.
@@ -794,26 +792,10 @@ rewrite size_mul // -ltnS prednK; first by rewrite -subn_gt0 addnK lt0n size_pol
 by rewrite addn_gt0 lt0n size_poly_eq0 p0.
 Qed.
 
-Definition poly_euclidMixin := EuclideanDomain.Mixin poly_size_mull edivP.
-
-Definition poly_dvdMixin := EuclidDvdMixin poly_euclidMixin.
-Canonical polynomial_dvdRingType := DvdRingType (polynomial F) poly_dvdMixin.
-Canonical poly_dvdRingType := DvdRingType {poly F} poly_dvdMixin.
-
-Definition poly_gcdMixin := EuclidGcdMixin poly_euclidMixin.
-Canonical polynomial_gcdType := GcdDomainType (polynomial F) poly_gcdMixin.
-Canonical poly_gcdType := GcdDomainType {poly F} poly_gcdMixin.
-
-Definition poly_bezoutMixin := EuclidBezoutMixin poly_euclidMixin.
-Canonical polynomial_bezoutType := BezoutDomainType (polynomial F) poly_bezoutMixin.
-Canonical poly_bezoutType := BezoutDomainType {poly F} poly_bezoutMixin.
-
-Definition poly_priMixin := EuclidPIDMixin poly_euclidMixin.
-Canonical polynomial_priType := PIDType (polynomial F) poly_priMixin.
-Canonical poly_priType := PIDType {poly F} poly_priMixin.
-
-Canonical polynomial_euclidType := EuclidDomainType (polynomial F) poly_euclidMixin.
-Canonical poly_euclidType := EuclidDomainType {poly F} poly_euclidMixin.
+HB.instance Definition _ := IntegralDomain_isEuclidean.Build (polynomial F)
+  poly_size_mull edivP.
+HB.instance Definition _ := EuclideanDomain.on {poly F}.
+HB.instance Definition _ := BezoutDomain.on {poly F}.
 
 End PolyPriField.
 
@@ -828,4 +810,3 @@ Proof. by apply/dvdrP/Pdiv.Field.dvdpP. Qed.
 End PolyPriFieldTheory.
 (****)
 End PolyPriField.
-

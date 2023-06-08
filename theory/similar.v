@@ -1,5 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From HB Require Import structures.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype fintype finfun ssrnat seq.
 From mathcomp Require Import choice ssralg poly polydiv mxpoly matrix bigop.
 From mathcomp Require Import mxalgebra perm fingroup tuple.
@@ -52,21 +53,22 @@ Definition id_converse_def := (fun x : R => x : R^c).
 Lemma add_id : additive id_converse_def.
 Proof. by []. Qed.
 
-Definition id_converse := Additive add_id.
+HB.instance Definition _ := GRing.isAdditive.Build R R^c id_converse_def add_id.
+Definition id_converse : {additive _ -> _} := id_converse_def.
 
 Lemma expr_rev (x : R) k : (x : R^c) ^+ k = x ^+ k.
 Proof. by elim:k=> // k IHk; rewrite exprS exprSr IHk. Qed.
 
 Definition phi (p : {poly R}^c) := map_poly id_converse p.
 
-Fact phi_is_rmorphism : rmorphism phi.
+Fact phi_is_rmorphism : multiplicative phi.
 Proof.
-split=> //; first exact: raddfB.
 split=> [p q|]; apply/polyP=> i; last by rewrite coef_map !coef1.
 by rewrite coefMr coef_map coefM; apply: eq_bigr => j _; rewrite !coef_map.
 Qed.
 
-Canonical phi_rmorphism := RMorphism phi_is_rmorphism.
+HB.instance Definition _ := GRing.Additive.copy phi phi.
+HB.instance Definition _ := GRing.isMultiplicative.Build _ _ _ phi_is_rmorphism.
 
 Definition phi_inv (p : {poly R^c}) :=
   map_poly (fun x : R^c => x : R) p : {poly R}^c.
@@ -100,7 +102,7 @@ Definition rmultp_l := [rel m d | rdvdp_l d m].
 Lemma ltn_rmodp_l p q : (size (rmodp_l p q) < size q) = (q != 0).
 Proof.
 have := ltn_rmodp (phi p) (phi q).
-rewrite -(rmorph0 phi_rmorphism) (inj_eq (can_inj phiK)) => <-.
+rewrite -(rmorph0 phi) (inj_eq (can_inj phiK)) => <-.
 rewrite /rmodp_l /redivp_l /rmodp; case: (redivp _ _)=> [[k q'] r'] /=.
 by rewrite !size_map_inj_poly.
 Qed.
@@ -461,8 +463,8 @@ constructor.
   case: m A=> [A [eq _]|m' A]; first exact: equiv0l.
   case=> eq [P HP HPA]; split=> //.
   move: A P HP HPA; rewrite eq=> A P HP; rewrite !conform_mx_id=> HPA.
-  pose M := (map_mx (polyC_rmorphism _) P).
-  pose N := (map_mx (polyC_rmorphism _) P^-1).
+  pose M := map_mx polyC P.
+  pose N := map_mx polyC P^-1.
   have HM: M \in unitmx by rewrite map_unitmx.
   exists M, N; split=> //; first by rewrite map_unitmx unitmx_inv.
   rewrite mulmxBr mulmxBl mul_mx_scalar -scalemxAl /M /N map_mx_inv.
@@ -490,19 +492,21 @@ have {}H: M0 * ('X - A%:P) * N0 = (1 - ('X - B%:P) * R1) * ('X - B%:P).
     by rewrite [phi M](rdivp_l_eq (monicXsubC B)) addrK.
   have HN1: N1 * ('X - B%:P) = phi N - N0.
     by rewrite [phi N](rdivp_eq (monicXsubC B)) addrK.
-  rewrite /R1 mulrBr mulrDr !mulrA HM1 mulrBl mulrDl mulrDl.
+  rewrite /R1 (mulrBr (_ - B%:P)) (mulrDr (_ - B%:P)) !mulrA HM1 mulrBl 2!mulrDl.
   rewrite mulNr -![_ * N1 * _]mulrA HN1 2!mulrBl.
   rewrite ![_ * (phi N - N0)]mulrBr ![(phi M - M0) * _]mulrBl.
   rewrite -[_ * _ * phi N]mulrA -!rmorphM divrr // mulVr // !rmorph1 !mulr1.
-  rewrite mul1r 2!mulrBl H 3!opprD !opprK !addrA addrN add0r -{1 3}H.
+  rewrite mul1r [_ * phi N]mulrBl [(_ - _) * N0]mulrBl H [X in _ = _ + X]opprD.
+  rewrite [X in _ + (X - _)]opprD [X in _ + ((X - _) - _)]opprD !opprK.
+  rewrite !addrA addrN add0r -{1 3}H.
   rewrite !mulrA -[_ * _ * phi M]mulrA -[_ * _ * phi N^-1]mulrA -!rmorphM.
   rewrite divrr // mulVr // !rmorph1 !mulr1 opprB addrA.
   rewrite -{1}[_ + _ - B%:P]addrA subrK (addrC (M0 * _ * _)) addrK.
   by rewrite opprD opprK addrA addrN add0r.
 have HM0: size M0 <= 1.
-  by rewrite -ltnS -(size_XsubC B) ltn_rmodp_l polyXsubC_eq0.
+  by rewrite -ltnS -[leqRHS](size_XsubC B) ltn_rmodp_l polyXsubC_eq0.
 have HN0: size N0 <= 1.
-  by rewrite -ltnS -(size_XsubC B) ltn_rmodp polyXsubC_eq0.
+  by rewrite -ltnS -[leqRHS](size_XsubC B) ltn_rmodp polyXsubC_eq0.
 case: (eqVneq R1 0) => HR1; last first.
   have: size ((1 - ('X - B%:P) * R1) * ('X - B%:P)) <= 2.
     rewrite -H; apply:(leq_trans (size_mul_leq _ _)).
@@ -575,7 +579,7 @@ have Hxp : x1 %= x2 by move: (Hi 0%N); rewrite nth0.
 have Hx12: (@equivalent _ 1 1 1 1 x1%:M x2%:M).
   split=> //; case/eqdP: Hxp=> c Hc Hcx.
   rewrite conform_mx_id.
-  exists c%:M, 1%:M; split.
+  exists c%:M; exists 1%:M; split.
   + by rewrite -scalemx1 unitmxZ // unitmx1.
   + by rewrite unitmx1.
   by rewrite mul_scalar_mx scale_scalar_mx mulmx1 Hcx.

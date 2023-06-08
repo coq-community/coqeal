@@ -324,7 +324,7 @@ Lemma perm_fE  (g f: {ffun 'I_k -> 'I_l}) : injective f ->
   same_codom f g -> forall x, f x = g ((perm_f g f) x).
 Proof.
 move => hf hc /= x.
-rewrite /perm_f PermDef.fun_of_permE /=.
+rewrite /perm_f unlock /=.
 case: goodP => [/= _|[]] //.
 by rewrite inv_g_of_fxE.
 Qed.

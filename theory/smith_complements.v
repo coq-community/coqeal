@@ -142,7 +142,7 @@ rewrite /minor.
 elim: k=>[f g|j IHj f g Hf Hg Hfg]; first by rewrite det_mx00 big_ord0.
 have := perm_eq_image Hf Hg Hfg.
 have Ht : size (codom g) == j.+1 by rewrite size_codom card_ord.
-have -> : image g (ordinal_finType j.+1) = Tuple Ht by [].
+have -> : image g 'I_j.+1 = Tuple Ht by [].
 case/tuple_permP=> p Hp.
 have Hfg0 i : g (p i) = f i.
   have He: (i < #|'I_j.+1|)%N by rewrite card_ord.

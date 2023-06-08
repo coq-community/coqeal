@@ -63,7 +63,7 @@ Lemma big_lift_ord n F j :
   \big[op/idx]_( i < n.+1 | j != i ) F i = \big[op/idx]_i F (lift j i).
 Proof.
 case: (pickP 'I_n) => [k0 _ | n0]; last first.
-  by rewrite !big1 // => [k /unlift_some[i] | i _]; have:= n0 i.
+  by rewrite !big1 // => [i _ | k /unlift_some[i]]; have:= n0 i.
 rewrite (reindex (lift j)).
   by apply: eq_bigl=> k; rewrite neq_lift.
 exists (fun k => odflt k0 (unlift j k)) => k; first by rewrite liftK.

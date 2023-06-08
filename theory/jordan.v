@@ -80,7 +80,7 @@ case: (eqVneq i ord_max) => Hi.
 have Ho: (i.+1 < n.+1)%N by rewrite ltn_neqAle Hi ltn_ord.
 rewrite (bigD1 i) //= (bigD1 (Ordinal Ho)); last first.
   by rewrite -(inj_eq (@ord_inj _)) eqn_leq ltnn.
-rewrite !mxE eqxx (@eq_sym nat_eqType i) !eqn_leq !ltnn addr0 add0r.
+rewrite !mxE eqxx (@eq_sym nat i) !eqn_leq !ltnn addr0 add0r.
 rewrite !leqnn mul1r subnS /= big1 ?addr0; last first.
   move=> l /andP [] /negbTE Hil /negbTE Hl.
   by rewrite !mxE eq_sym [_ == _ :>nat]Hil eq_sym [_ == _ :>nat]Hl addr0 mul0r.
@@ -213,7 +213,7 @@ have Hs: size s1 = size s2.
   by do 2! rewrite map_comp -map_flatten size_map.
 apply: similar_diag_block=> // i; rewrite /s1.
 (do 2! rewrite map_comp -map_flatten size_map) => Hi.
-rewrite !(nth_map 0) ?size_map //.
+rewrite (nth_map 0) ?size_map //.
 rewrite !(nth_map (0,0%N)) ?size_map //.
 set x := nth _ _ _.
 rewrite -(@prednK x.2); first exact: similar_cj.

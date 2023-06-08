@@ -15,6 +15,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Import GRing.Theory.
+
 (** * CoqEAL refinement for effective multivariate polynomials built on FMaps *)
 
 (** N.B.: Do not use {vm_,native_}compute directly on the various
@@ -1082,9 +1084,9 @@ rewrite (Rseqmultinom_eq Hmnmd Hm) eq_sym.
 case_eq (m' == (@mnmd_seq n1.+1 i' d')).
 { move/eqP => Hm'; rewrite Hm'.
   rewrite F.add_eq_o; last exact: E.eq_refl.
-  by rewrite /= GRing.mulr1 (refines_eq ref_c). }
+  by rewrite /= mulr1 (refines_eq ref_c). }
 move=> Hm'; rewrite F.add_neq_o /=.
-{ by rewrite GRing.mulr0; rewrite F.empty_o. }
+{ by rewrite mulr0; rewrite F.empty_o. }
 by apply/mnmc_eq_seqP; rewrite eq_sym Hm'.
 Qed.
 
@@ -1103,9 +1105,9 @@ have Hm0 := @refine_mnm0 n.
 rewrite (Rseqmultinom_eq Hm Hm0).
 case_eq (m' == @mnm0_seq n).
 { move/eqP => Hm'; rewrite Hm'.
-  by rewrite F.add_eq_o; [rewrite GRing.mulr1|apply E.eq_refl]. }
+  by rewrite F.add_eq_o; [rewrite mulr1|apply E.eq_refl]. }
 move=> Hm'; rewrite F.add_neq_o /=.
-{ by rewrite GRing.mulr0; rewrite F.empty_o. }
+{ by rewrite mulr0; rewrite F.empty_o. }
 by apply/mnmc_eq_seqP; move: Hm'; rewrite eq_sym =>->.
 Qed.
 
@@ -1164,7 +1166,7 @@ case Es: (M.find _ _) => [s|] /=.
   congr *%R.
   apply: MapsTo_mcoeff ref_p ref_m Ha2. }
 move/F.not_find_in_iff in Es.
-suff->: p@_m = 0 by rewrite GRing.mulr0.
+suff->: p@_m = 0 by rewrite mulr0.
 apply: not_In_mcoeff ref_p ref_m _.
 move=> K; apply: Es.
 exact/F.map_in_iff.
@@ -1194,16 +1196,13 @@ case Ep: M.find => [cp|]; case Eq: M.find => [cq|] /=.
   by rewrite (MapsTo_mcoeff ref_p Hm Ep) (MapsTo_mcoeff ref_q Hm Eq).
 - move/F.find_mapsto_iff in Ep;
   move/F.not_find_in_iff in Eq;
-  by rewrite (MapsTo_mcoeff ref_p Hm Ep) (not_In_mcoeff ref_q Hm Eq)
-  GRing.addr0.
+  by rewrite (MapsTo_mcoeff ref_p Hm Ep) (not_In_mcoeff ref_q Hm Eq) addr0.
 - move/F.not_find_in_iff in Ep;
   move/F.find_mapsto_iff in Eq;
-  by rewrite (not_In_mcoeff ref_p Hm Ep) (MapsTo_mcoeff ref_q Hm Eq)
-  GRing.add0r.
+  by rewrite (not_In_mcoeff ref_p Hm Ep) (MapsTo_mcoeff ref_q Hm Eq) add0r.
 - move/F.not_find_in_iff in Ep;
   move/F.not_find_in_iff in Eq;
-  by rewrite (not_In_mcoeff ref_p Hm Ep) (not_In_mcoeff ref_q Hm Eq)
-  GRing.addr0.
+  by rewrite (not_In_mcoeff ref_p Hm Ep) (not_In_mcoeff ref_q Hm Eq) addr0.
 Qed.
 
 Definition mpoly_sub {n} (p : {mpoly T[n]}) q := mpoly_add p (mpoly_opp q).
@@ -1230,16 +1229,13 @@ case Ep: M.find => [cp|]; case Eq: M.find => [cq|] /=.
   by rewrite (MapsTo_mcoeff ref_p Hm Ep) (MapsTo_mcoeff ref_q Hm Eq).
 - move/F.find_mapsto_iff in Ep;
   move/F.not_find_in_iff in Eq;
-  by rewrite (MapsTo_mcoeff ref_p Hm Ep) (not_In_mcoeff ref_q Hm Eq)
-  GRing.subr0.
+  by rewrite (MapsTo_mcoeff ref_p Hm Ep) (not_In_mcoeff ref_q Hm Eq) subr0.
 - move/F.not_find_in_iff in Ep;
   move/F.find_mapsto_iff in Eq;
-  by rewrite (not_In_mcoeff ref_p Hm Ep) (MapsTo_mcoeff ref_q Hm Eq)
-  GRing.sub0r.
+  by rewrite (not_In_mcoeff ref_p Hm Ep) (MapsTo_mcoeff ref_q Hm Eq) sub0r.
 - move/F.not_find_in_iff in Ep;
   move/F.not_find_in_iff in Eq;
-  by rewrite (not_In_mcoeff ref_p Hm Ep) (not_In_mcoeff ref_q Hm Eq)
-  GRing.subr0.
+  by rewrite (not_In_mcoeff ref_p Hm Ep) (not_In_mcoeff ref_q Hm Eq) subr0.
 Qed.
 
 Lemma rem_mpoly_eff n (q p' : effmpoly T) (k' : seqmultinom) (e : T)
@@ -1262,14 +1258,14 @@ case E.eq_dec.
 { move/mnmc_eq_seqP/eqP => Hmm'; rewrite -Hmm'.
   have Hmm : k = mm.
   { by apply/eqP; rewrite (Rseqmultinom_eq Hk ref_mm); apply/eqP. }
-  rewrite (proj1 (F.not_find_in_iff _ _) Hin) -Hmm eqxx GRing.mulr1.
-  by rewrite (refine_find_mpoly Hp Hk) => ->; rewrite GRing.subrr. }
+  rewrite (proj1 (F.not_find_in_iff _ _) Hin) -Hmm eqxx mulr1.
+  by rewrite (refine_find_mpoly Hp Hk) => ->; rewrite subrr. }
 move=> Hmm' <-.
 have Hmm : ~ k = mm.
 { move=> Hmmm; apply/Hmm'/mnmc_eq_seqP.
   by rewrite -(Rseqmultinom_eq Hk ref_mm); apply/eqP. }
 rewrite (refine_find_mpoly Hp ref_mm).
-by have ->: (k == mm = false); [apply/eqP|rewrite GRing.mulr0 GRing.subr0].
+by have ->: (k == mm = false); [apply/eqP|rewrite mulr0 subr0].
 Qed.
 
 Lemma refine_mpoly_sum_eff n k f f' (p : mpoly k T) p' :
@@ -1300,7 +1296,7 @@ have Hc : p@_m = c.
   apply E.eq_refl. }
 pose pmcm := p - cm.
 have Hpmcm : pmcm@_m = 0.
-{ by rewrite mcoeffB mcoeffZ mcoeffX eqxx Hc GRing.mulr1 GRing.subrr. }
+{ by rewrite mcoeffB mcoeffZ mcoeffX eqxx Hc mulr1 subrr. }
 have -> : \sum_(m <- msupp p) f m p@_m
   = f m c + \sum_(m <- msupp pmcm) f m pmcm@_m.
 { case_eq (m \in msupp p) => Hmsuppp.
@@ -1310,9 +1306,9 @@ have -> : \sum_(m <- msupp p) f m p@_m
     rewrite mcoeffB mcoeffZ mcoeffX.
     rewrite mcoeff_msupp Hc -/cm -/pmcm -Hpmcm.
     case (@eqP _ m i) => [->|]; [by rewrite eqxx|].
-    by rewrite GRing.mulr0 GRing.subr0. }
+    by rewrite mulr0 subr0. }
   move: Hmsuppp; rewrite /pmcm /cm mcoeff_msupp Hc; move/eqP ->.
-  by rewrite Hf GRing.add0r GRing.scale0r GRing.subr0. }
+  by rewrite Hf add0r scale0r subr0. }
 eapply refines_apply.
 { eapply refines_apply; [by apply refine_mpoly_add_eff|].
   apply: (@refines_apply _ _ eq).
@@ -1355,7 +1351,7 @@ apply: refine_effmpolyP.
   - by apply (@refine_size_mpoly _ _ _ _ Hp). }
 move=> l l' Hl; rewrite mcoeffD mcoeffZ mcoeffX.
 case: (boolP (m == l)) => Heq /=.
-{ rewrite GRing.mulr1.
+{ rewrite mulr1.
   rewrite F.add_eq_o /=; last first.
   { apply/mnmc_eq_seqP.
     apply RseqmultinomE in Hm.
@@ -1364,9 +1360,9 @@ case: (boolP (m == l)) => Heq /=.
     rewrite /= Hm Hl in Heq.
     exact/eqP/map_spec_N_inj. }
   move/eqP in Heq; rewrite Heq in Hnotin.
-  by rewrite memN_msupp_eq0 // GRing.addr0.
+  by rewrite memN_msupp_eq0 // addr0.
 }
-rewrite GRing.mulr0 GRing.add0r.
+rewrite mulr0 add0r.
 rewrite F.add_neq_o /=; last first.
 { apply/mnmc_eq_seqP.
   apply/negbT; rewrite -(@Rseqmultinom_eq _ _ _ _ _ Hm Hl).
@@ -1408,7 +1404,7 @@ apply P.fold_rec.
   case_eq (M.find (seqmultinom_of_multinom i) q') =>[s|/=].
   - rewrite -F.find_mapsto_iff F.elements_mapsto_iff.
     by rewrite -in_InA_eq_key_elt_iff (proj1 (P.elements_Empty _ ) Eq').
-  - by move=> _; rewrite GRing.mulr0 GRing.scale0r.
+  - by move=> _; rewrite mulr0 scale0r.
 }
 move=> k' e q p'' p''' Hmap Hin Hadd Hind p ref_p.
 pose k := multinom_of_seqmultinom_val n k'.
@@ -1419,7 +1415,7 @@ have Hp : p@_k = e.
 pose p0 := (c * e) *: 'X_[m + k].
 pose pmpk := p - p@_k *: 'X_[k].
 have Hpmpk : pmpk@_k = 0.
-{ by rewrite mcoeffB mcoeffZ mcoeffX eqxx Hp GRing.mulr1 GRing.subrr. }
+{ by rewrite mcoeffB mcoeffZ mcoeffX eqxx Hp mulr1 subrr. }
 set sum := \sum_(_ <- _) _.
 have->: sum = p0 + \big[+%R/0]_(i2 <- msupp pmpk) ((c * pmpk@_i2) *: 'X_[(m + i2)]).
 { rewrite /sum /pmpk /p0.
@@ -1431,10 +1427,10 @@ have->: sum = p0 + \big[+%R/0]_(i2 <- msupp pmpk) ((c * pmpk@_i2) *: 'X_[(m + i2
     rewrite mcoeff_msupp Hp -Hpmpk.
     case (boolP (k == i)).
     { move/eqP<-; rewrite Hpmpk.
-      by rewrite mcoeffB Hp mcoeffZ mcoeffX eqxx GRing.mulr1 GRing.subrr eqxx. }
-    by rewrite GRing.mulr0 GRing.subr0. }
+      by rewrite mcoeffB Hp mcoeffZ mcoeffX eqxx mulr1 subrr eqxx. }
+    by rewrite mulr0 subr0. }
   move: Hmsuppp; rewrite mcoeff_msupp Hp; move/eqP ->.
-  by rewrite GRing.mulr0 GRing.scale0r GRing.add0r GRing.scale0r GRing.subr0. }
+  by rewrite mulr0 !scale0r add0r subr0. }
 rewrite /p0.
 apply refine_Madd_mnm_add.
 { eapply refines_apply; first by eapply refines_apply; tc.
@@ -1455,11 +1451,11 @@ rewrite (eq_bigr F').
   rewrite (mcoeff_poly_mul _ _ (k:=(mdeg (m + k)).+1)) //.
   rewrite big1 // => k0.
   case (boolP (m == k0.1)).
-  { by move/eqP<-; rewrite eqm_add2l; move/eqP <-; rewrite Hpmpk GRing.mulr0. }
-  by rewrite mcoeffZ mcoeffX; move /negbTE ->; rewrite GRing.mulr0 GRing.mul0r. }
+  { by move/eqP<-; rewrite eqm_add2l; move/eqP <-; rewrite Hpmpk mulr0. }
+  by rewrite mcoeffZ mcoeffX; move /negbTE ->; rewrite mulr0 mul0r. }
 move=> m'' _; rewrite /F'; rewrite mpolyXD.
-rewrite -GRing.scalerAl -GRing.scalerA; f_equal.
-by rewrite -[RHS]commr_mpolyX -GRing.scalerAl commr_mpolyX.
+rewrite -scalerAl -scalerA; f_equal.
+by rewrite -[RHS]commr_mpolyX -scalerAl commr_mpolyX.
 Qed.
 
 Arguments mpoly_mul {n R} p q.
@@ -1476,7 +1472,7 @@ pose f' m c := @mult_monomial_eff _ mul_instR m c p'.
 now_show (refines Reffmpoly (\sum_(m <- msupp q) f m q@_m)
   (M.fold (fun m c => mpoly_add_eff (f' m c)) q' M.empty)).
 apply(*:*) refine_mpoly_sum_eff =>//.
-- by move=> m; rewrite /f big1 // => m2 _; rewrite GRing.mul0r GRing.scale0r.
+- by move=> m; rewrite /f big1 // => m2 _; rewrite mul0r scale0r.
 - apply refines_abstr => m m' ref_m.
   apply refines_abstr => c c' ref_c.
   rewrite /f /f' /mult_monomial_eff.
@@ -1496,10 +1492,10 @@ rewrite /mpoly_exp /mpoly_exp_eff.
 move/RnatE in ref_k.
 have{ref_k}->: k' = implem_N k by rewrite ref_k spec_NK.
 rewrite /implem_N bin_of_natE.
-elim: k => [|k IHk]; first by rewrite GRing.expr0; apply refine_mp1_eff.
+elim: k => [|k IHk]; first by rewrite expr0; apply refine_mp1_eff.
 case Ek: k => [|k0].
-  by rewrite GRing.expr1 /= -[p]GRing.mulr1; refines_apply.
-rewrite GRing.exprS -Ek /= -Pos.succ_of_nat ?Ek //.
+  by rewrite expr1 /= -[p]mulr1; refines_apply.
+rewrite exprS -Ek /= -Pos.succ_of_nat ?Ek //.
 rewrite Pos.iter_succ.
 refines_apply1.
 by rewrite Ek /= Pos.of_nat_succ in IHk.
@@ -1559,7 +1555,7 @@ rewrite /comp_mpoly /mmap /comp_mpoly_eff.
 pose f := fun m c => c%:MP_[n] * mmap1 (tnth lq) m.
 rewrite (eq_bigr (fun m => f m p@_m)) //.
 apply refine_mpoly_sum_eff.
-{ by move=> m; rewrite /f mpolyC0 GRing.mul0r. }
+{ by move=> m; rewrite /f mpolyC0 mul0r. }
 { apply refines_abstr => m m' ref_m.
   apply refines_abstr => c c'; rewrite refinesE /f => <-.
   change (_ * _) with ((fun lq => c%:MP_[n] * mmap1 (tnth lq) m) lq).

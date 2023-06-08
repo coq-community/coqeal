@@ -1,5 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From HB Require Import structures.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 From mathcomp Require Import ssralg fintype finfun perm matrix bigop zmodp mxalgebra.
 From mathcomp Require Import choice poly polydiv mxpoly binomial.
@@ -273,21 +274,22 @@ Definition id_converse_def := (fun x : R => x : R^c).
 Lemma add_id : additive id_converse_def.
 Proof. by []. Qed.
 
-Definition id_converse := Additive add_id.
+HB.instance Definition _ := GRing.isAdditive.Build R R^c id_converse_def add_id.
+Definition id_converse : {additive _ -> _} := id_converse_def.
 
 Lemma expr_rev (x : R) k : (x : R^c) ^+ k = x ^+ k.
 Proof. by elim:k=> // k IHk; rewrite exprS exprSr IHk. Qed.
 
 Definition phi (p : {poly R}^c) := map_poly id_converse p.
 
-Fact phi_is_rmorphism : rmorphism phi.
+Fact phi_is_rmorphism : multiplicative phi.
 Proof.
-split=> //; first exact:raddfB.
 split=> [p q|]; apply/polyP=> i; last by rewrite coef_map !coef1.
 by rewrite coefMr coef_map coefM; apply: eq_bigr => j _; rewrite !coef_map.
 Qed.
 
-Canonical phi_rmorphism := RMorphism phi_is_rmorphism.
+HB.instance Definition _ := GRing.Additive.copy phi phi.
+HB.instance Definition _ := GRing.isMultiplicative.Build _ _ _ phi_is_rmorphism.
 
 Definition phi_inv (p : {poly R^c}) :=
   map_poly (fun x : R^c => x : R) p : {poly R}^c.
@@ -321,7 +323,7 @@ Definition rmultp_l := [rel m d | rdvdp_l d m].
 Lemma ltn_rmodp_l p q : (size (rmodp_l p q) < size q) = (q != 0).
 Proof.
 have := ltn_rmodp (phi p) (phi q).
-rewrite -(rmorph0 phi_rmorphism) (inj_eq (can_inj phiK)) => <-.
+rewrite -(rmorph0 phi) (inj_eq (can_inj phiK)) => <-.
 rewrite /rmodp_l /redivp_l /rmodp; case: (redivp _ _)=> [[k q'] r'] /=.
 by rewrite !size_map_inj_poly.
 Qed.

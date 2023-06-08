@@ -1,10 +1,11 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From HB Require Import structures.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq path.
 From mathcomp Require Import ssralg fintype perm choice fingroup.
 From mathcomp Require Import matrix bigop zmodp mxalgebra poly.
 
-Require Import ssrcomplements dvdring.
+Require Import ssrcomplements.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -15,83 +16,27 @@ Import GRing.Theory.
 Local Open Scope ring_scope.
 
 (** Strongly discrete rings *)
-Module StronglyDiscrete.
-
 Variant member_spec (R : ringType) n (x : R) (I : 'cV[R]_n)
   : option 'rV[R]_n -> Type :=
 | Member J of x%:M = J *m I : member_spec x I (Some J)
 | NMember of (forall J, x%:M != J *m I) : member_spec x I None.
 
-Record mixin_of (R : ringType) : Type := Mixin {
+HB.mixin Record Ring_isStronglyDiscrete R of GRing.Ring R := {
   member : forall n, R -> 'cV_n -> option 'rV_n;
-  _ : forall n (x : R) (I : 'cV_n), member_spec x I (member x I)
+  member_specP : forall n (x : R) (I : 'cV_n), member_spec x I (member n x I)
 }.
 
-Section ClassDef.
+HB.structure Definition StronglyDiscrete :=
+  { R of Ring_isStronglyDiscrete R & GRing.IntegralDomain R }.
 
-Record class_of (R : Type) : Type := Class {
-  base  : GRing.IntegralDomain.class_of R;
-  mixin : mixin_of (GRing.IntegralDomain.Pack base)
-}.
-Local Coercion base : class_of >-> GRing.IntegralDomain.class_of.
-
-Structure type : Type := Pack {sort : Type; _ : class_of sort}.
-Local Coercion sort : type >-> Sortclass.
-
-Variable (T : Type) (cT : type).
-Definition class := let: Pack _ c := cT return class_of cT in c.
-Definition clone c of phant_id class c := @Pack T c.
-
-Definition pack b0 (m0 : mixin_of (@GRing.IntegralDomain.Pack T b0)) :=
-  fun bT b & phant_id (GRing.IntegralDomain.class bT) b =>
-  fun    m & phant_id m m0 => Pack (@Class T b m).
-
-Definition eqType := Equality.Pack class.
-Definition choiceType := Choice.Pack class.
-Definition zmodType := GRing.Zmodule.Pack class.
-Definition ringType := GRing.Ring.Pack class.
-Definition comRingType := GRing.ComRing.Pack class.
-Definition unitRingType := GRing.UnitRing.Pack class.
-Definition comUnitRingType := GRing.ComUnitRing.Pack class.
-Definition idomainType := GRing.IntegralDomain.Pack class.
-
-End ClassDef.
-
-Module Exports.
-Coercion base : class_of >-> GRing.IntegralDomain.class_of.
-Coercion mixin : class_of >-> mixin_of.
-Coercion sort : type >-> Sortclass.
-Bind Scope ring_scope with sort.
-Coercion eqType : type >-> Equality.type.
-Canonical Structure eqType.
-Coercion choiceType : type >-> Choice.type.
-Canonical Structure choiceType.
-Coercion zmodType : type >-> GRing.Zmodule.type.
-Canonical Structure zmodType.
-Coercion ringType : type >-> GRing.Ring.type.
-Canonical Structure ringType.
-Coercion comRingType : type >-> GRing.ComRing.type.
-Canonical Structure comRingType.
-Coercion unitRingType : type >-> GRing.UnitRing.type.
-Canonical Structure unitRingType.
-Coercion comUnitRingType : type >-> GRing.ComUnitRing.type.
-Canonical Structure comUnitRingType.
-Coercion idomainType : type >-> GRing.IntegralDomain.type.
-Canonical Structure idomainType.
-Notation stronglyDiscreteType := type.
-Notation StronglyDiscreteType T m := (@pack T _ m _ _ id _ id).
-Notation StronglyDiscreteMixin := Mixin.
-Notation "[ 'stronglyDiscreteType' 'of' T 'for' cT ]" := (@clone T cT _ idfun)
+Bind Scope ring_scope with StronglyDiscrete.sort.
+Notation stronglyDiscreteType := StronglyDiscrete.type.
+Notation "[ 'stronglyDiscreteType' 'of' T 'for' cT ]" := (StronglyDiscrete.clone T cT)
   (at level 0, format "[ 'stronglyDiscreteType'  'of'  T  'for'  cT ]") : form_scope.
-Notation "[ 'stronglyDiscreteType' 'of' T ]" := (@clone T _ _ id)
+Notation "[ 'stronglyDiscreteType' 'of' T ]" := (StronglyDiscrete.clone T _)
   (at level 0, format "[ 'stronglyDiscreteType'  'of'  T ]") : form_scope.
-End Exports.
 
-End StronglyDiscrete.
-Export StronglyDiscrete.Exports.
-
-Definition member R := StronglyDiscrete.member (StronglyDiscrete.class R).
-Definition member_spec := StronglyDiscrete.member_spec.
+Arguments member {_} [_].
 
 Declare Scope ideal_scope.
 Delimit Scope ideal_scope with IS.
@@ -101,10 +46,6 @@ Section StronglyDiscreteTheory.
 Variable R : stronglyDiscreteType.
 
 Implicit Types a b c : R.
-
-Lemma member_specP : forall n (x : R) (I : 'cV[R]_n),
-  member_spec x I (member x I).
-Proof. by case: R => [? [? []]]. Qed.
 
 Lemma memberP n (x : R) (I : 'cV[R]_n) :
   reflect (exists J, x%:M = J *m I) (member x I).
@@ -677,31 +618,4 @@ Notation "A == B" := ((subid A B) && (subid B A)) : ideal_scope.
 Notation "I +i J" := (addid I J) (at level 30).
 Notation "I *i J" := (mulid I J) (at level 50).
 
-Section BezoutStronglyDiscrete.
-
-Variable R : bezoutDomainType.
-
-Definition bmember n (x : R) (I : 'cV[R]_n) :=
-  omap (fun a => a %:M *m principal_w1 I) (x %/? principal_gen I).
-
-Lemma bmember_correct : forall n (x : R) (I : 'cV[R]_n),
-  member_spec x I (bmember x I).
-Proof.
-rewrite /bmember => n x I.
-case: odivrP => [a | ] Ha /=; constructor.
-  by rewrite -mulmxA principal_w1_correct Ha scalar_mxM.
-move => J.
-rewrite -(principal_w2_correct I) /principal mulmxA scalar_mxC.
-apply: contra (Ha ((J *m principal_w2 I) 0 0)).
-rewrite {1}[J *m principal_w2 I]mx11_scalar -scalar_mxM.
-move/eqP/matrixP => /(_ 0 0).
-rewrite !mxE /= !mulr1n => ->.
-by rewrite mulrC.
-Qed.
-
-Definition bezout_stronglyDiscreteMixin := StronglyDiscrete.Mixin bmember_correct.
-Canonical Structure bezout_stronglyDiscreteType :=
-  Eval hnf in StronglyDiscreteType R bezout_stronglyDiscreteMixin.
-
-End BezoutStronglyDiscrete.
 #[export] Hint Resolve subid_refl sub0id subid1 : core.
