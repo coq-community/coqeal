@@ -240,7 +240,7 @@ rewrite /Z2int; case Ex: x; case Ey: y=> //.
 { rewrite oppr_le0; split; by rewrite /Z.le. }
 { split=>_; [by rewrite /Z.le|].
   by apply: (@le_trans _ _ 0%R); [apply oppr_le0|apply ltW, nat_of_pos_gt0]. }
-rewrite ler_opp2; split.
+rewrite lerN2; split.
 { rewrite /Z.le /Z.compare -!binnat.to_natE /Num.Def.ler /= => /ssrnat.leP.
   by rewrite -Pos.compare_antisym -Pos2Nat.inj_le -Pos.compare_le_iff. }
 rewrite /Z.le /Z.compare -!binnat.to_natE /Num.Def.ler /=.
@@ -250,7 +250,7 @@ Qed.
 
 Lemma Z2int_lt x y : (Z2int x < Z2int y)%R <-> Z.lt x y.
 Proof.
-rewrite -lez_addr1 -[1%R]/(Z2int 1) -Z2int_add Z2int_le; lia.
+rewrite -lezD1 -[1%R]/(Z2int 1) -Z2int_add Z2int_le; lia.
 Qed.
 
 Lemma nat_of_pos_Z_to_pos x : nat_of_pos x = `|Z2int (Z.pos x)|%N.
@@ -566,8 +566,8 @@ rewrite /lt_op /lt_bigQ BigQ.spec_compare.
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
 rewrite !Z2int_Qred /= /Qcompare /= -Z.ltb_compare.
-rewrite ltr_pdivr_mulr ?ltr0z ?nat_of_pos_gtr0 //.
-rewrite mulrAC ltr_pdivl_mulr ?ltr0z ?nat_of_pos_gtr0 //.
+rewrite ltr_pdivrMr ?ltr0z ?nat_of_pos_gtr0 //.
+rewrite mulrAC ltr_pdivlMr ?ltr0z ?nat_of_pos_gtr0 //.
 rewrite !nat_of_pos_Z_to_pos.
 rewrite !gez0_abs; [|by rewrite -[0%R]int2ZK Z2int_le..].
 rewrite -!intrM -!Z2int_mul ltr_int.
@@ -584,8 +584,8 @@ rewrite /leq_op /le_bigQ BigQ.spec_compare.
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
 rewrite !Z2int_Qred /= /Qcompare /=.
-rewrite ler_pdivr_mulr ?ltr0z ?nat_of_pos_gtr0 //.
-rewrite mulrAC ler_pdivl_mulr ?ltr0z ?nat_of_pos_gtr0 //.
+rewrite ler_pdivrMr ?ltr0z ?nat_of_pos_gtr0 //.
+rewrite mulrAC ler_pdivlMr ?ltr0z ?nat_of_pos_gtr0 //.
 rewrite !nat_of_pos_Z_to_pos.
 rewrite !gez0_abs; [|by rewrite -[0%R]int2ZK Z2int_le..].
 rewrite -!intrM -!Z2int_mul ler_int.

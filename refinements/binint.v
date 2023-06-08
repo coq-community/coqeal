@@ -279,9 +279,9 @@ Proof.
     rewrite leNgt (@lt_le_trans _ _ 0) ?oppr_lt0 //=.
     apply: valP.
   have neg_leqnat n p : bool_R (- (Posz (val p)) <= n :> int) true.
-    by rewrite ler_oppl (@le_trans _ _ 0) // oppr_le0 le0z_nat.
+    by rewrite lerNl (@le_trans _ _ 0) // oppr_le0 le0z_nat.
   rewrite refinesE=> _ x <- _ y <-; rewrite /leq_op /leqZ.
-  case: x y => [x|x] [y|y] /=; rewrite -?[((_<=_)%C)]/(_<=_)%N ?ler_opp2 //;
+  case: x y => [x|x] [y|y] /=; rewrite -?[((_<=_)%C)]/(_<=_)%N ?lerN2 //;
   exact: bool_Rxx.
 Qed.
 
@@ -292,7 +292,7 @@ have -> : (int_of_Z x < int_of_Z y) = (x < y)%C.
   case: x y => [x|x] [y|y] //=.
   - by rewrite ltNge (@le_trans _ _ 0) // oppr_le0.
   - by rewrite (@lt_le_trans _ _ 0) // oppr_lt0; apply: valP.
-  by rewrite ltr_opp2.
+  by rewrite ltrN2.
 exact: bool_Rxx.
 Qed.
 
