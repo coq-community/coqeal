@@ -111,11 +111,11 @@ Instance : forall m n, opp_of 'M[R]_(m, n) := fun m n M => - M.
 Instance ursubmx : ursubmx_of (matrix {poly R}) := @matrix.ursubmx {poly R}.
 Instance dlsubmx : dlsubmx_of (matrix {poly R}) := @matrix.dlsubmx {poly R}.
 Instance drsubmx : drsubmx_of (matrix {poly R}) := @matrix.drsubmx {poly R}.
-Instance : hmul_of (matrix {poly R}) := @mulmx [ringType of {poly R}].
+Instance : hmul_of (matrix {poly R}) := @mulmx {poly R}.
 Instance : forall m n, sub_of (matrix {poly R} m n) :=
   fun m n (M N : 'M[{poly R}]_(m,n)) => M - N.
 Instance : forall m n, scale_of {poly R} (matrix {poly R} m n) :=
-  @scalemx [ringType of {poly R}].
+  @scalemx {poly R}.
 Instance map_mx : forall m n, map_mx_of {poly R} {poly R} (matrix {poly R} m n)
   (matrix {poly R} m n) :=
   fun m n f => @matrix.map_mx {poly R} {poly R} f m n.

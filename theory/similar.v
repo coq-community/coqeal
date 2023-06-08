@@ -53,9 +53,8 @@ Definition id_converse_def := (fun x : R => x : R^c).
 Lemma add_id : additive id_converse_def.
 Proof. by []. Qed.
 
-HB.instance Definition _ :=
-  GRing.isAdditive.Build R [zmodType of R^c] id_converse_def add_id.
-Definition id_converse := [the {additive _ -> _} of id_converse_def].
+HB.instance Definition _ := GRing.isAdditive.Build R R^c id_converse_def add_id.
+Definition id_converse : {additive _ -> _} := id_converse_def.
 
 Lemma expr_rev (x : R) k : (x : R^c) ^+ k = x ^+ k.
 Proof. by elim:k=> // k IHk; rewrite exprS exprSr IHk. Qed.
@@ -68,7 +67,7 @@ split=> [p q|]; apply/polyP=> i; last by rewrite coef_map !coef1.
 by rewrite coefMr coef_map coefM; apply: eq_bigr => j _; rewrite !coef_map.
 Qed.
 
-HB.instance Definition _ := GRing.Additive.copy phi [additive of phi].
+HB.instance Definition _ := GRing.Additive.copy phi phi.
 HB.instance Definition _ := GRing.isMultiplicative.Build _ _ _ phi_is_rmorphism.
 
 Definition phi_inv (p : {poly R^c}) :=
@@ -103,7 +102,7 @@ Definition rmultp_l := [rel m d | rdvdp_l d m].
 Lemma ltn_rmodp_l p q : (size (rmodp_l p q) < size q) = (q != 0).
 Proof.
 have := ltn_rmodp (phi p) (phi q).
-rewrite -(rmorph0 [rmorphism of phi]) (inj_eq (can_inj phiK)) => <-.
+rewrite -(rmorph0 phi) (inj_eq (can_inj phiK)) => <-.
 rewrite /rmodp_l /redivp_l /rmodp; case: (redivp _ _)=> [[k q'] r'] /=.
 by rewrite !size_map_inj_poly.
 Qed.
@@ -464,8 +463,8 @@ constructor.
   case: m A=> [A [eq _]|m' A]; first exact: equiv0l.
   case=> eq [P HP HPA]; split=> //.
   move: A P HP HPA; rewrite eq=> A P HP; rewrite !conform_mx_id=> HPA.
-  pose M := (map_mx [rmorphism of polyC] P).
-  pose N := (map_mx [rmorphism of polyC] P^-1).
+  pose M := map_mx polyC P.
+  pose N := map_mx polyC P^-1.
   have HM: M \in unitmx by rewrite map_unitmx.
   exists M, N; split=> //; first by rewrite map_unitmx unitmx_inv.
   rewrite mulmxBr mulmxBl mul_mx_scalar -scalemxAl /M /N map_mx_inv.

@@ -109,8 +109,8 @@ have [i_small|i_big] := ltnP; first by rewrite ffunE /= inordK.
 by rewrite nth_default // 1?(leq_trans _ i_big) // size_npoly.
 Qed.
 
-HB.instance Definition _ : isFinite (npolynomial n R) :=
-  UniqFinMixin npoly_enum_uniq mem_npoly_enum.
+HB.instance Definition _ := isFinite.Build (npolynomial n R)
+  (Finite.uniq_enumP npoly_enum_uniq mem_npoly_enum).
 HB.instance Definition _ := Finite.on {poly_n R}.
 
 Lemma card_npoly : #|{poly_n R}| = (#|R| ^ n)%N.
@@ -225,7 +225,7 @@ End enum_boolF2.
 Parametricity enum_boolF2.
 
 #[export] Instance refines_enum_boolF2 :
-  refines (perm_eq \o list_R Rbool) (Finite.enum [finType of 'F_2]) (enum_boolF2).
+  refines (perm_eq \o list_R Rbool) (Finite.enum 'F_2) (enum_boolF2).
 Proof.
 rewrite -enumT; refines_trans; last first.
   by rewrite refinesE; do !constructor.
@@ -247,7 +247,7 @@ End enum_npoly.
 
 Lemma enum_npolyE (n : nat) (R : finRingType) s :
   perm_eq (Finite.enum R) s ->
-  perm_eq (Finite.enum [finType of {poly_n R}])
+  perm_eq (Finite.enum {poly_n R})
                (enum_npoly n iter s (@npoly_of_seq _ _)).
 Proof.
 rewrite -!enumT => Rs; rewrite uniq_perm ?enum_uniq //=.
@@ -284,7 +284,7 @@ Definition RnpolyC : {poly_n A} -> seqpoly C -> Type :=
 
 #[export] Instance refines_enum_npoly :
    refines (perm_eq \o list_R RnpolyC)
-           (Finite.enum [finType of {poly_n A}]) (enum_npoly n' iter' enumC id).
+           (Finite.enum {poly_n A}) (enum_npoly n' iter' enumC id).
 Proof.
 have [s [sP ?]] := refines_split2 enumR.
 eapply refines_trans; tc.
