@@ -162,7 +162,7 @@ rewrite refinesE /Rrat /fun_hrel /Qint_to_rat /= /cast /cast_pos_int /=.
 rewrite /pos_to_int /mul_op /mul_pos /mul_int /add_op /add_int /=.
 rewrite val_insubd muln_gt0 da_gt0 db_gt0 /=.
 rewrite [x]RratE [y]RratE /= addf_div ?intr_eq0 -?lt0n //.
-by rewrite ?(rmorphD, rmorphM) //= PoszM intrM !natz.
+by rewrite ?(rmorphD, rmorphM)/= ?PoszM ?intrM !natz.
 Qed.
 
 Instance Rrat_opp : refines (Rrat ==> Rrat) -%R -%C.
@@ -177,7 +177,7 @@ apply refines_abstr2  => x [na [da da_gt0]] rx y [nb [db db_gt0]] ry.
 rewrite refinesE /Rrat /fun_hrel /Qint_to_rat /= /mul_op /mul_int /mul_pos /=.
 rewrite val_insubd muln_gt0 da_gt0 db_gt0 /=.
 rewrite [x]RratE [y]RratE mulrACA -invfM ?(rmorphD, rmorphM) /=.
-by rewrite PoszM rmorphM /=.
+by rewrite ?PoszM ?rmorphM /=.
 Qed.
 
 Instance Rrat_expnat :
