@@ -77,7 +77,7 @@ license:
 
 supported_coq_versions:
   text: 8.16 or later (use releases for other Coq versions)
-  opam: '{(>= "8.16" & < "8.18~") | (= "dev")}'
+  opam: '{(>= "8.16" & < "8.19~") | (= "dev")}'
 
 dependencies:
 - opam:
@@ -90,22 +90,35 @@ dependencies:
   description: |-
     [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.3 or later
 - opam:
-    name: coq-mathcomp-multinomials
-    version: '{((>= "2.0" & < "2.1~") | = "dev")}'
+    name: coq-hierarchy-builder
+    version: '{>= "1.4.0"}'
   description: |-
-    [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 2.0 or later
+    [Hierarchy Builder](https://github.com/math-comp/hierarchy-builder) 1.4.0 or later
+- opam:
+    name: coq-mathcomp-ssreflect
+    version: '{>= "2.0"}'
+  description: |-
+    [MathComp ssreflect](https://math-comp.github.io) 2.0 or later
 - opam:
     name: coq-mathcomp-algebra
-    version: '{((>= "2.0" & < "2.1~") | = "dev")}'
   description: |-
     [MathComp algebra](https://math-comp.github.io) 2.0 or later
 - opam:
-    name: coq-mathcomp-real-closed
-    version: '{(= "dev")}'
+    name: coq-mathcomp-multinomials
+    version: '{>= "2.0"}'
   description: |-
-    [MathComp real-closed](https://math-comp.github.io) 1.1.2 or later
+    [MathComp Multinomials](https://github.com/math-comp/multinomials) 2.0 or later
+- opam:
+    name: coq-mathcomp-real-closed
+    version: '{>= "2.0"}'
+  description: |-
+    [MathComp real-closed](https://math-comp.github.io) 2.0 or later
 
 tested_coq_opam_versions:
+- version: 'coq-dev'
+  repo: 'mathcomp/mathcomp-dev'
+- version: '2.0.0-coq-8.18'
+  repo: 'mathcomp/mathcomp'
 - version: '2.0.0-coq-8.17'
   repo: 'mathcomp/mathcomp'
 - version: '2.0.0-coq-8.16'
