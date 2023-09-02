@@ -48,9 +48,11 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
 - Additional dependencies:
   - [Bignums](https://github.com/coq/bignums) same version as Coq
   - [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.3 or later
-  - [MathComp Multinomials](https://github.com/math-comp/multinomials) >= 2.0 or later
+  - [Hierarchy Builder](https://github.com/math-comp/hierarchy-builder) 1.4.0 or later
+  - [MathComp ssreflect](https://math-comp.github.io) 2.0 or later
   - [MathComp algebra](https://math-comp.github.io) 2.0 or later
-  - [MathComp real-closed](https://math-comp.github.io) 1.1.2 or later
+  - [MathComp Multinomials](https://github.com/math-comp/multinomials) 2.0 or later
+  - [MathComp real-closed](https://math-comp.github.io) 2.0 or later
 - Coq namespace: `CoqEAL`
 - Related publication(s):
   - [A refinement-based approach to computational algebra in Coq](https://hal.inria.fr/hal-00734505/document) doi:[10.1007/978-3-642-32347-8_7](https://doi.org/10.1007/978-3-642-32347-8_7)

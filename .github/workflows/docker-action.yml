@@ -17,6 +17,8 @@ jobs:
     strategy:
       matrix:
         image:
+          - 'mathcomp/mathcomp-dev:coq-dev'
+          - 'mathcomp/mathcomp:2.0.0-coq-8.18'
           - 'mathcomp/mathcomp:2.0.0-coq-8.17'
           - 'mathcomp/mathcomp:2.0.0-coq-8.16'
       fail-fast: false
@@ -26,11 +28,6 @@ jobs:
         with:
           opam_file: 'coq-coqeal.opam'
           custom_image: ${{ matrix.image }}
-          before_install: |
-            startGroup "Add extra-dev repo"
-              opam repo add coq-extra-dev https://coq.inria.fr/opam/extra-dev
-              opam config list; opam repo list; opam list
-            endGroup
 
 
 # See also:
