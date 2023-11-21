@@ -232,6 +232,19 @@ End seqmx_op.
 Parametricity isSub.axioms_.
 Parametricity SubType.axioms_ as axioms___R.
 Parametricity subType.
+Definition eqtype_isSub_mixin_noprimproj_R T₁ T₂ (T_R : T₁ -> T₂ -> Type)
+  (P₁ : pred T₁) (P₂ : pred T₂)
+  (P_R : forall (t₁ : T₁) (t₂ : T₂), T_R t₁ t₂ -> bool_R (P₁ t₁) (P₂ t₂))
+  S₁ S₂ (S_R : S₁ -> S₂ -> Type)
+  (a₁ : SubType.axioms_ P₁ S₁) (a₂ : SubType.axioms_ P₂ S₂)
+  (a_R : axioms___R P_R S_R a₁ a₂) :=
+match a_R in axioms___R _ _ a₁ a₂
+  return axioms__R P_R S_R (let (m) := a₁ in m) (let (m) := a₂ in m) with
+| @axioms___R_Class_R _ _ _ _ _ _ _ _ _ _ _ eqtype_isSub_mixin_R =>
+    eqtype_isSub_mixin_R
+end.
+Realizer SubType.eqtype_isSub_mixin as eqtype_isSub_mixin :=
+  eqtype_isSub_mixin_noprimproj_R.
 Parametricity ord_enum_eq.
 Parametricity seqmx_of_fun.
 Parametricity mkseqmx_ord.
