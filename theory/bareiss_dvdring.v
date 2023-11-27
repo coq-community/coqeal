@@ -403,7 +403,7 @@ Qed.
 
 
 Definition char_poly_alt n (M: 'M[R]_(1 + n)) :=
-  Bareiss (char_poly_mx M).
+  Bareiss (char_poly_mx M : 'M[polydvd.poly_of R]__).
 
 (*
   Here is our alternative definition of char_poly

@@ -118,7 +118,11 @@ Qed.
 End PolyDvdRing.
 End PolyDvdRing.
 
-HB.instance Definition _ (R : dvdRingType) := Ring_hasDiv.Build {poly R}
+Definition poly_of (R : semiRingType) := {poly R}.
+
+HB.instance Definition _ (R : dvdRingType) :=
+  GRing.IntegralDomain.on (poly_of R).
+HB.instance Definition _ (R : dvdRingType) := Ring_hasDiv.Build (poly_of R)
   (@PolyDvdRing.odivpP R).
 
 Module PolyGcdDomain.
@@ -131,7 +135,7 @@ Import PolyDvdRing.
 Variable R : gcdDomainType.
 Implicit Types a b : R.
 
-Implicit Types p q : {poly R}.
+Implicit Types p q : poly_of R.
 
 (* Useful lemmas *)
 
@@ -156,14 +160,14 @@ elim/poly_ind; first by exists 0, 0; rewrite mul0r add0r.
 by move=> p c [_ [_]] _; exists p, c.
 Qed.
 
-Lemma polyC_inj_dvdr : forall a b, (a %| b)%R -> a%:P %| b %:P.
+Lemma polyC_inj_dvdr : forall a b, (a %| b)%R -> (a%:P : poly_of R) %| b %:P.
 Proof.
 move=> a b.
 case/dvdrP=> x Hx; apply/dvdrP; exists (x%:P).
 by rewrite -polyCM Hx.
 Qed.
 
-Lemma polyC_inj_eqd : forall a b, a %= b -> a%:P %= b%:P.
+Lemma polyC_inj_eqd : forall a b, a %= b -> (a%:P : poly_of R) %= b%:P.
 Proof.
 by move=> a b; rewrite /eqd; case/andP; do 2 move/polyC_inj_dvdr=> ->.
 Qed.
@@ -274,7 +278,7 @@ exists (wr%:P * q * 'X + wl%:P).
 by rewrite mulrDr gcdsr_gcdl !mulrA -!polyCM -Hl -Hr -IH.
 Qed.
 
-Lemma gcdsr_dvdr : forall p, (gcdsr p)%:P %| p.
+Lemma gcdsr_dvdr : forall p, ((gcdsr p)%:P : poly_of R) %| p.
 Proof.
 move=> p; case: (gcdsr_primitive p)=> x [? _]; apply/dvdrP.
 by exists x; rewrite mulrC.
@@ -412,7 +416,7 @@ move: (eqd_trans (polyC_inj_eqd (gcdsrC c)) (eq_eqd (ppP c%:P))).
 rewrite -{1}[(gcdsr c%:P)%:P]mulr1.
 have g0: (gcdsr c%:P)%:P != 0.
   by rewrite polyC_eq0 gcdsr_eq0 polyC_eq0.
-by rewrite (eqd_mul2l _ _ g0) eqd_sym.
+by rewrite eqd_mul2l// eqd_sym.
 Qed.
 
 Lemma pp1 : pp 1 %= 1.
@@ -444,7 +448,7 @@ have h0: (gcdsr (p * q))%:P != 0.
   by rewrite polyC_eq0 gcdsr_eq0 mulf_eq0 negb_or p0.
 have h1: pp p * pp q != 0.
   by rewrite mulf_eq0 !pp_eq0 negb_or p0.
-rewrite -(eqd_mul2l _ _ h0) -ppP.
+rewrite -(@eqd_mul2l (poly_of R) (gcdsr (p * q))%:P)// -ppP.
 move: (polyC_inj_eqd (gauss_lemma p q)).
 rewrite -(eqd_mul2r _ _ h1)=> H; rewrite eqd_sym (eqd_trans H) //.
 by rewrite polyCM mulrCA -mulrA -ppP mulrCA mulrA -ppP.
@@ -532,7 +536,7 @@ case/andP: (pp_prim pq)=> G1 _.
 by rewrite (dvdr_trans (dvdr_trans Hpp G1)); case/andP: (pp_mull q a0).
 Qed.
 
-Lemma dvdrpC : forall a p, a%:P %| p = (a %| gcdsr p).
+Lemma dvdrpC : forall a p, (a%:P : poly_of R) %| p = (a %| gcdsr p).
 Proof.
 move=> a p.
 apply/idP/idP=> [|H]; last exact: (dvdr_trans (polyC_inj_dvdr H) (gcdsr_dvdr p)).
@@ -576,7 +580,7 @@ Proof.
 by move=> p n; rewrite /gcdp_rec; case: n; rewrite rmod0p eqxx.
 Qed.
 
-Lemma gcdp_recr0 : forall p n, primitive p -> gcdp_rec n p 0 %= p.
+Lemma gcdp_recr0 : forall p n, primitive p -> (gcdp_rec n p 0 : poly_of R) %= p.
 Proof.
 move=> p n pp.
 have p0 := primitive0 pp.
@@ -588,7 +592,8 @@ Qed.
 (* Show that gcdp_rec return a primitive polynomial that is the gcd of p and q *)
 Lemma gcdp_recP : forall n p q g,
    size q <= n -> q != 0 -> primitive q ->
-  (g %| gcdp_rec n p q = (g %| p) && (g %| q)) /\ primitive (gcdp_rec n p q).
+  (g %| (gcdp_rec n p q : poly_of R) = (g %| p) && (g %| q))
+  /\ primitive (gcdp_rec n p q).
 Proof.
 elim=> /= [p q g|n IH p q g sqn q0 pq].
   by rewrite leqn0 size_poly_eq0=> ->.
@@ -604,7 +609,7 @@ case: ifP=>[pq0|npq0].
   split=> //; apply/idP/idP; last by case/andP.
   move=> gq; rewrite gq andbT.
   rewrite (eqP pq0) addr0 in Hdiv.
-  move: (dvdr_mull (p %/ q)%P gq); rewrite -Hdiv=> H.
+  move: (dvdr_mull (((p : poly_of R) %/ q)%P : poly_of R) gq); rewrite -Hdiv=> H.
   by rewrite (dvdrp_priml H0 H) // (dvdrp_primr gq).
 
 set pp_pq := pp (p %% q)%P.
@@ -621,15 +626,15 @@ apply/idP/idP.
 
   (* Case: (g %| q) && (g %| pp_pq) -> (g %| p) && (g %| q) *)
   case/andP=> gq gpppq; rewrite gq andbT.
-  move: (dvdr_mull (gcdsr (p %% q)%P)%:P gpppq); rewrite -(ppP _)=> gpmq.
-  move: (dvdr_add (dvdr_mull (p %/ q)%P gq) gpmq); rewrite -Hdiv=> H.
+  move: (dvdr_mull ((gcdsr (p %% q)%P)%:P : poly_of R) gpppq); rewrite -(ppP _)=> gpmq.
+  move: (dvdr_add (dvdr_mull (((p : poly_of R) %/ q)%P : poly_of R) gq) gpmq); rewrite -Hdiv=> H.
   by rewrite (dvdrp_priml H0 H) // (dvdrp_primr gq).
 
 (* Case: (g %| p) && (g %| q) -> (g %| q) && (g %| pp_pq) *)
 (* Simplify the goal *)
 case/andP=> gp gq; rewrite gq /=.
 
-move: (dvdr_sub (dvdr_mull lx%:P gp) (dvdr_mull (p %/ q)%P gq)).
+move: (dvdr_sub (dvdr_mull (lx%:P : poly_of R) gp) (dvdr_mull (((p : poly_of R) %/ q)%P : poly_of R) gq)).
 move/eqP: Hdiv; rewrite addrC -subr_eq => /eqP->; rewrite dvdrp_spec=> gpq.
 
 suff gppg : g %| pp g by rewrite (dvdr_trans gppg) //; case/andP: gpq.
@@ -638,7 +643,7 @@ by rewrite (pp_prim_eq (primitive0 (dvdrp_primr gq pq))); case/andP.
 Qed.
 
 (* Correctness of gcdp *)
-Lemma gcdpP g p q : g %| gcdp p q = (g %| p) && (g %| q).
+Lemma gcdpP g p q : g %| (gcdp p q : poly_of R) = (g %| p) && (g %| q).
 Proof.
 rewrite /gcdp.
 
@@ -697,7 +702,7 @@ Qed.
 End PolyGcdDomain.
 End PolyGcdDomain.
 
-HB.instance Definition _ (R : gcdDomainType) := DvdRing_hasGcd.Build {poly R}
+HB.instance Definition _ (R : gcdDomainType) := DvdRing_hasGcd.Build (poly_of R)
   (@PolyGcdDomain.gcdpP R).
 
 Module PolyPriField.
