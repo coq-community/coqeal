@@ -280,7 +280,7 @@ Definition Rnpoly : {poly_n A} -> {poly A} -> Type :=
   fun p q => p = q :> {poly A}.
 
 Definition RnpolyC : {poly_n A} -> seqpoly C -> Type :=
-  (Rnpoly \o RseqpolyC rAC).
+  (Rnpoly \o RseqpolyC rAC)%rel.
 
 #[export] Instance refines_enum_npoly :
    refines (perm_eq \o list_R RnpolyC)

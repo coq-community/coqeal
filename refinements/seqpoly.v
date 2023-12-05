@@ -460,7 +460,7 @@ Context `{!refines (rN ==> rN ==> bool_R) eqtype.eq_op eq_op}.
 Context `{!refines (rN ==> nat_R) spec_id spec}.
 
 Definition RseqpolyC : {poly R} -> seq C -> Type :=
-  (Rseqpoly \o list_R rAC).
+  (Rseqpoly \o list_R rAC)%rel.
 
 #[export] Instance RseqpolyC_cons :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) (@cons_poly R) cons.
