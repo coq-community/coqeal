@@ -205,6 +205,7 @@ Qed.
 
 End refinements.
 
+Arguments refines [A B]%type R%rel m n.
 Arguments refinesP {T T' R x y} _.
 
 #[export] Hint Mode refines - - - + - : typeclass_instances.
