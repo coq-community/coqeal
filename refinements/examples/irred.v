@@ -196,15 +196,15 @@ Section enumerable.
 Context (T : finType) (T' : Type) (RT : T -> T' -> Type).
 Variable (N : Type) (rN : nat -> N -> Type).
 Context (enumT' : seq T')
-  {enumR : refines (perm_eq \o (list_R RT)) (@Finite.enum T) enumT'}.
+  {enumR : refines (perm_eq \o list_R RT) (@Finite.enum T) enumT'}.
 Context `{zero_of N} `{one_of N} `{add_of N}.
 Context `{!refines rN 0%N 0%C}.
 Context `{!refines rN 1%N 1%C}.
-Context `{!refines (rN ==> rN ==> rN)%rel addn add_op}.
+Context `{!refines (rN ==> rN ==> rN) addn add_op}.
 Context (P : pred T) (P' : pred T').
 
 #[export] Instance refines_card :
-  (forall x x' `{!refines RT x x'}, refines (bool_R \o (@unify _)) (P x) (P' x')) ->
+  (forall x x' `{!refines RT x x'}, refines (bool_R \o @unify _) (P x) (P' x')) ->
   refines rN #|[pred x | P x]| (card' enumT' P').
 Proof.
 move=> RP; have := refines_comp_unify (RP _ _ _) => /refines_abstr => {}RP.
@@ -274,13 +274,13 @@ Context (iter' : forall T, N -> (T -> T) -> T -> T)
   {iterR : forall T T' RT,
     refines (rN ==> (RT ==> RT) ==> RT ==> RT) (@iter T) (@iter' T')}.
 Context (enumC : seq C)
-  {enumR : refines (perm_eq \o (list_R rAC)) (@Finite.enum A) enumC}.
+  {enumR : refines (perm_eq \o list_R rAC) (@Finite.enum A) enumC}.
 
 Definition Rnpoly : {poly_n A} -> {poly A} -> Type :=
   fun p q => p = q :> {poly A}.
 
 Definition RnpolyC : {poly_n A} -> seqpoly C -> Type :=
-  (Rnpoly \o (RseqpolyC rAC))%rel.
+  (Rnpoly \o RseqpolyC rAC)%rel.
 
 #[export] Instance refines_enum_npoly :
    refines (perm_eq \o list_R RnpolyC)

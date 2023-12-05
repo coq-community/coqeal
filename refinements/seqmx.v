@@ -666,7 +666,7 @@ Qed.
        (rn : nat_R n1 n2) f g
        `{forall x y, refines (rI rm) x y ->
          forall z t, refines (rI rn) z t ->
-         refines (rAC \o (@unify _)) (f x z) (g y t)} :
+         refines (rAC \o @unify _) (f x z) (g y t)} :
   refines (RseqmxC rm rn)
           (\matrix_(i, j) f i j) (seqmx_of_fun (I:=I) g).
 Proof.
@@ -680,7 +680,7 @@ Qed.
 #[export] Instance refine_seqmx_of_fun m n f g
        `{forall x y, refines (rI (nat_Rxx m)) x y ->
          forall z t, refines (rI (nat_Rxx n)) z t ->
-         refines (rAC \o (@unify _)) (f x z) (g y t)} :
+         refines (rAC \o @unify _) (f x z) (g y t)} :
   refines (RseqmxC (nat_Rxx m) (nat_Rxx n))
           (\matrix_(i, j) f i j) (seqmx_of_fun (I:=I) g).
 Proof. exact: RseqmxC_seqmx_of_fun. Qed.
