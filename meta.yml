@@ -77,7 +77,7 @@ license:
 
 supported_coq_versions:
   text: 8.16 or later (use releases for other Coq versions)
-  opam: '{(>= "8.16" & < "8.19~") | (= "dev")}'
+  opam: '{(>= "8.16" & < "8.20~") | (= "dev")}'
 
 dependencies:
 - opam:
@@ -115,14 +115,38 @@ dependencies:
     [MathComp real-closed](https://math-comp.github.io) 2.0 or later
 
 tested_coq_opam_versions:
-- version: 'coq-dev'
-  repo: 'mathcomp/mathcomp-dev'
-- version: '2.0.0-coq-8.18'
+- version: '2.0.0-coq-8.16'
   repo: 'mathcomp/mathcomp'
 - version: '2.0.0-coq-8.17'
   repo: 'mathcomp/mathcomp'
-- version: '2.0.0-coq-8.16'
+- version: '2.0.0-coq-8.18'
   repo: 'mathcomp/mathcomp'
+- version: '2.1.0-coq-8.16'
+  repo: 'mathcomp/mathcomp'
+- version: '2.1.0-coq-8.17'
+  repo: 'mathcomp/mathcomp'
+- version: '2.1.0-coq-8.18'
+  repo: 'mathcomp/mathcomp'
+- version: '2.2.0-coq-8.16'
+  repo: 'mathcomp/mathcomp'
+- version: '2.2.0-coq-8.17'
+  repo: 'mathcomp/mathcomp'
+- version: '2.2.0-coq-8.18'
+  repo: 'mathcomp/mathcomp'
+- version: '2.2.0-coq-8.19'
+  repo: 'mathcomp/mathcomp'
+- version: '2.2.0-coq-dev'
+  repo: 'mathcomp/mathcomp'
+- version: 'coq-8.16'
+  repo: 'mathcomp/mathcomp-dev'
+- version: 'coq-8.17'
+  repo: 'mathcomp/mathcomp-dev'
+- version: 'coq-8.18'
+  repo: 'mathcomp/mathcomp-dev'
+- version: 'coq-8.19'
+  repo: 'mathcomp/mathcomp-dev'
+- version: 'coq-dev'
+  repo: 'mathcomp/mathcomp-dev'
 
 namespace: CoqEAL
 
