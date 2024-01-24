@@ -568,10 +568,12 @@ Proof. rewrite -['X]expr1; exact: RseqpolyC_scaleXn. Qed.
   refines (rN ==> RseqpolyC ==> prod_R RseqpolyC RseqpolyC)
     (splitp (R:=R)) split_op.
 Proof.
-  eapply refines_trans; tc.
+have: refines (rN ==> list_R rAC ==> prod_R (list_R rAC) (list_R rAC))
+    split_op split_op.
   rewrite refinesE; do ?move=> ?*.
   eapply (split_seqpoly_R (N_R:=rN))=> // *.
   exact: refinesP.
+exact: refines_trans Rseqpoly_split.
 Qed.
 
 #[export] Instance RseqpolyC_splitn n rn p sp :
@@ -586,13 +588,8 @@ Definition eq_prod_seqpoly (x y : (seqpoly C * seqpoly C)) :=
   refines (prod_R RseqpolyC RseqpolyC ==> prod_R RseqpolyC RseqpolyC ==> bool_R)
           eqtype.eq_op eq_prod_seqpoly.
 Proof.
-  rewrite refinesE=> x x' hx y y' hy.
-  rewrite /eqtype.eq_op /eq_prod_seqpoly /=.
-  have -> : (x.1 == y.1) = (x'.1 == y'.1)%C.
-    apply: refines_eq.
-  have -> : (x.2 == y.2) = (x'.2 == y'.2)%C.
-    apply: refines_eq.
-  exact: bool_Rxx.
+rewrite refinesE => _ _ [x1 x'1 hx1 x2 x'2 hx2] _ _ [y1 y'1 hy1 y2 y'2 hy2].
+by apply: andb_R => /=; apply: refinesP.
 Qed.
 
 #[export] Instance RseqpolyC_lead_coef :

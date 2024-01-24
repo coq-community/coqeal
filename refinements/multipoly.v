@@ -1850,11 +1850,13 @@ elim=> [|h t IHt]; case=> //=.
 move=> h' t' i i' ref_i Hyp.
 eapply inv_list_R; last exact: Hyp; try done.
 move=> H a c sa sc Heq Heqs [H1 H2] [H3 H4].
-eapply IHt.
-- refines_apply1; first refines_apply1; first refines_apply1.
-  { rewrite !refinesE -H1 -H3; by case: Heq. }
-  { rewrite -H1 -H3; by refines_apply1. }
-- rewrite -H2 -H4; exact: Heqs.
+apply: IHt; last first.
+  rewrite -H2 -H4; exact: Heqs.
+rewrite -H1 -H3; case: Heq => [h1 _ <- h2 h2' rh2] /=.
+apply: refines_apply ref_i.
+apply: refines_apply.
+apply: refines_apply.
+by rewrite refinesE.
 Qed.
 
 #[export] Instance refine_filter A' B (rAB : A' -> B -> Type) :
@@ -1878,44 +1880,46 @@ Qed.
     list_R (prod_R Rseqmultinom rAC))
     (@list_of_mpoly A n) list_of_mpoly_eff.
 Proof.
-eapply refines_trans; [|by apply refine_list_of_mpoly_eff|].
-{ apply (composable_imply _ _ (R2 := list_R (prod_R eq rAC))).
-  rewrite composableE=> l.
-  elim: l => [|h t IH].
-  { case=> [|h' t']; [by move=>_; apply list_R_nil_R|].
-    move=> H; inversion H as [x X]; inversion X as [X0 X1].
-    by inversion X0 as [H' Hx|H' Hx]; rewrite -Hx in X1; inversion X1. }
-  case=> [|h' t'].
-  { move=> H; inversion H as [x X]; inversion X as [X0 X1].
-    by inversion X1 as [Hx H'|Hx H']; rewrite -Hx in X0; inversion X0. }
-  specialize (IH t'); move=> H.
-  case: H => l'' X.
-  case: X => X0 X1.
-  move: X0 X1; case: l'' => [|h'' t''] X0 X1; [by inversion X0|].
-  inversion X0 as [|X X' ref_X Y Y' ref_Y].
-  inversion X1 as [|Z Z' ref_Z T T' ref_T].
-  inversion ref_X as [x x' ref_x x0 x0' ref_x0'].
-  inversion ref_Z as [u u' ref_u v v' ref_v].
-  apply list_R_cons_R.
-  { apply/prod_RI; split; simpl.
-    suff->: u' = x' by [].
-    rewrite -[u']/(u',v').1 H10 -[x']/(x', x0').1 H8.
-    symmetry.
-    by eapply refinesP; refines_apply1.
-    suff->: x0 = v by [].
-    rewrite -[x0]/(x, x0).2 H7.
-    rewrite -[v]/(u, v).2 H9.
-    by eapply refinesP; refines_apply1. }
-  by apply IH; exists t''; split. }
-rewrite /list_of_mpoly_eff.
-apply refines_abstr => p p' rp.
-eapply refines_apply;
-  [|eapply refines_apply; [apply refine_M_hrel_elements|exact rp]].
-eapply refines_apply; [by apply refine_filter|].
-eapply refines_abstr => mc mc' rmc.
-rewrite refinesE; f_equal.
-rewrite refinesE in rmc; inversion rmc as [a a' ref_a b b' ref_b].
-apply refinesP; tc.
+have: refines (M_hrel ==> list_R (prod_R eq rAC))
+        (@list_of_mpoly_eff _ _ (@eq_of_instance_0 A)) list_of_mpoly_eff.
+{ rewrite /list_of_mpoly_eff.
+  apply refines_abstr => p p' rp.
+  eapply refines_apply;
+    [|eapply refines_apply; [apply refine_M_hrel_elements|exact rp]].
+  eapply refines_apply; [by apply refine_filter|].
+  eapply refines_abstr => mc mc' rmc.
+  rewrite refinesE; f_equal.
+  rewrite refinesE in rmc; inversion rmc as [a a' ref_a b b' ref_b].
+  apply refinesP; tc. }
+apply: refines_trans (refine_list_of_mpoly_eff _).
+apply: (composable_imply _ _ (R2 := list_R (prod_R eq rAC))).
+rewrite composableE => l.
+elim: l => [|h t IH].
+{ case=> [|h' t']; [by move=>_; apply list_R_nil_R|].
+  move=> H; inversion H as [x X]; inversion X as [X0 X1].
+  by inversion X0 as [H' Hx|H' Hx]; rewrite -Hx in X1; inversion X1. }
+case=> [|h' t'].
+{ move=> H; inversion H as [x X]; inversion X as [X0 X1].
+  by inversion X1 as [Hx H'|Hx H']; rewrite -Hx in X0; inversion X0. }
+specialize (IH t'); move=> H.
+case: H => l'' X.
+case: X => X0 X1.
+move: X0 X1; case: l'' => [|h'' t''] X0 X1; [by inversion X0|].
+inversion X0 as [|X X' ref_X Y Y' ref_Y].
+inversion X1 as [|Z Z' ref_Z T T' ref_T].
+inversion ref_X as [x x' ref_x x0 x0' ref_x0'].
+inversion ref_Z as [u u' ref_u v v' ref_v].
+apply: list_R_cons_R; last first.
+  by apply IH; exists t''; split.
+apply/prod_RI; split; simpl.
+suff->: u' = x' by [].
+rewrite -[u']/(u',v').1 H10 -[x']/(x', x0').1 H8.
+symmetry.
+by rewrite -H9 -H10 /=.
+suff->: x0 = v by [].
+rewrite -[x0]/(x, x0).2 H7.
+rewrite -[v]/(u, v).2 H9.
+by rewrite -H7 -H8 /=.
 Qed.
 
 #[export] Instance ReffmpolyC_mp0_eff (n : nat) :
