@@ -206,35 +206,32 @@ Qed.
 
 Instance Rrat_eq : refines (Rrat ==> Rrat ==> bool_R) eqtype.eq_op eq_op.
 Proof.
-apply refines_abstr2 => x [na [da da_gt0]] rx y [nb [db db_gt0]] ry.
-have -> : (x == y) = ((na, pos_of da_gt0) == (nb, pos_of db_gt0))%C.
-  rewrite /eq_op /eqQ /cast /cast_pos_int /pos_to_int /=; simpC.
-  rewrite [x]RratE [y]RratE /= GRing.eqr_div; last 2 first.
-  - by rewrite gt_eqF // ltr0z.
-  - by rewrite gt_eqF // ltr0z.
-  by rewrite -!rmorphM /= eqr_int !natz.
+apply: refines_abstr2 => x [na [da da_gt0]] rx y [nb [db db_gt0]] ry.
+rewrite /eq_op /eqQ /cast /cast_pos_int /pos_to_int /=; simpC.
+rewrite [x]RratE [y]RratE /= GRing.eqr_div; last 2 first.
+- by rewrite gt_eqF // ltr0z.
+- by rewrite gt_eqF // ltr0z.
+rewrite -!rmorphM /= eqr_int !natz.
 rewrite refinesE; exact: bool_Rxx.
 Qed.
 
 Instance Rrat_leq : refines (Rrat ==> Rrat ==> bool_R) Num.le leq_op.
 Proof.
 apply refines_abstr2 => x [na [da da_gt0]] rx y [nb [db db_gt0]] ry.
-have -> : (x <= y)%R = ((na, pos_of da_gt0) <= (nb, pos_of db_gt0))%C.
-  rewrite /leq_op /leqQ /cast /cast_pos_int /pos_to_int /=; simpC.
-  rewrite [x]RratE [y]RratE /= !natz.
-  rewrite ler_pdivrMr ?ltr0z // mulrAC ler_pdivlMr ?ltr0z //.
-  by rewrite -!rmorphM /= ler_int.
+rewrite /leq_op /leqQ /cast /cast_pos_int /pos_to_int /=; simpC.
+rewrite [x]RratE [y]RratE /= !natz.
+rewrite ler_pdivrMr ?ltr0z // mulrAC ler_pdivlMr ?ltr0z //.
+rewrite -!rmorphM /= ler_int.
 rewrite refinesE; exact: bool_Rxx.
 Qed.
 
 Instance Rrat_lt : refines (Rrat ==> Rrat ==> bool_R) Num.lt lt_op.
 Proof.
 apply refines_abstr2 => x [na [da da_gt0]] rx y [nb [db db_gt0]] ry.
-have -> : (x < y) = ((na, pos_of da_gt0) < (nb, pos_of db_gt0))%C.
-  rewrite /leq_op /leqQ /cast /cast_pos_int /pos_to_int /=.
-  rewrite [x]RratE [y]RratE /= /lt_op /ltQ /cast /= !natz.
-  rewrite ltr_pdivrMr ?ltr0z // mulrAC ltr_pdivlMr ?ltr0z //.
-  by rewrite -!rmorphM /= ltr_int.
+rewrite /leq_op /leqQ /cast /cast_pos_int /pos_to_int /=.
+rewrite [x]RratE [y]RratE /= /lt_op /ltQ /cast /= !natz.
+rewrite ltr_pdivrMr ?ltr0z // mulrAC ltr_pdivlMr ?ltr0z //.
+rewrite -!rmorphM /= ltr_int.
 rewrite refinesE; exact: bool_Rxx.
 Qed.
 

@@ -292,16 +292,24 @@ Proof.
   by rewrite divn_small ?addn0 // ?to_natE.
 Qed.
 
+(* chunk of proof extracted from below to avoid tc
+   generating spurious universe constraints *)
+Lemma Rnat_div_subproof
+    x x' (rx : refines Rnat x x') y y' (ry : refines Rnat y y') :
+  refines (prod_R Rnat Rnat) (edivn x y) (N.div_eucl x' y').
+Proof. tc. Qed.
+
 #[export] Instance Rnat_div : refines (Rnat ==> Rnat ==> Rnat) divn div_op.
 Proof.
-by apply refines_abstr2; rewrite /divn /div_op /div_N /N.div=> x x' rx y y' ry; tc.
+apply refines_abstr2; rewrite /divn /div_op /div_N /N.div=> x x' rx y y' ry.
+exact: (refines_apply (refines_fst_R _ _) (Rnat_div_subproof _ _)).
 Qed.
 
 #[export] Instance Rnat_mod : refines (Rnat ==> Rnat ==> Rnat) modn mod_op.
 Proof.
-  apply refines_abstr2; rewrite /mod_op /mod_N /N.modulo=> x x' rx y y' ry.
-  rewrite modn_def.
-  exact: refines_apply.
+apply refines_abstr2; rewrite /mod_op /mod_N /N.modulo=> x x' rx y y' ry.
+rewrite modn_def.
+exact: (refines_apply (refines_snd_R _ _) (Rnat_div_subproof _ _)).
 Qed.
 
 #[export] Instance Rnat_exp : refines (Rnat ==> Rnat ==> Rnat) expn exp_op.
