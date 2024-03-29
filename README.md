@@ -9,8 +9,8 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 [![Code of Conduct][conduct-shield]][conduct-link]
 [![Zulip][zulip-shield]][zulip-link]
 
-[docker-action-shield]: https://github.com/coq-community/coqeal/workflows/Docker%20CI/badge.svg?branch=master
-[docker-action-link]: https://github.com/coq-community/coqeal/actions?query=workflow:"Docker%20CI"
+[docker-action-shield]: https://github.com/coq-community/coqeal/actions/workflows/docker-action.yml/badge.svg?branch=master
+[docker-action-link]: https://github.com/coq-community/coqeal/actions/workflows/docker-action.yml
 
 [contributing-shield]: https://img.shields.io/badge/contributions-welcome-%23f7931e.svg
 [contributing-link]: https://github.com/coq-community/manifesto/blob/master/CONTRIBUTING.md
@@ -49,8 +49,8 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
   - [Bignums](https://github.com/coq/bignums) same version as Coq
   - [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.3 or later
   - [Hierarchy Builder](https://github.com/math-comp/hierarchy-builder) 1.4.0 or later
-  - [MathComp ssreflect](https://math-comp.github.io) 2.0 or later
-  - [MathComp algebra](https://math-comp.github.io) 2.0 or later
+  - [MathComp ssreflect](https://math-comp.github.io) 2.1 or later
+  - [MathComp algebra](https://math-comp.github.io) 2.1 or later
   - [MathComp Multinomials](https://github.com/math-comp/multinomials) 2.0 or later
   - [MathComp real-closed](https://math-comp.github.io) 2.0 or later
 - Coq namespace: `CoqEAL`
