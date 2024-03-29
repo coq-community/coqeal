@@ -125,7 +125,7 @@ End fin_npoly.
 
 Section Irreducible.
 
-Variable R : finIntegralDomainType.
+Variable R : finIdomainType.
 Variable p : {poly R}.
 
 Definition irreducibleb :=
