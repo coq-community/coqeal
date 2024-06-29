@@ -97,7 +97,7 @@ move: (erefl om); rewrite /om /d; case: {2}_ / ihn.
     by rewrite add1n (leq_trans spq) // leqnSn.
   rewrite size_proper_mul ?lead_coefC ?lead_coefXn ?mulr1 //.
   rewrite size_polyC x0 size_polyXn /= addnS /=.
-  by rewrite addnBA // leq_subLR leq_add2r size_poly.
+  by rewrite ?add0n ?addnS addnBA//= leq_subLR leq_add2r size_poly.
 * move=> s hs; case hpq: (odivp_rec _ _ _ _)=> [r'|] //=.
   case=> hm; constructor; move: hm; rewrite opprD addrA.
   move/eqP; rewrite (can2_eq (@addrNK _ _) (@addrK _ _)) => /eqP->.
@@ -769,7 +769,7 @@ case: {1}_ / h=> //.
     by rewrite add1n (leq_trans spq) // leqnSn.
   rewrite size_proper_mul ?lead_coefC ?lead_coefXn ?mulr1 ?x0 //.
   rewrite size_polyC x0 size_polyXn /= addnS /=.
-  by rewrite addnBA // leq_subLR leq_add2r size_poly.
+  by rewrite ?add0n ?addnS addnBA//= leq_subLR leq_add2r size_poly.
 move=> q1 r0 H G.
 move/eqP; rewrite xpair_eqE; case/andP; move/eqP=> q1q0; move/eqP=> r0r.
 constructor; last by rewrite -r0r.
