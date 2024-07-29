@@ -169,10 +169,8 @@ Qed.
           (scal_poly (N:=nat) (R:=R) (polyR:={poly R}))
           (scal_poly (N:=N) (R:=C) (polyR:=polyC)).
 Proof.
-  rewrite refinesE=> p p' hp q q' hq.
-  eapply (scal_poly_R (polyR_R:=RpolyC))=> // *;
-  eapply refinesP;
-  do ?eapply refines_apply; tc.
+  apply: refines_abstr2 => p p' hp q q' hq; rewrite refinesE.
+  by apply: (scal_poly_R (R_R:=rC) (polyR_R:=RpolyC)) => *; apply: refinesP.
 Qed.
 
 #[export] Instance refine_scal_poly :
