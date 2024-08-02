@@ -44,42 +44,40 @@ Proof. by rewrite refinesE. Qed.
 
 #[export] Instance Rbool_opp : refines (Rbool ==> Rbool) -%R -%C.
 Proof.
-rewrite refinesE=> x []; rewrite /Rbool /F2_of_bool /fun_hrel /= => <- //.
-by rewrite GRing.mulr0n GRing.oppr0.
+rewrite refinesE => x.
+by case; rewrite /Rbool /F2_of_bool /fun_hrel /= => <-; apply/val_inj.
 Qed.
 
 #[export] Instance Rbool_add : refines (Rbool ==> Rbool ==> Rbool) +%R +%C.
 Proof.
-rewrite refinesE /Rbool /F2_of_bool /fun_hrel => x [] <- y [] <- //=.
-  by rewrite -GRing.natrD char_Zp.
-by rewrite GRing.add0r.
+rewrite refinesE /Rbool /F2_of_bool /fun_hrel.
+by move=> x [] <- y [] <-; apply/val_inj.
 Qed.
 
 (* TODO: lemma for sub *)
 #[export] Instance Rbool_sub :
   refines (Rbool ==> Rbool ==> Rbool) (fun x y => x - y) sub_op.
 Proof.
-  rewrite refinesE /Rbool /F2_of_bool /fun_hrel=> x [] <- y [] <- //=;
-  by apply/eqP; rewrite eq_sym GRing.subr_eq0.
+rewrite refinesE /Rbool /F2_of_bool /fun_hrel.
+by move=> x [] <- y [] <-; apply/val_inj.
 Qed.
 
 #[export] Instance Rbool_mul : refines (Rbool ==> Rbool ==> Rbool) *%R *%C.
 Proof.
-rewrite refinesE /Rbool /F2_of_bool /fun_hrel => x [] <- y [] <- //=.
-+ by rewrite GRing.mulr0.
-+ by rewrite GRing.mul0r.
-by rewrite GRing.mul0r.
+rewrite refinesE /Rbool /F2_of_bool /fun_hrel.
+by move=> x [] <- y [] <-; apply/val_inj.
 Qed.
 
 #[export] Instance Rbool_inv : refines (Rbool ==> Rbool) GRing.inv inv_bool.
 Proof.
-by rewrite refinesE=> x []; rewrite /Rbool /F2_of_bool /fun_hrel /= => <- //.
+rewrite refinesE => x.
+by case; rewrite /Rbool /F2_of_bool /fun_hrel /= => <-; apply/val_inj.
 Qed.
 
 #[export] Instance Rbool_eq :
   refines (Rbool ==> Rbool ==> bool_R) eqtype.eq_op eq_op.
 Proof.
-  by rewrite refinesE /Rbool /F2_of_bool /fun_hrel=> x [] <- y [] <-.
+by rewrite refinesE /Rbool /F2_of_bool /fun_hrel=> x [] <- y [] <-.
 Qed.
 
 (*
