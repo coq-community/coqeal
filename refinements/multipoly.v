@@ -1,7 +1,7 @@
 (** Authors: Erik Martin-Dorel and Pierre Roux, 2016-2017 *)
 Require Import ZArith NArith FMaps FMapAVL.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-From mathcomp Require Import choice finfun tuple fintype ssralg bigop.
+From mathcomp Require Import choice finfun tuple fintype order ssralg bigop.
 From CoqEAL Require Import hrel.
 From CoqEAL Require Import refinements.
 From CoqEAL Require Import param binord binnat.
@@ -653,20 +653,20 @@ rewrite -ltEmnm.
 case: (boolP (m1 == m2)) => /= [E|].
 { suff: mnmc_eq_seq m1' m2'.
   { move=> E'; symmetry.
-    move: E => /eqP ->; rewrite order.Order.POrderTheory.ltxx.
+    move: E => /eqP ->; rewrite Order.POrderTheory.ltxx.
     apply negbTE; apply /negP => K.
     by apply (E.lt_not_eq K). }
   by apply /mnmc_eq_seqP; rewrite -(Rseqmultinom_eq rm1 rm2). }
 move=> nE.
-rewrite /mnmc_lt_seq /order.Order.lt /=.
+rewrite /mnmc_lt_seq /Order.lt /=.
 rewrite mpoly.ltmc_def eq_sym nE /=.
 have rmdeg := refine_mdeg n; rewrite refinesE in rmdeg.
 rewrite /eq_op /eq_N /lt_op /lt_N.
 rewrite /mnmc_le.
-rewrite order.Order.SeqLexiOrder.Exports.lexi_cons.
+rewrite Order.SeqLexiOrder.Exports.lexi_cons.
 rewrite (rmdeg _ _ (refinesP rm1)) (rmdeg _ _ (refinesP rm2)) => {rmdeg}.
-rewrite /order.Order.le /=.
-rewrite (_ : order.Order.SeqLexiOrder.le _ _ = mnmc_lt_seq_aux m1' m2').
+rewrite /Order.le /=.
+rewrite (_ : Order.SeqLexiOrder.le _ _ = mnmc_lt_seq_aux m1' m2').
 { rewrite leq_eqVlt.
   apply/idP/idP.
   { case eqP => /= He.
@@ -713,12 +713,12 @@ have rt2 : refines Rseqmultinom [multinom Tuple st2] t2.
   { by move: (@refine_size _ _ _ rm2)=> /= /eqP; rewrite eqSS=> /eqP. }
   move=> i; move: (refine_nth (fintype.lift ord0 i) rm2).
   by rewrite /= =>->; rewrite !multinomE !(tnth_nth 0%N) /=. }
-rewrite /order.Order.lt /= /eq_op /eq_N /lt_op /lt_N.
+rewrite /Order.lt /= /eq_op /eq_N /lt_op /lt_N.
 move: (@refine_nth _ _ _ ord0 rm1) => /=.
 rewrite multinomE /spec_N (tnth_nth 0%N) /= => <-.
 move: (@refine_nth _ _ _ ord0 rm2) => /=.
 rewrite multinomE /spec_N (tnth_nth 0%N) /= => <-.
-rewrite /order.Order.le /=.
+rewrite /Order.le /=.
 apply/idP/idP.
 { rewrite leq_eqVlt.
   move=> /andP [/orP [Heq12|Hlt12] /implyP Himpl].
@@ -1003,7 +1003,7 @@ apply: (path.sorted_eq mpoly.lemc_trans mpoly.lemc_anti).
     by rewrite -/(path.sorted _ (h' :: t')) -Ht'; apply IH. }
   case_eq l=> [//|h t Hl] /= /(path.pathP (@mnm0_seq n, 0)) H.
   apply/(path.pathP 0%MM)=> i; rewrite size_map=> Hi.
-  rewrite /mnmc_le -leEmnm order.Order.POrderTheory.le_eqVlt; apply/orP; right.
+  rewrite /mnmc_le -leEmnm Order.POrderTheory.le_eqVlt; apply/orP; right.
   rewrite (nth_map (@mnm0_seq n, 0)) //; move/allP in Hs.
   move: (H _ Hi); rewrite /lef/is_true=><-; apply refinesP.
   eapply refines_apply; [eapply refines_apply; [by apply refine_mnmc_lt|]|].
