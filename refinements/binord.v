@@ -118,7 +118,7 @@ Local Arguments mul_ord /.
 
 #[export] Instance Rord_mul n1 n2 (rn : nat_R n1 n2) :
   refines (Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn))
-          (@Zp_mul n1) *%C.
+  (@Zp_mul _) *%C.
 Proof.
   rewrite refinesE=> x x' hx y y' hy /=.
   exact: refinesP.
