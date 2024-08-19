@@ -76,8 +76,8 @@ rewrite [p in RHS](rdivp_eq (monicXn _ m)) [q in RHS](rdivp_eq (monicXn _ m)).
 rewrite /shift_op /shift_polyR /shiftp /implem /implem_nat /implem_id.
 simpC.
 rewrite !ih !(mulrDl, mulrDr, mulNr) mulnC exprM.
-rewrite -addrA -addrA -opprD [X in X + _ - _]addrC [in LHS]addrACA addrK.
-by rewrite !(commr_polyXn, mulrA, addrA).
+rewrite -[in X in X + _]addrA -opprD [X in X + _ - _]addrC [in LHS]addrACA.
+by rewrite addrK !(commr_polyXn, mulrA, addrA).
 Qed.
 
 Lemma karatsubaE (p q : {poly R}) : karatsuba (N:=nat) p q = p * q.

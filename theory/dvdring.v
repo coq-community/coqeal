@@ -1792,8 +1792,8 @@ HB.builders Context R of IntegralDomain_isEuclidean R.
   rewrite (eqd_trans (gcdrE _ _)) ?(eqd_trans (ihn' _ _)) //;
     do ?by rewrite -ltnS (leq_trans (mod_spec _ _)) ?b0 //.
   rewrite mulrBl addrA [v * a + _]addrC -mulrA -addrA -mulrBr /div b0.
-  case: edivP ihn'=> /= q r.
-  move/eqP; rewrite addrC -subr_eq; move/eqP=>->.
+  case: edivP ihn'=> /= q r /eqP.
+  rewrite [_ + r]addrC -subr_eq; move/eqP=>->.
   by rewrite b0 /= => nrb; apply; rewrite -ltnS (leq_trans nrb).
   Qed.
 
