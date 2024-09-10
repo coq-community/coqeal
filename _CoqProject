@@ -25,6 +25,7 @@ theory/edr.v
 theory/fpmod.v
 theory/frobenius_form.v
 theory/gauss.v
+theory/grobner.v
 theory/jordan.v
 theory/kaplansky.v
 theory/karatsuba.v
