@@ -24,13 +24,16 @@ jobs:
           - 'mathcomp/mathcomp:2.2.0-coq-8.17'
           - 'mathcomp/mathcomp:2.2.0-coq-8.18'
           - 'mathcomp/mathcomp:2.2.0-coq-8.19'
-          - 'mathcomp/mathcomp:2.2.0-coq-dev'
+          - 'mathcomp/mathcomp:2.2.0-coq-8.20'
+          - 'mathcomp/mathcomp:2.3.0-coq-8.20'
+          - 'mathcomp/mathcomp:2.3.0-coq-dev'
           - 'mathcomp/mathcomp-dev:coq-8.18'
           - 'mathcomp/mathcomp-dev:coq-8.19'
+          - 'mathcomp/mathcomp-dev:coq-8.20'
           - 'mathcomp/mathcomp-dev:coq-dev'
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: coq-community/docker-coq-action@v1
         with:
           opam_file: 'coq-coqeal.opam'
