@@ -542,7 +542,8 @@ rewrite refinesE => _ a <- _ b <-; rewrite /r_ratBigQ unlock /fun_hrel /=.
 rewrite /eq_op /eq_bigQ BigQ.spec_eq_bool.
 case: (BigQ.to_Q a) => na da {a}.
 case: (BigQ.to_Q b) => nb db {b}.
-rewrite /Qeq_bool !Z2int_Qred /= /Zeq_bool -Z.eqb_compare.
+rewrite /Qeq_bool !Z2int_Qred /=.
+do ?[rewrite /Zeq_bool -Z.eqb_compare].  (* remove line when requiring Rocq >= 9.0 *)
 rewrite GRing.eqr_div ?intq_eq0 ?Posz_nat_of_pos_neq0 //.
 rewrite !nat_of_pos_Z_to_pos.
 rewrite !gez0_abs; [|by rewrite -[0%R]int2ZK Z2int_le..].

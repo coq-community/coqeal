@@ -410,7 +410,7 @@ Tactic Notation  "context" "[" ssrpatternarg(pat) "]" tactic3(tac) :=
   tac; rewrite eqQ {Q eqQ}.
 
 Class strategy_class (C : forall T, T -> T -> Prop) :=
-   StrategyClass : C = @eq.
+   StrategyClass : C = (fun T => @eq T).
 #[export] Hint Mode strategy_class + : typeclass_instances.
 
 Class native_compute T (x y : T) := NativeCompute : x = y.
