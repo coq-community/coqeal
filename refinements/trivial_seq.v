@@ -1,3 +1,5 @@
+From elpi Require Import derive.
+
 Require Import ZArith.
 
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
@@ -15,7 +17,7 @@ Context (A : Type) (N : Type) `{zero_of N} `{one_of N} `{add_of N}.
   fix size xs := if xs is x :: s then (size s + 1)%C else 0%C.
 
 End size_seq.
-Parametricity size_seq.
+Elpi derive.param2 size_seq.
 
 Lemma size_seqE T (s : seq T) : (@size_seq _ _ 0%N 1%N addn) s = size s.
 Proof. by elim: s => //= x s ->; rewrite [(_ + _)%C]addn1. Qed.
@@ -47,7 +49,7 @@ Qed.
           (nth [::]) (fun s (n : N) => nth [::] s (spec n)).
 Proof.
   param nth_R.
-    rewrite refinesE; exact: list_R_nil_R.
+    rewrite refinesE; exact: nil_R.
   rewrite -[X in refines _ X _]/(spec_id _); exact: refines_apply.
 Qed.
 
@@ -56,11 +58,11 @@ Qed.
 Proof.
   rewrite refinesE.
   elim: s=> [|a s ihs] /=.
-    exact: list_R_nil_R.
-  apply: list_R_cons_R.
+    exact: nil_R.
+  apply: cons_R.
     elim: a=> [|hd tl ih] /=.
-      exact: list_R_nil_R.
-      apply: list_R_cons_R.
+      exact: nil_R.
+      apply: cons_R.
       have heq : refines eq hd hd by rewrite refinesE.
       rewrite -[X in rAC X _]/(implem_id _).
       exact: refinesP.

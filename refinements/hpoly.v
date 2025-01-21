@@ -26,8 +26,8 @@ Section hpoly.
 
 Context {A N pos : Type}.
 
-Inductive hpoly A := Pc : A -> hpoly A
-                   | PX : A -> pos -> hpoly A -> hpoly A.
+Inductive hpoly A := Pc : A -> hpoly
+                   | PX : A -> pos -> hpoly -> hpoly.
 
 Section hpoly_op.
 
@@ -166,30 +166,31 @@ Definition head_hpoly (p : hpoly A) :=
 End hpoly_op.
 End hpoly.
 
-Parametricity hpoly.
-Parametricity normalize.
-Parametricity from_seq.
-Parametricity cast_hpoly.
-Parametricity zero_hpoly.
-Parametricity one_hpoly.
-Parametricity map_hpoly.
-Parametricity opp_hpoly.
-Parametricity scale_hpoly.
-Parametricity addXn_const.
-Parametricity addXn.
-Parametricity add_hpoly.
-Parametricity sub_hpoly.
-Parametricity shift_hpoly.
-Parametricity mul_hpoly.
-Definition exp_hpoly' := Eval compute in @exp_hpoly.
-Parametricity exp_hpoly'.
-Realizer @exp_hpoly as exp_hpoly_R := exp_hpoly'_R.
-Parametricity eq0_hpoly.
-Parametricity eq_hpoly.
-Parametricity size_hpoly.
-Parametricity lead_coef_hpoly.
-Parametricity split_hpoly.
-Parametricity head_hpoly.
+Elpi derive.param2 hpoly.
+Elpi derive.param2 normalize.
+Elpi derive.param2 from_seq.
+Elpi derive.param2 cast_hpoly.
+Elpi derive.param2 zero_hpoly.
+Elpi derive.param2 one_hpoly.
+Elpi derive.param2 map_hpoly.
+Elpi derive.param2 opp_hpoly.
+Elpi derive.param2 scale_hpoly.
+Elpi derive.param2 addXn_const.
+Elpi derive.param2 addXn.
+Elpi derive.param2 add_hpoly.
+Elpi derive.param2 sub_hpoly.
+Elpi derive.param2 shift_hpoly.
+Elpi derive.param2 mul_hpoly.
+Elpi derive.param2 exp_hpoly.
+(* Definition exp_hpoly' := Eval compute in @exp_hpoly. *)
+(* Elpi derive.param2 exp_hpoly'. *)
+(* Realizer @exp_hpoly as exp_hpoly_R := exp_hpoly'_R. *)
+Elpi derive.param2 eq0_hpoly.
+Elpi derive.param2 eq_hpoly.
+Elpi derive.param2 size_hpoly.
+Elpi derive.param2 lead_coef_hpoly.
+Elpi derive.param2 split_hpoly.
+Elpi derive.param2 head_hpoly.
 
 Section hpoly_more_op.
 
@@ -712,7 +713,7 @@ Proof. param_comp mul_hpoly_R. Qed.
 Proof.
   eapply refines_trans; tc.
   rewrite refinesE; do ?move=> ?*.
-  eapply (exp_hpoly_R (N_R:=rN))=> // *;
+  eapply (@exp_hpoly_R _ _ _ _ _ rN)=> // *;
     exact: refinesP.
 Qed.
 
@@ -743,7 +744,7 @@ Proof. param_comp scale_hpoly_R. Qed.
 Proof.
   eapply refines_trans; tc.
   rewrite refinesE; do ?move=> ?*.
-  eapply (shift_hpoly_R (N_R:=rN))=> // *;
+  eapply (@shift_hpoly_R _ _ _ _ _ rN)=> // *;
   exact: refinesP.
 Qed.
 
@@ -784,7 +785,7 @@ Proof. rewrite -['X]expr1; exact: RhpolyC_scaleXn. Qed.
 Proof.
 refines_trans.
   rewrite refinesE; do ?move=> ?*.
-  eapply (split_hpoly_R (N_R:=rN))=> // *;
+  eapply (@split_hpoly_R _ _ _ _ _ rN)=> // *;
     exact: refinesP.
 Qed.
 

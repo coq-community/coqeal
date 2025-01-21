@@ -1,3 +1,4 @@
+From elpi Require Import derive.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
 From mathcomp Require Import path choice fintype tuple finset bigop poly polydiv.
 
@@ -77,22 +78,31 @@ Proof. by elim: s. Qed.
 
 End seqpoly_op.
 
-Parametricity cast_seqpoly.
-Parametricity seqpoly0.
-Parametricity seqpoly1.
-Parametricity opp_seqpoly.
-Parametricity add_seqpoly.
-Parametricity sub_seqpoly.
-Parametricity scale_seqpoly.
-Parametricity mul_seqpoly.
+Elpi derive.param2 seqpoly.
+Elpi derive.param2 cast_seqpoly.
+Elpi derive.param2 seqpoly0.
+Elpi derive.param2 seqpoly1.
+Elpi derive.param2 List.map.
+Elpi derive.param2 opp_seqpoly.
+Elpi derive.param2 add_seqpoly_fun.
+Elpi derive.param2 add_seqpoly.
+Elpi derive.param2 sub_seqpoly.
+Elpi derive.param2 scale_seqpoly.
+Elpi derive.param2 mul_seqpoly.
 Definition exp_seqpoly' := Eval compute in exp_seqpoly.
-Parametricity exp_seqpoly'.
-Realizer exp_seqpoly as exp_seqpoly_R := exp_seqpoly'_R.
-Parametricity size_seqpoly.
-Parametricity eq_seqpoly.
-Parametricity shift_seqpoly.
-Parametricity split_seqpoly.
-Parametricity lead_coef_seqpoly.
+Elpi derive.param2 exp_seqpoly'.
+Definition exp_seqpoly_R := exp_seqpoly'_R.
+Elpi Accumulate derive Db derive.param2.db.
+Elpi Accumulate derive.param2.db "
+:before ""param:fail""
+param {{ @exp_seqpoly }} {{ @exp_seqpoly }} {{ @exp_seqpoly_R }}.
+".
+Elpi derive.param2 size_seqpoly.
+Elpi derive.param2 eq_seqpoly.
+Elpi derive.param2 shift_seqpoly.
+Elpi derive.param2 split_seqpoly.
+Elpi derive.param2 predn.
+Elpi derive.param2 lead_coef_seqpoly.
 
 Section seqpoly_more_op.
 
@@ -464,7 +474,7 @@ Definition RseqpolyC : {poly R} -> seq C -> Type :=
 
 #[export] Instance RseqpolyC_cons :
   refines (rAC ==> RseqpolyC ==> RseqpolyC) (@cons_poly R) cons.
-Proof. param_comp list_R_cons_R. Qed.
+Proof. param_comp cons_R. Qed.
 
 #[export] Instance RseqpolyC_cast :
   refines (rAC ==> RseqpolyC) polyC cast_op.
@@ -500,7 +510,7 @@ Proof. param_comp mul_seqpoly_R. Qed.
 Proof.
   eapply refines_trans; tc.
   rewrite refinesE; do ?move=> ?*.
-  eapply (exp_seqpoly_R (N_R:=rN))=> // *;
+  eapply (@exp_seqpoly_R _ _ _ _ _ rN)=> // *;
     exact: refinesP.
 Qed.
 
@@ -519,7 +529,7 @@ Proof.
   relation, why? *)
   eapply refines_trans; tc.
   rewrite refinesE; do ?move=> ?*.
-  eapply (shift_seqpoly_R (N_R:=rN))=> // *;
+  eapply (@shift_seqpoly_R _ _ _ _ _ rN)=> // *;
     exact: refinesP.
 Qed.
 
@@ -571,7 +581,7 @@ Proof.
 have: refines (rN ==> list_R rAC ==> prod_R (list_R rAC) (list_R rAC))
     split_op split_op.
   rewrite refinesE; do ?move=> ?*.
-  eapply (split_seqpoly_R (N_R:=rN))=> // *.
+  eapply (@split_seqpoly_R _ _ _ _ _ rN)=> // *.
   exact: refinesP.
 exact: refines_trans Rseqpoly_split.
 Qed.

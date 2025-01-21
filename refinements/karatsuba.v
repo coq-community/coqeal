@@ -46,8 +46,8 @@ Definition karatsuba p q :=
 
 End karatsuba_generic.
 
-Parametricity karatsuba_rec.
-Parametricity karatsuba.
+Elpi derive.param2 karatsuba_rec.
+Elpi derive.param2 karatsuba.
 
 Section karatsuba_correctness.
 

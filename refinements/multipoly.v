@@ -31,7 +31,7 @@ Local Open Scope ring_scope.
 (** BEGIN FIXME this is redundant with PR CoqEAL/CoqEAL#3 *)
 Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
-#[export] Hint Resolve list_R_nil_R : core.
+#[export] Hint Resolve nil_R : core.
 (** END FIXME this is redundant with PR CoqEAL/CoqEAL#3 *)
 
 (** Tip to leverage a Boolean condition *)
@@ -314,13 +314,12 @@ have [Ral|Ral] := @HdRel_dec T R a l Hdec.
 Qed.
 
 Inductive HdRelT (A : Type) (R : A -> A -> Prop) (a : A) : seq A -> Type :=
-    HdRelT_nil : HdRelT R a [::]
-  | HdRelT_cons : forall (b : A) (l : seq A), R a b -> HdRelT R a (b :: l).
+    HdRelT_nil : HdRelT [::]
+  | HdRelT_cons : forall (b : A) (l : seq A), R a b -> HdRelT (b :: l).
 
 Inductive SortedT (A : Type) (R : A -> A -> Prop) : seq A -> Type :=
-    SortedT_nil : SortedT R [::]
-  | SortedT_cons : forall (a : A) (l : seq A), SortedT R l -> HdRelT R a l -> SortedT R (a :: l).
-
+    SortedT_nil : SortedT [::]
+  | SortedT_cons : forall (a : A) (l : seq A), SortedT l -> HdRelT R a l -> SortedT (a :: l).
 
 Lemma HdRelT_dec T (R : T -> T -> Prop) a l :
   (forall a b, decidable (R a b)) -> HdRel R a l -> HdRelT R a l.
@@ -1866,13 +1865,13 @@ Proof.
 eapply refines_abstr=> f f' rf.
 eapply refines_abstr=> l l' rl.
 elim: l l' rl => [|h t IH] l'; rewrite refinesE => rl.
-{ inversion rl; apply list_R_nil_R. }
+{ inversion rl; apply nil_R. }
 move: rl; case l' => [|h' t'] rl; [by inversion rl|].
 inversion rl as [|h_ h'_ Hh t_ t'_ Ht].
 rewrite /=.
 have ->: f h = f' h'; [by apply refinesP; eapply refines_apply; tc|].
 specialize (IH t' (trivial_refines Ht)); rewrite refinesE in IH.
-by case (f' h') => //; apply list_R_cons_R.
+by case (f' h') => //; apply cons_R.
 Qed.
 
 #[export] Instance ReffmpolyC_list_of_mpoly_eff n :
@@ -1895,7 +1894,7 @@ apply: refines_trans (refine_list_of_mpoly_eff _).
 apply: (composable_imply _ _ (R2 := list_R (prod_R eq rAC))).
 rewrite composableE => l.
 elim: l => [|h t IH].
-{ case=> [|h' t']; [by move=>_; apply list_R_nil_R|].
+{ case=> [|h' t']; [by move=>_; apply nil_R|].
   move=> H; inversion H as [x X]; inversion X as [X0 X1].
   by inversion X0 as [H' Hx|H' Hx]; rewrite -Hx in X1; inversion X1. }
 case=> [|h' t'].
@@ -1909,7 +1908,7 @@ inversion X0 as [|X X' ref_X Y Y' ref_Y].
 inversion X1 as [|Z Z' ref_Z T T' ref_T].
 inversion ref_X as [x x' ref_x x0 x0' ref_x0'].
 inversion ref_Z as [u u' ref_u v v' ref_v].
-apply: list_R_cons_R; last first.
+apply: cons_R; last first.
   by apply IH; exists t''; split.
 apply/prod_RI; split; simpl.
 suff->: u' = x' by [].

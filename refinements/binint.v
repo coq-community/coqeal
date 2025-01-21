@@ -1,5 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From elpi Require Import derive.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 From mathcomp Require Import path choice fintype tuple finset bigop order.
 From mathcomp Require Import ssralg zmodp ssrnum ssrint.
@@ -130,26 +131,26 @@ Context `{implem_of nat N, implem_of pos P}.
 
 End binint_op.
 
-Parametricity Z.
-Parametricity Zmatch.
-Parametricity zeroZ.
-Parametricity oneZ.
-Parametricity addZ.
-Parametricity oppZ.
-Parametricity subZ.
-Parametricity eqZ.
-Parametricity mulZ.
-Parametricity expZ.
-Parametricity leqZ.
-Parametricity ltZ.
-Parametricity cast_NZ.
-Parametricity cast_PZ.
-Parametricity cast_ZN.
-Parametricity cast_ZP.
-(* Parametricity int. *)
-(* Parametricity sum. *)
+Elpi derive.param2 Z.
+Elpi derive.param2 Zmatch.
+Elpi derive.param2 zeroZ.
+Elpi derive.param2 oneZ.
+Elpi derive.param2 addZ.
+Elpi derive.param2 oppZ.
+Elpi derive.param2 subZ.
+Elpi derive.param2 eqZ.
+Elpi derive.param2 mulZ.
+Elpi derive.param2 expZ.
+Elpi derive.param2 leqZ.
+Elpi derive.param2 ltZ.
+Elpi derive.param2 cast_NZ.
+Elpi derive.param2 cast_PZ.
+Elpi derive.param2 cast_ZN.
+Elpi derive.param2 cast_ZP.
+(* Elpi derive.param2 int. *)
+(* Elpi derive.param2 sum. *)
 (* Definition specZ_simpl := Eval cbv in specZ. *)
-(* Parametricity specZ_simpl. *)
+(* Elpi derive.param2 specZ_simpl. *)
 (* Realizer specZ as specZ_R := specZ_simpl_R. *)
 
 (******************************************************************************)
@@ -452,10 +453,10 @@ Proof.
   eapply refines_trans; tc.
   rewrite refinesE=> _ x ->.
   case: x=> n /=.
-    apply: Z_R_Zpos_R.
+    apply: Zpos_R.
     have heq : refines eq n n by rewrite refinesE.
     exact: refinesP.
-  apply: Z_R_Zneg_R.
+  apply: Zneg_R.
   have heq : refines eq (posS n) (posS n) by rewrite refinesE.
   exact: refinesP.
 Qed.

@@ -1,5 +1,6 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
+From elpi Require Import derive.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq zmodp.
 From mathcomp Require Import path choice fintype tuple finset ssralg bigop poly polydiv.
 
@@ -50,10 +51,10 @@ Definition div_rec_poly (q : polyR) :=
 
 End generic_division.
 
-Parametricity div_rec_poly.
-Parametricity div_poly.
-Parametricity mod_poly.
-Parametricity scal_poly.
+Elpi derive.param2 div_rec_poly.
+Elpi derive.param2 div_poly.
+Elpi derive.param2 mod_poly.
+Elpi derive.param2 scal_poly.
 
 Section division_correctness.
 
@@ -170,7 +171,7 @@ Qed.
           (scal_poly (N:=N) (R:=C) (polyR:=polyC)).
 Proof.
   apply: refines_abstr2 => p p' hp q q' hq; rewrite refinesE.
-  by apply: (scal_poly_R (R_R:=rC) (polyR_R:=RpolyC)) => *; apply: refinesP.
+  by apply: (@scal_poly_R _ _ _ _ _ rC _ _ RpolyC) => *; apply: refinesP.
 Qed.
 
 #[export] Instance refine_scal_poly :
