@@ -124,6 +124,7 @@
       mathcomp-real-closed.override.version = "master";
       stdlib.override.version = "master";
       bignums.override.version = "master";
+      mathcomp-apery.override.version = "coqeal_99";
     };
     "coq-8.20".coqPackages = common-bundles // {
       coq.override.version = "8.20";
@@ -131,6 +132,7 @@
       coq-elpi.override.elpi-version = "2.0.7";
       hierarchy-builder.override.version = "master";
       mathcomp.override.version = "2.3.0";
+      mathcomp-apery.override.version = "coqeal_99";
     };
   };
 }
