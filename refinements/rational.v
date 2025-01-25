@@ -71,22 +71,28 @@ Context `{spec_of Z int, spec_of P pos, spec_of N nat}.
 End Q_ops.
 End Q.
 
-Parametricity zeroQ.
-Parametricity oneQ.
-Parametricity addQ.
-Parametricity mulQ.
-Parametricity oppQ.
-Parametricity eqQ.
-Parametricity leqQ.
-Parametricity ltQ.
-Parametricity invQ.
-Parametricity subQ.
-Parametricity divQ.
+Elpi derive.param2 Q.
+Elpi derive.param2 zeroQ.
+Elpi derive.param2 oneQ.
+Elpi derive.param2 addQ.
+Elpi derive.param2 mulQ.
+Elpi derive.param2 oppQ.
+Elpi derive.param2 eqQ.
+Elpi derive.param2 leqQ.
+Elpi derive.param2 ltQ.
+Elpi derive.param2 invQ.
+Elpi derive.param2 subQ.
+Elpi derive.param2 divQ.
 Definition expQnat' := Eval compute in expQnat.
-Parametricity expQnat'.
-Realizer expQnat as expQnat_R := expQnat'_R.
-Parametricity cast_ZQ.
-Parametricity cast_PQ.
+Elpi derive.param2 expQnat'.
+Definition expQnat_R := expQnat'_R.
+Elpi Accumulate derive Db derive.param2.db.
+Elpi Accumulate derive.param2.db "
+:before ""param:fail""
+param {{ @leq }} {{ @leq }} {{ @leq_R }}.
+".
+Elpi derive.param2 cast_ZQ.
+Elpi derive.param2 cast_PQ.
 
 Arguments specQ / _ _ _ _ _ : assert.
 
@@ -319,7 +325,7 @@ Proof. param_comp mulQ_R. Qed.
 Proof.
   eapply refines_trans; tc.
   rewrite refinesE; do ?move=> ?*.
-  eapply (expQnat_R (N_R:=Rnat))=> // *;
+  eapply (@expQnat_R _ _ _ _ _ _ _ _ Rnat)=> // *;
     exact: refinesP.
 Qed.
 

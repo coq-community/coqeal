@@ -19,7 +19,7 @@ Arguments refines A%type B%type R%rel _ _. (* Fix a scope issue with refines *)
 
 Arguments refinesP {T T' R x y} _.
 
-#[export] Hint Resolve list_R_nil_R : core.
+#[export] Hint Resolve nil_R : core.
 
 Notation ord_instN := (fun _ : nat => nat) (only parsing).
 
@@ -120,7 +120,7 @@ by rewrite /fun_of_seqmx.
 Qed.
 
 #[export] Instance Rseqmx_row_seqmx m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord rm ==> Rseqmx rm rn ==> Rseqmx (nat_R_S_R nat_R_O_R) rn)
+  refines (Rord rm ==> Rseqmx rm rn ==> Rseqmx (S_R O_R) rn)
     (@row A m1 n1) (@row_seqmx A m2 n2).
 Proof.
 rewrite refinesE=> i _ <- _ _ [M sM h1 h2 h3].
@@ -225,11 +225,18 @@ Qed.
 
 (** ** Parametricity *)
 
-Parametricity fun_of_seqmx.
-Parametricity row_seqmx.
-Parametricity store_seqmx.
-Parametricity trmx_seqmx.
-Parametricity heq_seqmx.
+Elpi derive.param2 fun_of_of.
+Elpi derive.param2 fun_of_seqmx.
+Elpi derive.param2 row_of.
+Elpi derive.param2 row_seqmx.
+Elpi derive.param2 store_of.
+Elpi derive.param2 store_aux.
+Elpi derive.param2 store_seqmx0.
+Elpi derive.param2 store_seqmx.
+Elpi derive.param2 trmx_of.
+Elpi derive.param2 trmx_seqmx.
+Elpi derive.param2 heq_of.
+Elpi derive.param2 heq_seqmx.
 
 Section seqmx_param.
 

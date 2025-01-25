@@ -56,11 +56,11 @@ Definition Rord n1 n2 (rn : nat_R n1 n2) : 'I_n1 -> binord n2 -> Type :=
   fun x y => Rnat x y.
 
 #[export] Instance Rord_0 n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn)) 0%R 0%C.
+  refines (Rord (S_R rn)) 0%R 0%C.
 Proof. by rewrite refinesE. Qed.
 
 #[export] Instance Rord_1 n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn)) Zp1 1%C.
+  refines (Rord (S_R rn)) Zp1 1%C.
 Proof.
   rewrite refinesE /Rord /Zp1 /inZp /= modn_def (nat_R_eq rn).
   by case: n2 rn.
@@ -68,7 +68,7 @@ Qed.
 
 Local Instance refines_nat_R_S n1 n2 :
   refines nat_R n1 n2 -> refines nat_R n1.+1 n2.+1.
-Proof. rewrite refinesE; exact: nat_R_S_R. Qed.
+Proof. rewrite refinesE; exact: S_R. Qed.
 
 Local Instance refines_implem_eq A B (R : A -> B -> Type)
       `{implem_of A B, !refines (eq ==> R) implem_id implem} x y :
@@ -85,7 +85,7 @@ Local Arguments opp_ord /.
 Local Arguments N.sub : simpl nomatch.
 
 #[export] Instance Rord_opp n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn)) -%R -%C.
+  refines (Rord (S_R rn) ==> Rord (S_R rn)) -%R -%C.
 Proof.
   rewrite refinesE=> x x' hx /=.
   exact: refinesP.
@@ -95,7 +95,7 @@ Local Arguments add_op /.
 Local Arguments add_ord /.
 
 #[export] Instance Rord_add n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn))
+  refines (Rord (S_R rn) ==> Rord (S_R rn) ==> Rord (S_R rn))
           +%R +%C.
 Proof.
   rewrite refinesE=> x x' hx y y' hy /=.
@@ -106,7 +106,7 @@ Local Arguments sub_op /.
 Local Arguments sub_ord /.
 
 #[export] Instance Rord_sub n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn))
+  refines (Rord (S_R rn) ==> Rord (S_R rn) ==> Rord (S_R rn))
           (fun x y => x - y) sub_op.
 Proof.
   rewrite refinesE=> x x' hx y y' hy /=.
@@ -117,7 +117,7 @@ Local Arguments mul_op /.
 Local Arguments mul_ord /.
 
 #[export] Instance Rord_mul n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn))
+  refines (Rord (S_R rn) ==> Rord (S_R rn) ==> Rord (S_R rn))
   (@Zp_mul _) *%C.
 Proof.
   rewrite refinesE=> x x' hx y y' hy /=.
@@ -128,7 +128,7 @@ Local Arguments eq_op /.
 Local Arguments eq_ord /.
 
 #[export] Instance Rord_eq n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn) ==> bool_R)
+  refines (Rord (S_R rn) ==> Rord (S_R rn) ==> bool_R)
           eqtype.eq_op eq_op.
 Proof.
   rewrite refinesE=> x x' hx y y' hy /=.
@@ -140,7 +140,7 @@ Local Arguments leq_op /.
 Local Arguments leq_ord /.
 
 #[export] Instance Rord_leq n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn) ==> bool_R)
+  refines (Rord (S_R rn) ==> Rord (S_R rn) ==> bool_R)
           (fun x y => (x <= y)%N) leq_op.
 Proof.
   rewrite refinesE=> x x' hx y y' hy /=.
@@ -152,7 +152,7 @@ Local Arguments lt_ord /.
 Local Opaque ltn.
 
 #[export] Instance Rord_lt n1 n2 (rn : nat_R n1 n2) :
-  refines (Rord (nat_R_S_R rn) ==> Rord (nat_R_S_R rn) ==> bool_R)
+  refines (Rord (S_R rn) ==> Rord (S_R rn) ==> bool_R)
           (fun x y => ltn x y) lt_op.
 Proof.
   rewrite refinesE=> x x' hx y y' hy /=.

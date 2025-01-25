@@ -31,8 +31,8 @@
   ## Cachix caches to use in CI
   ## Below we list some standard ones
   cachix.coq = {};
-  cachix.coq-community = {};
-  cachix.math-comp.authToken = "CACHIX_AUTH_TOKEN";
+  cachix.math-comp.authToken = {};
+  cachix.coq-community = "CACHIX_AUTH_TOKEN";
 
   ## If you have write access to one of these caches you can
   ## provide the auth token or signing key through a secret
@@ -124,13 +124,15 @@
       mathcomp-real-closed.override.version = "master";
       stdlib.override.version = "master";
       bignums.override.version = "master";
+      mathcomp-apery.override.version = "coqeal_99";
     };
     "coq-8.20".coqPackages = common-bundles // {
       coq.override.version = "8.20";
       coq-elpi.override.version = "master";
       coq-elpi.override.elpi-version = "2.0.7";
       hierarchy-builder.override.version = "master";
-      mathcomp.override.version = "2.2.0";
+      mathcomp.override.version = "2.3.0";
+      mathcomp-apery.override.version = "coqeal_99";
     };
   };
 }

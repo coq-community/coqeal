@@ -1,5 +1,8 @@
+From elpi Require Import derive.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
 From mathcomp Require Import path choice fintype tuple finset bigop poly polydiv.
+
+From CoqEAL Require Import param.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -19,6 +22,15 @@ Class lead_coef_of A polyA := lead_coef_op : polyA -> A.
 #[export] Hint Mode lead_coef_of + + : typeclass_instances.
 Class scal_of polyA N := scal_op : polyA -> polyA -> N.
 #[export] Hint Mode scal_of + + : typeclass_instances.
+
+Elpi derive.param2 shift_of.
+Elpi derive.param2 shift_op.
+Elpi derive.param2 split_of.
+Elpi derive.param2 split_op.
+Elpi derive.param2 lead_coef_of.
+Elpi derive.param2 lead_coef_op.
+Elpi derive.param2 scal_of.
+Elpi derive.param2 scal_op.
 
 End Op.
 End Poly.

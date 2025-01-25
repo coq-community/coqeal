@@ -63,10 +63,11 @@ Definition bdet n (M : mxR (1 + n) (1 + n)) := head (bareiss_char_poly (- M)%C).
 
 End generic_bareiss.
 
-Parametricity bareiss_rec.
-Parametricity bareiss.
-Parametricity bareiss_char_poly.
-Parametricity bdet.
+Elpi derive.param2 hmul_op.
+Elpi derive.param2 bareiss_rec.
+Elpi derive.param2 bareiss.
+Elpi derive.param2 bareiss_char_poly.
+Elpi derive.param2 bdet.
 
 (* First some general lemmas *)
 Section prelude.
@@ -301,7 +302,7 @@ Context `{forall m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2),
           refines ((RpolyC ==> RpolyC) ==> RmxpolyC rm rn ==> RmxpolyC rm rn)
                   (fun f => @matrix.map_mx _ _ f m1 n1) (@map_mxC m2 n2)}.
 Context `{forall m1 m2 (rm : nat_R m1 m2),
-          refines (RmxpolyC (nat_R_S_R rm) (nat_R_S_R rm) ==> RpolyC)
+          refines (RmxpolyC (S_R rm) (S_R rm) ==> RpolyC)
                   (@top_left m1) (@top_leftC m2)}.
 Context `{!refines (RpolyC ==> RpolyC ==> RpolyC) (@rdivp R) divpC}.
 Context `{forall n1 n2 (rn : nat_R n1 n2),
@@ -309,33 +310,49 @@ Context `{forall n1 n2 (rn : nat_R n1 n2),
                   (@char_poly_mxC n2)}.
 Context `{!refines (RpolyC ==> rC) head headC}.
 
+#[export] Instance RmxpolyC_ursubmx :
+  refines (ursubmx_of_R (@RmxpolyC)) ursubmx ursubmxC.
+Proof. by rewrite /ursubmx_of_R refinesE => *; apply: refinesP. Qed.
+
+#[export] Instance RmxpolyC_dlsubmx :
+  refines (dlsubmx_of_R (@RmxpolyC)) dlsubmx dlsubmxC.
+Proof. by rewrite /dlsubmx_of_R refinesE => *; apply: refinesP. Qed.
+
+#[export] Instance RmxpolyC_drsubmx :
+  refines (drsubmx_of_R (@RmxpolyC)) drsubmx drsubmxC.
+Proof. by rewrite /drsubmx_of_R refinesE => *; apply: refinesP. Qed.
+
+#[export] Instance RmxpolyC_hmul :
+  refines (hmul_of_R (@RmxpolyC)) hmul_of_instance_0 hmul_of0.
+Proof. by rewrite /hmul_of_R refinesE => *; apply: refinesP. Qed.
+
 #[export] Instance RpolyC_bareiss_rec m1 m2 (rm : nat_R m1 m2) :
-  refines (RpolyC ==> RmxpolyC (nat_R_S_R rm) (nat_R_S_R rm) ==> RpolyC)
+  refines (RpolyC ==> RmxpolyC (S_R rm) (S_R rm) ==> RpolyC)
           (bareiss_rec (polyR:={poly R}) (mxpolyR:=matrix {poly R}) (m:=m1))
           (bareiss_rec (polyR:=polyC) (mxpolyR:=mxpolyC) (m:=m2)).
 Proof. param bareiss_rec_R. Qed.
 
 #[export] Instance refine_bareiss_rec m :
-  refines (RpolyC ==> RmxpolyC (nat_R_S_R (nat_Rxx m)) (nat_R_S_R (nat_Rxx m))
+  refines (RpolyC ==> RmxpolyC (S_R (nat_Rxx m)) (S_R (nat_Rxx m))
                   ==> RpolyC)
           (bareiss_rec (polyR:={poly R}) (mxpolyR:=matrix {poly R}) (m:=m))
           (bareiss_rec (polyR:=polyC) (mxpolyR:=mxpolyC) (m:=m)).
 Proof. exact: RpolyC_bareiss_rec. Qed.
 
 #[export] Instance RpolyC_bareiss n1 n2 (rn : nat_R n1 n2) :
-  refines (RmxpolyC (nat_R_S_R rn) (nat_R_S_R rn) ==> RpolyC)
+  refines (RmxpolyC (S_R rn) (S_R rn) ==> RpolyC)
           (bareiss (polyR:={poly R}) (mxpolyR:=matrix {poly R}) (n:=n1))
           (bareiss (polyR:=polyC) (mxpolyR:=mxpolyC) (n:=n2)).
 Proof. param bareiss_R. Qed.
 
 #[export] Instance refine_bareiss n :
-  refines (RmxpolyC (nat_R_S_R (nat_Rxx n)) (nat_R_S_R (nat_Rxx n)) ==> RpolyC)
+  refines (RmxpolyC (S_R (nat_Rxx n)) (S_R (nat_Rxx n)) ==> RpolyC)
           (bareiss (polyR:={poly R}) (mxpolyR:=matrix {poly R}) (n:=n))
           (bareiss (polyR:=polyC) (mxpolyR:=mxpolyC) (n:=n)).
 Proof. exact: RpolyC_bareiss. Qed.
 
 #[export] Instance RpolyC_bareiss_char_poly n1 n2 (rn : nat_R n1 n2) :
-  refines (RmxC (nat_R_S_R rn) (nat_R_S_R rn) ==> RpolyC)
+  refines (RmxC (S_R rn) (S_R rn) ==> RpolyC)
           (bareiss_char_poly (polyR:={poly R}) (mxR:=matrix R)
                              (mxpolyR:=matrix {poly R}) (@char_poly_mx R)
                              (n:=n1))
@@ -344,7 +361,7 @@ Proof. exact: RpolyC_bareiss. Qed.
 Proof. param bareiss_char_poly_R. Qed.
 
 #[export] Instance refine_bareiss_char_poly n :
-  refines (RmxC (nat_R_S_R (nat_Rxx n)) (nat_R_S_R (nat_Rxx n)) ==> RpolyC)
+  refines (RmxC (S_R (nat_Rxx n)) (S_R (nat_Rxx n)) ==> RpolyC)
           (bareiss_char_poly (polyR:={poly R}) (mxR:=matrix R)
                              (mxpolyR:=matrix {poly R}) (@char_poly_mx R)
                              (n:=n))
@@ -353,16 +370,16 @@ Proof. param bareiss_char_poly_R. Qed.
 Proof. exact: RpolyC_bareiss_char_poly. Qed.
 
 #[export] Instance RC_bdet n1 n2 (rn : nat_R n1 n2) :
-  refines (RmxC (nat_R_S_R rn) (nat_R_S_R rn) ==> rC)
+  refines (RmxC (S_R rn) (S_R rn) ==> rC)
           (bdet (R:=R) (polyR:={poly R}) (mxR:=matrix R)
                 (mxpolyR:=matrix {poly R}) (@char_poly_mx R) head
                 (n:=n1))
           (bdet (R:=C) (polyR:=polyC) (mxR:=mxC) (mxpolyR:=mxpolyC)
                 char_poly_mxC headC (n:=n2)).
-Proof. param bdet_R. Qed.
+Proof. by param bdet_R; rewrite /opp_of_R refinesE => *; apply: refinesP. Qed.
 
 #[export] Instance refine_bdet n :
-  refines (RmxC (nat_R_S_R (nat_Rxx n)) (nat_R_S_R (nat_Rxx n)) ==> rC)
+  refines (RmxC (S_R (nat_Rxx n)) (S_R (nat_Rxx n)) ==> rC)
           (bdet (R:=R) (polyR:={poly R}) (mxR:=matrix R)
                 (mxpolyR:=matrix {poly R}) (@char_poly_mx R) head
                 (n:=n))
@@ -371,7 +388,7 @@ Proof. param bdet_R. Qed.
 Proof. exact: RC_bdet. Qed.
 
 #[export] Instance RC_det_bdet n1 n2 (rn : nat_R n1 n2) :
-  refines (RmxC (nat_R_S_R rn) (nat_R_S_R rn) ==> rC) determinant
+  refines (RmxC (S_R rn) (S_R rn) ==> rC) determinant
           (bdet (R:=C) (polyR:=polyC) (mxpolyR:=mxpolyC) char_poly_mxC headC
                 (n:=n2)).
 Proof.
@@ -381,7 +398,7 @@ Proof.
 Qed.
 
 #[export] Instance refine_det n :
-  refines (RmxC (nat_R_S_R (nat_Rxx n)) (nat_R_S_R (nat_Rxx n)) ==> rC)
+  refines (RmxC (S_R (nat_Rxx n)) (S_R (nat_Rxx n)) ==> rC)
           determinant (bdet (R:=C) (polyR:=polyC) (mxpolyR:=mxpolyC)
                             char_poly_mxC headC (n:=n)).
 Proof. exact: RC_det_bdet. Qed.

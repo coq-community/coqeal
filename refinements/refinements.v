@@ -1,3 +1,4 @@
+From elpi Require Import derive.
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq ssralg.
 (* Require Import path choice fintype tuple finset ssralg bigop poly polydiv. *)
 (* Require Import ssrint ZArith. *)
@@ -227,10 +228,10 @@ Ltac param x :=
 Ltac param_comp x := eapply refines_trans; tc; param x.
 
 #[export] Instance refines_true : refines _ _ _ :=
-  trivial_refines bool_R_true_R.
+  trivial_refines true_R.
 
 #[export] Instance refines_false : refines _ _ _ :=
-  trivial_refines bool_R_false_R.
+  trivial_refines false_R.
 
 #[export] Instance refines_negb : refines (bool_R ==> bool_R) negb negb.
 Proof. exact/trivial_refines/negb_R. Qed.
@@ -285,6 +286,29 @@ Class mod_of A := mod_op : A -> A -> A.
 Class scale_of A B := scale_op : A -> B -> B.
 #[export] Hint Mode scale_of + + : typeclass_instances.
 
+Elpi derive.param2 zero_of.
+Elpi derive.param2 zero_op.
+Elpi derive.param2 one_of.
+Elpi derive.param2 one_op.
+Elpi derive.param2 opp_of.
+Elpi derive.param2 opp_op.
+Elpi derive.param2 add_of.
+Elpi derive.param2 add_op.
+Elpi derive.param2 sub_of.
+Elpi derive.param2 sub_op.
+Elpi derive.param2 mul_of.
+Elpi derive.param2 mul_op.
+Elpi derive.param2 exp_of.
+Elpi derive.param2 exp_op.
+Elpi derive.param2 div_of.
+Elpi derive.param2 div_op.
+Elpi derive.param2 inv_of.
+Elpi derive.param2 inv_op.
+Elpi derive.param2 mod_of.
+Elpi derive.param2 mod_op.
+Elpi derive.param2 scale_of.
+Elpi derive.param2 scale_op.
+
 Class eq_of A := eq_op : A -> A -> bool.
 #[export] Hint Mode eq_of + : typeclass_instances.
 Class leq_of A := leq_op : A -> A -> bool.
@@ -294,6 +318,15 @@ Class lt_of A := lt_op : A -> A -> bool.
 Class size_of A N := size_op : A -> N.
 #[export] Hint Mode size_of + + : typeclass_instances.
 
+Elpi derive.param2 eq_of.
+Elpi derive.param2 eq_op.
+Elpi derive.param2 leq_of.
+Elpi derive.param2 leq_op.
+Elpi derive.param2 lt_of.
+Elpi derive.param2 lt_op.
+Elpi derive.param2 size_of.
+Elpi derive.param2 size_op.
+
 Class spec_of A B   := spec : A -> B.
 #[export] Hint Mode spec_of + + : typeclass_instances.
 Definition spec_id {A : Type} : spec_of A A := id.
@@ -302,6 +335,13 @@ Class implem_of A B := implem : A -> B.
 Definition implem_id {A : Type} : implem_of A A := id.
 Class cast_of A B  := cast_op : A -> B.
 #[export] Hint Mode cast_of + + : typeclass_instances.
+
+Elpi derive.param2 spec_of.
+Elpi derive.param2 spec.
+Elpi derive.param2 implem_of.
+Elpi derive.param2 implem.
+Elpi derive.param2 cast_of.
+Elpi derive.param2 cast_op.
 
 End Op.
 End Refinements.
@@ -370,7 +410,7 @@ Tactic Notation  "context" "[" ssrpatternarg(pat) "]" tactic3(tac) :=
   tac; rewrite eqQ {Q eqQ}.
 
 Class strategy_class (C : forall T, T -> T -> Prop) :=
-   StrategyClass : C = @eq.
+   StrategyClass : C = (fun T => @eq T).
 #[export] Hint Mode strategy_class + : typeclass_instances.
 
 Class native_compute T (x y : T) := NativeCompute : x = y.

@@ -175,7 +175,7 @@ Context (T' : Type) (N : Type).
 Context (enumT' : seq T')  `{zero_of N} `{one_of N} `{add_of N}.
 Definition card' (P' : pred T') : N := size_op [seq s <- enumT' | P' s].
 End card.
-Parametricity card'.
+Elpi derive.param2 card'.
 
 Lemma size_seqE T (s : seq T) : (@size_seq _ _ 0%N 1%N addn) s = size s.
 Proof. by elim: s => //= x s ->; rewrite [(_ + _)%C]addn1. Qed.
@@ -222,7 +222,7 @@ Definition enum_boolF2 : seq bool := [:: false; true].
 
 End enum_boolF2.
 
-Parametricity enum_boolF2.
+Elpi derive.param2 enum_boolF2.
 
 #[export] Instance refines_enum_boolF2 :
   refines (perm_eq \o list_R Rbool) (Finite.enum 'F_2) (enum_boolF2).
@@ -262,7 +262,7 @@ elim: n => [|n IHn] in p *.
 rewrite /= mem_cat.
 Admitted.
 
-Parametricity enum_npoly.
+Elpi derive.param2 enum_npoly.
 
 Section RnpolyC.
 

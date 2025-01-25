@@ -47,7 +47,7 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
 - Compatible Coq versions: 8.16 or later (use releases for other Coq versions)
 - Additional dependencies:
   - [Bignums](https://github.com/coq/bignums) same version as Coq
-  - [Paramcoq](https://github.com/coq-community/paramcoq) 1.1.3 or later
+  - [Coq-Elpi](https://github.com/LPCIC/coq-elpi) 2.4.1 or later
   - [Hierarchy Builder](https://github.com/math-comp/hierarchy-builder) 1.4.0 or later
   - [MathComp ssreflect](https://math-comp.github.io) 2.1 or later
   - [MathComp algebra](https://math-comp.github.io) 2.1 or later
