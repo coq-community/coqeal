@@ -115,8 +115,6 @@ dependencies:
     [MathComp real-closed](https://math-comp.github.io) 2.0 or later
 
 tested_coq_opam_versions:
-- version: '2.2.0-coq-8.20'
-  repo: 'mathcomp/mathcomp'
 - version: '2.3.0-coq-8.20'
   repo: 'mathcomp/mathcomp'
 - version: '2.3.0-coq-dev'
