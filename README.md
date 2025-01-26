@@ -44,12 +44,12 @@ of the ForMath EU FP7 project (2009-2013). It has two parts:
   - Cyril Cohen ([**@CohenCyril**](https://github.com/CohenCyril))
   - Pierre Roux ([**@proux01**](https://github.com/proux01))
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 8.16 or later (use releases for other Coq versions)
+- Compatible Coq versions: 8.20 or later (use releases for other Coq versions)
 - Additional dependencies:
   - [Bignums](https://github.com/coq/bignums) same version as Coq
   - [Coq-Elpi](https://github.com/LPCIC/coq-elpi) 2.4.1 or later
   - [Hierarchy Builder](https://github.com/math-comp/hierarchy-builder) 1.4.0 or later
-  - [MathComp ssreflect](https://math-comp.github.io) 2.1 or later
+  - [MathComp ssreflect](https://math-comp.github.io) 2.3 or later
   - [MathComp algebra](https://math-comp.github.io) 2.1 or later
   - [MathComp Multinomials](https://github.com/math-comp/multinomials) 2.0 or later
   - [MathComp real-closed](https://math-comp.github.io) 2.0 or later
