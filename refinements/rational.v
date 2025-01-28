@@ -86,11 +86,6 @@ Elpi derive.param2 divQ.
 Definition expQnat' := Eval compute in expQnat.
 Elpi derive.param2 expQnat'.
 Definition expQnat_R := expQnat'_R.
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @leq }} {{ @leq }} {{ @leq_R }}.
-".
 Elpi derive.param2 cast_ZQ.
 Elpi derive.param2 cast_PQ.
 

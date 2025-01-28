@@ -246,12 +246,8 @@ match a_R in axioms__R1 _ _ a₁ a₂
     eqtype_isSub_mixin_R
 end.
 Definition eqtype_isSub_mixin := eqtype_isSub_mixin_noprimproj_R.
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @SubType.eqtype_isSub_mixin }} {{ @SubType.eqtype_isSub_mixin }}
-  {{ @eqtype_isSub_mixin_noprimproj_R }}.
-".
+Elpi derive.param2.register SubType.eqtype_isSub_mixin
+  eqtype_isSub_mixin_noprimproj_R.
 Elpi derive.param2 nat_of_ord.
 Definition vrefl_R :=
 @eq_rect (forall (T : Type) (P : pred T) (x : T) (_ : is_true (P x)), @eq T x x)
@@ -277,11 +273,7 @@ Definition vrefl_R :=
          [Px₁ : is_true (P₁ x₁)] [Px₂ : is_true (P₂ x₂)]
          (_ : (fun (b₁ b₂ : bool) (b_R : bool_R b₁ b₂) => @eq_R bool bool bool_R b₁ b₂ b_R true true true_R) (P₁ x₁) (P₂ x₂) (P_R x₁ x₂ x_R) Px₁ Px₂),
        @eq_R T₁ T₂ T_R x₁ x₂ x_R x₁ x₂ x_R (@vrefl T₁ P₁ x₁ Px₁) (@vrefl T₂ P₂ x₂ Px₂).
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @vrefl }} {{ @vrefl }} {{ @vrefl_R }}.
-".
+Elpi derive.param2.register vrefl vrefl_R.
 Elpi derive.param2 vrefl_rect.
 Elpi derive.param2 fintype.HB_unnamed_factory_57.
 Elpi derive.param2 fintype_ordinal__canonical__eqtype_SubType.
@@ -303,11 +295,7 @@ Elpi derive.param2 seqmx0.
 Definition diag_seqmx_simpl := Eval cbv in diag_seqmx.
 Elpi derive.param2 diag_seqmx_simpl.
 Definition diag_seqmx_R := diag_seqmx_simpl_R.
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @diag_seqmx }} {{ @diag_seqmx }} {{ @diag_seqmx_R }}.
-".
+Elpi derive.param2.register diag_seqmx diag_seqmx_R.
 Elpi derive.param2 scalar_seqmx.
 Elpi derive.param2 seqmx1.
 Elpi derive.param2 opp_seqmx.
