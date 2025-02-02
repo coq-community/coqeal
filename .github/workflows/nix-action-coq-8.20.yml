@@ -32,12 +32,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (bignums)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -93,12 +93,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (coq)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -148,12 +148,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (coq-elpi)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -214,12 +214,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (coqeal)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -289,12 +289,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (hierarchy-builder)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -356,12 +356,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -449,12 +449,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-algebra)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -526,12 +526,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-algebra-tactics)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -602,12 +602,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-apery)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -685,12 +685,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-bigenough)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -751,12 +751,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-field)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -834,12 +834,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-finmap)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -900,12 +900,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-real-closed)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -984,12 +984,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-ssreflect)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -1052,12 +1052,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (mathcomp-zify)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -1126,12 +1126,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (multinomials)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
@@ -1204,12 +1204,12 @@ jobs:
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=channel:nixpkgs-unstable
-    - name: Cachix setup math-comp
+    - name: Cachix setup coq-community
       uses: cachix/cachix-action@v15
       with:
         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        extraPullNames: coq, coq-community
-        name: math-comp
+        extraPullNames: coq, math-comp
+        name: coq-community
     - id: stepGetDerivation
       name: Getting derivation for current job (stdlib)
       run: "NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link \\\n   --argstr bundle
