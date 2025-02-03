@@ -92,11 +92,7 @@ Elpi derive.param2 mul_seqpoly.
 Definition exp_seqpoly' := Eval compute in exp_seqpoly.
 Elpi derive.param2 exp_seqpoly'.
 Definition exp_seqpoly_R := exp_seqpoly'_R.
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @exp_seqpoly }} {{ @exp_seqpoly }} {{ @exp_seqpoly_R }}.
-".
+Elpi derive.param2.register exp_seqpoly exp_seqpoly_R.
 Elpi derive.param2 size_seqpoly.
 Elpi derive.param2 eq_seqpoly.
 Elpi derive.param2 shift_seqpoly.

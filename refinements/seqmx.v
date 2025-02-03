@@ -229,68 +229,11 @@ Definition copid_seqmx m r := (seqmx1 m - pid_seqmx m m r)%C.
 
 End seqmx_op.
 
-Elpi derive.param2 isSub.axioms_.
-Elpi derive.param2 SubType.axioms_.
-Elpi derive.param2 subType.
-Elpi derive.param2 SubType.sort.
-Elpi derive.param2 SubType.class.
-Definition eqtype_isSub_mixin_noprimproj_R T₁ T₂ (T_R : T₁ -> T₂ -> Type)
-  (P₁ : pred T₁) (P₂ : pred T₂)
-  (P_R : forall (t₁ : T₁) (t₂ : T₂), T_R t₁ t₂ -> bool_R (P₁ t₁) (P₂ t₂))
-  S₁ S₂ (S_R : S₁ -> S₂ -> Type)
-  (a₁ : SubType.axioms_ P₁ S₁) (a₂ : SubType.axioms_ P₂ S₂)
-  (a_R : axioms__R1 P_R S_R a₁ a₂) :=
-match a_R in axioms__R1 _ _ a₁ a₂
-  return axioms__R P_R S_R (let (m) := a₁ in m) (let (m) := a₂ in m) with
-| @Class_R _ _ _ _ _ _ _ _ _ _ _ eqtype_isSub_mixin_R =>
-    eqtype_isSub_mixin_R
-end.
-Definition eqtype_isSub_mixin := eqtype_isSub_mixin_noprimproj_R.
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @SubType.eqtype_isSub_mixin }} {{ @SubType.eqtype_isSub_mixin }}
-  {{ @eqtype_isSub_mixin_noprimproj_R }}.
-".
-Elpi derive.param2 nat_of_ord.
-Definition vrefl_R :=
-@eq_rect (forall (T : Type) (P : pred T) (x : T) (_ : is_true (P x)), @eq T x x)
-  (fun (T : Type) (P : pred T) (x : T) (_ : is_true (P x)) => @Logic.eq_refl T x)
-  (fun e : forall (T : Type) (P : pred T) (x : T) (_ : is_true (P x)), @eq T x x =>
-   forall (T₁ T₂ : Type) (T_R : forall (_ : T₁) (_ : T₂), Type) (P₁ : pred T₁) (P₂ : pred T₂)
-     (P_R : (fun (T₁0 T₂0 : Type) (T_R0 : forall (_ : T₁0) (_ : T₂0), Type) (b₁ : forall _ : T₁0, bool) (b₂ : forall _ : T₂0, bool) =>
-             forall (t₁ : T₁0) (t₂ : T₂0) (_ : T_R0 t₁ t₂), bool_R (b₁ t₁) (b₂ t₂)) T₁ T₂ T_R P₁ P₂) (x₁ : T₁) (x₂ : T₂) (x_R : T_R x₁ x₂)
-     (i₁ : is_true (P₁ x₁)) (i₂ : is_true (P₂ x₂))
-     (_ : (fun (b₁ b₂ : bool) (b_R : bool_R b₁ b₂) => @eq_R bool bool bool_R b₁ b₂ b_R true true true_R) (P₁ x₁) (P₂ x₂) (P_R x₁ x₂ x_R) i₁ i₂),
-   @eq_R T₁ T₂ T_R x₁ x₂ x_R x₁ x₂ x_R (e T₁ P₁ x₁ i₁) (e T₂ P₂ x₂ i₂))
-  (fun (T₁ T₂ : Type) (T_R : forall (_ : T₁) (_ : T₂), Type) (P₁ : pred T₁) (P₂ : pred T₂)
-     (P_R : (fun (T₁0 T₂0 : Type) (T_R0 : forall (_ : T₁0) (_ : T₂0), Type) (b₁ : forall _ : T₁0, bool) (b₂ : forall _ : T₂0, bool) =>
-             forall (t₁ : T₁0) (t₂ : T₂0) (_ : T_R0 t₁ t₂), bool_R (b₁ t₁) (b₂ t₂)) T₁ T₂ T_R P₁ P₂) (x₁ : T₁) (x₂ : T₂) (x_R : T_R x₁ x₂)
-     (H₁ : is_true (P₁ x₁)) (H₂ : is_true (P₂ x₂))
-     (_ : (fun (b₁ b₂ : bool) (b_R : bool_R b₁ b₂) => @eq_R bool bool bool_R b₁ b₂ b_R true true true_R) (P₁ x₁) (P₂ x₂) (P_R x₁ x₂ x_R) H₁ H₂) =>
-   @eq_refl_R T₁ T₂ T_R x₁ x₂ x_R) (@vrefl)
-  (ProofIrrelevance.proof_irrelevance (forall (T : Type) (P : pred T) (x : T) (_ : is_true (P x)), @eq T x x)
-     (fun (T : Type) (P : pred T) (x : T) (_ : is_true (P x)) => @Logic.eq_refl T x) (@vrefl))
-     : forall [T₁ T₂ : Type] [T_R : forall (_ : T₁) (_ : T₂), Type] [P₁ : pred T₁] [P₂ : pred T₂]
-         [P_R : (fun (T₁0 T₂0 : Type) (T_R0 : forall (_ : T₁0) (_ : T₂0), Type) (b₁ : forall _ : T₁0, bool) (b₂ : forall _ : T₂0, bool) =>
-                 forall (t₁ : T₁0) (t₂ : T₂0) (_ : T_R0 t₁ t₂), bool_R (b₁ t₁) (b₂ t₂)) T₁ T₂ T_R P₁ P₂] [x₁ : T₁] [x₂ : T₂] [x_R : T_R x₁ x₂]
-         [Px₁ : is_true (P₁ x₁)] [Px₂ : is_true (P₂ x₂)]
-         (_ : (fun (b₁ b₂ : bool) (b_R : bool_R b₁ b₂) => @eq_R bool bool bool_R b₁ b₂ b_R true true true_R) (P₁ x₁) (P₂ x₂) (P_R x₁ x₂ x_R) Px₁ Px₂),
-       @eq_R T₁ T₂ T_R x₁ x₂ x_R x₁ x₂ x_R (@vrefl T₁ P₁ x₁ Px₁) (@vrefl T₂ P₂ x₂ Px₂).
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @vrefl }} {{ @vrefl }} {{ @vrefl_R }}.
-".
-Elpi derive.param2 vrefl_rect.
-Elpi derive.param2 fintype.HB_unnamed_factory_57.
-Elpi derive.param2 fintype_ordinal__canonical__eqtype_SubType.
-Elpi derive.param2 isSub.Sub.
-Elpi derive.param2 Sub.
-Elpi derive.param2 insub_eq.
-Elpi derive.param2 ord_enum_eq.
 Elpi derive.param2 seqmx.
 Elpi derive.param2 hseqmx.
+Definition ord_enum_eqn := Eval cbv in ord_enum_eq.
+Elpi derive.param2 ord_enum_eqn.
+Elpi derive.param2.register ord_enum_eq ord_enum_eqn_R.
 Elpi derive.param2 seqmx_of_fun.
 Elpi derive.param2 mkseqmx_ord.
 Elpi derive.param2 const_mx_of.
@@ -303,11 +246,7 @@ Elpi derive.param2 seqmx0.
 Definition diag_seqmx_simpl := Eval cbv in diag_seqmx.
 Elpi derive.param2 diag_seqmx_simpl.
 Definition diag_seqmx_R := diag_seqmx_simpl_R.
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @diag_seqmx }} {{ @diag_seqmx }} {{ @diag_seqmx_R }}.
-".
+Elpi derive.param2.register diag_seqmx diag_seqmx_R.
 Elpi derive.param2 scalar_seqmx.
 Elpi derive.param2 seqmx1.
 Elpi derive.param2 opp_seqmx.
@@ -344,6 +283,7 @@ Elpi derive.param2 col_seqmx.
 Elpi derive.param2 block_mx_of.
 Elpi derive.param2 block_seqmx.
 Elpi derive.param2 mkseqmx_ord.
+Elpi derive.param2 nat_of_ord.
 Elpi derive.param2 delta_seqmx.
 Elpi derive.param2 trace_seqmx.
 Elpi derive.param2 pid_seqmx.
@@ -800,8 +740,7 @@ Proof. exact: RseqmxC_top_left_seqmx. Qed.
        (rm2 : nat_R m21 m22) n1 n2 (rn : nat_R n1 n2) :
   refines (RseqmxC (addn_R rm1 rm2) rn ==> RseqmxC rm1 rn)
           (@matrix.usubmx R m11 m21 n1) (@usubseqmx C m12 m22 n2).
-Proof. param_comp usubseqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp usubseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_usubseqmx m1 m2 n :
   refines (RseqmxC (addn_R (nat_Rxx m1) (nat_Rxx m2)) (nat_Rxx n) ==>
@@ -813,8 +752,7 @@ Proof. exact: RseqmxC_usubseqmx. Qed.
        (rm2 : nat_R m21 m22) n1 n2 (rn : nat_R n1 n2) :
   refines (RseqmxC (addn_R rm1 rm2) rn ==> RseqmxC rm2 rn)
           (@matrix.dsubmx R m11 m21 n1) (@dsubseqmx C m12 m22 n2).
-Proof. param_comp dsubseqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp dsubseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_dsubseqmx m1 m2 n :
   refines (RseqmxC (addn_R (nat_Rxx m1) (nat_Rxx m2)) (nat_Rxx n) ==>
@@ -826,8 +764,7 @@ Proof. exact: RseqmxC_dsubseqmx. Qed.
        (rn1 : nat_R n11 n12) n21 n22 (rn2 : nat_R n21 n22) :
   refines (RseqmxC rm (addn_R rn1 rn2) ==> RseqmxC rm rn1)
           (@matrix.lsubmx R m1 n11 n21) (@lsubseqmx C m2 n12 n22).
-Proof. param_comp lsubseqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp lsubseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_lsubseqmx m n1 n2 :
   refines (RseqmxC (nat_Rxx m) (addn_R (nat_Rxx n1) (nat_Rxx n2)) ==>
@@ -839,8 +776,7 @@ Proof. exact: RseqmxC_lsubseqmx. Qed.
        (rn1 : nat_R n11 n12) n21 n22 (rn2 : nat_R n21 n22) :
   refines (RseqmxC rm (addn_R rn1 rn2) ==> RseqmxC rm rn2)
           (@matrix.rsubmx R m1 n11 n21) (@rsubseqmx C m2 n12 n22).
-Proof. param_comp rsubseqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp rsubseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_rsubseqmx m n1 n2 :
   refines (RseqmxC (nat_Rxx m) (addn_R (nat_Rxx n1) (nat_Rxx n2)) ==>
@@ -853,8 +789,7 @@ Proof. exact: RseqmxC_rsubseqmx. Qed.
        (rn2 : nat_R n21 n22) :
   refines (RseqmxC (addn_R rm1 rm2) (addn_R rn1 rn2) ==> RseqmxC rm1 rn1)
           (@matrix.ulsubmx R m11 m21 n11 n21) (@ulsubseqmx C m12 m22 n12 n22).
-Proof. param_comp ulsubseqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp ulsubseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_ulsubseqmx m1 m2 n1 n2 :
   refines (RseqmxC (addn_R (nat_Rxx m1) (nat_Rxx m2))
@@ -868,55 +803,48 @@ Proof. exact: RseqmxC_ulsubseqmx. Qed.
        (rn2 : nat_R n21 n22) :
   refines (RseqmxC (addn_R rm1 rm2) (addn_R rn1 rn2) ==> RseqmxC rm1 rn2)
           (@matrix.ursubmx R m11 m21 n11 n21) (@ursubseqmx C m12 m22 n12 n22).
-Proof. param_comp ursubseqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp ursubseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_ursubseqmx m1 m2 n1 n2 :
   refines (RseqmxC (addn_R (nat_Rxx m1) (nat_Rxx m2))
                    (addn_R (nat_Rxx n1) (nat_Rxx n2)) ==>
                    RseqmxC (nat_Rxx m1) (nat_Rxx n2))
           (@matrix.ursubmx R m1 m2 n1 n2) (@ursubseqmx C m1 m2 n1 n2).
-Proof. exact: RseqmxC_ursubseqmx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. exact: RseqmxC_ursubseqmx. Qed.
 
 #[export] Instance RseqmxC_dlsubseqmx m11 m12 (rm1 : nat_R m11 m12) m21 m22
        (rm2 : nat_R m21 m22) n11 n12 (rn1 : nat_R n11 n12) n21 n22
        (rn2 : nat_R n21 n22) :
   refines (RseqmxC (addn_R rm1 rm2) (addn_R rn1 rn2) ==> RseqmxC rm2 rn1)
           (@matrix.dlsubmx R m11 m21 n11 n21) (@dlsubseqmx C m12 m22 n12 n22).
-Proof. param_comp dlsubseqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp dlsubseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_dlsubseqmx m1 m2 n1 n2 :
   refines (RseqmxC (addn_R (nat_Rxx m1) (nat_Rxx m2))
                    (addn_R (nat_Rxx n1) (nat_Rxx n2)) ==>
                    RseqmxC (nat_Rxx m2) (nat_Rxx n1))
           (@matrix.dlsubmx R m1 m2 n1 n2) (@dlsubseqmx C m1 m2 n1 n2).
-Proof. exact: RseqmxC_dlsubseqmx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. exact: RseqmxC_dlsubseqmx. Qed.
 
 #[export] Instance RseqmxC_drsubseqmx m11 m12 (rm1 : nat_R m11 m12) m21 m22
        (rm2 : nat_R m21 m22) n11 n12 (rn1 : nat_R n11 n12) n21 n22
        (rn2 : nat_R n21 n22) :
   refines (RseqmxC (addn_R rm1 rm2) (addn_R rn1 rn2) ==> RseqmxC rm2 rn2)
           (@matrix.drsubmx R m11 m21 n11 n21) (@drsubseqmx C m12 m22 n12 n22).
-Proof. param_comp drsubseqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp drsubseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_drsubseqmx m1 m2 n1 n2 :
   refines (RseqmxC (addn_R (nat_Rxx m1) (nat_Rxx m2))
                    (addn_R (nat_Rxx n1) (nat_Rxx n2)) ==>
                    RseqmxC (nat_Rxx m2) (nat_Rxx n2))
           (@matrix.drsubmx R m1 m2 n1 n2) (@drsubseqmx C m1 m2 n1 n2).
-Proof. exact: RseqmxC_drsubseqmx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. exact: RseqmxC_drsubseqmx. Qed.
 
 #[export] Instance RseqmxC_row_seqmx m1 m2 (rm : nat_R m1 m2) n11 n12
        (rn1 : nat_R n11 n12) n21 n22 (rn2 : nat_R n21 n22) :
   refines (RseqmxC rm rn1 ==> RseqmxC rm rn2 ==> RseqmxC rm (addn_R rn1 rn2))
           (@matrix.row_mx R m1 n11 n21) (@row_seqmx C m2 n12 n22).
-Proof. param_comp row_seqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp row_seqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_row_seqmx m n1 n2 :
   refines (RseqmxC (nat_Rxx m) (nat_Rxx n1) ==> RseqmxC (nat_Rxx m) (nat_Rxx n2)
@@ -928,8 +856,7 @@ Proof. exact: RseqmxC_row_seqmx. Qed.
        (rm2 : nat_R m21 m22) n1 n2 (rn : nat_R n1 n2) :
   refines (RseqmxC rm1 rn ==> RseqmxC rm2 rn ==> RseqmxC (addn_R rm1 rm2) rn)
           (@matrix.col_mx R m11 m21 n1) (@col_seqmx C m12 m22 n2).
-Proof. param_comp col_seqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp col_seqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_col_seqmx m1 m2 n :
   refines (RseqmxC (nat_Rxx m1) (nat_Rxx n) ==> RseqmxC (nat_Rxx m2) (nat_Rxx n)
@@ -943,8 +870,7 @@ Proof. exact: RseqmxC_col_seqmx. Qed.
   refines (RseqmxC rm1 rn1 ==> RseqmxC rm1 rn2 ==> RseqmxC rm2 rn1 ==>
            RseqmxC rm2 rn2 ==> RseqmxC (addn_R rm1 rm2) (addn_R rn1 rn2))
     (@matrix.block_mx R m11 m21 n11 n21) (@block_seqmx C m12 m22 n12 n22).
-Proof. param_comp block_seqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp block_seqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_block_seqmx m1 m2 n1 n2 :
   refines (RseqmxC (nat_Rxx m1) (nat_Rxx n1) ==>
@@ -958,8 +884,7 @@ Proof. exact: RseqmxC_block_seqmx. Qed.
 
 #[export] Instance RseqmxC_tr m1 m2 (rm : nat_R m1 m2) n1 n2 (rn : nat_R n1 n2) :
   refines (RseqmxC rm rn ==> RseqmxC rn rm) trmx (@trseqmx C m2 n2).
-Proof. param_comp trseqmx_R.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp trseqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_trseqmx m n :
   refines (RseqmxC (nat_Rxx m) (nat_Rxx n) ==> RseqmxC (nat_Rxx n) (nat_Rxx m))
@@ -1290,8 +1215,7 @@ Proof. exact: RseqmxC_sub. Qed.
        p1 p2 (rp : nat_R p1 p2) :
   refines (RseqmxC rm rn ==> RseqmxC rn rp ==> RseqmxC rm rp)
           mulmx (@hmul_op _ _ _  m2 n2 p2).
-Proof. param_comp mul_seqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp mul_seqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_mul_seqmx m n p :
   refines (RseqmxC (nat_Rxx m) (nat_Rxx n) ==> RseqmxC (nat_Rxx n) (nat_Rxx p)
@@ -1335,8 +1259,7 @@ Proof. apply RseqmxC_delta_seqmx; exact: nat_Rxx. Qed.
 
 #[export] Instance RseqmxC_trace_seqmx m1 m2 (rm : nat_R m1 m2) :
   refines (RseqmxC rm rm ==> rAC) mxtrace (trace_seqmx (A:=C) (m:=m2)).
-Proof. param_comp trace_seqmx_R; rewrite refinesE; apply nat_Rxx.
-Unshelve. all: exact: nat_Rxx. Qed.
+Proof. param_comp trace_seqmx_R. Unshelve. all: exact: nat_Rxx. Qed.
 
 #[export] Instance refine_trace_seqmx m :
   refines (RseqmxC (nat_Rxx m) (nat_Rxx m) ==> rAC)
@@ -1503,7 +1426,7 @@ by coqeal.
 Abort.
 
 Goal (pid_mx 4 * copid_mx 4 == 0 :> 'M[{poly {poly int}}]_(5)).
-by coqeal.
+Time by coqeal.
 Abort.
 
 Definition Maddm : 'M[int]_(2) := \matrix_(i, j < 2) (i + j * i)%:Z.

@@ -82,11 +82,7 @@ Opaque eqn subn.
 Definition leqn := Eval cbv in leq.
 Elpi derive.param2 leqn.
 Definition leq_R := leqn_R.
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @leq }} {{ @leq }} {{ @leq_R }}.
-".
+Elpi derive.param2.register leq leq_R.
 
 Elpi derive.param2 Logic.eq.
 
@@ -350,11 +346,7 @@ with uphalf_R (n₁ n₂ : nat) (n_R : nat_R n₁ n₂) {struct n_R} : nat_R (fi
        end (fix_uphalf_2 n₂) (gen_path n₂)) (fix_uphalf_1 n₁) (gen_path n₁)
 for
 half_R.
-Elpi Accumulate derive Db derive.param2.db.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @half }} {{ @half }} {{ @half_R }}.
-".
+Elpi derive.param2.register half half_R.
 (* Elpi derive.param2 half. (* requires mutual inductives *) *)
 
 (** seq *)
@@ -365,10 +357,7 @@ Elpi derive.param2 size.
 Definition nilp' T (s : seq T) := eqn (size s) 0.
 Elpi derive.param2 nilp'.
 Definition nilp_R := nilp'_R.
-Elpi Accumulate derive.param2.db "
-:before ""param:fail""
-param {{ @nilp }} {{ @nilp }} {{ @nilp_R }}.
-".
+Elpi derive.param2.register nilp nilp_R.
 
 Elpi derive.param2 ohead.
 Elpi derive.param2 head.
