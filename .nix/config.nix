@@ -124,7 +124,16 @@
       mathcomp-real-closed.override.version = "master";
       stdlib.override.version = "master";
       bignums.override.version = "master";
-      mathcomp-apery.override.version = "coqeal_99";
+      mathcomp-zify.override.version = "master";
+      mathcomp-algebra-tactics.override.version = "master";
+    };
+    "rocq-9.0".coqPackages = common-bundles // {
+      coq.override.version = "9.0";
+      coq-elpi.override.version = "master";
+      coq-elpi.override.elpi-version = "2.0.7";
+      hierarchy-builder.override.version = "master";
+      mathcomp.override.version = "2.3.0";
+      multinomials.override.version = "2.3.0";  # needs a release
     };
     "coq-8.20".coqPackages = common-bundles // {
       coq.override.version = "8.20";
@@ -132,7 +141,6 @@
       coq-elpi.override.elpi-version = "2.0.7";
       hierarchy-builder.override.version = "master";
       mathcomp.override.version = "2.3.0";
-      mathcomp-apery.override.version = "coqeal_99";
     };
   };
 }
