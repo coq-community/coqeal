@@ -242,6 +242,9 @@ Proof. by rewrite refinesE. Qed.
 #[export] Instance Rnat_1 : refines Rnat 1%nat 1%C.
 Proof. by rewrite refinesE. Qed.
 
+Lemma nat_of_add_bin b1 b2 : (b1 + b2)%num = b1 + b2 :> nat.
+Proof. by case: b1 b2 => [|p] [|q]; rewrite ?addn0 //= nat_of_add_pos. Qed.
+
 #[export] Instance Rnat_add : refines (Rnat ==> Rnat ==> Rnat) addn +%C.
 Proof.
 by rewrite refinesE => _ x <- _ y <-; rewrite /Rnat /fun_hrel nat_of_add_bin.
@@ -262,6 +265,9 @@ Proof.
 rewrite refinesE => _ x <- _ y <-.
 by apply: Nnat.Nat2N.inj; rewrite Nnat.Nat2N.inj_sub !nat_of_binK.
 Qed.
+
+Lemma nat_of_mul_bin b1 b2 : (b1 * b2)%num = b1 * b2 :> nat.
+Proof. by case: b1 b2 => [|p] [|q]; rewrite ?muln0 //= nat_of_mul_pos. Qed.
 
 #[export] Instance Rnat_mul : refines (Rnat ==> Rnat ==> Rnat) muln mul_op.
 Proof.
