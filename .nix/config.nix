@@ -112,8 +112,16 @@
     #   from https://github.com/<github_login>/<repository>
   };
   in {
-    "coq-master".coqPackages = common-bundles // {
+    "coq-master" = { rocqPackages = {
+      rocq-core.override.version = "master";
+      stdlib.override.version = "master";
+      bignums.override.version = "master";
+      rocq-elpi.override.version = "master";
+      rocq-elpi.override.elpi-version = "2.0.7";
+    }; coqPackages = common-bundles // {
       coq.override.version = "master";
+      stdlib.override.version = "master";
+      bignums.override.version = "master";
       coq-elpi.override.version = "master";
       coq-elpi.override.elpi-version = "2.0.7";
       hierarchy-builder.override.version = "master";
@@ -122,24 +130,21 @@
       mathcomp-bigenough.override.version = "master";
       multinomials.override.version = "master";
       mathcomp-real-closed.override.version = "master";
-      stdlib.override.version = "master";
-      bignums.override.version = "master";
       mathcomp-zify.override.version = "master";
       mathcomp-algebra-tactics.override.version = "master";
-    };
+    }; };
     "rocq-9.0".coqPackages = common-bundles // {
       coq.override.version = "9.0";
-      coq-elpi.override.version = "master";
-      coq-elpi.override.elpi-version = "2.0.7";
-      hierarchy-builder.override.version = "master";
+      coq-elpi.job = true;
+      hierarchy-builder.job = true;
       mathcomp.override.version = "2.3.0";
-      multinomials.override.version = "2.3.0";  # needs a release
+      multinomials.override.version = "2.3.0";
     };
     "coq-8.20".coqPackages = common-bundles // {
       coq.override.version = "8.20";
-      coq-elpi.override.version = "master";
+      coq-elpi.override.version = "2.5.0";
       coq-elpi.override.elpi-version = "2.0.7";
-      hierarchy-builder.override.version = "master";
+      hierarchy-builder.override.version = "1.8.1";
       mathcomp.override.version = "2.3.0";
     };
   };
