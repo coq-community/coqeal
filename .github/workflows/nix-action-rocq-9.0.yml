@@ -118,7 +118,6 @@ jobs:
   coq-elpi:
     needs:
     - coq
-    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -171,10 +170,6 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "coq"
     - if: steps.stepCheck.outputs.status == 'built'
-      name: 'Building/fetching previous CI target: stdlib'
-      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
-        --argstr job "stdlib"
-    - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "coq-elpi"
@@ -183,6 +178,7 @@ jobs:
     - coq
     - mathcomp-algebra
     - bignums
+    - multinomials
     - mathcomp-real-closed
     runs-on: ubuntu-latest
     steps:
@@ -244,6 +240,10 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "bignums"
     - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: multinomials'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "multinomials"
+    - if: steps.stepCheck.outputs.status == 'built'
       name: 'Building/fetching previous CI target: mathcomp-real-closed'
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-real-closed"
@@ -255,6 +255,7 @@ jobs:
     needs:
     - coq
     - coq-elpi
+    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -311,6 +312,10 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "coq-elpi"
     - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: stdlib'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "stdlib"
+    - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "hierarchy-builder"
@@ -322,6 +327,7 @@ jobs:
     - mathcomp-algebra
     - mathcomp-field
     - hierarchy-builder
+    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -406,6 +412,10 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "hierarchy-builder"
     - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: stdlib'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "stdlib"
+    - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp"
@@ -415,6 +425,7 @@ jobs:
     - stdlib
     - mathcomp-ssreflect
     - hierarchy-builder
+    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -482,6 +493,10 @@ jobs:
       name: 'Building/fetching previous CI target: hierarchy-builder'
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "hierarchy-builder"
+    - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: stdlib'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "stdlib"
     - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
@@ -717,6 +732,7 @@ jobs:
     - mathcomp-ssreflect
     - mathcomp-algebra
     - hierarchy-builder
+    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -793,6 +809,10 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "hierarchy-builder"
     - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: stdlib'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "stdlib"
+    - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-field"
@@ -800,6 +820,7 @@ jobs:
     needs:
     - coq
     - mathcomp-ssreflect
+    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -856,6 +877,10 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-ssreflect"
     - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: stdlib'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "stdlib"
+    - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-finmap"
@@ -866,6 +891,7 @@ jobs:
     - mathcomp-algebra
     - mathcomp-field
     - mathcomp-bigenough
+    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -942,6 +968,10 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-bigenough"
     - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: stdlib'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "stdlib"
+    - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-real-closed"
@@ -950,6 +980,7 @@ jobs:
     - coq
     - stdlib
     - hierarchy-builder
+    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -1010,6 +1041,10 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "hierarchy-builder"
     - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: stdlib'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "stdlib"
+    - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-ssreflect"
@@ -1018,6 +1053,7 @@ jobs:
     - coq
     - mathcomp-algebra
     - mathcomp-ssreflect
+    - stdlib
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -1082,11 +1118,20 @@ jobs:
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-fingroup"
     - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: stdlib'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "stdlib"
+    - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
         --argstr job "mathcomp-zify"
   multinomials:
-    needs: []
+    needs:
+    - coq
+    - mathcomp-ssreflect
+    - mathcomp-algebra
+    - mathcomp-finmap
+    - mathcomp-bigenough
     runs-on: ubuntu-latest
     steps:
     - name: Determine which commit to initially checkout
@@ -1134,6 +1179,30 @@ jobs:
     - id: stepCheck
       name: Checking presence of CI target for current job
       run: (echo -n status=; cat out err | grep "built:" | sed "s/.*/built/") >> $GITHUB_OUTPUT
+    - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: coq'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "coq"
+    - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: mathcomp-ssreflect'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "mathcomp-ssreflect"
+    - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: mathcomp-algebra'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "mathcomp-algebra"
+    - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: mathcomp-finmap'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "mathcomp-finmap"
+    - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: mathcomp-fingroup'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "mathcomp-fingroup"
+    - if: steps.stepCheck.outputs.status == 'built'
+      name: 'Building/fetching previous CI target: mathcomp-bigenough'
+      run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
+        --argstr job "mathcomp-bigenough"
     - if: steps.stepCheck.outputs.status == 'built'
       name: Building/fetching current CI target
       run: NIXPKGS_ALLOW_UNFREE=1 nix-build --no-out-link --argstr bundle "rocq-9.0"
