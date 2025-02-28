@@ -1,9 +1,9 @@
 (** This file is part of CoqEAL, the Coq Effective Algebra Library.
 (c) Copyright INRIA and University of Gothenburg, see LICENSE *)
 From HB Require Import structures.
-From mathcomp Require Import ssreflect ssrfun ssrbool eqtype fintype finfun ssrnat seq.
-From mathcomp Require Import choice ssralg poly polydiv mxpoly matrix bigop.
-From mathcomp Require Import mxalgebra perm fingroup tuple.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype choice ssrnat seq.
+From mathcomp Require Import bigop fintype finfun ssralg poly polydiv matrix.
+From mathcomp Require Import mxalgebra mxpoly perm fingroup tuple.
 Require Import mxstructure dvdring.
 
 (**   This file contains the definitions of similarity and equivalence

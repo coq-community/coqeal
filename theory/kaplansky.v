@@ -173,12 +173,12 @@ constructor; rewrite ?unitmx_mul; last first.
 rewrite -[M]hsubmxK -/A1 -/A2 -[_ *m P1 *m _]mulmxA (mul_mx_row _ A1) -!mulmxA.
 rewrite [row_mx (P1 *m A1) _ *m (_ *m _)]mulmxA mul_row_block ?simplmx !mulmxA.
 have -> : lift0_mx L1 *m P2 *m C *m block_mx Q2 0 0 1%:M =
-          lift0_mx L1 *m block_mx d2`_0%:M r 0 H'.
+          lift0_mx L1 *m block_mx (d2`_0)%:M r 0 H'.
   rewrite -!mulmxA; congr (_ *m _); rewrite mulmxA [C]surgery2 -mulmxA.
   rewrite (mul_row_block D) ?simplmx mul_mx_row mulmxA -/H -[H]submxK.
   f_equal; apply/rowP=> i; rewrite !mxE H1 ?ord1 ?lshift0;
   by case: splitP=> // j hj; rewrite !mxE -hj.
-rewrite -[lift0_mx L1 *m _ *m _]mulmxA (mulmx_block d2`_0%:M r) ?simplmx.
+rewrite -[lift0_mx L1 *m _ *m _]mulmxA (mulmx_block (d2`_0)%:M r) ?simplmx.
 rewrite mulmx_block ?simplmx mulmxA -mulmxDl mulmxN mul_scalar_mx.
 have -> : - (d2`_0 *: r') + r = 0.
   apply/rowP=> i; rewrite 4!mxE.
